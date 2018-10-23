@@ -32,10 +32,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 
 public class P4LocalFileImpl implements P4LocalFile {
     private final P4RemoteFile depot;
+    private final P4RemoteFile clientDepot;
     private final FilePath local;
     private final P4Revision haveRev;
     private final P4FileRevision headRev;
@@ -49,6 +51,7 @@ public class P4LocalFileImpl implements P4LocalFile {
 
     public static class Builder {
         private P4RemoteFile depot;
+        private P4RemoteFile clientDepot;
         private FilePath local;
         private P4Revision haveRev;
         private P4FileRevision headRev;
@@ -61,6 +64,7 @@ public class P4LocalFileImpl implements P4LocalFile {
 
         public Builder withLocalFile(P4LocalFile file) {
             this.depot = file.getDepotPath();
+            this.clientDepot = file.getClientDepotPath().orElse(null);
             this.local = file.getFilePath();
             this.haveRev = file.getHaveRevision();
             this.headRev = file.getHeadFileRevision();
@@ -79,6 +83,11 @@ public class P4LocalFileImpl implements P4LocalFile {
 
         public Builder withDepot(P4RemoteFile file) {
             this.depot = file;
+            return this;
+        }
+
+        public Builder withClientDepot(P4RemoteFile file) {
+            this.clientDepot = file;
             return this;
         }
 
@@ -128,7 +137,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         }
 
         public P4LocalFileImpl build() {
-            return new P4LocalFileImpl(depot, local, haveRev, headRev, changelistId, action, resolveType,
+            return new P4LocalFileImpl(depot, clientDepot, local, haveRev, headRev, changelistId, action, resolveType,
                     fileType, integrateFrom, charset);
         }
 
@@ -158,6 +167,9 @@ public class P4LocalFileImpl implements P4LocalFile {
         }
 
         depot = new P4RemoteFileImpl(spec);
+        clientDepot = spec.getClientPathString() == null
+                ? null
+                : new P4RemoteFileImpl(spec.getClientPathString(), spec.getClientPathString(), spec.getLocalPathString());
         local = VcsUtil.getFilePath(spec.getLocalPath().getPathString(), false);
         haveRev = new P4Revision(spec.getHaveRev());
         headRev = P4FileRevisionImpl.getHead(ref, spec);
@@ -180,6 +192,10 @@ public class P4LocalFileImpl implements P4LocalFile {
 
     public P4LocalFileImpl(@NotNull ClientServerRef ref, @NotNull IFileSpec spec) {
         this(new P4RemoteFileImpl(spec),
+            spec.getClientPathString() == null
+                    ? null
+                    : new P4RemoteFileImpl(spec.getClientPathString(), spec.getClientPathString(),
+                            spec.getLocalPathString()),
             getLocalFile(spec),
             new P4Revision(IFileSpec.HEAD_REVISION),
             null, null,
@@ -191,11 +207,12 @@ public class P4LocalFileImpl implements P4LocalFile {
     }
 
 
-    private P4LocalFileImpl(@Nullable P4RemoteFile depot, @NotNull FilePath local, @NotNull P4Revision haveRev,
-            @Nullable P4FileRevision headRev, @Nullable P4ChangelistId changelistId, @NotNull P4FileAction action,
-            @NotNull P4ResolveType resolveType, @Nullable P4FileType fileType, @Nullable P4RemoteFile integrateFrom,
-            @Nullable Charset charset) {
+    private P4LocalFileImpl(@Nullable P4RemoteFile depot, @Nullable P4RemoteFile clientDepot, @NotNull FilePath local,
+            @NotNull P4Revision haveRev, @Nullable P4FileRevision headRev, @Nullable P4ChangelistId changelistId,
+            @NotNull P4FileAction action, @NotNull P4ResolveType resolveType, @Nullable P4FileType fileType,
+            @Nullable P4RemoteFile integrateFrom, @Nullable Charset charset) {
         this.depot = depot;
+        this.clientDepot = clientDepot;
         this.local = local;
         this.haveRev = haveRev;
         this.headRev = headRev;
@@ -212,6 +229,12 @@ public class P4LocalFileImpl implements P4LocalFile {
     @Override
     public P4RemoteFile getDepotPath() {
         return depot;
+    }
+
+    @NotNull
+    @Override
+    public Optional<P4RemoteFile> getClientDepotPath() {
+        return Optional.ofNullable(clientDepot);
     }
 
     @NotNull

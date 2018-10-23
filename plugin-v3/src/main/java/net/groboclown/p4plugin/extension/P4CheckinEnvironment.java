@@ -200,7 +200,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                         P4ServerComponent
                                 .perform(project, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null))
                                 .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate(true))
-                                // TODO report issues
+                                // TODO report issues.  Is this necessary?
                                 //.whenServerError(asdf)
                                 //.whenOffline(asdf)
                                 ;

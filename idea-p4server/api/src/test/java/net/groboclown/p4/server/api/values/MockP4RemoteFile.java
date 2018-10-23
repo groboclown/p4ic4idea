@@ -16,6 +16,8 @@ package net.groboclown.p4.server.api.values;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+
 // supposed to be immutable, but for testing...
 public class MockP4RemoteFile implements P4RemoteFile {
     private String depotPath;
@@ -40,6 +42,12 @@ public class MockP4RemoteFile implements P4RemoteFile {
     @Override
     public String getDisplayName() {
         return display;
+    }
+
+    @NotNull
+    @Override
+    public Optional<String> getLocalPath() {
+        return Optional.empty();
     }
 
     public MockP4RemoteFile withDepotPath(String s) {

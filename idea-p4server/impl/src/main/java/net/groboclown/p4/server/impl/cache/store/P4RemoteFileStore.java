@@ -25,6 +25,7 @@ public class P4RemoteFileStore {
     public static class State {
         public String displayName;
         public String path;
+        public String localPath;
     }
 
 
@@ -46,7 +47,7 @@ public class P4RemoteFileStore {
 
     @NotNull
     public static P4RemoteFile read(@NotNull State state) {
-        return new P4RemoteFileImpl(state.path, state.displayName);
+        return new P4RemoteFileImpl(state.path, state.displayName, state.localPath);
     }
 
     @Nullable

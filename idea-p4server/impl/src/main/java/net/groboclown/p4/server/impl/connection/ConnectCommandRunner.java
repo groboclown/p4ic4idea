@@ -26,6 +26,7 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.ILabelSummary;
+import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileAnnotation;
@@ -108,6 +109,7 @@ import net.groboclown.p4.server.impl.connection.impl.FileAnnotationParser;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
+import net.groboclown.p4.server.impl.repository.AddedExtendedFileSpec;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
@@ -788,7 +790,7 @@ public class ConnectCommandRunner
             List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
             MessageStatusUtil.throwIfError(edited);
             return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
-        } else if (!srcStatus.hasOpen()){
+        } else if (!srcStatus.hasOpen()) {
             LOG.debug("Source not open.  Move requires the source to be open for edit.");
             List<IFileSpec> edited = cmd.editFiles(client, srcFile, null, action.getChangelistId(), null);
             MessageStatusUtil.throwIfError(edited);
@@ -827,15 +829,18 @@ public class ConnectCommandRunner
             // Then get details about the changelists.
             List<IChangelist> changes = new ArrayList<>(summaries.size());
             List<IFileSpec> pendingChangelistFileSummaries = new ArrayList<>();
+            List<IExtendedFileSpec> pendingAddedFiles = new ArrayList<>();
             Map<Integer, List<IFileSpec>> shelvedFiles = new HashMap<>();
             // Calling
             for (IChangelistSummary summary : summaries) {
                 IChangelist cl = cmd.getChangelistDetails(client.getServer(), summary.getId());
                 changes.add(cl);
-                pendingChangelistFileSummaries.addAll(cl.getFiles(false));
+                List<IFileSpec> clFiles = cl.getFiles(false);
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("listOpenedFilesChanges: Fetched @" + cl.getId() + " files " + cl.getFiles(false));
+                    LOG.debug("listOpenedFilesChanges: Fetched @" + cl.getId() + " files " + clFiles);
                 }
+                pendingAddedFiles.addAll(splitAddedFilesFromChangelistFileList(clFiles));
+                pendingChangelistFileSummaries.addAll(clFiles);
 
                 // Get the list of shelved files, if any
                 if (cl.isShelved()) {
@@ -846,17 +851,22 @@ public class ConnectCommandRunner
 
             // Then find details on all the opened files
             if (LOG.isDebugEnabled()) {
-                LOG.debug("listOpenedFilesChanges@" + startDate + ": getting file details");
+                LOG.debug("listOpenedFilesChanges@" + startDate + ": getting file details (requesting " +
+                        pendingChangelistFileSummaries.size() + " files, maximum file count " +
+                        maxFileResults + ")");
             }
             List<IExtendedFileSpec> pendingChangelistFiles = cmd.getFileDetailsForOpenedSpecs(
                     client.getServer(), pendingChangelistFileSummaries, maxFileResults);
             Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
-            // TODO DEBUG variable
+            // TODO DEBUG variable; remove when that code path stablizes.
             boolean foundNonOpened = false;
             while (pendingIter.hasNext()) {
                 IExtendedFileSpec next = pendingIter.next();
                 if (next.getStatusMessage() != null) {
-                    LOG.info("Opened File Spec message: " + next.getStatusMessage().getAllInfoStrings());
+                    // This can be a "not on server" message if nothing is checked out.
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Opened File Spec " + next + "; message: " + next.getStatusMessage());
+                    }
                     pendingIter.remove();
                 } else if (next.getAction() == null) {
                     // TODO better understand why this situation happens; when it does, the CL is always -1.
@@ -889,11 +899,16 @@ public class ConnectCommandRunner
             LOG.debug("listOpenedFilesChanges@" + startDate + ": getting file details for default changelist");
             List<IExtendedFileSpec> openedDefaultChangelistFiles =
                     cmd.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(), maxFileResults);
+            List<IExtendedFileSpec> defaultAddedFiles =
+                    splitAddedFilesFromChangelistFileList(openedDefaultChangelistFiles);
             Iterator<IExtendedFileSpec> defaultIter = openedDefaultChangelistFiles.iterator();
             while (defaultIter.hasNext()) {
                 IExtendedFileSpec next = defaultIter.next();
                 if (next.getStatusMessage() != null) {
-                    LOG.info("Default File Spec message: " + next.getStatusMessage().getAllInfoStrings());
+                    // This can be a "not on server" message if nothing is checked out.
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Opened File Spec " + next + "; message: " + next.getStatusMessage());
+                    }
                     defaultIter.remove();
                 } else if (next.getAction() == null) {
                     // This seems to happen when there's a double entry in the returned list.
@@ -928,10 +943,26 @@ public class ConnectCommandRunner
                 }
             }
 
+            // Need to find the local path for the added files.
+            addLocalPathsFromDepotPaths(client, pendingAddedFiles, defaultAddedFiles);
+            pendingChangelistFiles.addAll(pendingAddedFiles);
+            openedDefaultChangelistFiles.addAll(defaultAddedFiles);
+
             // Then join all the information together.
-            LOG.debug("listOpenedFilesChanges@" + startDate + ": generating result");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("listOpenedFilesChanges@" + startDate + ": generating result");
+            }
             ListOpenedFilesChangesResult ret = OpenedFilesChangesFactory.createListOpenedFilesChangesResult(
                     config, changes, pendingChangelistFiles, shelvedFiles, openedDefaultChangelistFiles);
+            if (LOG.isDebugEnabled()) {
+                StringBuilder sb = new StringBuilder("Final opened file list: ");
+                for (P4LocalFile file : ret.getOpenedFiles()) {
+                    sb.append(file.getDepotPath()).append(" :: ").append(file.getClientDepotPath()).append(" :: ")
+                        .append(file.getFilePath());
+                    sb.append("; ");
+                }
+                LOG.debug(sb.toString());
+            }
             ClientOpenCacheMessage.sendEvent(new ClientOpenCacheMessage.Event(
                     config.getClientServerRef(), ret.getOpenedFiles(), ret.getPendingChangelists()
             ));
@@ -952,4 +983,77 @@ public class ConnectCommandRunner
         return new ListClientsForUserResult(config, username, summaries);
     }
 
+
+    @NotNull
+    private List<IExtendedFileSpec> splitAddedFilesFromChangelistFileList(List<? extends IFileSpec> clFiles) {
+        // Extract all the files that are marked as a variation of "add".  These will not return any information
+        // from fstat, because they are not on the server.  All such files are removed from the clFiles list
+        // and returned as extended file specs.
+        List<IExtendedFileSpec> added = new ArrayList<>();
+
+        Iterator<? extends IFileSpec> iter = clFiles.iterator();
+        while (iter.hasNext()) {
+            IFileSpec next = iter.next();
+            FileAction action = next.getAction();
+            if (action != null) {
+                switch (next.getAction()) {
+                    case ADD:
+                    case COPY_FROM:
+                    case BRANCH:
+                    case MOVE_ADD:
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Marking " + next + " as added");
+                        }
+                        added.add(AddedExtendedFileSpec.create(next));
+                        iter.remove();
+                        break;
+                    default:
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Checking " + next.getAction() + " as not added for " + next);
+                        }
+                }
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("Null action found for spec " + next + ": " + next.getStatusMessage());
+            }
+        }
+
+        return added;
+    }
+
+    private void addLocalPathsFromDepotPaths(IClient client,
+            List<IExtendedFileSpec> addedFiles1, List<IExtendedFileSpec> addedFiles2)
+            throws ConnectionException, AccessException {
+        List<IFileSpec> origSpecs = new ArrayList<>(addedFiles1);
+        origSpecs.addAll(addedFiles2);
+
+        List<IFileSpec> where = cmd.getSpecLocations(client, FileSpecBuildUtil.stripDepotRevisions(origSpecs));
+        int specPos = 0;
+        for (int wherePos = 0; wherePos < where.size(); ++wherePos) {
+            IFileSpec whereSpec = where.get(wherePos);
+            if (whereSpec.getLocalPath() == null) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Ignoring where return value for " + whereSpec + ": " + whereSpec.getStatusMessage());
+                }
+            } else {
+                if (specPos >= origSpecs.size()) {
+                    throw new IllegalStateException("Where request returned too many values: requested " + origSpecs +
+                            ", returned " + where);
+                }
+                IFileSpec spec = origSpecs.get(specPos++);
+                spec.setLocalPath(whereSpec.getLocalPathString());
+                spec.setClientPath(whereSpec.getClientPathString());
+                // Do not set the depot path.
+                // spec.setDepotPath(whereSpec.getDepotPathString());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("WHERE: Setting " + spec + " to local " + spec.getLocalPath() + "; client " +
+                            spec.getClientPath() + "; depot " + spec.getDepotPath() + "; whereSpec depot " +
+                            whereSpec.getDepotPath());
+                }
+            }
+        }
+        if (specPos < origSpecs.size()) {
+            throw new IllegalStateException("Where request did not return enough values: requested " + origSpecs +
+                    ", returned " + where);
+        }
+    }
 }

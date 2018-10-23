@@ -20,15 +20,19 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
 import net.groboclown.p4.server.impl.util.HandleFileSpecUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class P4RemoteFileImpl implements P4RemoteFile {
     private final String displayName;
     private final String path;
+    private final String localPath;
 
     public static List<P4RemoteFile> createFor(@NotNull Collection<IFileSpec> specList) {
         return specList.stream()
@@ -60,22 +64,27 @@ public class P4RemoteFileImpl implements P4RemoteFile {
         } else {
             throw new NullPointerException("Invalid spec path " + spec);
         }
+
+        this.localPath = spec.getLocalPathString();
     }
 
     P4RemoteFileImpl(@NotNull String path) {
         this.path = path;
         this.displayName = path;
+        this.localPath = null;
     }
 
     P4RemoteFileImpl(@NotNull IFileAnnotation ann) {
         // Note: depotPath may be null in very rare circumstances.
         this.path = ann.getDepotPath() == null ? "<unknown>" : ann.getDepotPath();
         this.displayName = HandleFileSpecUtil.getDepotDisplayName(ann);
+        this.localPath = null;
     }
 
-    public P4RemoteFileImpl(@NotNull String path, @NotNull String displayName) {
+    public P4RemoteFileImpl(@NotNull String path, @NotNull String displayName, @Nullable String localPath) {
         this.path = path;
-        this.displayName = path;
+        this.displayName = displayName;
+        this.localPath = localPath;
     }
 
     @NotNull
@@ -88,6 +97,12 @@ public class P4RemoteFileImpl implements P4RemoteFile {
     @Override
     public String getDisplayName() {
         return displayName;
+    }
+
+    @NotNull
+    @Override
+    public Optional<String> getLocalPath() {
+        return Optional.ofNullable(localPath);
     }
 
     @Override

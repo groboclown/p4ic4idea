@@ -67,7 +67,7 @@ public class RevertFileAction extends AbstractAction implements P4CommandRunner.
     @Override
     public String[] getDisplayParameters() {
         if (isRevertOnlyIfUnchanged()) {
-            // FIXME message catalog
+            // TODO message catalog
             return new String[] { "unchanged" };
         }
         return EMPTY;

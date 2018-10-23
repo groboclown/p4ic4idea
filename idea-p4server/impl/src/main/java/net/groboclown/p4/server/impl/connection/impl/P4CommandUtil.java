@@ -494,4 +494,9 @@ public class P4CommandUtil {
 
         return client.getServer().moveFile(source, target, options);
     }
+
+    public List<IFileSpec> getSpecLocations(IClient client, List<IFileSpec> specs)
+            throws ConnectionException, AccessException {
+        return client.where(specs);
+    }
 }

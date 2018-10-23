@@ -112,6 +112,26 @@ public class FileSpecBuildUtil {
         return FileSpecBuilder.makeFileSpecList(src);
     }
 
+    public static List<IFileSpec> stripDepotRevisions(@NotNull List<IFileSpec> files) {
+        List<String> request = new ArrayList<>(files.size());
+        for (IFileSpec file : files) {
+            String path = file.getDepotPathString();
+            if (path == null) {
+                throw new IllegalArgumentException("null file spec in arguments");
+            }
+            int pos = path.lastIndexOf('#');
+            if (pos >= 0) {
+                path = path.substring(0, pos);
+            }
+            pos = path.lastIndexOf('@');
+            if (pos >= 0) {
+                path = path.substring(0, pos);
+            }
+            request.add(path);
+        }
+        return FileSpecBuilder.makeFileSpecList(request);
+    }
+
 
     private static String escapeToP4Path(@NotNull String path) {
         if (path.contains("...")) {

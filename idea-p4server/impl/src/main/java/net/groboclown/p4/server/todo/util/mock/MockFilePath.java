@@ -121,7 +121,11 @@ public class MockFilePath implements FilePath {
     @Nullable
     @Override
     public FilePath getParentPath() {
-        return new MockFilePath(f.getParentFile());
+        File parent = f.getParentFile();
+        if (parent == null) {
+            return null;
+        }
+        return new MockFilePath(parent);
     }
 
     @Override
@@ -137,5 +141,10 @@ public class MockFilePath implements FilePath {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof FilePath && vf.equals(((FilePath) obj).getVirtualFile());
+    }
+
+    @Override
+    public String toString() {
+        return f.toString();
     }
 }

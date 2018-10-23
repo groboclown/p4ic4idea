@@ -69,6 +69,10 @@ public class ServerQueryCacheStore {
         userClients.put(user, new ArrayList<>(clients));
     }
 
+    public Collection<P4WorkspaceSummary> getClientsForUser(String user) {
+        return new ArrayList<>(userClients.get(user));
+    }
+
     @NotNull
     public State getState() {
         State ret = new State();

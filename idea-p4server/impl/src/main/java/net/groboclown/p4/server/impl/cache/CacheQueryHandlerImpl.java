@@ -286,9 +286,14 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
     @Override
     public Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName,
             @NotNull String username) {
-        // FIXME implement
-        LOG.warn("FIXME implement getCachedClientsForUser");
-        return Collections.emptyList();
+        try {
+            Collection<P4WorkspaceSummary> ret = cache.read(serverName, Collections.emptyList(),
+                    (serverCache) -> serverCache.getClientsForUser(username));
+            return ret == null ? Collections.emptyList() : ret;
+        } catch (InterruptedException e) {
+            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            return Collections.emptyList();
+        }
     }
 
     // TODO look at using the CachePendingActionHandler's read.

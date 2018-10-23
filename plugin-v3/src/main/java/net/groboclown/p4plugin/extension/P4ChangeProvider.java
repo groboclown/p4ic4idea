@@ -633,6 +633,11 @@ public class P4ChangeProvider
                 after = new CurrentContentRevision(file.getFilePath());
                 if (file.getIntegrateFrom() != null) {
                     // TODO find the right charset
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("INTEGRATE: Finding relative path from " + file.getFilePath() + " ; " +
+                                file.getDepotPath() + " ; " + file.getClientDepotPath() + " -> " +
+                                file.getIntegrateFrom());
+                    }
                     before = new P4RemoteFileContentRevision(file.getIntegrateFrom(),
                             RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom()),
                             null, config.getServerConfig(), loader, null);
@@ -686,18 +691,16 @@ public class P4ChangeProvider
                 if (movedFrom != null) {
                     before = new P4LocalFileContentRevision(config, movedFrom, loader);
                     usedMovedFrom = true;
-                } else {
-                    FilePath relativeFrom = RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom());
-                    FilePath relativeDepot = RemoteFileUtil.findRelativeRemotePath(file, file.getDepotPath());
-                    if (relativeFrom != null) {
-                        before = new P4RemoteFileContentRevision(
-                                file.getIntegrateFrom(), relativeFrom,
-                                file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
-                    } else if (relativeDepot != null) {
-                        before = new P4RemoteFileContentRevision(
-                                file.getDepotPath(), relativeDepot,
-                                file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
+                } else if (file.getIntegrateFrom() != null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("MOVE_ADD: Finding relative path from " + file.getFilePath() + " ; " +
+                                file.getDepotPath() + " ; " + file.getClientDepotPath() + " -> " +
+                                file.getIntegrateFrom());
                     }
+                    FilePath relativeFrom = RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom());
+                    before = new P4RemoteFileContentRevision(
+                            file.getIntegrateFrom(), relativeFrom,
+                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
                 }
                 after = new CurrentContentRevision(file.getFilePath());
                 // Even though the status is "ADD", the UI will notice the different before/after

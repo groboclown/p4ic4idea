@@ -17,6 +17,7 @@ package net.groboclown.p4.server.api.values;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.Optional;
 
 /**
  * Simple typed depot path.  It must not include extra information, such as revision (<tt>#12</tt>)
@@ -39,4 +40,11 @@ public interface P4RemoteFile {
      */
     @NotNull
     String getDisplayName();
+
+    /**
+     *
+     * @return the local path, which may or may not be known.
+     */
+    @NotNull
+    Optional<String> getLocalPath();
 }

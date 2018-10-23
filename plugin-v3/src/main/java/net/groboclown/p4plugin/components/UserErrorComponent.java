@@ -142,7 +142,7 @@ public class UserErrorComponent implements ProjectComponent {
                         P4Bundle.message("user-error.ssl-algorithm.title"));
             }
 
-            // FIXME all below here should use P4Bundle
+            // TODO all below here should use P4Bundle
             @Override
             public void sslPeerUnverified(@NotNull ServerErrorEvent.ServerNameErrorEvent<SslHandshakeException> event) {
                 simpleError("SSL peer unverified for " + event.getName(), "SSL Error");

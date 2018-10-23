@@ -6,17 +6,6 @@ of Github.
 
 ## Bugs
 
-### Move Added Files Marks Old File As Deleted
-
-**Priority: Critical**
-
-If you open a file for edit, then move or rename the file, then the old file is marked as deleted, even though it
-isn't marked as deleted according to the server.
-
-This can take several refreshes to get itself into a rational state again, including some manual reverts.
-
-**Should be fixed now.  Need to check.**
-
 ### File Cache Conflict
 
 "File Cache Conflict" popup happens every 5-10 minutes (#174).  Typically happens during heavy iteration of perforce
@@ -42,15 +31,6 @@ associations remain, causing bad UI display.
 
 **This looks to be fixed, but it needs testing.**  Fix was in `PersistentRootConfigComponent`, where it now only loads
 root paths that are declared as roots in the project.
-
-### Move File Changelist View Message
-
-**Priority: Major**
-
-Move file operations show up as "moved from ../../../..//depot/path/".  Looks to be an issue with the creation of 
-the Change object in `RemoteFileUtil`.
-
-**Should be fixed now.  Need to check.**
 
 ### After Setting Password Active Connection is Still Offline
 
@@ -203,14 +183,6 @@ Needs implementation, and tie into P4Vcs.  If not, then delete it.
 
 Implement getForNonLocal, createFilters for shelved files, and HAS_SHELVED.getValue.
 
-### P4CheckinEnvironment
-
-Implement the cache cleanup.
-
-### UserErrorComponent
-
-Use bundle messages.
-
 ### InvalidPasswordMonitorComponent
 
 Better project detection.
@@ -239,25 +211,13 @@ Some connection questions need answers.
 
 Need to figure out how to bundle message referenced here.
 
-### AnswerUtil
-
-Need message localization
-
 ### CacheQueryHandlerImpl
 
-Implement getCachedChangelist callback, and getCachedClientsForUser.
+Implement getCachedChangelist callback.
 
 ### P4ResolveType
 
 Implement correct resolve types.
-
-### AbstractAction
-
-Need message localization
-
-### RevertFileAction
-
-Need message localization
 
 
 ## Near-Term Functionality

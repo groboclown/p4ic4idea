@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 /**
  * A local filesystem file, used for representing its state as the
@@ -33,6 +34,14 @@ public interface P4LocalFile {
      */
     @Nullable
     P4RemoteFile getDepotPath();
+
+    /**
+     * Path in the form <tt>//(client-workspace-name)/path/to/file</tt>
+     *
+     * @return null if it isn't in the depot, or a client-relative path isn't known.
+     */
+    @NotNull
+    Optional<P4RemoteFile> getClientDepotPath();
 
     // Can't be null, because this is a local file.  However, it can be non-existent if locally deleted.
     @NotNull

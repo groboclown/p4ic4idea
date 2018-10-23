@@ -38,8 +38,7 @@ public class AnswerUtil {
         @NotNull
         @Override
         public Optional<String> getMessage() {
-            // FIXME better error message for localization.
-            LOG.warn("FIXME better error message for localization.");
+            // TODO better error message for localization.
             return Optional.of("Server Offline");
         }
     }

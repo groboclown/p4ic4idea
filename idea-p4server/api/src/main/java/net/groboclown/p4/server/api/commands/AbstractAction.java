@@ -50,7 +50,7 @@ public abstract class AbstractAction implements PreviousExecutionProblems, Displ
     }
 
     protected static String changeId(P4ChangelistId id) {
-        // FIXME use message catalog
+        // TODO use message catalog
         if (id == null) {
             return "?";
         }

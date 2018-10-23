@@ -28,6 +28,7 @@ public class P4LocalFileStore {
     @SuppressWarnings("WeakerAccess")
     public static class State {
         public P4RemoteFileStore.State depot;
+        public P4RemoteFileStore.State clientDepot;
         public String local;
         public int haveRev;
         public P4FileRevisionStore.State headRev;
@@ -44,6 +45,7 @@ public class P4LocalFileStore {
         State ret = new State();
 
         ret.depot = P4RemoteFileStore.getStateNullable(file.getDepotPath());
+        ret.clientDepot = P4RemoteFileStore.getStateNullable(file.getClientDepotPath().orElse(null));
         ret.local = file.getFilePath().getPath();
         ret.haveRev = file.getHaveRevision().getValue();
         ret.headRev = P4FileRevisionStore.getStateNullable(file.getHeadFileRevision());
@@ -62,6 +64,7 @@ public class P4LocalFileStore {
     public static P4LocalFile read(@NotNull State state) {
         return new P4LocalFileImpl.Builder()
                 .withDepot(P4RemoteFileStore.readNullable(state.depot))
+                .withClientDepot(P4RemoteFileStore.readNullable(state.clientDepot))
                 .withLocal(VcsUtil.getFilePath(state.local))
                 .withHave(new P4Revision(state.haveRev))
                 .withHead(P4FileRevisionStore.readNullable(state.headRev))

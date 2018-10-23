@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 // Supposed to be immutable, but it's for testing...
 public class MockP4LocalFile implements P4LocalFile {
@@ -40,6 +41,12 @@ public class MockP4LocalFile implements P4LocalFile {
     @Override
     public P4RemoteFile getDepotPath() {
         return depotPath;
+    }
+
+    @Nullable
+    @Override
+    public Optional<P4RemoteFile> getClientDepotPath() {
+        return Optional.empty();
     }
 
     public MockP4LocalFile withDepotPath(String s) {

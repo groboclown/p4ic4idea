@@ -1025,6 +1025,10 @@ public class ConnectCommandRunner
             throws ConnectionException, AccessException {
         List<IFileSpec> origSpecs = new ArrayList<>(addedFiles1);
         origSpecs.addAll(addedFiles2);
+        if (origSpecs.isEmpty()) {
+            // Nothing to do.
+            return;
+        }
 
         List<IFileSpec> where = cmd.getSpecLocations(client, FileSpecBuildUtil.stripDepotRevisions(origSpecs));
         int specPos = 0;

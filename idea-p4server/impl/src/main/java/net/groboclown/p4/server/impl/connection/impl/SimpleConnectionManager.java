@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.connection.impl;
 
+import com.intellij.credentialStore.OneTimeString;
 import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
@@ -40,6 +41,7 @@ import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
+import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4Func;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
@@ -63,6 +65,8 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     private static final String PLUGIN_P4HOST_KEY = "P4HOST";
     private static final String PLUGIN_LANGUAGE_KEY = "P4LANGUAGE";
+
+    private static final char[] EMPTY_PASSWORD = new char[0];
 
     private final File tmpDir;
     private final int socketSoTimeoutMillis;
@@ -91,38 +95,15 @@ public class SimpleConnectionManager implements ConnectionManager {
             LOG.debug("Performing client execution from cwd " + cwd);
         }
 
-        if (config.getServerConfig().usesStoredPassword()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Using password stored in registry.");
-            }
-            return Answer.forPromise(ApplicationPasswordRegistry.getInstance().get(config.getServerConfig()))
-                    .mapAsync((password) -> handleAsync(config, () -> {
-                        final IOptionsServer server = connect(
-                                config.getServerConfig(),
-                                password.toString(false),
-                                createProperties(config, cwd));
-                        try {
-                            IClient client = server.getClient(config.getClientname());
-                            if (client == null) {
-                                throw new ConfigException("Client does not exist: " + config.getClientname());
-                            }
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Connected to client " + client.getName());
-                            }
-                            server.setCurrentClient(client);
-                            return fun.func(client);
-                        } finally {
-                            close(server);
-                        }
-                    }));
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Skipping password use.");
-        }
-        return handleAsync(config, () -> {
+        return getPassword(config.getServerConfig())
+                .mapAsync((password) -> handleAsync(config, () -> {
+                    String passwdStr = password == null ? null : password.toString(true);
+                    if (passwdStr == null || passwdStr.isEmpty()) {
+                        passwdStr = null;
+                    }
                     final IOptionsServer server = connect(
                             config.getServerConfig(),
-                            null,
+                            passwdStr,
                             createProperties(config, cwd));
                     try {
                         IClient client = server.getClient(config.getClientname());
@@ -133,47 +114,41 @@ public class SimpleConnectionManager implements ConnectionManager {
                             LOG.debug("Connected to client " + client.getName());
                         }
                         server.setCurrentClient(client);
-                        return fun.func(server.getClient(config.getClientname()));
+                        return fun.func(client);
                     } finally {
                         close(server);
                     }
-                });
+                }));
     }
 
     @NotNull
     @Override
-    public <R> Answer<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
-        if (config.usesStoredPassword()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Using password stored in registry.");
-            }
-            return Answer.forPromise(ApplicationPasswordRegistry.getInstance().get(config))
-                    .mapAsync((password) -> handleAsync(config, () -> {
-                        final IOptionsServer server = connect(
-                                config,
-                                password.toString(false),
-                                createProperties(config));
-                        try {
-                            return fun.func(server);
-                        } finally {
-                            close(server);
+    public <R> Answer<R> withConnection(@NotNull final ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
+        return getPassword(config)
+                .mapAsync((password) -> handleAsync(config, () -> {
+                    String passwdStr = password == null ? null : password.toString(true);
+                    if (passwdStr == null || passwdStr.isEmpty()) {
+                        passwdStr = null;
+                    }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Connecting to " + config.getServerName());
+                    }
+                    final IOptionsServer server = connect(
+                            config,
+                            passwdStr,
+                            createProperties(config));
+                    try {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Running invocation for " + fun);
                         }
-                    }));
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Skipping password use.");
-        }
-        return handleAsync(config, () -> {
-            final IOptionsServer server = connect(
-                    config,
-                    null,
-                    createProperties(config));
-            try {
-                return fun.func(server);
-            } finally {
-                close(server);
-            }
-        });
+                        return fun.func(server);
+                    } finally {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Closing connection to server " + config.getServerName());
+                        }
+                        close(server);
+                    }
+                }));
     }
 
     @NotNull
@@ -612,10 +587,31 @@ public class SimpleConnectionManager implements ConnectionManager {
             } catch (P4CommandRunner.ServerResultException e) {
                 LOG.info("Command execution failed", e);
                 sink.reject(e);
+            } catch (Throwable t) {
+                LOG.error("Command generated unexpected problem; making it look like an interrupted error", t);
+                sink.reject(AnswerUtil.createFor(new InterruptedException()));
             }
         });
     }
 
+    private Answer<OneTimeString> getPassword(@NotNull final ServerConfig serverConfig) {
+        if (serverConfig.usesStoredPassword()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Using password stored in registry.");
+            }
+            // Custom promise handler.  We want all password responses, whether a failure or a success,
+            // to resolve.  Failures shouldn't be bubbled up from this call.
+            return Answer.resolve(null)
+                    .futureMap((x, sink) ->
+                        ApplicationPasswordRegistry.getInstance().get(serverConfig)
+                            .processed(sink::resolve)
+                            .rejected((t) -> {
+                                LOG.warn("Problem loading the password", t);
+                                sink.resolve(new OneTimeString(EMPTY_PASSWORD));
+                            }));
+        }
+        return Answer.resolve(new OneTimeString(EMPTY_PASSWORD));
+    }
 
 
     private void close(@NotNull final IServer server) {

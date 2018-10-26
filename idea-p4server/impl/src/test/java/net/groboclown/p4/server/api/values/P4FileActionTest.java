@@ -153,12 +153,14 @@ class P4FileActionTest {
                             // Delete the target file
                             msgs = cmd.deleteFiles(client, tgtFiles, null);
                             MessageStatusUtil.throwIfError(msgs);
+                            // make sure the command deleted the file.
+                            assertFalse(toFile.getIOFile().exists());
                             change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("delete target file");
                             msgs = cmd.submitChangelist(null, null, change);
                             MessageStatusUtil.throwIfError(msgs);
-                            // make sure the file's gone.
-                            assertTrue(toFile.getIOFile().delete());
+                            // make sure the file's still gone.
+                            assertFalse(toFile.getIOFile().exists());
 
                             // Move over the deleted file.
                             msgs = client.editFiles(srcFiles, new EditFilesOptions());

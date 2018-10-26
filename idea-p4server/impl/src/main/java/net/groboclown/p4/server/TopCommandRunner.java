@@ -105,6 +105,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 
@@ -751,21 +752,27 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Attempting to connect to " + clientConfig.getClientServerRef());
             }
-            boolean timedOut = server.getClientsForUser(state.config,
+            AtomicInteger debugCompleteState = new AtomicInteger(0);
+            boolean completed = server.getClientsForUser(state.config,
                     new ListClientsForUserQuery(state.config.getUsername(), 1))
             .whenCompleted((x) -> {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Completed connection attempt to " + clientConfig.getClientServerRef());
+                    debugCompleteState.incrementAndGet();
                 }
             })
             .whenServerError((e) -> {
                 // The correct listeners will fire.
                 LOG.info("Reconnect failed for " + clientConfig.getClientServerRef(), e);
+                debugCompleteState.decrementAndGet();
             })
             .waitForCompletion(30, TimeUnit.SECONDS);
-            if (timedOut) {
-                LOG.info("Timed out waiting for connection to " + clientConfig.getClientServerRef());
+            if (!completed) {
+                LOG.info("Reconnect attempt timed out waiting for connection to " + clientConfig.getClientServerRef());
                 state.badConnection = true;
+            } else if (LOG.isDebugEnabled()) {
+                // -1 means failure, 1 means success, 0 means didn't complete.
+                LOG.debug("Completed reconnect attempt; either success or failure: " + debugCompleteState.get());
             }
         }
         if (LOG.isDebugEnabled()) {

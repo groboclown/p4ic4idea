@@ -103,12 +103,19 @@ public abstract class ApplicationPasswordRegistry
      * @return promise with a null value (if no password stored) or the password.
      */
     @NotNull
-    public final Promise<OneTimeString> get(@NotNull ServerConfig config) {
+    public final Promise<OneTimeString> get(@NotNull final ServerConfig config) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Fetching password for config " + config.getServerName());
         }
         final CredentialAttributes attr = getCredentialAttributes(config, true);
-        return PasswordSafe.getInstance().getAsync(attr).then(Credentials::getPassword);
+        return PasswordSafe.getInstance().getAsync(attr)
+                .then((c) -> c == null ? null : c.getPassword())
+                .processed((p) -> {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Fetched password for config " + config.getServerName());
+                    }
+                })
+                .rejected((t) -> LOG.warn("Password fetch generated an error", t));
     }
 
     @Override

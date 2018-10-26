@@ -15,10 +15,12 @@
 package net.groboclown.p4.server.api.async;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
 
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -40,6 +42,21 @@ public interface Answer<S> {
                 .rejected((t) -> {
                     if (t instanceof P4CommandRunner.ServerResultException) {
                         ret.reject((P4CommandRunner.ServerResultException) t);
+                    } else {
+                        ret.reject(new P4CommandRunner.ServerResultException(new P4CommandRunner.ResultError() {
+                            @NotNull
+                            @Override
+                            public P4CommandRunner.ErrorCategory getCategory() {
+                                return P4CommandRunner.ErrorCategory.INTERNAL;
+                            }
+
+                            @Nls
+                            @NotNull
+                            @Override
+                            public Optional<String> getMessage() {
+                                return Optional.ofNullable(t.getLocalizedMessage());
+                            }
+                        }, t));
                     }
                 });
         return ret;

@@ -88,14 +88,11 @@ public class LimitedConnectionManager implements ConnectionManager {
                 sink.reject(AnswerUtil.createFor(e));
             } catch (CancellationException e) {
                 sink.reject(AnswerUtil.createFor(e));
-            } catch (Throwable t) {
-                LOG.error("Did not catch", t);
             }
         })
         .mapAsync((x) -> {
             LOG.debug("Start execution for " + requester);
-            Answer<R> r = fun.get();
-            return r;
+            return fun.get();
         })
         .whenCompleted((c) -> {
             // Will only release if the requester acquired the lock.

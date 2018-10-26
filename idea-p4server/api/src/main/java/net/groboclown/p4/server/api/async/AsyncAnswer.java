@@ -152,6 +152,7 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
         }
         // All the current listeners have already run.
         if (error != null) {
+            // There's already a problem, so don't run the argument.
             return DoneAnswer.reject(error);
         }
         return fun.apply(result);

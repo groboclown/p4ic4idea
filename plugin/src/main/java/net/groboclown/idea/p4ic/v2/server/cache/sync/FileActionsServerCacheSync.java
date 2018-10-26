@@ -1478,6 +1478,17 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
             LOG.debug("Symlink 1: Mapped paths " + currentKnownDepotPaths);
         }
 
+        // Merged fix #175 (commit 758d44557c2fa31f5625069d170ec1aef4815236)
+        // Retrieve depot root path as it may be different with project base dir.
+        FilePath depotRootPath = FilePathUtil.getFilePath(exec.getClient().getRoot());
+        VirtualFile depotRootDir = null;
+        if (depotRootPath != null) {
+            depotRootDir = FilePathUtil.getFilePath(exec.getClient().getRoot()).getVirtualFile();
+        }
+        if (depotRootDir == null) {
+            depotRootDir = exec.getProject().getBaseDir();
+        }
+
 
         // There may be multiple symlinks pointing to symlinks, so we need to loop until we've
         // exhausted the list of files that have symlinks.
@@ -1485,7 +1496,7 @@ public class FileActionsServerCacheSync extends CacheFrontEnd {
         do {
             // Find the complete list of parent directories for the requested files for add, up to but not including
             // the depot.  So, a file like //depot/a/b/c.txt would have //depot/a, //depot/a/b as the returned list.
-            List<IFileSpec> splitParents = splitParentPathsFor(exec.getProject().getBaseDir(), remainingFilesNeedingMaps);
+            List<IFileSpec> splitParents = splitParentPathsFor(depotRootDir, remainingFilesNeedingMaps);
 
             // Run p4 fstat "-F "headType = symlink" (split parents list)
             // Returns only the paths that are symlinks.

@@ -44,9 +44,12 @@ public class QueryAnswerImpl<S> implements P4CommandRunner.QueryAnswer<S> {
         return this;
     }
 
+    @NotNull
     @Override
-    public void after(Runnable r) {
-        answer.after(r);
+    public P4CommandRunner.QueryAnswer<S> whenAnyState(Runnable r) {
+        answer.whenCompleted((c) -> r.run());
+        answer.whenFailed((c) -> r.run());
+        return this;
     }
 
     @NotNull

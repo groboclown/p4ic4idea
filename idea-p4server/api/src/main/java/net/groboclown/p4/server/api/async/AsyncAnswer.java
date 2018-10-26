@@ -19,7 +19,6 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -40,7 +39,6 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
     private final Object sync = new Object();
     private final List<Consumer<S>> resolveListeners = new ArrayList<>();
     private final List<Consumer<P4CommandRunner.ServerResultException>> errListeners = new ArrayList<>();
-    private final List<Runnable> afterListeners = new ArrayList<>();
     private final CountDownLatch completedSignal = new CountDownLatch(1);
     private S result;
     private P4CommandRunner.ServerResultException error;
@@ -67,11 +65,7 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
         for (Consumer<S> listener : resolveListeners) {
             listener.accept(result);
         }
-        for (Runnable listener : afterListeners) {
-            listener.run();
-        }
         resolveListeners.clear();
-        afterListeners.clear();
         errListeners.clear();
     }
 
@@ -90,11 +84,7 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
         for (Consumer<P4CommandRunner.ServerResultException> listener : errListeners) {
             listener.accept(error);
         }
-        for (Runnable listener : afterListeners) {
-            listener.run();
-        }
         resolveListeners.clear();
-        afterListeners.clear();
         errListeners.clear();
     }
 
@@ -126,17 +116,6 @@ class AsyncAnswer<S> implements Answer<S>, AnswerSink<S> {
             c.accept(error);
         }
         return this;
-    }
-
-    @Override
-    public void after(@Nonnull Runnable r) {
-        synchronized (sync) {
-            if (!completed) {
-                afterListeners.add(r);
-                return;
-            }
-        }
-        r.run();
     }
 
     @NotNull

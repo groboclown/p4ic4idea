@@ -42,9 +42,11 @@ public class ErrorQueryAnswerImpl<S> implements P4CommandRunner.QueryAnswer<S> {
         return this;
     }
 
+    @NotNull
     @Override
-    public void after(Runnable r) {
+    public P4CommandRunner.QueryAnswer<S> whenAnyState(Runnable r) {
         r.run();
+        return this;
     }
 
     @NotNull

@@ -80,7 +80,7 @@ public abstract class BasicAction extends DumbAwareAction {
         final List<VirtualFile> affectedFiles = collectAffectedFiles(project, vFiles);
         final List<VcsException> exceptions = new ArrayList<VcsException>();
         perform(project, vcs, exceptions, affectedFiles)
-            .after(() -> {
+            .whenAnyState(() -> {
                 exceptions.forEach(LOG::info);
             });
     }

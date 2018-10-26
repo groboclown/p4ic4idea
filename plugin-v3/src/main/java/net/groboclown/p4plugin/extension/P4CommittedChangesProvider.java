@@ -160,7 +160,7 @@ public class P4CommittedChangesProvider implements CommittedChangesProvider<P4Co
         }
         asyncLoadCommittedChanges(settings, location, maxCount)
                 .whenCompleted((c) -> c.forEach(consumer::consume))
-                .after(consumer::finished);
+                .whenAnyState(consumer::finished);
     }
 
     @NotNull

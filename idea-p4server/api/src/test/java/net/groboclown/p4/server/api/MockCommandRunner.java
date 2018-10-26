@@ -179,6 +179,13 @@ public class MockCommandRunner
 
         @NotNull
         @Override
+        public QueryAnswer<R> whenAnyState(Runnable r) {
+            r.run();
+            return this;
+        }
+
+        @NotNull
+        @Override
         public <T> ActionAnswer<T> mapAction(Function<R, T> fun) {
             if (error == null) {
                 return new MockActionAnswer<T>(false, fun.apply(result), null);
@@ -211,11 +218,6 @@ public class MockCommandRunner
                 return fun.apply(result);
             }
             return new MockQueryAnswer<>(null, error);
-        }
-
-        @Override
-        public void after(Runnable fun) {
-            fun.run();
         }
 
         @Override
@@ -273,6 +275,13 @@ public class MockCommandRunner
 
         @NotNull
         @Override
+        public ActionAnswer<S> whenAnyState(Runnable r) {
+            r.run();
+            return this;
+        }
+
+        @NotNull
+        @Override
         public <T> ActionAnswer<T> mapAction(Function<S, T> fun) {
             if (!offline && error == null) {
                 return new MockActionAnswer<>(false, fun.apply(result), null);
@@ -305,11 +314,6 @@ public class MockCommandRunner
                 return fun.apply(result);
             }
             return new MockQueryAnswer<>(null, error);
-        }
-
-        @Override
-        public void after(Runnable fun) {
-            fun.run();
         }
 
         @Override

@@ -60,7 +60,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -72,7 +72,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -83,7 +83,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -94,7 +94,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -105,7 +105,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(name, query);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -137,7 +137,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
         if (instance.second) {
-            ret.getPromise().after(instance.first::dispose);
+            ret.getPromise().whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -147,7 +147,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
         if (instance.second) {
-            ret.getPromise().after(instance.first::dispose);
+            ret.getPromise().whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -157,7 +157,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.getClientsForUser(config);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -167,7 +167,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.checkServerConnection(config);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }
@@ -176,7 +176,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> ret = instance.first.checkClientConnection(clientConfig);
         if (instance.second) {
-            ret.after(instance.first::dispose);
+            ret.whenAnyState(instance.first::dispose);
         }
         return ret;
     }

@@ -975,10 +975,17 @@ public class ConnectCommandRunner
     private ListClientsForUserResult listClientsForUser(IOptionsServer server, ServerConfig config, String username,
             int maxClients)
             throws P4JavaException {
+        // TODO use P4CommandUtil
         GetClientsOptions opts = new GetClientsOptions(maxClients, username, null);
         List<P4WorkspaceSummary> summaries = new ArrayList<>();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Fetching clients");
+        }
         for (IClientSummary client : server.getClients(opts)) {
             summaries.add(new P4WorkspaceSummaryImpl(client));
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Fetched " + summaries.size() + " clients");
         }
         return new ListClientsForUserResult(config, username, summaries);
     }

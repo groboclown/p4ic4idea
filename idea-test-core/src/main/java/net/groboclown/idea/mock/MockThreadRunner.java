@@ -80,11 +80,16 @@ public class MockThreadRunner {
     private final ThreadPoolExecutor simulatedRunner = new ThreadPoolExecutor(2, 30, 10L,
             TimeUnit.SECONDS, runnerQueue);
 
-    private final long waitTimeoutSeconds = 2L;
+    private final long waitTimeoutSeconds;
     private final Map<String, CyclicBarrier> waitForMap = new HashMap<>();
     private final List<String> queuedKeys = new LinkedList<>();
 
     public MockThreadRunner(IdeaLightweightExtension extension) {
+        this(extension, 2L);
+    }
+
+    public MockThreadRunner(IdeaLightweightExtension extension, long waitTimeSeconds) {
+        waitTimeoutSeconds = waitTimeSeconds;
         Application application = extension.getMockApplication();
 
         BlockingRunAnswer pooledThreadAnswer = new BlockingRunAnswer(pooledThreadsRun);

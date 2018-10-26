@@ -44,9 +44,11 @@ public class OfflineActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<
         return this;
     }
 
+    @NotNull
     @Override
-    public void after(Runnable r) {
+    public P4CommandRunner.ActionAnswer<S> whenAnyState(Runnable r) {
         r.run();
+        return this;
     }
 
     @NotNull

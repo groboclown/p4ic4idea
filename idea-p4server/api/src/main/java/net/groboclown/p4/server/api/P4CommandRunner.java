@@ -534,6 +534,8 @@ public interface P4CommandRunner {
         ActionAnswer<S> whenServerError(Consumer<ServerResultException> c);
         @NotNull
         ActionAnswer<S> whenCompleted(Consumer<S> c);
+        @NotNull
+        ActionAnswer<S> whenAnyState(Runnable r);
 
         @NotNull
         <T> ActionAnswer<T> mapAction(Function<S, T> fun);
@@ -544,7 +546,6 @@ public interface P4CommandRunner {
         @NotNull
         <T> QueryAnswer<T> mapQueryAsync(Function<S, QueryAnswer<T>> fun);
 
-        void after(Runnable fun);
 
         /**
          *
@@ -582,6 +583,8 @@ public interface P4CommandRunner {
         QueryAnswer<S> whenCompleted(Consumer<S> c);
         @NotNull
         QueryAnswer<S> whenServerError(Consumer<ServerResultException> c);
+        @NotNull
+        QueryAnswer<S> whenAnyState(Runnable r);
 
         @NotNull
         <T> ActionAnswer<T> mapAction(Function<S, T> fun);
@@ -591,8 +594,6 @@ public interface P4CommandRunner {
         <T> ActionAnswer<T> mapActionAsync(Function<S, ActionAnswer<T>> fun);
         @NotNull
         <T> QueryAnswer<T> mapQueryAsync(Function<S, QueryAnswer<T>> fun);
-
-        void after(Runnable fun);
 
         /**
          *

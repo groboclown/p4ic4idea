@@ -49,9 +49,11 @@ public class DoneActionAnswer<S> implements P4CommandRunner.ActionAnswer<S> {
         return this;
     }
 
+    @NotNull
     @Override
-    public void after(Runnable r) {
+    public P4CommandRunner.ActionAnswer<S> whenAnyState(Runnable r) {
         r.run();
+        return this;
     }
 
     @NotNull

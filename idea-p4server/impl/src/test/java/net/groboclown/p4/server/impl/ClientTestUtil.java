@@ -15,20 +15,37 @@
 package net.groboclown.p4.server.impl;
 
 import com.perforce.p4java.core.CoreFactory;
+import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.connection.FailP4RequestErrorHandler;
+import net.groboclown.p4.server.impl.connection.P4Func;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class ClientTestUtil {
+    public static Answer<SimpleConnectionManager> withConnection(final ServerConfig config,
+            final TemporaryFolder tmpDir) {
+        return withConnection(config, tmpDir, new FailP4RequestErrorHandler());
+    }
+
+    public static Answer<SimpleConnectionManager> withConnection(final ServerConfig config,
+            final TemporaryFolder tmpDir, P4RequestErrorHandler errorHandler) {
+        final SimpleConnectionManager mgr = new SimpleConnectionManager(
+                tmpDir.newFile("tmpdir"), 1000, "v1",
+                errorHandler);
+        return Answer.resolve(mgr);
+    }
+
     public static Answer<SimpleConnectionManager> setupClient(final ClientConfig config,
             final TemporaryFolder tmpDir, File clientRoot) {
         return setupClient(config, tmpDir, clientRoot, new FailP4RequestErrorHandler());
@@ -36,19 +53,18 @@ public class ClientTestUtil {
 
     public static Answer<SimpleConnectionManager> setupClient(final ClientConfig config,
             final TemporaryFolder tmpDir, File clientRoot, P4RequestErrorHandler errorHandler) {
-        final SimpleConnectionManager mgr = new SimpleConnectionManager(
-                tmpDir.newFile("tmpdir"), 1000, "v1",
-                errorHandler);
         if (!clientRoot.isDirectory()) {
             if (!clientRoot.mkdirs()) {
                 fail("Could not create " + clientRoot);
             }
         }
-        return mgr.withConnection(config.getServerConfig(), (server) ->
+        return withConnection(config.getServerConfig(), tmpDir, errorHandler)
+            .mapAsync(mgr -> mgr.withConnection(config.getServerConfig(), server -> {
                 CoreFactory.createClient(server, config.getClientname(), "new client from CoreFactory",
                         clientRoot.getAbsolutePath(), new String[]{"//depot/... //" + config.getClientname() + "/..."},
-                        true))
-                .map((x) -> mgr);
+                        true);
+                return mgr;
+            }));
     }
 
 

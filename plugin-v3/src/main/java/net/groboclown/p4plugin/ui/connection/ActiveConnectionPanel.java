@@ -91,16 +91,22 @@ public class ActiveConnectionPanel {
             // There's a bit of code here to attempt to maintain the
             // expanded row set, but it doesn't work.
             connectionTree.setPaintBusy(true);
-            Collection<TreeNode> needsRefresh = treeNode.refresh(project);
             Collection<Integer> expanded = connectionTree.getExpandableItemsHandler().getExpandedItems();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("The tree was expanded at: " + expanded);
+            }
+            Collection<TreeNode> needsRefresh = treeNode.refresh(project);
             ApplicationManager.getApplication().invokeAndWait(() -> {
                 for (TreeNode toRefresh: needsRefresh) {
                     connectionTreeModel.reload(toRefresh);
                 }
-                // Is this accurate?  Probably not, but it at least attempts to keep the expansion.
+                // This isn't accurate, but it at least attempts to keep the expansion.
                 for (Integer nodeIndex : expanded) {
                     if (nodeIndex < connectionTree.getRowCount()) {
                         connectionTree.expandRow(nodeIndex);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Expanding row " + nodeIndex);
+                        }
                     }
                 }
             });

@@ -55,6 +55,14 @@ public class ActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<S> {
 
     @NotNull
     @Override
+    public P4CommandRunner.ActionAnswer<S> whenAnyState(Runnable r) {
+        answer.whenCompleted((c) -> r.run());
+        answer.whenFailed((c) -> r.run());
+        return this;
+    }
+
+    @NotNull
+    @Override
     public <T> P4CommandRunner.ActionAnswer<T> mapAction(Function<S, T> fun) {
         return new ActionAnswerImpl<>(answer.map(fun));
     }
@@ -82,11 +90,6 @@ public class ActionAnswerImpl<S> implements P4CommandRunner.ActionAnswer<S> {
                 fun.apply(s)
                         .whenCompleted(sink::resolve)
                         .whenServerError(sink::reject)));
-    }
-
-    @Override
-    public void after(Runnable fun) {
-        answer.after(fun);
     }
 
     @Override

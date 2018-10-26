@@ -229,7 +229,7 @@ public class P4HistoryProvider
                     })
                 )
                 .whenServerError(partner::reportException)
-                .after(partner::finished);
+                .whenAnyState(partner::finished);
     }
 
     @Nullable

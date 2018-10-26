@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -34,7 +33,6 @@ import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
-import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,7 +43,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -92,7 +89,7 @@ public class P4VFSListener extends VcsVFSListener {
                 P4ServerComponent
                 .perform(myProject, root.getClientConfig(),
                         new AddEditAction(fp, getFileType(fp), id, (String) null))
-                .after(() -> {
+                .whenAnyState(() -> {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Completed call to add " + addedFiles + "; copy " + copyFromMap);
                     }
@@ -120,7 +117,7 @@ public class P4VFSListener extends VcsVFSListener {
                 P4ServerComponent
                 .perform(myProject, root.getClientConfig(),
                         new DeleteFileAction(filePath, id))
-                .after(() -> {
+                .whenAnyState(() -> {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Completed call to delete file " + filesToDelete);
                     }
@@ -202,7 +199,7 @@ public class P4VFSListener extends VcsVFSListener {
                 }
             }
 
-            pending.after(() -> {
+            pending.whenAnyState(() -> {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Completed move request for " + src + " -> " + tgt);
                 }

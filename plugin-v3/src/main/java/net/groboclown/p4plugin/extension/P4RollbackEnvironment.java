@@ -197,6 +197,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                             .whenOffline(() -> listener.accept(e.getValue()));
                 })
                 .collect(ErrorCollectors.collectActionErrors(exceptions))
-                .after(() -> LOG.info("Completed sync of files"));
+                .whenCompleted((c) -> LOG.info("Completed sync of files"))
+                .whenFailed((c) -> LOG.info("Failed to sync files"));
     }
 }

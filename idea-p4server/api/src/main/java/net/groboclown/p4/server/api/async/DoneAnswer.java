@@ -79,14 +79,12 @@ class DoneAnswer<S> implements Answer<S> {
     @NotNull
     @Override
     public <T> Answer<T> futureMap(@NotNull BiConsumer<S, AnswerSink<T>> func) {
-        AsyncAnswer<T> ret = new AsyncAnswer<>();
-        func.accept(result, ret);
-        return ret;
-    }
-
-    @Override
-    public void after(@NotNull Runnable r) {
-        r.run();
+        if (error == null) {
+            AsyncAnswer<T> ret = new AsyncAnswer<>();
+            func.accept(result, ret);
+            return ret;
+        }
+        return new DoneAnswer<>(null, error);
     }
 
     @Override

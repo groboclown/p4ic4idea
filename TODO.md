@@ -22,16 +22,6 @@ project.  The submission should only submit the files that the user sees.
 The unseen files should be moved to the default changelist before submission.  If the default changelist is
 submitted, then the code will need to create a changelist before submission, just like how the job association works.
 
-### Removing a Config Does Not Remove Its Cached Data
-
-**Priority: Critical**
-
-If you remove a server or client configuration from a project, its cached values do not get deleted.  File and changelist
-associations remain, causing bad UI display.
-
-**This looks to be fixed, but it needs testing.**  Fix was in `PersistentRootConfigComponent`, where it now only loads
-root paths that are declared as roots in the project.
-
 ### After Setting Password Active Connection is Still Offline
 
 **Priority: Major**
@@ -39,35 +29,14 @@ root paths that are declared as roots in the project.
 Once the user has fixed the login problem by entering a password, the Active Connection panel always shows the
 connection as offline, even after a refresh of both the Active Connection panel and the changelist view. 
 
-### Weird Error
+
+### After Changing Server Configuration, Active Connection Refreshes Wrong
 
 **Priority: Major**
 
-Is this still happening?  May have been due to a preview idea issue.
+If you keep the same general server connection, but alter how it's connected, then the Active Connection panel, on
+refresh, adds a new server connection to the existing list.
 
-```
-java.lang.Throwable: Skipping invalid VCS root: VcsRoot{vcs=p4ic, path=null}
-	at com.intellij.openapi.diagnostic.Logger.error(Logger.java:134)
-	at com.intellij.vcs.log.impl.VcsLogManager.findLogProviders(VcsLogManager.java:150)
-	at com.intellij.vcs.log.util.VcsLogUtil.getActualRoot(VcsLogUtil.java:277)
-	at com.intellij.vcs.log.history.VcsLogFileHistoryProviderImpl.canShowFileHistory(VcsLogFileHistoryProviderImpl.java:44)
-	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.canShowNewFileHistory(TabbedShowHistoryAction.java:85)
-	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.isEnabled(TabbedShowHistoryAction.java:73)
-	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.isEnabled(TabbedShowHistoryAction.java:59)
-	at com.intellij.openapi.vcs.actions.TabbedShowHistoryAction.update(TabbedShowHistoryAction.java:47)
-	at com.intellij.openapi.vcs.actions.AbstractVcsAction.performUpdate(AbstractVcsAction.java:71)
-	at com.intellij.openapi.vcs.actions.AbstractVcsAction.update(AbstractVcsAction.java:43)
-	at com.intellij.openapi.actionSystem.ex.ActionUtil.performDumbAwareUpdate(ActionUtil.java:171)
-	at com.intellij.openapi.actionSystem.impl.Utils.doUpdate(Utils.java:202)
-	at com.intellij.openapi.actionSystem.impl.Utils.expandActionGroup(Utils.java:151)
-	at com.intellij.openapi.actionSystem.impl.Utils.expandActionGroup(Utils.java:177)
-	at com.intellij.openapi.actionSystem.impl.Utils.expandActionGroup(Utils.java:177)
-	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl.updateActionsImpl(ActionToolbarImpl.java:1120)
-	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl.access$000(ActionToolbarImpl.java:53)
-	at com.intellij.openapi.actionSystem.impl.ActionToolbarImpl$2.updateActionsImpl(ActionToolbarImpl.java:175)
-	at com.intellij.openapi.actionSystem.impl.ToolbarUpdater$MyUpdateRunnable.run(ToolbarUpdater.java:186)
-	...
-```
 
 ### File Change Operations Do Not Refresh Change List View
 
@@ -99,7 +68,7 @@ server action to have this state change.
 
 ### Check Connection from VCS Root Directory Configuration memory leak
 
-**Priority: Minor**
+**Priority: Minor** (because of its extremely limited usage now)
 
 If you check the connection from the VCS root directory configuration dialog, a serious memory leak happens that puts
 the breaks on the IDE.
@@ -263,4 +232,4 @@ extreme care must be taken to properly clean up the cached data.  This means tig
 
 ### Check Description Length in Submit Dialog
 
-Really old, long standing issue.  Can't submit with an empty description.
+Really old, long standing issue.  The UI should prevent submitting a change if the description is empty.

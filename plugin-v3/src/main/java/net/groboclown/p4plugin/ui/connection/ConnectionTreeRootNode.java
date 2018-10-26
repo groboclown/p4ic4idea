@@ -31,10 +31,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ConnectionTreeRootNode
@@ -42,7 +40,6 @@ public class ConnectionTreeRootNode
     private static final Logger LOG = Logger.getInstance(ConnectionTreeRootNode.class);
 
     private final Object sync = new Object();
-    private Map<VirtualFile, RootNode> treeContents = new HashMap<>();
 
     public Collection<TreeNode> refresh(@NotNull Project project) {
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
@@ -53,17 +50,10 @@ public class ConnectionTreeRootNode
             return Collections.emptyList();
         }
 
-        Map<VirtualFile, RootNode> newContents = new HashMap<>();
         synchronized (sync) {
-            Map<VirtualFile, RootNode> untouchedContents = new HashMap<>(treeContents);
+            removeAllChildren();
             registry.getClientConfigRoots().forEach((root) ->
-                    updateClientConfigRoot(project, root, untouchedContents, newContents));
-            untouchedContents.forEach((key, value) -> {
-                if (key instanceof ClientConfigRoot) {
-                    remove(value.fileRoot);
-                }
-            });
-            treeContents = newContents;
+                    loadClientConfigRoot(project, root));
         }
         return Collections.singleton(this);
     }
@@ -81,65 +71,42 @@ public class ConnectionTreeRootNode
     }
 
 
-    private void updateClientConfigRoot(@NotNull Project project, @NotNull ClientConfigRoot root,
-            @NotNull Map<VirtualFile, RootNode> oldContents,
-            @NotNull Map<VirtualFile, RootNode> newContents) {
-        RootNode fileRoot = findOrCreateRootNode(root, oldContents);
-        newContents.put(root.getClientRootDir(), fileRoot);
+    private void loadClientConfigRoot(@NotNull Project project, @NotNull ClientConfigRoot root) {
+        RootNode fileRoot = createRootNode(root);
 
         try {
             List<ActionChoice> pendingActions =
                     CacheComponent.getInstance(project).getCachePending().copyActions(root.getClientConfig())
                             .collect(Collectors.toList());
             fileRoot.pending.setPendingCount(pendingActions.size());
-            Map<ActionChoice, DefaultMutableTreeNode> oldActions = fileRoot.pendingActions;
-            fileRoot.pendingActions = new HashMap<>();
             pendingActions.forEach((ac) -> {
-                DefaultMutableTreeNode actionNode = oldActions.remove(ac);
-                if (actionNode == null) {
-                    actionNode = new DefaultMutableTreeNode(ac);
-                    fileRoot.pendingNode.add(actionNode);
-                    // File information on an action is static.
-                    for (FilePath affectedFile : ac.getAffectedFiles()) {
-                        actionNode.add(new DefaultMutableTreeNode(affectedFile));
-                    }
-                    // Errors are always refreshed.
-                }
-                fileRoot.pendingActions.put(ac, actionNode);
-                for (Enumeration e = actionNode.children(); e.hasMoreElements();) {
-                    Object child = e.nextElement();
-                    if (child instanceof DefaultMutableTreeNode) {
-                        DefaultMutableTreeNode c = (DefaultMutableTreeNode) child;
-                        if (c.getUserObject() instanceof P4CommandRunner.ResultError) {
-                            actionNode.remove(c);
-                        }
-                    }
+                DefaultMutableTreeNode actionNode = new DefaultMutableTreeNode(ac);
+                fileRoot.pendingNode.add(actionNode);
+                // File information on an action is static.
+                for (FilePath affectedFile : ac.getAffectedFiles()) {
+                    actionNode.add(new DefaultMutableTreeNode(affectedFile));
                 }
                 for (P4CommandRunner.ResultError previousExecutionProblem : ac.getPreviousExecutionProblems()) {
                     actionNode.add(new DefaultMutableTreeNode(previousExecutionProblem));
                 }
             });
-            oldActions.values().forEach(fileRoot.pendingNode::remove);
         } catch (InterruptedException e) {
             LOG.warn(e);
         }
     }
 
 
-    private RootNode findOrCreateRootNode(ClientConfigRoot root, @NotNull Map<VirtualFile, RootNode> oldContents) {
-        RootNode fileRoot = oldContents.remove(root.getClientRootDir());
-        if (fileRoot == null) {
-            fileRoot = new RootNode(root, new DefaultMutableTreeNode(root, true));
+    private RootNode createRootNode(ClientConfigRoot root) {
+        RootNode fileRoot = new RootNode(root, new DefaultMutableTreeNode(root, true));
 
-            // The client root details should never change, so only add them when the root itself is added.
-            // They are never included in the content map.
-            fileRoot.fileRoot.add(new DefaultMutableTreeNode(
-                    root.getClientConfig().getClientServerRef().getServerName(), false));
-            fileRoot.fileRoot.add(new DefaultMutableTreeNode(
-                    root.getClientConfig().getClientServerRef(), false));
-            fileRoot.fileRoot.add(fileRoot.pendingNode);
-            add(fileRoot.fileRoot);
-        }
+        // The client root details should never change, so only add them when the root itself is added.
+        // They are never included in the content map.
+        fileRoot.fileRoot.add(new DefaultMutableTreeNode(
+                root.getClientConfig().getClientServerRef().getServerName(), false));
+        fileRoot.fileRoot.add(new DefaultMutableTreeNode(
+                root.getClientConfig().getClientServerRef(), false));
+        fileRoot.fileRoot.add(fileRoot.pendingNode);
+        add(fileRoot.fileRoot);
         return fileRoot;
     }
 
@@ -149,7 +116,6 @@ public class ConnectionTreeRootNode
         final DefaultMutableTreeNode fileRoot;
         final PendingParentNode pending;
         final DefaultMutableTreeNode pendingNode;
-        Map<ActionChoice, DefaultMutableTreeNode> pendingActions = new HashMap<>();
 
         private RootNode(ClientConfigRoot root, DefaultMutableTreeNode fileRoot) {
             this.root = root;

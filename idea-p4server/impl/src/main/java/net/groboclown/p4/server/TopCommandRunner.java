@@ -104,6 +104,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 
@@ -192,6 +193,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                     state.needsLogin = false;
                 }
                 for (ClientConfig clientConfig: clientConfigs.values()) {
+                    // Try to connect to the server, and wait for that connection
+                    // attempt to complete.
+                    tryOnlineAfterReconnect(clientConfig);
                     sendCachedPendingRequests(clientConfig);
                 }
             }
@@ -209,6 +213,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 }
                 for (ClientConfig clientConfig: clientConfigs.values()) {
                     if (clientConfig.getClientServerRef().equals(e.getRef())) {
+                        // Try to connect to the server, and wait for that connection
+                        // attempt to complete.
+                        tryOnlineAfterReconnect(clientConfig);
                         sendCachedPendingRequests(clientConfig);
                     }
                 }
@@ -729,6 +736,41 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             }
             return cacheExec.exec();
         });
+    }
+
+    private void tryOnlineAfterReconnect(final ClientConfig clientConfig) {
+        // Ensure the connection is allowed.
+        for (ServerConnectionState state : getStatesFor(clientConfig.getClientServerRef().getServerName())) {
+            if (state.userOffline || state.badConnection || state.badLogin || state.needsLogin) {
+                // Already checked the online state, and it's not valid.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skipping another attempt for " + state.config.getServerName());
+                }
+                continue;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Attempting to connect to " + clientConfig.getClientServerRef());
+            }
+            boolean timedOut = server.getClientsForUser(state.config,
+                    new ListClientsForUserQuery(state.config.getUsername(), 1))
+            .whenCompleted((x) -> {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Completed connection attempt to " + clientConfig.getClientServerRef());
+                }
+            })
+            .whenServerError((e) -> {
+                // The correct listeners will fire.
+                LOG.info("Reconnect failed for " + clientConfig.getClientServerRef(), e);
+            })
+            .waitForCompletion(30, TimeUnit.SECONDS);
+            if (timedOut) {
+                LOG.info("Timed out waiting for connection to " + clientConfig.getClientServerRef());
+                state.badConnection = true;
+            }
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Completed online check after reconnect for " + clientConfig.getClientServerRef());
+        }
     }
 
     // Could replace this with "Supplier"

@@ -87,6 +87,7 @@ import static net.groboclown.idea.ExtAsserts.assertEmpty;
 import static net.groboclown.idea.ExtAsserts.assertSize;
 import static net.groboclown.p4.server.impl.ClientTestUtil.setupClient;
 import static net.groboclown.p4.server.impl.ClientTestUtil.touchFile;
+import static net.groboclown.p4.server.impl.ClientTestUtil.withConnection;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -935,6 +936,55 @@ class ConnectCommandRunnerTest {
                     assertEmpty(res.getClients());
                 })
                 .whenFailed(Assertions::fail);
+    }
+
+
+    // Simulates the "try online check" operation.
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void getClientsForUser_passwordNotGiven(TemporaryFolder tmpDir)
+            throws IOException, InterruptedException {
+        idea.useInlineThreading(null);
+        final MockConfigPart setupPart = new MockConfigPart()
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword();
+        final ServerConfig setupServerConfig = ServerConfig.createFrom(setupPart);
+
+        // Set the password
+        assertTrue(withConnection(setupServerConfig, tmpDir)
+                .mapAsync((mgr) -> mgr.withConnection(setupServerConfig, server -> {
+                    String res = server.changePassword(null, "x", server.getUserName());
+                    System.err.println("Password change: [" + res + "]");
+                    return null;
+                }))
+                .blockingWait(5, TimeUnit.SECONDS));
+
+        // Continue on, with no password set.
+        final MockConfigPart part = new MockConfigPart()
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword()
+                .withClientname("client1");
+        final ServerConfig serverConfig = ServerConfig.createFrom(part);
+        final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        final File clientRoot = tmpDir.newFile("clientRoot");
+        final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
+
+        setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
+                .map(ConnectCommandRunner::new)
+                .futureMap((runner, sink) ->
+                        runner.getClientsForUser(serverConfig, new ListClientsForUserQuery(server.getUser(), 1))
+                                .whenCompleted(sink::resolve)
+                                .whenServerError(sink::reject)
+                )
+                .whenCompleted((r) -> fail("Did not fail with password error"))
+                .whenFailed((e) -> {
+                    assertEquals(e.getResultError().getCategory(), P4CommandRunner.ErrorCategory.ACCESS_DENIED);
+                    assertEquals(e.getLocalizedMessage(), e.getLocalizedMessage());
+                    assertThat(e.getResultError().getMessage().orElse(null),
+                            containsString(e.getLocalizedMessage()));
+                });
     }
 
 

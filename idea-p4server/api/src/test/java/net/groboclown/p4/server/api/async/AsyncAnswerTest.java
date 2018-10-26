@@ -17,10 +17,13 @@ import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockThreadRunner;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ResultErrorUtil;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -142,8 +145,6 @@ class AsyncAnswerTest {
 
     @Test
     void doubleSink() {
-        MockThreadRunner tr = new MockThreadRunner(idea);
-        tr.setNextWaitKey("bg1");
         AsyncAnswer<Object> answer1 = new AsyncAnswer<>();
         answer1.resolve("");
         assertThrows(IllegalStateException.class, () -> answer1.resolve(""));
@@ -153,8 +154,6 @@ class AsyncAnswerTest {
     @Test
     void future_resolved()
             throws InterruptedException, P4CommandRunner.ServerResultException {
-        MockThreadRunner tr = new MockThreadRunner(idea);
-        tr.setNextWaitKey("bg1");
         AsyncAnswer<Object> answer1 = new AsyncAnswer<>();
         answer1.resolve("a");
         AsyncAnswer<Object> answer2 = new AsyncAnswer<>();
@@ -163,7 +162,66 @@ class AsyncAnswerTest {
         assertEquals("a", Answer.blockingGet(answer3, 100, TimeUnit.MILLISECONDS));
     }
 
+    @Test
+    void map_reject() {
+        AsyncAnswer<Object> answer1 = new AsyncAnswer<>();
+        Answer<Object> answer2 = answer1.map((c) -> "b");
+        answer2.whenCompleted((c) -> fail("Should never be called"));
+        P4CommandRunner.ServerResultException sre = new P4CommandRunner.ServerResultException(
+                new P4CommandRunner.ResultError() {
+                    @NotNull
+                    @Override
+                    public P4CommandRunner.ErrorCategory getCategory() {
+                        return P4CommandRunner.ErrorCategory.CONNECTION;
+                    }
+
+                    @Nls
+                    @NotNull
+                    @Override
+                    public Optional<String> getMessage() {
+                        return Optional.empty();
+                    }
+                });
+        answer2.whenFailed((actual) -> assertSame(sre, actual));
+
+        answer1.reject(sre);
+    }
+
+    @Test
+    void mapAsync_background_resolve()
+            throws InterruptedException {
+        MockThreadRunner tr = new MockThreadRunner(idea);
+        Object expected1 = new Object();
+        Object expected2 = new Object();
+
+        tr.setNextWaitKey("bg1");
+        Answer<Object> answer = AsyncAnswer.background((sink) -> {
+            sink.resolve(expected1);
+        })
+        .mapAsync((o) -> {
+            assertSame(expected1, o);
+            tr.setNextWaitKey("bg2");
+            return AsyncAnswer.background((sink) -> {
+                sink.resolve(expected2);
+            });
+        });
+
+        // Now that it completed, ensure that immediate requests are
+        // handled right.
+        final AtomicInteger completedCount = new AtomicInteger(0);
+        answer.whenCompleted((o) -> {
+            assertSame(expected2, o);
+            completedCount.incrementAndGet();
+        })
+        .whenFailed(Assertions::fail);
+
+        tr.startAndWaitFor("bg1");
+        tr.startAndWaitFor("bg2");
+        tr.assertNoExceptions();
+        assertTrue(answer.blockingWait(500, TimeUnit.SECONDS));
+        assertEquals(1, completedCount.get());
+    }
+
     // TODO tests for reject errors passed to other promises.
 
-    // TODO tests for "after" call.
 }

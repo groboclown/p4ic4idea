@@ -8,6 +8,8 @@ of Github.
 
 ### File Cache Conflict
 
+**Priority: Critical**
+
 "File Cache Conflict" popup happens every 5-10 minutes (#174).  Typically happens during heavy iteration of perforce
 backed files. "I do a lot of editing followed by alt+tab to another application, back and forth. I think idea
 automatically saves the file any time the window loses focus."
@@ -16,27 +18,20 @@ automatically saves the file any time the window loses focus."
 
 **Priority: Critical**
 
-When you submit a changelist, it can include files that are not visible, because they are ouside the scope of the
+When you submit a changelist, it can include files that are not visible, because they are outside the scope of the
 project.  The submission should only submit the files that the user sees.
 
 The unseen files should be moved to the default changelist before submission.  If the default changelist is
 submitted, then the code will need to create a changelist before submission, just like how the job association works.
 
-### After Setting Password Active Connection is Still Offline
+### Changing Configuration Does Not Clear Cache
 
 **Priority: Major**
 
-Once the user has fixed the login problem by entering a password, the Active Connection panel always shows the
-connection as offline, even after a refresh of both the Active Connection panel and the changelist view. 
+If you remove a server configuration and add a different one, the cached files of the old one will remain.  The
+big display of this problem is the changelist view includes cached maps to the old connection.
 
-
-### After Changing Server Configuration, Active Connection Refreshes Wrong
-
-**Priority: Major**
-
-If you keep the same general server connection, but alter how it's connected, then the Active Connection panel, on
-refresh, adds a new server connection to the existing list.
-
+Fix might be to include extra checks to the cache storage mechanism, so that dead connection information isn't stored.
 
 ### File Change Operations Do Not Refresh Change List View
 
@@ -117,6 +112,10 @@ When a user performs an action, the internal mechanisms must first check the pen
 duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
 
 Some of this work has started.  It is handled in `PendingActionCurator`.
+
+### Symlink Files
+
+The symlink file checks that were a major effort in the old plugin were not transferred over.
 
 
 ## Code Items Needing Attention

@@ -19,9 +19,9 @@
 
 * No longer compatible with versions before 2017.1.
 * Updated code to work with 2017.1 features.
+    * Removed dependency upon the external lib project.  Pulling the project now gets everything.
     * Included major release libraries from IDEA, built from source.
     * These are broken up into small libraries to reduce their size, so we don't need to include the normal gigabyte sized jar.
-    * Removed dependency upon the external lib project.  Pulling the project gets everything.
 * Complete rewrite of connection and caching mechanism.
     * In order to support the 2017.1 per-VCS Root configuration, the plugin now maintains the connection information in the VCS root level.
     * Relative configuration files are no longer supported.

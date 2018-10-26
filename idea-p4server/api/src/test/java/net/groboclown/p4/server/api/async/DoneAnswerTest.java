@@ -121,11 +121,23 @@ class DoneAnswerTest {
 
     @Test
     void futureMap_completed() {
-
     }
 
     @Test
     void futureMap_failed() {
-
+        // This is where a bug was discovered!
+        final P4CommandRunner.ServerResultException error = ResultErrorUtil.createInternalException();
+        final Answer<Object> da = DoneAnswer.reject(error);
+        final AtomicInteger count = new AtomicInteger(0);
+        da
+            .futureMap((c, sink) -> {
+                fail("Should not be called");
+                sink.resolve(null);
+            })
+            .whenFailed((e) -> {
+                count.incrementAndGet();
+                assertSame(error, e);
+            });
+        assertEquals(1, count.get());
     }
 }

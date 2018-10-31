@@ -18,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -75,22 +76,33 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     @Override
     public void apply()
             throws ConfigurationException {
+        Collection<ConfigProblem> problems = null;
         if (isModified()) {
-            // TODO do we need to keep the old config around?  This would be to send a message that it's not used.
+            LOG.info("Updating root configuration for " + vcsRoot);
             // ClientConfig oldConfig = loadConfigFromSettings();
             P4VcsRootSettings settings = new P4VcsRootSettingsImpl(project, vcsRoot);
             MultipleConfigPart parentPart = loadParentPartFromUI();
             settings.setConfigParts(parentPart.getChildren());
             mapping.setRootSettings(settings);
+
             if (parentPart.hasError()) {
-                Collection<ConfigProblem> problems =
-                        parentPart.getConfigProblems();
-                throw new ConfigurationException(toMessage(problems),
-                        P4Bundle.getString("configuration.error.title"));
+                problems = parentPart.getConfigProblems();
             }
-            // This class just deals with the configuration.
-            // The actual generation of the events for the configuration is done by the
-            // mapping updates (ClientConfigComponent).
+        } else {
+            LOG.info("Skipping root configuration update; nothing modified for " + vcsRoot);
+        }
+
+        // Send the update events regarding the root configuration updates.  Do this even in the
+        // case of an error, or if there were no updates.  The no updates use case is for the situation where
+        // events were fired in an unexpected order, then the user can rerun the apply to re-trigger everything.
+        // It's a hack, yes.
+        project.getMessageBus().syncPublisher(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED)
+                .directoryMappingChanged();
+
+        if (problems != null) {
+            LOG.warn("Configuration problems discovered; not adding: " + problems);
+            throw new ConfigurationException(toMessage(problems),
+                    P4Bundle.getString("configuration.error.title"));
         }
     }
 

@@ -59,9 +59,7 @@ import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.ui.ColorUtil;
-import net.groboclown.p4plugin.ui.VcsDockedComponent;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
-import net.groboclown.p4plugin.ui.connection.ActiveConnectionPanel;
 import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -69,9 +67,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     private static final Logger LOG = Logger.getInstance(P4Vcs.class);
@@ -179,11 +174,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     private final P4RevisionSelector revisionSelector;
 
-    // Capture the VCS roots list.  This is necessary, because the standard call
-    // requires getting an IDE read lock, and that leads to all kinds of synchronization issues.
-    // TODO this doesn't look necessary anymore.  Remove?
-    private final List<VirtualFile> vcsRootsCache;
-
 
     @NotNull
     public static P4Vcs getInstance(@Nullable Project project) {
@@ -221,7 +211,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
         this.revisionSelector = new P4RevisionSelector(this);
         this.tempFileWatchDog = new TempFileWatchDog();
-        this.vcsRootsCache = new ArrayList<>();
     }
 
     public static VcsKey getKey() {
@@ -307,12 +296,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     protected void activate() {
         tempFileWatchDog.start();
 
-        synchronized (vcsRootsCache) {
-            vcsRootsCache.clear();
-            vcsRootsCache.addAll(Arrays.asList(
-                    ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(this)));
-        }
-
         if (myVFSListener == null) {
             myVFSListener = new P4VFSListener(getProject(), this);
         }
@@ -323,46 +306,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         projectMessageBusConnection = myProject.getMessageBus().connect();
         appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
 
-        // TODO is this cache still used here?
-        // Keep our cache up-to-date
-        projectMessageBusConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, () -> {
-            final VirtualFile[] cache = ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(P4Vcs.this);
-            synchronized (vcsRootsCache) {
-                vcsRootsCache.clear();
-                vcsRootsCache.addAll(Arrays.asList(cache));
-            }
-        });
-
-
-        /*
-        // TODO Look at adding file annotations (locally checked out or open for delete).
-        if (myRepositoryForAnnotationsListener == null) {
-            myRepositoryForAnnotationsListener = new P4RepositoryForAnnotationsListener(myProject);
-        }
-
-        // Activate any other services that are required.
-        */
-
-        // This is a good time to check for passwords and connectivity
-        // See bugs #81, #84
-        // But, additionally, bug #110 which can cause a deadlock when this
-        // is done in the activation thread.  So instead, push this to the
-        // background.
-
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-
-            // Add the connection panel view in the future, after initializations.
-            ApplicationManager.getApplication().invokeLater(() -> {
-                ActiveConnectionPanel panel = new ActiveConnectionPanel(myProject, null);
-                VcsDockedComponent.getInstance(myProject).addVcsTab(
-                        P4Bundle.getString("connection.tree.docked-title"),
-                        panel.getRoot(), true, false);
-                panel.refresh();
-            });
-
-            // TODO check connection state?
-        });
-
+        // If additional actions need to happen at plugin startup time, add them here to execute in
+        // a background thread.
     }
 
     @Override

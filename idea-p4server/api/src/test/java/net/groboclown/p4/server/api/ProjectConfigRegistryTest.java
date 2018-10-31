@@ -91,7 +91,7 @@ class ProjectConfigRegistryTest {
 
         @Nullable
         @Override
-        public ClientConfigRoot getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
+        public ClientConfig getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
             return null;
         }
 
@@ -101,7 +101,7 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        public boolean removeClientConfig(@NotNull ClientServerRef ref) {
+        public boolean removeClientConfigAt(@NotNull VirtualFile ref) {
             throw new IllegalStateException();
         }
 

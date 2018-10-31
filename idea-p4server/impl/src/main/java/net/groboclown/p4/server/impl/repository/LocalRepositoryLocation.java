@@ -22,6 +22,7 @@ import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.List;
 
 class LocalRepositoryLocation implements P4RepositoryLocation {
@@ -65,6 +66,6 @@ class LocalRepositoryLocation implements P4RepositoryLocation {
     @NotNull
     @Override
     public List<IFileSpec> getFileSpecs() {
-        return FileSpecBuildUtil.escapedForFilePaths(path);
+        return FileSpecBuildUtil.escapedForFilePathsAnnotated(Collections.singleton(path), null, true);
     }
 }

@@ -85,7 +85,6 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         return ret;
     }
 
-    @SuppressWarnings("WeakerAccess")
     public CacheComponent(@Nullable Project project) {
         LOG.warn("Creating a cache component for " + project);
         this.project = project;

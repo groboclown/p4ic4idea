@@ -1,7 +1,7 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.0-alpha-6</version>
+    <version>0.10.0-alpha-7</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
@@ -210,9 +210,6 @@
             <add-to-group group-id="VcsGlobalGroup" anchor="after" relative-to-action="Vcs.Specific"/>
         </group>
 
-        <!--
-        -->
-
         <group id="P4.ContextMenu" class="net.groboclown.p4plugin.actions.P4Menu" popup="true" text="_P4">
             <reference ref="P4FileActions"/>
 
@@ -234,6 +231,12 @@
 
         <!-- Populate a project with the contents from Perforce -->
         <checkoutProvider implementation="net.groboclown.p4plugin.extension.P4CheckoutProvider"/>
+
+        <changesViewContent tabName="Active Connections"
+                className="net.groboclown.p4plugin.ui.connection.ActiveConnectionViewManager"
+        />
+        <!-- optionally add in predicateClassName -->
+
     </extensions>
 
     <project-components>

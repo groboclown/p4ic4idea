@@ -33,6 +33,8 @@ import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -41,6 +43,7 @@ import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,28 +72,27 @@ public class CacheStoreUpdateListener implements Disposable {
 
         this.pendingCache = new CachePendingActionHandlerImpl(cache);
 
-        MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(this);
+        MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(this);
+        MessageBusClient.ProjectClient projectClient = MessageBusClient.forProject(project, this);
         CacheListener listener = new CacheListener();
         String cacheId = AbstractCacheMessage.createCacheId(project, CacheStoreUpdateListener.class);
-        ClientActionMessage.addListener(mbClient, cacheId, listener);
+        ClientActionMessage.addListener(appClient, cacheId, listener);
 
         // TODO this causes the event listener to be fired twice.
         // Somewhere, this ClientOpenCacheMessage call invokes the exact same listener
         // method twice.  Either the listener is registered twice, or the event object
         // is being passed to send() twice.
-        ClientOpenCacheMessage.addListener(mbClient, cacheId, listener);
+        ClientOpenCacheMessage.addListener(appClient, cacheId, listener);
 
-        DescribeChangelistCacheMessage.addListener(mbClient, cacheId, listener);
+        DescribeChangelistCacheMessage.addListener(appClient, cacheId, listener);
 
-        // TODO this causes 2 or 3 repeated calls
-        FileActionMessage.addListener(mbClient, cacheId, listener);
+        FileActionMessage.addListener(appClient, cacheId, listener);
 
-        JobCacheMessage.addListener(mbClient, cacheId, listener);
-        JobSpecCacheMessage.addListener(mbClient, cacheId, listener);
-        ListClientsForUserCacheMessage.addListener(mbClient, cacheId, listener);
-        ServerActionCacheMessage.addListener(mbClient, cacheId, listener);
-
-        // TODO perhaps add in listener for client config removal
+        JobCacheMessage.addListener(appClient, cacheId, listener);
+        JobSpecCacheMessage.addListener(appClient, cacheId, listener);
+        ListClientsForUserCacheMessage.addListener(appClient, cacheId, listener);
+        ServerActionCacheMessage.addListener(appClient, cacheId, listener);
+        ClientConfigRemovedMessage.addListener(projectClient, cacheId, listener);
     }
 
 
@@ -177,7 +179,7 @@ public class CacheStoreUpdateListener implements Disposable {
 
     private void addChangelistDetails(P4ChangelistId requestedChangelist, P4RemoteChangelist updatedChangelist) {
         // FIXME add the cached data
-        LOG.warn("FIXME add the cached data");
+        LOG.warn("FIXME cache the changelist details");
     }
 
     private void handleClientAction(@NotNull ClientActionMessage.Event event)
@@ -215,6 +217,15 @@ public class CacheStoreUpdateListener implements Disposable {
         ));
     }
 
+    @NotNull
+    private Collection<ClientConfig> getActiveClientConfigs() {
+        final Set<ClientConfig> configs = new HashSet<>();
+        getClientConfigRoots().stream()
+                .map(ClientConfigRoot::getClientConfig)
+                .forEach(configs::add);
+        return configs;
+    }
+
 
     // The listener doesn't need to be aware of complications around added pending events
     // conflicting with each other (for example, add file then remove file), because there's a
@@ -226,7 +237,8 @@ public class CacheStoreUpdateListener implements Disposable {
     private class CacheListener
             implements ClientActionMessage.Listener, ClientOpenCacheMessage.Listener,
             DescribeChangelistCacheMessage.Listener, FileActionMessage.Listener, JobCacheMessage.Listener,
-            JobSpecCacheMessage.Listener, ListClientsForUserCacheMessage.Listener, ServerActionCacheMessage.Listener {
+            JobSpecCacheMessage.Listener, ListClientsForUserCacheMessage.Listener, ServerActionCacheMessage.Listener,
+            ClientConfigRemovedMessage.Listener{
 
         @Override
         public void clientActionUpdate(@NotNull ClientActionMessage.Event event) {
@@ -302,6 +314,16 @@ public class CacheStoreUpdateListener implements Disposable {
                     pendingCache.writeActions(event.getServerName(),
                             (store) -> store.removeActionById(event.getServerAction().getActionId()));
                 }
+            } catch (InterruptedException e) {
+                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+            }
+        }
+
+        @Override
+        public void clientConfigurationRemoved(@NotNull ClientConfigRemovedMessage.Event event) {
+            Collection<ClientConfig> activeConfigs = getActiveClientConfigs();
+            try {
+                cache.cleanClientCache(activeConfigs);
             } catch (InterruptedException e) {
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }

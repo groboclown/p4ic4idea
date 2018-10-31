@@ -20,15 +20,20 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.LockTimeoutProvider;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.impl.config.LockTimeoutProviderImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -61,7 +66,6 @@ public class ProjectCacheStore {
         public List<ActionStore.State> pendingActions;
 
         public IdeChangelistCacheStore.State changelistState;
-
     }
 
     @TestOnly
@@ -83,24 +87,26 @@ public class ProjectCacheStore {
     @Nullable
     public State getState()
             throws InterruptedException {
-        State ret = new State();
+        final State ret = new State();
 
-        ret.serverState = new ArrayList<>(serverQueryCache.size());
-        for (ServerQueryCacheStore entry : serverQueryCache.values()) {
-            ret.serverState.add(entry.getState());
-        }
+        lockTimeout.withReadLock(lock, () -> {
+            ret.serverState = new ArrayList<>(serverQueryCache.size());
+            for (ServerQueryCacheStore entry : serverQueryCache.values()) {
+                ret.serverState.add(entry.getState());
+            }
 
-        ret.clientState = new ArrayList<>(clientQueryCache.size());
-        for (ClientQueryCacheStore value : clientQueryCache.values()) {
-            ret.clientState.add(value.getState());
-        }
+            ret.clientState = new ArrayList<>(clientQueryCache.size());
+            for (ClientQueryCacheStore value : clientQueryCache.values()) {
+                ret.clientState.add(value.getState());
+            }
 
-        ret.pendingActions = new ArrayList<>(pendingActions.size());
-        for (ActionStore.PendingAction pendingAction : pendingActions) {
-            ret.pendingActions.add(pendingAction.getState());
-        }
+            ret.pendingActions = new ArrayList<>(pendingActions.size());
+            for (ActionStore.PendingAction pendingAction : pendingActions) {
+                ret.pendingActions.add(pendingAction.getState());
+            }
 
-        ret.changelistState = changelistCacheStore.getState();
+            ret.changelistState = changelistCacheStore.getState();
+        });
 
         return ret;
     }
@@ -123,7 +129,8 @@ public class ProjectCacheStore {
                     clientQueryCache.put(store.getClientServerRef(), store);
                 }
                 for (ActionStore.State actionState : state.pendingActions) {
-                    // TODO look into this weird bug; stuff was coming back null.  Is it still happening?
+                    // There was a weird bug where action state values were null.  Doesn't seem to be happening
+                    // any more, but keep the protections in place.
                     if (actionState.clientActionCmd != null || actionState.serverActionCmd != null) {
                         ActionStore.PendingAction action;
                         try {
@@ -145,6 +152,51 @@ public class ProjectCacheStore {
 
     public IdeChangelistCacheStore getChangelistCacheStore() {
         return changelistCacheStore;
+    }
+
+    public void cleanClientCache(Collection<ClientConfig> validConfigs) throws InterruptedException {
+        final Set<P4ServerName> validServers = new HashSet<>();
+        final Set<ClientServerRef> validClients = new HashSet<>();
+        final Set<String> validSourceIds = new HashSet<>();
+        validConfigs.forEach((c) -> {
+            validServers.add(c.getClientServerRef().getServerName());
+            validClients.add(c.getClientServerRef());
+            validSourceIds.add(ActionStore.getSourceId(c.getClientServerRef().getServerName()));
+            validSourceIds.add(ActionStore.getSourceId(c.getClientServerRef()));
+        });
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Cleaning all configurations except " + validSourceIds);
+        }
+
+        lockTimeout.withWriteLock(lock, () -> {
+            // Copy the key sets so we don't get weird states during removal.
+            new HashSet<>(clientQueryCache.keySet()).forEach((clientServerRef) -> {
+                if (! validClients.contains(clientServerRef)) {
+                    LOG.info("Clearing cache for unregistered client " + clientServerRef);
+                    clientQueryCache.remove(clientServerRef);
+                }
+            });
+            new HashSet<>(serverQueryCache.keySet()).forEach((p4ServerName) -> {
+                if (! validServers.contains(p4ServerName)) {
+                    LOG.info("Clearing cache for unregistered server " + p4ServerName);
+                    serverQueryCache.remove(p4ServerName);
+                }
+            });
+            Iterator<ActionStore.PendingAction> actionIter = pendingActions.iterator();
+            while (actionIter.hasNext()) {
+                final ActionStore.PendingAction action = actionIter.next();
+                if (! validSourceIds.contains(action.sourceId)) {
+                    LOG.info("Clearing cache for unregistered action " + action);
+                    actionIter.remove();
+                }
+            }
+            for (P4LocalChangelist cl : changelistCacheStore.getPendingChangelists()) {
+                if (! validClients.contains(cl.getChangelistId().getClientServerRef())) {
+                    LOG.info("Clearing cache for unregistered changelist " + cl.getChangelistId());
+                    changelistCacheStore.deleteChangelist(cl.getChangelistId());
+                }
+            }
+        });
     }
 
     /**

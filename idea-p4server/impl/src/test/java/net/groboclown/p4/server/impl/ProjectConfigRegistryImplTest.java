@@ -15,10 +15,10 @@ package net.groboclown.p4.server.impl;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
+import net.groboclown.idea.mock.MockVirtualFile;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
-import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
@@ -30,12 +30,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ProjectConfigRegistryImplTest {
     @RegisterExtension
@@ -58,25 +53,50 @@ class ProjectConfigRegistryImplTest {
         ClientConfigAddedMessage.addListener(client, this, e -> added.add(e.getClientConfig()));
         ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
-        VirtualFile root = MockVirtualFileSystem.createRoot();
+        MockVirtualFile root = MockVirtualFileSystem.createRoot();
 
         registry.addClientConfig(config, root);
 
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
         assertEquals(0, removed.size());
-        ClientConfigRoot fetchedState =
+        ClientConfig fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNotNull(fetchedState);
-        assertSame(config, fetchedState.getClientConfig());
+        assertSame(config, fetchedState);
 
+        // Add the same config again.  Because the same config in the same root
+        // has already been added, no event should trigger.
         added.clear();
         registry.addClientConfig(config, root);
 
+        assertEquals(0, added.size());
+        assertEquals(0, removed.size());
+
+        // Add an exact same config but with a different object to a different root
+        MockVirtualFile root2 = root.addChildDir(this, "2");
+        registry.addClientConfig(createClientConfig(), root2);
+
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
+        assertEquals(0, removed.size());
+
+        // Add a different config to the same root
+        added.clear();
+        ClientConfig second = createClientConfig("second");
+        registry.addClientConfig(second, root);
+
+        assertEquals(1, added.size());
+        assertSame(second, added.get(0));
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
+        fetchedState = registry.getRegisteredClientConfigState(second.getClientServerRef());
+        assertNotNull(fetchedState);
+        assertSame(second, fetchedState);
+
+        fetchedState = registry.getRegisteredClientConfigState(config.getClientServerRef());
+        assertNotNull(fetchedState);
+        assertSame(config, fetchedState);
     }
 
     @Test
@@ -93,10 +113,10 @@ class ProjectConfigRegistryImplTest {
 
         assertEquals(1, added.size());
         assertSame(config, added.get(0));
-        ClientConfigRoot fetchedState =
+        ClientConfig fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNotNull(fetchedState);
-        assertSame(config, fetchedState.getClientConfig());
+        assertSame(config, fetchedState);
     }
 
     @Test
@@ -109,11 +129,10 @@ class ProjectConfigRegistryImplTest {
         ClientConfigRemovedMessage.addListener(client, this, (e) -> removed.add(e.getClientConfig()));
         ClientConfig config = createClientConfig();
 
-        registry.removeClientConfig(config.getClientServerRef());
+        registry.removeClientConfigAt(MockVirtualFileSystem.createRoot());
 
         assertEquals(0, removed.size());
-        ClientConfigRoot fetchedState =
-                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        ClientConfig fetchedState = registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
     }
 
@@ -131,13 +150,12 @@ class ProjectConfigRegistryImplTest {
         assertEquals(1, added.size());
         added.clear();
 
-        registry.removeClientConfig(config.getClientServerRef());
+        registry.removeClientConfigAt(root);
 
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        ClientConfigRoot fetchedState =
-                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        ClientConfig fetchedState = registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
     }
 
@@ -163,8 +181,7 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        ClientConfigRoot fetchedState =
-                registry.getRegisteredClientConfigState(config.getClientServerRef());
+        ClientConfig fetchedState = registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
 
         // closing the project should turn off further registration
@@ -172,7 +189,7 @@ class ProjectConfigRegistryImplTest {
         assertThrows(Throwable.class, () -> registry.addClientConfig(config, root));
         assertEquals(0, added.size());
 
-        assertThrows(Throwable.class, () -> registry.removeClientConfig(config.getClientServerRef()));
+        assertThrows(Throwable.class, () -> registry.removeClientConfigAt(root));
         assertEquals(0, removed.size());
     }
 
@@ -195,7 +212,7 @@ class ProjectConfigRegistryImplTest {
         assertEquals(0, added.size());
         assertEquals(1, removed.size());
         assertSame(config, removed.get(0));
-        ClientConfigRoot fetchedState =
+        ClientConfig fetchedState =
                 registry.getRegisteredClientConfigState(config.getClientServerRef());
         assertNull(fetchedState);
 
@@ -204,7 +221,7 @@ class ProjectConfigRegistryImplTest {
         assertThrows(Throwable.class, () -> registry.addClientConfig(config, root));
         assertEquals(0, added.size());
 
-        assertThrows(Throwable.class, () -> registry.removeClientConfig(config.getClientServerRef()));
+        assertThrows(Throwable.class, () -> registry.removeClientConfigAt(root));
         assertEquals(0, removed.size());
     }
 
@@ -215,10 +232,14 @@ class ProjectConfigRegistryImplTest {
     }
 
     private ClientConfig createClientConfig() {
+        return createClientConfig("my-client");
+    }
+
+    private ClientConfig createClientConfig(String clientName) {
         MockConfigPart data = new MockConfigPart()
                 .withServerName("1666")
                 .withUsername("user")
-                .withClientname("my-client");
+                .withClientname(clientName);
         ServerConfig serverConfig = ServerConfig.createFrom(data);
         return ClientConfig.createFrom(serverConfig, data);
     }

@@ -114,6 +114,16 @@ public class AbstractP4FileContentRevision
         return rev;
     }
 
+    @NotNull
+    public VcsRevisionNumber.Int getIntRevisionNumber() {
+        return rev;
+    }
+
+    @NotNull
+    public Charset getCharset() {
+        return charset;
+    }
+
     @Override
     public String toString() {
         return serverFilePath + "@" + rev;

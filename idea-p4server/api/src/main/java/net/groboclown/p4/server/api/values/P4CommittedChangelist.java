@@ -14,8 +14,10 @@
 
 package net.groboclown.p4.server.api.values;
 
+import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Perforce stored changelists which are known to be committed on
@@ -24,4 +26,6 @@ import org.jetbrains.annotations.NotNull;
 public interface P4CommittedChangelist extends CommittedChangeList {
     @NotNull
     P4ChangelistSummary getSummary();
+
+    void setVcs(@Nullable AbstractVcs vcs);
 }

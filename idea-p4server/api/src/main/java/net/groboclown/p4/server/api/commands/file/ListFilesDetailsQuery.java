@@ -31,8 +31,8 @@ public class ListFilesDetailsQuery implements P4CommandRunner.ServerQuery<ListFi
         HAVE, HEAD
     }
 
-    public ListFilesDetailsQuery(ClientServerRef ref,
-            List<FilePath> files, RevState revState, int maxResultCount) {
+    public ListFilesDetailsQuery(@NotNull ClientServerRef ref,
+            @NotNull List<FilePath> files, @NotNull RevState revState, int maxResultCount) {
         this.ref = ref;
         this.files = files;
         this.maxResultCount = maxResultCount;

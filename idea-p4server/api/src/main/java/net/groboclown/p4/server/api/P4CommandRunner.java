@@ -363,6 +363,12 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.client.ListClientFetchStatusResult
          */
         LIST_CLIENT_FETCH_STATUS, // cstat
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery
+         * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult
+         */
+        LIST_SUBMITTED_CHANGELISTS,
     }
 
     enum ServerQueryCmd implements ServerCmd {
@@ -418,12 +424,6 @@ public interface P4CommandRunner {
          * @see ListFileHistoryResult
          */
         LIST_FILE_HISTORY,
-
-        /**
-         * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery
-         * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult
-         */
-        LIST_SUBMITTED_CHANGELISTS,
 
         /**
          * @see net.groboclown.p4.server.api.commands.user.ListUsersQuery

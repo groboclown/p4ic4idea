@@ -521,8 +521,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(ServerConfig config,
-            ListSubmittedChangelistsQuery query) {
+    protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(final ClientConfig config,
+            final ListSubmittedChangelistsQuery query) {
         return onlineQuery(config,
                 () -> server.listSubmittedChangelists(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())

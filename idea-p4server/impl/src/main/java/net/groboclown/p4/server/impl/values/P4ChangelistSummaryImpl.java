@@ -47,6 +47,16 @@ public class P4ChangelistSummaryImpl implements P4ChangelistSummary {
         username = changelist.getUsername();
     }
 
+    /** Should only be used for serialization */
+    public P4ChangelistSummaryImpl(@NotNull P4ChangelistId id, @NotNull String comment,
+            @NotNull String username, boolean submitted, boolean hasShelved) {
+        this.id = id;
+        this.comment = comment;
+        this.username = username;
+        this.submitted = submitted;
+        this.hasShelved = hasShelved;
+    }
+
 
     @NotNull
     @Override

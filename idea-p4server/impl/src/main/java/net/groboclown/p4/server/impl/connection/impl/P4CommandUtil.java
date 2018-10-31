@@ -373,8 +373,8 @@ public class P4CommandUtil {
                             + "invoked p4 fstat " +
                             sources.stream().map(IFileSpec::toString).collect(Collectors.joining(" ")));
                 }
+                ret.put(sourceIter.next(), extendedFileSpec);
             }
-            ret.put(sourceIter.next(), extendedFileSpec);
         }
         return ret;
     }

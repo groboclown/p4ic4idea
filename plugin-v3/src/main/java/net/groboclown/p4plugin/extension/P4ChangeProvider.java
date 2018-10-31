@@ -193,7 +193,7 @@ public class P4ChangeProvider
 
             Collection<ClientConfigRoot> allClientRoots = getClientConfigRoots();
 
-            // This request is performed by the IDE in a background thread.
+            // This request is performed by the IDE in a background thread, so it can block.
 
             Pair<IdeChangelistMap, IdeFileMap> cachedMaps = CacheComponent.getInstance(project)
                     .blockingRefreshServerOpenedCache(

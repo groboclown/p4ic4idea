@@ -44,6 +44,11 @@ public class P4RemoteFileContentRevision extends AbstractP4FileContentRevision {
         this.file = file;
     }
 
+    @NotNull
+    public P4RemoteFile getDepotPath() {
+        return file;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) {

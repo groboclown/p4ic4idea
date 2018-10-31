@@ -42,7 +42,6 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -127,7 +126,7 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
-            @NotNull ServerConfig config, @NotNull ListSubmittedChangelistsQuery query);
+            @NotNull ClientConfig config, @NotNull ListSubmittedChangelistsQuery query);
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(

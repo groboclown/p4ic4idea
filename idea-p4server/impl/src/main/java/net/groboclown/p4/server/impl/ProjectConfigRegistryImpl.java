@@ -44,8 +44,10 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,7 +61,9 @@ public class ProjectConfigRegistryImpl
        extends ProjectConfigRegistry {
     private static final Logger LOG = Logger.getInstance(ProjectConfigRegistryImpl.class);
 
-    private final Map<ClientServerRef, ClientConfigRootImpl> registeredClients = new HashMap<>();
+    // NOTE: synchronize on the clients map, not the roots.
+    private final Map<VirtualFile, ClientConfigRootImpl> registeredRoots = new HashMap<>();
+    private final Map<ClientServerRef, ClientRef> registeredClients = new HashMap<>();
 
     // the servers are stored based on the shared config.  This means that the connection
     // approach (e.g. password vs. auth ticket) is taken into account.  It has a potential
@@ -67,8 +71,9 @@ public class ProjectConfigRegistryImpl
     // we take care about checking messages.
     private final Map<String, ServerRef> registeredServers = new HashMap<>();
 
+    // If needs to synchronize on both clients and servers, sync on servers first, then clients.
 
-    @SuppressWarnings("WeakerAccess")
+
     public ProjectConfigRegistryImpl(Project project) {
         super(project);
     }
@@ -76,46 +81,48 @@ public class ProjectConfigRegistryImpl
 
     /**
      * Retrieve the client configuration information about the client server ref.  Even though the
-     * connections are registered application-wide, individual projects must register themselves
+     * connections are registered application-wide, individual projects must register their own copy.
      *
      * @param ref client reference
      * @return the client config, or null if it isn't registered.
      */
     @Override
     @Nullable
-    public ClientConfigRoot getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
+    public ClientConfig getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
         if (isDisposed()) {
             // do not throw an error.
             return null;
         }
 
-        ClientConfigRoot state;
+        ClientRef client;
         synchronized (registeredClients) {
-            state = registeredClients.get(ref);
+            client = registeredClients.get(ref);
         }
-        if (state == null || state.isDisposed()) {
+        if (client == null || client.isDisposed()) {
             return null;
         }
-        return state;
+        return client.state;
     }
 
     @Override
     public void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
         checkDisposed();
         ClientServerRef ref = config.getClientServerRef();
-        ClientConfigRootImpl updated = createClientConfigState(config, vcsRootDir);
-        ClientConfigRoot existing;
+        ClientConfigRootImpl updated;
         synchronized (registeredClients) {
-            existing = registeredClients.get(ref);
-            registeredClients.put(ref, updated);
-        }
-        if (existing != null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(vcsRootDir + ": replacing " + existing + " with " + config);
+            ClientConfigRootImpl oldRoot = registeredRoots.get(vcsRootDir);
+            if (oldRoot != null) {
+                if (oldRoot.getClientConfig().getClientServerRef().equals(ref)) {
+                    // Old root is the same as the new root.  Don't do anything.
+                    return;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(vcsRootDir + ": replacing " + oldRoot.getClientConfig() + " with " + config);
+                }
+                removeClientConfigAt(vcsRootDir);
             }
-            sendClientRemoved(existing);
-        } else if (LOG.isDebugEnabled()) {
-            LOG.debug(vcsRootDir + ": setting to " + config);
+            updated = createClientConfigState(config, vcsRootDir);
+            registeredRoots.put(vcsRootDir, updated);
         }
         sendClientAdded(updated);
     }
@@ -124,39 +131,43 @@ public class ProjectConfigRegistryImpl
      * Removes the client configuration registration with the given reference.  If it is registered, then
      * the appropriate messages will be sent out.
      *
-     * @param ref the reference to de-register
+     * @param vcsRootDir the reference to de-register
      * @return true if it was registered, false if not.
      */
     @Override
-    public boolean removeClientConfig(@NotNull ClientServerRef ref) {
+    public boolean removeClientConfigAt(@NotNull VirtualFile vcsRootDir) {
         checkDisposed();
         ClientConfigRoot removed;
         synchronized (registeredClients) {
-            removed = registeredClients.remove(ref);
+            removed = registeredRoots.remove(vcsRootDir);
         }
         boolean registered = removed != null;
         if (registered) {
             sendClientRemoved(removed);
             cleanupClientState(removed);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Removed client config " + ref);
+                LOG.debug("Removed client config " + vcsRootDir);
             }
         }
-        // FIXME dispose the removed client config.
         return registered;
     }
 
     @Override
     public void dispose() {
+        if (isDisposed()) {
+            return;
+        }
         super.dispose();
         final Collection<ClientConfigRoot> configs;
         synchronized (registeredClients) {
             // need a copy of the values, otherwise they'll be cleared when we
             // clear the registered configs.
-            configs = new ArrayList<>(registeredClients.values());
+            configs = new ArrayList<>(registeredRoots.values());
             registeredClients.clear();
         }
+        System.err.println("Starting config loop");
         for (ClientConfigRoot clientConfig : configs) {
+            System.err.println("Call on " + clientConfig);
             sendClientRemoved(clientConfig);
         }
     }
@@ -166,7 +177,7 @@ public class ProjectConfigRegistryImpl
     protected Collection<ClientConfigRoot> getRegisteredStates() {
         List<ClientConfigRoot> clients;
         synchronized (registeredClients) {
-            clients = new ArrayList<>(registeredClients.values());
+            clients = new ArrayList<>(registeredRoots.values());
         }
         return clients.stream().filter((ccs) -> !ccs.isDisposed()).collect(Collectors.toList());
     }
@@ -186,7 +197,7 @@ public class ProjectConfigRegistryImpl
         // Note: does not check disposed state.
 
         getServersFor(server).forEach((state) -> state.setServerHostProblem(true));
-   }
+    }
 
     @Override
     protected void onServerConnected(@NotNull ServerConnectedMessage.ServerConnectedEvent e) {
@@ -203,16 +214,21 @@ public class ProjectConfigRegistryImpl
 
     @Override
     protected void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
-        // Note: does not check disposed state.
-
-        ClientConfigRoot removedState;
-        synchronized (registeredClients) {
-            removedState = registeredClients.remove(config.getClientServerRef());
-        }
-
-        // If we have it, then clean it up
-        if (removedState != null) {
-            cleanupClientState(removedState);
+        if (vcsRootDir != null) {
+            // Need to double check that the config is the same at the root, because since this call the
+            // root might have already changed to something else.
+            synchronized (registeredClients) {
+                ClientConfigRootImpl existing = registeredRoots.get(vcsRootDir);
+                if (existing != null && config.getClientServerRef().equals(existing.getClientConfig().getClientServerRef())) {
+                    removeClientConfigAt(vcsRootDir);
+                } else if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skipping removal of " + vcsRootDir +
+                            ": existing registered config (" + existing + ") does not match requested removal config (" +
+                            config + ")");
+                }
+            }
+        } else {
+            LOG.warn("Skipping removal of client config " + config + " at null root");
         }
     }
 
@@ -237,19 +253,28 @@ public class ProjectConfigRegistryImpl
 
     @Override
     protected void updateVcsRoots() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Updating VCS roots");
+        }
         synchronized (registeredServers) {
+            final Set<VirtualFile> oldRoots;
+            synchronized (registeredClients) {
+                oldRoots = new HashSet<>(registeredRoots.keySet());
+            }
             for (VcsDirectoryMapping directoryMapping : getDirectoryMappings()) {
                 VcsRootSettings settings = directoryMapping.getRootSettings();
                 if (settings == null) {
                     LOG.info("Skipping root " + directoryMapping.getDirectory() + "; no settings");
-                    return;
+                    continue;
                 }
                 if (settings instanceof P4VcsRootSettings) {
+                    oldRoots.remove(DirectoryMappingUtil.getDirectory(getProject(), directoryMapping));
                     updateRoot((P4VcsRootSettings) settings, directoryMapping);
                 } else {
                     LOG.warn("P4Vcs root mapping has non-vcs settings " + settings.getClass());
                 }
             }
+            oldRoots.forEach(this::removeClientConfigAt);
         }
     }
 
@@ -257,10 +282,9 @@ public class ProjectConfigRegistryImpl
             @NotNull VcsDirectoryMapping directoryMapping) {
         VirtualFile root = DirectoryMappingUtil.getDirectory(getProject(), directoryMapping);
         List<ConfigPart> parts = settings.getConfigParts();
-        // TODO set the source name.
-        MultipleConfigPart parentPart = new MultipleConfigPart("", parts);
+        MultipleConfigPart parentPart = new MultipleConfigPart("Project Registry", parts);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Adding mapping for " + root + " -> " + parentPart + " (directory mapping dir [" + directoryMapping.getDirectory() + "])");
+            LOG.debug("Add mapping for " + root + " -> " + parentPart + " (directory mapping dir [" + directoryMapping.getDirectory() + "])");
         }
         try {
             if (ServerConfig.isValidServerConfig(parentPart)) {
@@ -281,36 +305,52 @@ public class ProjectConfigRegistryImpl
         }
 
         // Invalid config.
-        ClientConfigRoot oldConfig = getClientFor(root);
-        if (oldConfig != null) {
-            removeClientConfig(oldConfig.getClientConfig().getClientServerRef());
-        }
+        removeClientConfigAt(root);
     }
 
     @NotNull
     private Iterable<VcsDirectoryMapping> getDirectoryMappings() {
-        return new FilteredIterable<>(ProjectLevelVcsManager.getInstance(getProject())
-                .getDirectoryMappings(), (mapping) -> mapping != null && P4VcsKey.VCS_NAME.equals(mapping.getVcs()));
+        return new FilteredIterable<>(
+                ProjectLevelVcsManager.getInstance(getProject()).getDirectoryMappings(),
+                (mapping) -> mapping != null && P4VcsKey.VCS_NAME.equals(mapping.getVcs()));
     }
 
-
     private void cleanupClientState(@NotNull ClientConfigRoot removed) {
-        // Note: does not check disposed state.
-
-        deregisterServerForConfig(removed.getClientConfig());
+        ClientServerRef clientServerRef = removed.getClientConfig().getClientServerRef();
+        boolean didRemove = false;
+        synchronized (registeredClients) {
+            ClientRef ref = registeredClients.get(clientServerRef);
+            if (ref != null && ref.removeClientConfigRoot()) {
+                registeredClients.remove(clientServerRef);
+                didRemove = true;
+            }
+        }
+        if (didRemove) {
+            deregisterServerForConfig(removed.getClientConfig());
+        }
         removed.dispose();
     }
 
-    private ClientConfigRootImpl createClientConfigState(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
+    private ClientConfigRootImpl createClientConfigState(@NotNull ClientConfig inpConfig, @NotNull VirtualFile vcsRootDir) {
         ServerStatusImpl serverState;
         synchronized (registeredServers) {
-            ServerRef ref = registeredServers.get(config.getServerConfig().getServerId());
+            ServerRef ref = registeredServers.get(inpConfig.getServerConfig().getServerId());
             if (ref == null || ref.state.isDisposed()) {
-                ref = new ServerRef(createServerConfigState(config.getServerConfig()));
-                registeredServers.put(config.getServerConfig().getServerId(), ref);
+                ref = new ServerRef(createServerConfigState(inpConfig.getServerConfig()));
+                registeredServers.put(inpConfig.getServerConfig().getServerId(), ref);
             }
             ref.addClientConfigRef();
             serverState = ref.state;
+        }
+        ClientConfig config;
+        synchronized (registeredClients) {
+            ClientRef ref = registeredClients.get(inpConfig.getClientServerRef());
+            if (ref == null || ref.isDisposed()) {
+                ref = new ClientRef(inpConfig);
+                registeredClients.put(inpConfig.getClientServerRef(), ref);
+            }
+            ref.addClientConfigRootRef();
+            config = ref.state;
         }
         return new ClientConfigRootImpl(config, serverState, vcsRootDir);
     }
@@ -357,6 +397,27 @@ public class ProjectConfigRegistryImpl
         return servers.stream()
                 .filter((sr) -> !sr.state.isDisposed())
                 .map((sr) -> sr.state);
+    }
+
+    private static class ClientRef {
+        private final AtomicInteger refCount = new AtomicInteger(0);
+        final ClientConfig state;
+
+        private ClientRef(ClientConfig state) {
+            this.state = state;
+        }
+
+        void addClientConfigRootRef() {
+            refCount.incrementAndGet();
+        }
+
+        boolean removeClientConfigRoot() {
+            return refCount.decrementAndGet() <= 0;
+        }
+
+        boolean isDisposed() {
+            return refCount.get() <= 0;
+        }
     }
 
     private static class ServerRef {

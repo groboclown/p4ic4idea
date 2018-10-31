@@ -29,7 +29,7 @@ public class ClientConfigRootImpl
     private final VirtualFile vcsRoot;
     private boolean loaded = false;
     private Boolean caseSensitive = null;
-    private VirtualFile clientRoot = null;
+    private VirtualFile clientRoot;
 
     // must monitor for client config removed.
     private boolean disposed;

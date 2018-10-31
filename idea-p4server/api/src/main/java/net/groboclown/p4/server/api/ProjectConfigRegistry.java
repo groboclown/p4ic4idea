@@ -141,7 +141,7 @@ public abstract class ProjectConfigRegistry
      * @return the client config state, or null if it isn't registered.
      */
     @Nullable
-    public abstract ClientConfigRoot getRegisteredClientConfigState(@NotNull ClientServerRef ref);
+    public abstract ClientConfig getRegisteredClientConfigState(@NotNull ClientServerRef ref);
 
     /**
      * Registers the client configuration to the project and the application.  If a configuration with the same
@@ -157,10 +157,11 @@ public abstract class ProjectConfigRegistry
      * Removes the client configuration registration with the given reference.  If it is registered, then
      * the appropriate messages will be sent out.
      *
-     * @param ref the reference to de-register
+     * @param vcsRootDir the VCS root directory to de-register; if it is not exactly a known root directory, this will
+     *                   do nothing.
      * @return true if it was registered, false if not.
      */
-    public abstract boolean removeClientConfig(@NotNull ClientServerRef ref);
+    public abstract boolean removeClientConfigAt(@NotNull VirtualFile vcsRootDir);
 
     @Override
     public void projectOpened() {
@@ -260,6 +261,9 @@ public abstract class ProjectConfigRegistry
 
     protected final void sendClientRemoved(@Nullable ClientConfigRoot state) {
         if (state != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Sending notification that root was removed: " + state.getClientRootDir());
+            }
             ClientConfigRemovedMessage.reportClientConfigRemoved(getProject(), this,
                     state.getClientConfig(), state.getProjectVcsRootDir());
         }
@@ -267,6 +271,9 @@ public abstract class ProjectConfigRegistry
 
     protected final void sendClientAdded(@Nullable ClientConfigRoot state) {
         if (state != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Sending notification that root was added: " + state.getClientRootDir());
+            }
             ClientConfigAddedMessage.sendClientConfigurationAdded(getProject(),
                     state.getClientRootDir(),
                     state.getClientConfig());

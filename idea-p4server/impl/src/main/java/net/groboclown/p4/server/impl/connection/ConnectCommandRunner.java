@@ -39,6 +39,7 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.FixJobsOptions;
+import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
@@ -113,6 +114,8 @@ import net.groboclown.p4.server.impl.repository.AddedExtendedFileSpec;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
+import net.groboclown.p4.server.impl.values.P4ChangelistSummaryImpl;
+import net.groboclown.p4.server.impl.values.P4CommittedChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4FileRevisionImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import net.groboclown.p4.server.impl.values.P4JobSpecImpl;
@@ -310,9 +313,44 @@ public class ConnectCommandRunner
     @NotNull
     @Override
     public P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
-            @NotNull ServerConfig config, @NotNull ListSubmittedChangelistsQuery query) {
-        // FIXME implement
-        return null;
+            @NotNull ClientConfig config, @NotNull ListSubmittedChangelistsQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (client) -> {
+            // TODO use cmd
+            GetChangelistsOptions options = new GetChangelistsOptions();
+            options.setMaxMostRecent(query.getMaxCount());
+            if (query.getClientNameFilter() != null) {
+                options.setClientName(query.getClientNameFilter());
+            }
+            if (query.getUsernameFilter() != null) {
+                options.setUserName(query.getUsernameFilter());
+            }
+            options.setLongDesc(true);
+            List<IFileSpec> specs = query.getLocation().getFileSpecs();
+            if (!specs.isEmpty() && query.getSpecFilter() != null) {
+                // FIXME DOUBLE CHECK THAT THE SPECS ARE ALWAYS DEPOT PATHS
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Using revision range " + query.getSpecFilter() + " for " + specs);
+                }
+                specs = FileSpecBuildUtil.replaceDepotRevisions(specs, query.getSpecFilter());
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Querying changelists with specs " + specs);
+            }
+
+            List<IChangelistSummary> res = client.getServer().getChangelists(specs, options);
+
+            return new ListSubmittedChangelistsResult(config,
+                    res.stream()
+                    .map((summary) -> {
+                        // FIXME scan for files on changelist, using the "describe changelist" action.
+                        return new P4CommittedChangelistImpl(
+                                new P4ChangelistSummaryImpl(
+                                    config.getServerConfig(), config.getClientServerRef(), summary),
+                                Collections.emptyList(),
+                                summary.getDate());
+                    })
+                    .collect(Collectors.toList()));
+        }));
     }
 
     @NotNull
@@ -355,7 +393,11 @@ public class ConnectCommandRunner
     @Override
     public P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config,
             ListFilesDetailsQuery query) {
-        final List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePaths(query.getFiles());
+        final List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePathsAnnotated(
+                query.getFiles(),
+                // TODO replace with more Perforce API way of creating the annotation.
+                query.getRevState() == ListFilesDetailsQuery.RevState.HEAD ? "#head" : "#have",
+                true);
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
             new ListFilesDetailsResult(config,
                 cmd.getFilesDetails(server, query.getClientServerRef().getClientName(), fileSpecs).entrySet().stream()

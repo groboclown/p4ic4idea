@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileSpecBuildUtil {
 
@@ -113,6 +116,10 @@ public class FileSpecBuildUtil {
     }
 
     public static List<IFileSpec> stripDepotRevisions(@NotNull List<IFileSpec> files) {
+        return replaceDepotRevisions(files, "");
+    }
+
+    public static List<IFileSpec> replaceDepotRevisions(@NotNull List<IFileSpec> files, @NotNull String newRevision) {
         List<String> request = new ArrayList<>(files.size());
         for (IFileSpec file : files) {
             String path = file.getDepotPathString();
@@ -127,7 +134,7 @@ public class FileSpecBuildUtil {
             if (pos >= 0) {
                 path = path.substring(0, pos);
             }
-            request.add(path);
+            request.add(path + newRevision);
         }
         return FileSpecBuilder.makeFileSpecList(request);
     }

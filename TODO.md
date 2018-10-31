@@ -10,7 +10,7 @@ of Github.
 
 **Priority: Critical**
 
-"File Cache Conflict" popup happens every 5-10 minutes (#174).  Typically happens during heavy iteration of perforce
+(#174) "File Cache Conflict" popup happens every 5-10 minutes.  Typically happens during heavy iteration of perforce
 backed files. "I do a lot of editing followed by alt+tab to another application, back and forth. I think idea
 automatically saves the file any time the window loses focus."
 
@@ -18,7 +18,7 @@ automatically saves the file any time the window loses focus."
 
 **Priority: Critical**
 
-When you submit a changelist, it can include files that are not visible, because they are outside the scope of the
+(#176) When you submit a changelist, it can include files that are not visible, because they are outside the scope of the
 project.  The submission should only submit the files that the user sees.
 
 The unseen files should be moved to the default changelist before submission.  If the default changelist is
@@ -28,10 +28,12 @@ submitted, then the code will need to create a changelist before submission, jus
 
 **Priority: Major**
 
-If you remove a server configuration and add a different one, the cached files of the old one will remain.  The
+(#177) If you remove a server configuration and add a different one, the cached files of the old one will remain.  The
 big display of this problem is the changelist view includes cached maps to the old connection.
 
 Fix might be to include extra checks to the cache storage mechanism, so that dead connection information isn't stored.
+
+The current state for this is the old one remains in the list of active roots.
 
 ### File Change Operations Do Not Refresh Change List View
 
@@ -79,7 +81,7 @@ This might be fixed now.  The API has changed to force usage that prevents serio
 
 ### Plugin Option Screen Revamp
 
-Some options are not shown, some are not used.  These need to be cleaned up.
+(#178) Some options are not shown, some are not used.  These need to be cleaned up.
 
 
 ## Required Missing Functionality
@@ -191,10 +193,6 @@ Implement correct resolve types.
 ## Near-Term Functionality
 
 These pieces of functionality are not required for the 0.10 release, but should be implemented soon after release.
-
-### Repository View
-
-The repository view doesn't show any commits.
 
 ### Shelved file support
 

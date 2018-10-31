@@ -14,30 +14,37 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
+import com.intellij.openapi.vcs.AbstractVcs;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
-public class ListSubmittedChangelistsResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+public class ListSubmittedChangelistsResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
     private final List<P4CommittedChangelist> changes;
 
-    public ListSubmittedChangelistsResult(@NotNull ServerConfig config, @NotNull List<P4CommittedChangelist> changes) {
+    public ListSubmittedChangelistsResult(@NotNull ClientConfig config, @NotNull List<P4CommittedChangelist> changes) {
         this.config = config;
-        this.changes = changes;
+        this.changes = Collections.unmodifiableList(changes);
     }
 
     @NotNull
     @Override
-    public ServerConfig getServerConfig() {
+    public ClientConfig getClientConfig() {
         return config;
     }
 
     @NotNull
-    public List<P4CommittedChangelist> getChanges() {
+    public List<P4CommittedChangelist> getChangesForVcs(@Nullable final AbstractVcs vcs) {
+        changes.forEach((c) -> {
+            c.setVcs(vcs);
+        });
         return changes;
     }
 }

@@ -182,8 +182,6 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listFilesHistory(config, (ListFileHistoryQuery) query);
             case LIST_JOBS:
                 return (QueryAnswer<R>) listJobs(config, (ListJobsQuery) query);
-            case LIST_SUBMITTED_CHANGELISTS:
-                return (QueryAnswer<R>) listSubmittedChangelists(config, (ListSubmittedChangelistsQuery) query);
             case LIST_USERS:
                 return (QueryAnswer<R>) listUsers(config, (ListUsersQuery) query);
             case LIST_LABELS:
@@ -239,7 +237,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
 
     @NotNull
     protected abstract QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
-            ServerConfig config, ListSubmittedChangelistsQuery query);
+            ClientConfig config, ListSubmittedChangelistsQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListUsersResult> listUsers(
@@ -258,6 +256,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listClientFetchStatus(config, (ListClientFetchStatusQuery) query);
             case LIST_OPENED_FILES_CHANGES:
                 return (QueryAnswer<R>) listOpenedFilesChanges(config, (ListOpenedFilesChangesQuery) query);
+            case LIST_SUBMITTED_CHANGELISTS:
+                return (QueryAnswer<R>) listSubmittedChangelists(config, (ListSubmittedChangelistsQuery) query);
             default:
                 throw new IllegalStateException("Incompatible class: should match " + ClientQueryCmd.class);
         }

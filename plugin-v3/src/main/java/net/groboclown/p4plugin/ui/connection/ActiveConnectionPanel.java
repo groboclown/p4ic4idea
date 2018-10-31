@@ -88,28 +88,11 @@ public class ActiveConnectionPanel {
         }
         runner = new IntervalPeriodExecution(() -> {
             // FIXME the tree is collapsed every time it's refreshed.
-            // There's a bit of code here to attempt to maintain the
-            // expanded row set, but it doesn't work.
+            // Attempts to store and restore the expanded list fails, and attempts to refresh by updating
+            // the data without creating new data fail.
             connectionTree.setPaintBusy(true);
-            Collection<Integer> expanded = connectionTree.getExpandableItemsHandler().getExpandedItems();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("The tree was expanded at: " + expanded);
-            }
-            Collection<TreeNode> needsRefresh = treeNode.refresh(project);
-            ApplicationManager.getApplication().invokeAndWait(() -> {
-                for (TreeNode toRefresh: needsRefresh) {
-                    connectionTreeModel.reload(toRefresh);
-                }
-                // This isn't accurate, but it at least attempts to keep the expansion.
-                for (Integer nodeIndex : expanded) {
-                    if (nodeIndex < connectionTree.getRowCount()) {
-                        connectionTree.expandRow(nodeIndex);
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Expanding row " + nodeIndex);
-                        }
-                    }
-                }
-            });
+            treeNode.refresh(project);
+            ApplicationManager.getApplication().invokeAndWait(() -> connectionTreeModel.reload());
             connectionTree.setPaintBusy(false);
         }, 5, TimeUnit.SECONDS);
 
@@ -162,6 +145,7 @@ public class ActiveConnectionPanel {
     public void refresh() {
         if (root != null) {
             runner.requestRun();
+            connectionTree.getEmptyText().setText(P4Bundle.getString("connection.tree.empty"));
         }
     }
 
@@ -173,7 +157,7 @@ public class ActiveConnectionPanel {
         connectionTree = new Tree();
         scroll.setViewportView(connectionTree);
 
-        connectionTree.getEmptyText().setText(P4Bundle.getString("connection.tree.empty"));
+        connectionTree.getEmptyText().setText(P4Bundle.getString("connection.tree.initial"));
         connectionTree.setEditable(false);
         connectionTreeModel = new DefaultTreeModel(treeNode);
         connectionTree.setModel(connectionTreeModel);

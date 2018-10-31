@@ -3,9 +3,9 @@
  */
 package com.perforce.p4java.exception;
 
-import com.perforce.p4java.Log;
-// p4ic4idea: use IServerMessage
 import com.perforce.p4java.server.IServerMessage;
+
+// p4ic4idea: use IServerMessage
 
 /**
  * An exception to be used to signal that the Perforce server has detected
@@ -168,6 +168,7 @@ public class RequestException extends P4JavaException {
 	public String getDisplayString() {
 		return "" + (this.genericCode != 0 ? "Generic: " + this.genericCode : "")
 				+ (this.severityCode != 0 ? " Severity: " + this.severityCode + "; " : "")
+				+ (this.subCode != 0 ? "SubCode: " + this.subCode + "; " : "")
 				+ this.getMessage()
 				+ (this.getCause() != null ? this.getCause() : "");
 	}
@@ -225,5 +226,12 @@ public class RequestException extends P4JavaException {
 	 */
 	public int getGenericCode() {
 		return this.genericCode;
+	}
+
+	private static String localizeMessage(IServerMessage message) {
+		return message.getLocalizedMessage() +
+				" (severity: " + message.getSeverity() +
+				", subsystem: " + message.getSubSystem() +
+				", message: " + message.getSubCode() + ")";
 	}
 }

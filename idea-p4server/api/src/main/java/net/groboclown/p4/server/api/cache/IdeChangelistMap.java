@@ -18,6 +18,7 @@ package net.groboclown.p4.server.api.cache;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import org.jetbrains.annotations.NotNull;
@@ -112,5 +113,13 @@ public interface IdeChangelistMap {
             throws InterruptedException;
 
     void changelistDeleted(@NotNull P4ChangelistId changelistId)
+            throws InterruptedException;
+
+    /**
+     * Prevents mappings from building up after a user removes a configuration.
+     *
+     * @param clients the list of current existing clients.
+     */
+    void clearChangesNotIn(@NotNull Collection<ClientServerRef> clients)
             throws InterruptedException;
 }

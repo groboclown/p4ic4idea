@@ -24,17 +24,6 @@ project.  The submission should only submit the files that the user sees.
 The unseen files should be moved to the default changelist before submission.  If the default changelist is
 submitted, then the code will need to create a changelist before submission, just like how the job association works.
 
-### Changing Configuration Does Not Clear Cache
-
-**Priority: Major**
-
-(#177) If you remove a server configuration and add a different one, the cached files of the old one will remain.  The
-big display of this problem is the changelist view includes cached maps to the old connection.
-
-Fix might be to include extra checks to the cache storage mechanism, so that dead connection information isn't stored.
-
-The current state for this is the old one remains in the list of active roots.
-
 ### File Change Operations Do Not Refresh Change List View
 
 **Priority: Minor** (first minor to tackle)

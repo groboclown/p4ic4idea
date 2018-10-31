@@ -311,7 +311,17 @@ public class P4ChangeProvider
         List<LocalChangeList> existingLocalChangeLists = addGate.getListsCopy();
         P4CommandRunner.ActionAnswer<Object> actions = new DoneActionAnswer<>(null);
 
-        for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
+        Collection<ClientConfigRoot> roots = getClientConfigRoots();
+
+        // #177 - prevent old clients from keeping their changelist mappings around.
+        changelistMap.clearChangesNotIn(
+                roots.stream()
+                    .map(ClientConfigRoot::getClientConfig)
+                    .map(ClientConfig::getClientServerRef)
+                    .collect(Collectors.toList())
+        );
+
+        for (ClientConfigRoot clientConfigRoot : roots) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Updating changelists for " + clientConfigRoot);
             }

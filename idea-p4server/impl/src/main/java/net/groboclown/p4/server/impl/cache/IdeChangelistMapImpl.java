@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.cache;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
@@ -32,6 +33,8 @@ import java.util.HashSet;
 import java.util.Map;
 
 public class IdeChangelistMapImpl implements IdeChangelistMap {
+    private static final Logger LOG = Logger.getInstance(IdeChangelistMapImpl.class);
+
     private final Project project;
     private final IdeChangelistCacheStore cache;
 
@@ -117,5 +120,24 @@ public class IdeChangelistMapImpl implements IdeChangelistMap {
     public void changelistDeleted(@NotNull P4ChangelistId changelistId)
             throws InterruptedException {
         cache.deleteChangelist(changelistId);
+    }
+
+    @Override
+    public void clearChangesNotIn(@NotNull Collection<ClientServerRef> clients)
+            throws InterruptedException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking if there exist any changelists that are associated with clients other than: " + clients);
+        }
+        for (P4ChangelistId cl : cache.getLinkedChangelistIds().keySet()) {
+            if (!clients.contains(cl.getClientServerRef())) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Removing changelist " + cl.getChangelistId() + " because its client no longer exists");
+                }
+                cache.deleteChangelist(cl);
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("Keeping changelist " + cl.getChangelistId() + " because its client still exists: " +
+                        cl.getClientServerRef());
+            }
+        }
     }
 }

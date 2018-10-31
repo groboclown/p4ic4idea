@@ -32,7 +32,7 @@
     * File annotations should be faster now.
     * Works when running in one of the `AltRoot` for a client workspace.
 * Active Connection view.
-    * Rather than using a small status-bar widget, connections are now viewed through a VCS tab called "Active Connections".
+    * Rather than using a small status-bar widget, connections are now viewed through a Version Control view tab called "Active Connections".
     * Gives a better view of online status for each server.
     * Permits viewing what changes are cached, ready to be sent to the server.
 * New Browsing Features.

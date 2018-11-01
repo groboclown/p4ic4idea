@@ -12,10 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.simpleswarm.exceptions;
+package net.groboclown.p4plugin.ui.swarm;
 
-public class UnauthorizedAccessException extends SwarmServerResponseException {
-    public UnauthorizedAccessException(String message, int code) {
-        super(message, null, null, code);
-    }
+public class CreateSwarmReviewPanel {
 }

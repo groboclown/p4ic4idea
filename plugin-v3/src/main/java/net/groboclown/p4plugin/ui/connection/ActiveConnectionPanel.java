@@ -298,7 +298,8 @@ public class ActiveConnectionPanel {
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);
                         if (selRoot != null) {
-                            P4ServerComponent.sendCachedPendingRequests(project, selRoot.getClientConfig());
+                            P4ServerComponent.sendCachedPendingRequests(project, selRoot.getClientConfig())
+                                .whenCompleted(c -> LOG.info("Sent pending actions"));
                         }
                     }
                 },

@@ -60,6 +60,8 @@ import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.LoginAction;
 import net.groboclown.p4.server.api.commands.server.LoginResult;
 import net.groboclown.p4.server.api.commands.server.ServerInfoResult;
+import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
+import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
@@ -186,6 +188,8 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listUsers(config, (ListUsersQuery) query);
             case LIST_LABELS:
                 return (QueryAnswer<R>) listLabels(config, (ListLabelsQuery) query);
+            case GET_SWARM_CONFIG:
+                return (QueryAnswer<R>) getSwarmConfig(config, (SwarmConfigQuery) query);
             default:
                 throw new IllegalStateException("Incompatible class: should match " + ServerQueryCmd.class);
         }
@@ -245,6 +249,9 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
 
     @NotNull
     protected abstract QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query);
+
+    @NotNull
+    protected abstract QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig config, SwarmConfigQuery query);
 
     @SuppressWarnings("unchecked")
     @NotNull

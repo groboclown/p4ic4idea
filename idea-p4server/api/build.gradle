@@ -35,6 +35,7 @@ dependencies {
     compatImplementation (
             project(':p4java'),
             project(':idea-compat:compat-api'),
+            project(':swarm'),
             'org.apache.commons:commons-lang3:3.7'
     )
     compatTest(

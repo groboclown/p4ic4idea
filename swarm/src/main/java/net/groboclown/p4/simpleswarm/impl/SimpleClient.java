@@ -22,6 +22,7 @@ import net.groboclown.p4.simpleswarm.model.Review;
 import java.io.IOException;
 
 public class SimpleClient implements SwarmClient {
+    private static final int[] EMPTY_REVIEW_LIST = new int[0];
     private final ReviewActions review;
 
     public SimpleClient(SwarmConfig config) {
@@ -48,7 +49,18 @@ public class SimpleClient implements SwarmClient {
     @Override
     public int[] getReviewIdsForChangelist(int changelistId)
             throws IOException, SwarmServerResponseException {
-        return review.getReviewIdsForChangelist(changelistId);
+        try {
+            int[] ret = review.getReviewIdsForChangelist(changelistId);
+            if (ret == null) {
+                ret = EMPTY_REVIEW_LIST;
+            }
+            return ret;
+        } catch (SwarmServerResponseException e) {
+            if (e.getResponseCode() == 404) {
+                return EMPTY_REVIEW_LIST;
+            }
+            throw e;
+        }
     }
 
     @Override

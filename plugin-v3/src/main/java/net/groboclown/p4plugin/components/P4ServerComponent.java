@@ -21,6 +21,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.TopCommandRunner;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4PluginVersion;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -37,6 +38,7 @@ import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.impl.LimitedConnectionManager;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
+import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.util.TempDirUtil;
 import org.jetbrains.annotations.NotNull;
@@ -237,7 +239,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
 
     // For Configuration UI.  Avoids cache hits.
-    public P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(ClientConfig clientConfig) {
+    private P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(ClientConfig clientConfig) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
         // Init is happening earlier now
         // initComponent();

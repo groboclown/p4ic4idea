@@ -15,15 +15,37 @@
 package net.groboclown.p4.simpleswarm.exceptions;
 
 public class SwarmServerResponseException extends InvalidSwarmServerException {
-    public SwarmServerResponseException(String message) {
-        super(message);
-    }
+    private final String requestObject;
+    private final String requestAction;
+    private final int responseCode;
 
-    public SwarmServerResponseException(Throwable cause) {
-        super(cause);
+    public SwarmServerResponseException(String message, String object, String action, int code) {
+        super(message);
+        this.requestObject = object;
+        this.requestAction = action;
+        this.responseCode = code;
     }
 
     public SwarmServerResponseException(String message, Throwable cause) {
         super(message, cause);
+        this.requestObject = null;
+        this.requestAction = null;
+        this.responseCode = -1;
+    }
+
+    public SwarmServerResponseException(String message) {
+        this(message, null, null, -1);
+    }
+
+    public int getResponseCode() {
+        return responseCode;
+    }
+
+    public String getRequestObject() {
+        return requestObject;
+    }
+
+    public String getRequestAction() {
+        return requestAction;
     }
 }

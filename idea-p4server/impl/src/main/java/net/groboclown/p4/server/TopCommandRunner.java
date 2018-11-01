@@ -73,6 +73,8 @@ import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.LoginAction;
 import net.groboclown.p4.server.api.commands.server.LoginResult;
 import net.groboclown.p4.server.api.commands.server.ServerInfoResult;
+import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
+import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
@@ -543,6 +545,14 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query) {
         return onlineQuery(config,
                 () -> server.listLabels(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
+    }
+
+    @NotNull
+    @Override
+    protected QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig config, SwarmConfigQuery query) {
+        return onlineQuery(config,
+                () -> server.getSwarmConfig(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
     }
 

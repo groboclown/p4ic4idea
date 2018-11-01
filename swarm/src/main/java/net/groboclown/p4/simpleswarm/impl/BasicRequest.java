@@ -127,7 +127,8 @@ class BasicRequest {
 
         return http.execute(request, context, provider, (HttpResponse response) -> {
             if (response.getStatusLine().getStatusCode() == 401) {
-                throw new UnauthorizedAccessException(response.getStatusLine().getReasonPhrase());
+                throw new UnauthorizedAccessException(response.getStatusLine().getReasonPhrase(),
+                        response.getStatusLine().getStatusCode());
             }
             return new BasicResponse(config.getLogger(), config.getVersion(), response);
         });

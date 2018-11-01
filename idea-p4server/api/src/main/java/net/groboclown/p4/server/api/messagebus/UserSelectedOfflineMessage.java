@@ -20,35 +20,35 @@ import net.groboclown.p4.server.api.P4ServerName;
 import org.jetbrains.annotations.NotNull;
 
 public class UserSelectedOfflineMessage extends ProjectMessage<UserSelectedOfflineMessage.Listener> {
-    private static final String DISPLAY_NAME = "p4ic4idea:user selected a server to go offline";
-    private static final Topic<Listener> TOPIC = new Topic<>(
-            DISPLAY_NAME,
-            Listener.class,
-            Topic.BroadcastDirection.TO_CHILDREN);
-    private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
+private static final String DISPLAY_NAME = "p4ic4idea:user selected a server to go offline";
+private static final Topic<Listener> TOPIC = new Topic<>(
+        DISPLAY_NAME,
+        Listener.class,
+        Topic.BroadcastDirection.TO_CHILDREN);
+private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
-    public static class OfflineEvent extends AbstractMessageEvent {
-        private final P4ServerName name;
+public static class OfflineEvent extends AbstractMessageEvent {
+    private final P4ServerName name;
 
-        public OfflineEvent(@NotNull P4ServerName name) {
-            this.name = name;
-        }
-
-        @NotNull
-        public P4ServerName getName() {
-            return name;
-        }
+    public OfflineEvent(@NotNull P4ServerName name) {
+        this.name = name;
     }
 
-    public interface Listener {
-        void userSelectedServerOffline(@NotNull OfflineEvent e);
+    @NotNull
+    public P4ServerName getName() {
+        return name;
     }
+}
 
-    public static class ListenerAdapter implements Listener {
-        @Override
-        public void userSelectedServerOffline(@NotNull OfflineEvent e) {
-        }
+public interface Listener {
+    void userSelectedServerOffline(@NotNull OfflineEvent e);
+}
+
+public static class ListenerAdapter implements Listener {
+    @Override
+    public void userSelectedServerOffline(@NotNull OfflineEvent e) {
     }
+}
 
 
     public static Listener send(@NotNull Project project) {

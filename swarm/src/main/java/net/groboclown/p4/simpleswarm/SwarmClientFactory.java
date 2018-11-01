@@ -39,9 +39,7 @@ public class SwarmClientFactory {
         try {
             createSwarmClient(config);
             return true;
-        } catch (IOException e) {
-            return false;
-        } catch (InvalidSwarmServerException e) {
+        } catch (IOException | InvalidSwarmServerException e) {
             return false;
         }
     }

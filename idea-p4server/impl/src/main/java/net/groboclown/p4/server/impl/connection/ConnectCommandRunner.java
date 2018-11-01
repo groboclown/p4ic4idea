@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.connection;
 
+import com.intellij.credentialStore.OneTimeString;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
@@ -43,9 +44,11 @@ import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
+import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
@@ -93,6 +96,8 @@ import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
 import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
+import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
+import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -124,6 +129,8 @@ import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
 import net.groboclown.p4.server.impl.values.P4WorkspaceSummaryImpl;
+import net.groboclown.p4.simpleswarm.P4ServerSwarmUtil;
+import net.groboclown.p4.simpleswarm.SwarmConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.Charset;
@@ -440,6 +447,39 @@ public class ConnectCommandRunner
                     query.getMaxResults());
             return new ListLabelsResult(config, labels.stream().map(P4LabelImpl::new).collect(Collectors.toList()));
         }));
+    }
+
+    @NotNull
+    @Override
+    public P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig serverConfig, SwarmConfigQuery query) {
+
+        Answer<OneTimeString> passwordAnswer;
+        if (serverConfig.usesStoredPassword()) {
+            passwordAnswer = Answer.resolve(null)
+                    .futureMap((x, sink) -> ApplicationPasswordRegistry.getInstance().get(serverConfig)
+                            .processed(sink::resolve)
+                            .rejected((t) -> {
+                                LOG.warn("Problem loading the password", t);
+                                sink.resolve(new OneTimeString(new char[0]));
+                            }));
+        } else {
+            passwordAnswer = Answer.resolve(new OneTimeString(new char[0]));
+        }
+
+        return new QueryAnswerImpl<>(passwordAnswer
+                .mapAsync((password) -> connectionManager.withConnection(serverConfig, (server) -> {
+                    SwarmConfig swarmConfig = new SwarmConfig()
+                            .withUsername(serverConfig.getUsername());
+                    if (serverConfig.usesStoredPassword()) {
+                        swarmConfig.withServerInfo(server, new String(password.toCharArray(true)));
+                    } else {
+                        // TODO how to get a ticket?!?
+                        LOG.warn("Do not have a ticket.  How do we find one?");
+                        swarmConfig.withServerInfo(server);
+                    }
+
+                    return new SwarmConfigResult(serverConfig, swarmConfig);
+                })));
     }
 
     @NotNull

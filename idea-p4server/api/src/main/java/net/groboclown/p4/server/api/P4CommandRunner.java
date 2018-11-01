@@ -449,7 +449,17 @@ public interface P4CommandRunner {
          */
         GET_JOB_SPEC,
 
+        /**
+         * @see net.groboclown.p4.server.api.commands.server.ListLabelsQuery
+         * @see net.groboclown.p4.server.api.commands.server.ListLabelsResult
+         */
         LIST_LABELS,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.server.SwarmConfigQuery
+         * @see net.groboclown.p4.server.api.commands.server.SwarmConfigResult
+         */
+        GET_SWARM_CONFIG,
     }
 
 

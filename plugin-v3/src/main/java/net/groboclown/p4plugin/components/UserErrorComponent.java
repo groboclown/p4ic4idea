@@ -18,6 +18,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.changes.ChangeList;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.exception.ClientError;
 import com.perforce.p4java.exception.ConnectionException;
@@ -42,6 +43,7 @@ import net.groboclown.p4.server.api.messagebus.P4WarningMessage;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
+import net.groboclown.p4.server.api.messagebus.SwarmErrorMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.UserMessage;
@@ -322,6 +324,31 @@ public class UserErrorComponent implements ProjectComponent {
             public void reconnectToClient(@NotNull ReconnectRequestMessage.ReconnectEvent e) {
                 simpleInfo("Requested to go online for " + e.getRef()  + ".",
                         "Perforce Server Connect");
+            }
+        });
+        SwarmErrorMessage.addListener(projClient, this, new SwarmErrorMessage.Listener() {
+            @Override
+            public void notOnServer(@NotNull SwarmErrorMessage.SwarmEvent e, @NotNull ChangeList ideChangeList) {
+                simpleError("Changelist not on a Perforce server: " + ideChangeList,
+                        "Not a Perforce Changelist");
+            }
+
+            @Override
+            public void notNumberedChangelist(@NotNull SwarmErrorMessage.SwarmEvent e) {
+                simpleError("Changelist must be a numbered changelist on the server: " +
+                                e.getChangelistId().orElse(null),
+                        "Changelist Not Numbered");
+            }
+
+            @Override
+            public void problemContactingServer(@NotNull SwarmErrorMessage.SwarmEvent swarmEvent,
+                    @NotNull Exception e) {
+                simpleError("Problem connecting to Swarm server referenced by " +
+                                swarmEvent.getChangelistId().map(c -> c.getClientServerRef().toString()).orElse(
+                                        "(unknown") +
+                                ": " + e.getLocalizedMessage(),
+                        "Swarm Server Connection Error"
+                        );
             }
         });
     }

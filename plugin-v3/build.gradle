@@ -209,7 +209,7 @@ task assembleUberJar(type: Zip) {
     dependsOn 'assembleDepends'
 
     extension 'jar'
-    classifier 'uber'
+    classifier 'plugin'
 
     includeEmptyDirs false
     duplicatesStrategy DuplicatesStrategy.FAIL
@@ -269,7 +269,7 @@ task finalizeZip {
         copy {
             from assembleUberJar.outputs.files
             into "$rootDir"
-            rename '.*', 'p4ic4idea-uber.jar'
+            rename '.*', 'p4ic4idea-plugin.jar'
         }
     }
 }

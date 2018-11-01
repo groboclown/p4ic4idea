@@ -110,9 +110,10 @@ class BasicResponse {
         return Charset.forName("UTF-8");
     }
 
-    SwarmServerResponseException getResponseException(String object, String action) {
-        return new SwarmServerResponseException("Swarm server failed during " + action + " of " + object + ": " +
-            (error == null ? reason : error));
+    SwarmServerResponseException getResponseException(String object, String action, int code) {
+        return new SwarmServerResponseException(
+                "Swarm server failed during " + action + " of " + object + ": " + (error == null ? reason : error),
+                object, action, code);
     }
 
     private static String getBodyError(SwarmLogger logger, int code, String body) {

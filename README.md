@@ -38,7 +38,7 @@ in the `135-compat` branch.
         1. Select the downloaded file from the file selection dialog.
     * Build it yourself:
         1. Follow [the building guide](BUILDING.md) for details on setting up your
-           environment and building the `p4ic4idea-uber.jar` file.
+           environment and building the `p4ic4idea-plugin.jar` file.
         1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
         1. Navigate to the Plugins panel.
         1. Click the ![gear](plugin/docs/img/settings-gear-icon-1.png) icon, and select the

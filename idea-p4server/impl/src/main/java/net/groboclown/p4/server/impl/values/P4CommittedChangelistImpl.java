@@ -80,7 +80,9 @@ public class P4CommittedChangelistImpl implements P4CommittedChangelist {
 
     @Override
     public Collection<Change> getChangesWithMovedTrees() {
-        return CommittedChangeListImpl.getChangesWithMovedTreesImpl(this);
+        // Not supported in 17.3 or later.
+        // return CommittedChangeListImpl.getChangesWithMovedTreesImpl(this);
+        return getChanges();
     }
 
     @Override

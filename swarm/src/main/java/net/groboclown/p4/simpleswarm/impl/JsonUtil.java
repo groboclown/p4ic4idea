@@ -70,7 +70,7 @@ public class JsonUtil {
         if (vay == null) {
             return null;
         }
-        List<String> ret = new ArrayList<String>(vay.size());
+        List<String> ret = new ArrayList<>(vay.size());
         for (int i = 0; i < vay.size(); i++) {
             JsonElement vi = vay.get(i);
             if (vi.isJsonNull()) {
@@ -150,7 +150,7 @@ public class JsonUtil {
 
     public static Map<String, JsonElement> getNullableMapKey(JsonObject obj, String key)
             throws ResponseFormatException {
-        Map<String, JsonElement> ret = new HashMap<String, JsonElement>();
+        Map<String, JsonElement> ret = new HashMap<>();
         JsonElement el = getNullableKey(obj, key);
         if (el == null) {
             return ret;

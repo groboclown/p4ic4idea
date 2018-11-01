@@ -57,7 +57,7 @@ public class ReviewActions {
         }
         BasicResponse resp = requester.postForm(config, "reviews/", form);
         if (resp.getStatusCode() != 200) {
-            throw resp.getResponseException("review", "create");
+            throw resp.getResponseException("review", "create", resp.getStatusCode());
         }
         return new Review(resp.getBodyAsJson());
     }
@@ -68,7 +68,7 @@ public class ReviewActions {
         form.put("change", changelistId);
         BasicResponse resp = requester.postForm(config, "reviews/" + reviewId + "/changes", form);
         if (resp.getStatusCode() != 200) {
-            throw resp.getResponseException("review", "create");
+            throw resp.getResponseException("review", "create", resp.getStatusCode());
         }
         return new Review(resp.getBodyAsJson());
     }
@@ -85,7 +85,7 @@ public class ReviewActions {
         while (true) {
             BasicResponse resp = requester.get(config, "review", query);
             if (resp.getStatusCode() != 200) {
-                throw resp.getResponseException("review", "get");
+                throw resp.getResponseException("review", "get", resp.getStatusCode());
             }
             JsonObject body = resp.getBodyAsJson();
 

@@ -17,21 +17,24 @@ package net.groboclown.p4.server.api.commands.server;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
-public class ServerInfoQuery implements P4CommandRunner.ServerNameQuery<ServerInfoResult> {
-    public static final ServerInfoQuery INSTANCE = new ServerInfoQuery();
+import static net.groboclown.p4.server.api.P4CommandRunner.ServerQueryCmd.GET_SWARM_CONFIG;
 
-    private ServerInfoQuery() {
+public class SwarmConfigQuery implements P4CommandRunner.ServerQuery<SwarmConfigResult> {
+    public static final SwarmConfigQuery INSTANCE = new SwarmConfigQuery();
+
+    private SwarmConfigQuery() {
         // do nothing
     }
 
+
     @NotNull
     @Override
-    public Class<? extends ServerInfoResult> getResultType() {
-        return ServerInfoResult.class;
+    public Class<? extends SwarmConfigResult> getResultType() {
+        return SwarmConfigResult.class;
     }
 
     @Override
-    public P4CommandRunner.ServerNameQueryCmd getCmd() {
-        return P4CommandRunner.ServerNameQueryCmd.SERVER_INFO;
+    public P4CommandRunner.ServerQueryCmd getCmd() {
+        return GET_SWARM_CONFIG;
     }
 }

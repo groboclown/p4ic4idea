@@ -141,26 +141,16 @@
             <!-- FIXME re-add behavior
             <action id="P4.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"
                     description="Preserve work to the Perforce server without committing them"/>
+            -->
 
             <action id="P4.CreateSwarmReview" class="net.groboclown.p4plugin.actions.CreateSwarmReviewAction"
-                    text=""
+                    text="Create New Swarm Review"
                     description="Send a review request from the selected changelist"/>
-            -->
 
             <!-- Add the revert unchanged to the changelist menu -->
             <add-to-group group-id="ChangesViewPopupMenu"
                           anchor="after" relative-to-action="ChangesView.Edit"/>
         </group>
-
-        <!-- TODO do we need this?
-        <group id="P4RollbackHistory">
-            <action id="P4.RollbackHistory" class="net.groboclown.idea.p4ic.actions.P4RollbackHistoryAction"
-                text="Revert to version..." icon="AllIcons.Actions.Rollback"/>
-
-            <add-to-group group-id="CommittedChangesToolbar"/>
-            <add-to-group group-id="VcsHistoryActionsGroup"/>
-        </group>
-        -->
 
         <!-- Need to add to the welcome screen.
         To add ourself to the welcome screen ("checkout from project"), need to add an extension
@@ -281,6 +271,11 @@
         <component>
             <interface-class>net.groboclown.p4plugin.components.CacheViewRefreshComponent</interface-class>
             <implementation-class>net.groboclown.p4plugin.components.CacheViewRefreshComponent</implementation-class>
+        </component>
+
+        <component>
+            <interface-class>net.groboclown.p4plugin.components.SwarmConnectionComponent</interface-class>
+            <implementation-class>net.groboclown.p4plugin.components.SwarmConnectionComponent</implementation-class>
         </component>
 
         <!-- FIXME re-add this

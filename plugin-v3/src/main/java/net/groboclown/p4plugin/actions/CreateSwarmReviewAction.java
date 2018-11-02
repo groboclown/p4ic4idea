@@ -92,7 +92,20 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
             presentation.setVisible(false);
             return;
         }
-        presentation.setEnabled(true);
+        // Restrict to just 1 changelist to create a review.
+        if (changeLists.size() != 1) {
+            presentation.setEnabled(false);
+            presentation.setVisible(true);
+            return;
+        }
+        boolean hasChanges = false;
+        for (ChangeList changeList : changeLists) {
+            if (!changeList.getChanges().isEmpty()) {
+                hasChanges = true;
+                break;
+            }
+        }
+        presentation.setEnabled(hasChanges);
         presentation.setVisible(true);
     }
 

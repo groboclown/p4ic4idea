@@ -567,7 +567,7 @@ public class ConnectCommandRunner
             LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
             addFile = true;
         } else if (LOG.isDebugEnabled() && !status.hasOpen()) {
-            LOG.debug("Unexpected status message for " + status + "; assuming 'edit'");
+            LOG.debug("Status message " + status + " assumed to mean 'edit'");
             for (IExtendedFileSpec spec : status.getSkipped()) {
                 LOG.debug(":: " + spec + " - " + spec.getAction());
             }
@@ -580,12 +580,17 @@ public class ConnectCommandRunner
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Opening " + action.getFile() + " for add as " + srcFiles);
             }
-            ret = cmd.addFiles(client, srcFiles, action.getFileType(), action.getChangelistId(), action.getCharset());
+            // For adding files, let Perforce server decide which file type is best, depending on the
+            // file type map.  The user can change this outside the IDE if required.
+            // See #179
+            ret = cmd.addFiles(client, srcFiles, null, action.getChangelistId(), action.getCharset());
         } else {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Opening " + action.getFile() + " for edit as " + srcFiles);
             }
-            ret = cmd.editFiles(client, srcFiles, action.getFileType(), action.getChangelistId(), action.getCharset());
+            // For editing files, ignore the file type, and keep it as Perforce knows it.
+            // See #179
+            ret = cmd.editFiles(client, srcFiles, null, action.getChangelistId(), action.getCharset());
         }
 
         MessageStatusUtil.throwIfMessageOrEmpty(addFile ? "add" : "edit", ret);

@@ -77,6 +77,7 @@ public class ChooseLabelDialog
 
         buttonCancel.addActionListener(e -> onCancel());
 
+        // TODO replace with FilterComponent
         mySearchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {

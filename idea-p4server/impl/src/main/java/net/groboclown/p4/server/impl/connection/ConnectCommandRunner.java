@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.impl.connection;
 
-import com.intellij.credentialStore.OneTimeString;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.FilePath;
@@ -27,6 +26,7 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.ILabelSummary;
+import com.perforce.p4java.core.IUserSummary;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
@@ -44,11 +44,10 @@ import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.GetClientsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerMessage;
-import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.cache.messagebus.ClientOpenCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.JobCacheMessage;
 import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
@@ -98,6 +97,8 @@ import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
 import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
+import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
+import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -106,10 +107,12 @@ import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
+import net.groboclown.p4.server.api.values.P4User;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.client.OpenedFilesChangesFactory;
 import net.groboclown.p4.server.impl.commands.ActionAnswerImpl;
+import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.commands.QueryAnswerImpl;
 import net.groboclown.p4.server.impl.connection.impl.FileAnnotationParser;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
@@ -128,19 +131,26 @@ import net.groboclown.p4.server.impl.values.P4LabelImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
+import net.groboclown.p4.server.impl.values.P4UserImpl;
 import net.groboclown.p4.server.impl.values.P4WorkspaceSummaryImpl;
-import net.groboclown.p4.simpleswarm.P4ServerSwarmUtil;
+import net.groboclown.p4.simpleswarm.SwarmClient;
+import net.groboclown.p4.simpleswarm.SwarmClientFactory;
 import net.groboclown.p4.simpleswarm.SwarmConfig;
+import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
+import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -325,13 +335,12 @@ public class ConnectCommandRunner
             // TODO use cmd
             GetChangelistsOptions options = new GetChangelistsOptions();
             options.setMaxMostRecent(query.getMaxCount());
-            if (query.getClientNameFilter() != null) {
-                options.setClientName(query.getClientNameFilter());
-            }
-            if (query.getUsernameFilter() != null) {
-                options.setUserName(query.getUsernameFilter());
-            }
+
+            // Null values are fine on the filters.
+            options.setClientName(query.getClientNameFilter());
+            options.setUserName(query.getUsernameFilter());
             options.setLongDesc(true);
+
             List<IFileSpec> specs = query.getLocation().getFileSpecs();
             if (!specs.isEmpty() && query.getSpecFilter() != null) {
                 // FIXME DOUBLE CHECK THAT THE SPECS ARE ALWAYS DEPOT PATHS
@@ -451,35 +460,58 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
+    public P4CommandRunner.QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+            List<IUserSummary> users = cmd.findUsers(server, query.getMaxResults());
+            return new ListUsersResult(config, users.stream()
+                .map(P4UserImpl::new)
+                .collect(Collectors.toList()));
+        }));
+    }
+
+    @NotNull
+    @Override
     public P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig serverConfig, SwarmConfigQuery query) {
-
-        Answer<OneTimeString> passwordAnswer;
-        if (serverConfig.usesStoredPassword()) {
-            passwordAnswer = Answer.resolve(null)
-                    .futureMap((x, sink) -> ApplicationPasswordRegistry.getInstance().get(serverConfig)
-                            .processed(sink::resolve)
-                            .rejected((t) -> {
-                                LOG.warn("Problem loading the password", t);
-                                sink.resolve(new OneTimeString(new char[0]));
-                            }));
-        } else {
-            passwordAnswer = Answer.resolve(new OneTimeString(new char[0]));
-        }
-
-        return new QueryAnswerImpl<>(passwordAnswer
-                .mapAsync((password) -> connectionManager.withConnection(serverConfig, (server) -> {
-                    SwarmConfig swarmConfig = new SwarmConfig()
-                            .withUsername(serverConfig.getUsername());
-                    if (serverConfig.usesStoredPassword()) {
-                        swarmConfig.withServerInfo(server, new String(password.toCharArray(true)));
-                    } else {
-                        // TODO how to get a ticket?!?
-                        LOG.warn("Do not have a ticket.  How do we find one?");
-                        swarmConfig.withServerInfo(server);
-                    }
-
-                    return new SwarmConfigResult(serverConfig, swarmConfig);
-                })));
+        // TODO this conflates password fetching and the swarm config fetch.
+        // May instead want it to be a function on the query object.
+        return new QueryAnswerImpl<>(
+                query.getAuthorization(serverConfig)
+                .mapAsync((auth) -> auth.on(
+                        (password) ->
+                            connectionManager.withConnection(serverConfig, (server) ->
+                                new SwarmConfig()
+                                        .withUsername(serverConfig.getUsername())
+                                        .withServerInfo(server, new String(password.toCharArray(true)))
+                                        .withLogger(query.getLogger())
+                            )
+                            .futureMap((BiConsumer<SwarmConfig, AnswerSink<SwarmClient>>) (swarmConfig, sink) -> {
+                                try {
+                                    sink.resolve(SwarmClientFactory.createSwarmClient(swarmConfig));
+                                } catch (UnauthorizedAccessException e) {
+                                    auth.onAuthenticationFailure();
+                                    sink.reject(AnswerUtil.createSwarmError(e));
+                                } catch (IOException | InvalidSwarmServerException e) {
+                                    sink.reject(AnswerUtil.createSwarmError(e));
+                                }
+                            }),
+                        (ticket) ->
+                            connectionManager.withConnection(serverConfig, (server) ->
+                                    new SwarmConfig()
+                                            .withUsername(serverConfig.getUsername())
+                                            .withServerInfo(server)
+                                            .withTicket(ticket)
+                                            .withLogger(query.getLogger())
+                            )
+                            .futureMap((swarmConfig, sink) -> {
+                                try {
+                                    sink.resolve(SwarmClientFactory.createSwarmClient(swarmConfig));
+                                } catch (IOException | InvalidSwarmServerException e) {
+                                    sink.reject(AnswerUtil.createSwarmError(e));
+                                }
+                            })
+                ))
+                .map(swarmClient -> new SwarmConfigResult(serverConfig, swarmClient))
+        );
     }
 
     @NotNull

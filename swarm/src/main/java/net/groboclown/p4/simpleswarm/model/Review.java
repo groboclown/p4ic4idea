@@ -149,4 +149,76 @@ public class Review {
     public int getId() {
         return id;
     }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public int[] getChangelists() {
+        return changelists;
+    }
+
+    public int[] getCommittedChangelists() {
+        return committedChangelists;
+    }
+
+    public void setCommittedChangelists(int[] committedChangelists) {
+        this.committedChangelists = committedChangelists;
+    }
+
+    public String[] getCommitStatus() {
+        return commitStatus;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public JsonArray getDeployDetails() {
+        return deployDetails;
+    }
+
+    public String getDeployStatus() {
+        return deployStatus;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Map<String, JsonElement> getParticipants() {
+        return participants;
+    }
+
+    public boolean isPending() {
+        return pending;
+    }
+
+    public JsonArray getProjects() {
+        return projects;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getStateLabel() {
+        return stateLabel;
+    }
+
+    public JsonArray getTestDetails() {
+        return testDetails;
+    }
+
+    public String getTestStatus() {
+        return testStatus;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Date getUpdated() {
+        return updated;
+    }
 }

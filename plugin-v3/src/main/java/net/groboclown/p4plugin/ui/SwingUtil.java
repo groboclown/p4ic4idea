@@ -14,12 +14,17 @@
 
 package net.groboclown.p4plugin.ui;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.IconLoader;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class SwingUtil {
+    private static final Logger LOG = Logger.getInstance(SwingUtil.class);
+
+
     public static JLabel createLabelFor(String text, JComponent editComponent) {
         JLabel ret = new JLabel();
         loadLabelText(ret, text);
@@ -95,13 +100,33 @@ public class SwingUtil {
     /**
      * Set a button to have only the icon.
      *
-     * @param button
-     * @param icon
+     * @param button button to setup as an icon-only button
+     * @param icon icon to assign to the button.
      */
     public static JButton iconOnlyButton(@NotNull JButton button, @NotNull Icon icon, @NotNull ButtonType type) {
+        button.setText("");
         button.setIcon(icon);
+        button.setDisabledIcon(IconLoader.getDisabledIcon(icon));
         button.setPreferredSize(new Dimension(icon.getIconWidth() + type.borderSize,
                 icon.getIconHeight() + type.borderSize));
         return button;
+    }
+
+
+    public static void centerDialog(@NotNull JDialog dialog) {
+        dialog.pack();
+        final Dimension bounds = dialog.getSize();
+        final Rectangle parentBounds = dialog.getOwner().getBounds();
+        if (parentBounds.width > 0 && parentBounds.height > 0) {
+            dialog.setLocation(
+                    Math.max(0, parentBounds.x + (parentBounds.width - bounds.width) / 2),
+                    Math.max(0, parentBounds.y + (parentBounds.height - bounds.height) / 2));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Set dialog centered on (" + parentBounds.x + ", " + parentBounds.y + " " +
+                        parentBounds.width + "x" + parentBounds.height + ") -> (" +
+                        dialog.getLocation().x + ", " + dialog.getLocation().y + " " +
+                        bounds.width + "x" + bounds.height + ")");
+            }
+        }
     }
 }

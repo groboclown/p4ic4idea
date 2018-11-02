@@ -64,6 +64,12 @@ public class SimpleClient implements SwarmClient {
     }
 
     @Override
+    public Review getReview(int reviewId)
+            throws IOException, SwarmServerResponseException {
+        return review.getReview(reviewId);
+    }
+
+    @Override
     public String toString() {
         return "Swarm Client for " + review.getConfig().getUri();
     }

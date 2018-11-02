@@ -109,6 +109,7 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
                         for (P4ChangelistId p4Changelist : p4Changelists) {
                             next = next.mapAsync(x ->
                                     SwarmReview.createOrEditSwarmReview(project, registry, p4Changelist));
+                            // Failure reporting is handled by the SwarmReview class.
                         }
                         // Skip the notOnServer message.
                         continue;

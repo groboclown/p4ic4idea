@@ -12,32 +12,35 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.api.commands.user;
+package net.groboclown.p4.server.impl.values;
 
-import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import com.perforce.p4java.core.IUserSummary;
 import net.groboclown.p4.server.api.values.P4User;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+public class P4UserImpl implements P4User {
+    private final String username;
+    private final String email;
+    private final String fullName;
 
-public class ListUsersResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
-    private final List<P4User> users;
-
-    public ListUsersResult(@NotNull ServerConfig config, @NotNull List<P4User> users) {
-        this.config = config;
-        this.users = users;
+    public P4UserImpl(@NotNull IUserSummary summary) {
+        this.username = summary.getLoginName();
+        this.email = summary.getEmail();
+        this.fullName = summary.getFullName();
     }
 
-    @NotNull
     @Override
-    public ServerConfig getServerConfig() {
-        return config;
+    public String getUsername() {
+        return username;
     }
 
-    @NotNull
-    public List<P4User> getUsers() {
-        return users;
+    @Override
+    public String getEmail() {
+        return email;
+    }
+
+    @Override
+    public String getFullName() {
+        return fullName;
     }
 }

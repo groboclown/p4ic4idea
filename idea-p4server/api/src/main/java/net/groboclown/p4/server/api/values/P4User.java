@@ -12,7 +12,16 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.ui.swarm;
+package net.groboclown.p4.server.api.values;
 
-public class CreateSwarmReviewPanel {
+public interface P4User {
+    /**
+     *
+     * @return username, the user ID internally used by Perforce for everything related to a user.
+     */
+    String getUsername();
+
+    String getEmail();
+
+    String getFullName();
 }

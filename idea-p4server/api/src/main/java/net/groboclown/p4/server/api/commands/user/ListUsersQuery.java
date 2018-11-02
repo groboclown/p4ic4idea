@@ -16,8 +16,15 @@ package net.groboclown.p4.server.api.commands.user;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ListUsersQuery implements P4CommandRunner.ServerQuery<ListUsersResult> {
+    private final int maxResults;
+
+    public ListUsersQuery(int maxResults) {
+        this.maxResults = maxResults;
+    }
+
     @NotNull
     @Override
     public Class<? extends ListUsersResult> getResultType() {
@@ -27,5 +34,9 @@ public class ListUsersQuery implements P4CommandRunner.ServerQuery<ListUsersResu
     @Override
     public P4CommandRunner.ServerQueryCmd getCmd() {
         return P4CommandRunner.ServerQueryCmd.LIST_USERS;
+    }
+
+    public int getMaxResults() {
+        return maxResults;
     }
 }

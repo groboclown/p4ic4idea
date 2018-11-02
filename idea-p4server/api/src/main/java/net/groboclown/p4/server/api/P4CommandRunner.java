@@ -85,7 +85,10 @@ public interface P4CommandRunner {
          * than a connection timeout, and is usually related to other
          * commands blocking this one from running.  Or, it could be
          * the user or other system cancelling the request. */
-        TIMEOUT
+        TIMEOUT,
+
+        /** Swarm server issue */
+        SWARM
     }
 
     /***

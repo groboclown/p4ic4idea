@@ -75,4 +75,21 @@ public class AnswerUtil {
     public static P4CommandRunner.ServerResultException createFor(CancellationException e) {
         return new P4CommandRunner.ServerResultException(new TimeoutResultError(e));
     }
+
+    public static P4CommandRunner.ServerResultException createSwarmError(final Exception e) {
+        return new P4CommandRunner.ServerResultException(new P4CommandRunner.ResultError() {
+            @NotNull
+            @Override
+            public P4CommandRunner.ErrorCategory getCategory() {
+                return P4CommandRunner.ErrorCategory.SWARM;
+            }
+
+            @Nls
+            @NotNull
+            @Override
+            public Optional<String> getMessage() {
+                return Optional.of(e.getLocalizedMessage() == null ? "General swarm problem" : e.getLocalizedMessage());
+            }
+        }, e);
+    }
 }

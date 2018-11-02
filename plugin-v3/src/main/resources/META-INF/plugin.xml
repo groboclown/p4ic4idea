@@ -144,7 +144,7 @@
             -->
 
             <action id="P4.CreateSwarmReview" class="net.groboclown.p4plugin.actions.CreateSwarmReviewAction"
-                    text="Create New Swarm Review"
+                    text="Create Or Edit Swarm Review"
                     description="Send a review request from the selected changelist"/>
 
             <!-- Add the revert unchanged to the changelist menu -->

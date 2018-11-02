@@ -19,6 +19,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
+import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import net.groboclown.p4.simpleswarm.model.Review;
 
 import java.io.IOException;
@@ -64,11 +65,23 @@ public class ReviewActions {
 
     public Review addChangeToReview(int reviewId, int changelistId)
             throws IOException, SwarmServerResponseException {
-        Map<String, Object> form = new HashMap<String, Object>();
+        Map<String, Object> form = new HashMap<>();
         form.put("change", changelistId);
         BasicResponse resp = requester.postForm(config, "reviews/" + reviewId + "/changes", form);
         if (resp.getStatusCode() != 200) {
             throw resp.getResponseException("review", "create", resp.getStatusCode());
+        }
+        return new Review(resp.getBodyAsJson());
+    }
+
+    public Review getReview(int reviewId)
+            throws IOException, SwarmServerResponseException {
+        BasicResponse resp = requester.get(config, "reviews/" + reviewId);
+        if (resp.getStatusCode() == 404) {
+            return null;
+        }
+        if (resp.getStatusCode() != 200) {
+            throw resp.getResponseException("review", "get", resp.getStatusCode());
         }
         return new Review(resp.getBodyAsJson());
     }

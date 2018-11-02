@@ -16,16 +16,17 @@ package net.groboclown.p4.server.api.commands.server;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.simpleswarm.SwarmClient;
 import net.groboclown.p4.simpleswarm.SwarmConfig;
 import org.jetbrains.annotations.NotNull;
 
 public class SwarmConfigResult implements P4CommandRunner.ServerResult {
     private final ServerConfig serverConfig;
-    private final SwarmConfig swarmConfig;
+    private final SwarmClient swarmClient;
 
-    public SwarmConfigResult(@NotNull ServerConfig serverConfig, @NotNull SwarmConfig swarmConfig) {
+    public SwarmConfigResult(@NotNull ServerConfig serverConfig, @NotNull SwarmClient swarmClient) {
         this.serverConfig = serverConfig;
-        this.swarmConfig = swarmConfig;
+        this.swarmClient = swarmClient;
     }
 
     @NotNull
@@ -35,7 +36,7 @@ public class SwarmConfigResult implements P4CommandRunner.ServerResult {
     }
 
     @NotNull
-    public SwarmConfig getSwarmConfig() {
-        return swarmConfig;
+    public SwarmClient getSwarmClient() {
+        return swarmClient;
     }
 }

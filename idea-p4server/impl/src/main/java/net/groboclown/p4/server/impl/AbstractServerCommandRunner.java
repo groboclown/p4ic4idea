@@ -40,6 +40,8 @@ import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
 import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
+import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
+import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -145,6 +147,9 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query);
+
+    @NotNull
+    public abstract P4CommandRunner.QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query);
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig config, SwarmConfigQuery query);

@@ -31,4 +31,7 @@ public interface SwarmClient {
 
     int[] getReviewIdsForChangelist(int changelistId)
             throws IOException, SwarmServerResponseException;
+
+    Review getReview(int reviewId)
+            throws IOException, SwarmServerResponseException;
 }

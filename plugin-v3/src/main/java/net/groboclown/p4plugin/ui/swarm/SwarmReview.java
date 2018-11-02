@@ -22,16 +22,16 @@ import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.SwarmErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.simpleswarm.SwarmClient;
-import net.groboclown.p4.simpleswarm.SwarmClientFactory;
-import net.groboclown.p4.simpleswarm.SwarmConfig;
-import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
+import net.groboclown.p4.simpleswarm.model.Review;
 import net.groboclown.p4plugin.components.SwarmConnectionComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 public class SwarmReview {
@@ -59,57 +59,75 @@ public class SwarmReview {
             return Answer.resolve(-2);
         }
         return Answer.resolve(0)
-        .futureMap((BiConsumer<Integer, AnswerSink<SwarmClient>>) (x, sink) -> SwarmConnectionComponent.getInstance(project).getSwarmClientFor(clientConfig)
-                .whenCompleted(c -> {
-                    SwarmConfig config = c.getSwarmConfig();
-                    try {
-                        SwarmClient client = SwarmClientFactory.createSwarmClient(config);
-                        sink.resolve(client);
-                    } catch (IOException | InvalidSwarmServerException | IllegalArgumentException e) {
-                        SwarmErrorMessage.send(project)
-                                .problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId), e);
-                        sink.resolve(null);
-                    }
-                })
+        .futureMap((BiConsumer<Integer, AnswerSink<SwarmClient>>) (x, sink) ->
+                SwarmConnectionComponent.getInstance(project).getSwarmClientFor(clientConfig)
+                .whenCompleted(result -> sink.resolve(result.getSwarmClient()))
                 .whenServerError(e -> {
                     LOG.info("Problem with swarm server", e);
-                    SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId), e);
-                    sink.resolve(null);
+                    sink.reject(e);
                 }))
-        .map(swarmClient -> {
-            if (swarmClient == null) {
-                return -1;
-            }
+        .futureMap((BiConsumer<SwarmClient, AnswerSink<Integer>>) (swarmClient, sink) -> {
             try {
                 int[] reviewIds = swarmClient.getReviewIdsForChangelist(changelistId.getChangelistId());
                 if (reviewIds == null || reviewIds.length <= 0) {
-                    return createSwarmReview(project, clientConfig, changelistId);
+                    createSwarmReview(project, clientConfig, changelistId)
+                            .whenCompleted(sink::resolve)
+                            .whenFailed(sink::reject);
                 } else {
-                    return updateSwarmReview(project, clientConfig, changelistId, reviewIds);
+                    List<Review> reviews = new ArrayList<>(reviewIds.length);
+                    for (int reviewId : reviewIds) {
+                        Review review = swarmClient.getReview(reviewId);
+                        if (review != null) {
+                            reviews.add(review);
+                        }
+                    }
+                    updateSwarmReview(project, clientConfig, changelistId, reviews)
+                            .whenCompleted(sink::resolve)
+                            .whenFailed(sink::reject);
                 }
             } catch (IOException | SwarmServerResponseException e) {
-                LOG.info("Problem with swarm server", e);
-                SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId), e);
-                return -1;
+                sink.reject(AnswerUtil.createSwarmError(e));
             }
+        })
+        .whenFailed(e -> {
+            LOG.info("Problem with swarm server", e);
+            SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId), e);
         });
         // Errors should be redirected to the event listener
     }
 
-    private static Integer createSwarmReview(Project project, ClientConfig clientConfig, P4ChangelistId changelistId) {
-        // FIXME implement
-        LOG.warn("implement create swarm review dialog: " + changelistId);
-        SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId),
-                new Exception("Not implemented yet"));
-        return null;
+    @NotNull
+    private static Answer<Integer> createSwarmReview(@NotNull final Project project,
+            @NotNull final ClientConfig clientConfig, @NotNull final P4ChangelistId changelistId) {
+        return Answer.background(sink -> {
+            CreateSwarmReviewDialog.show(project, clientConfig, changelistId,
+                    new CreateSwarmReviewDialog.OnCompleteListener() {
+                        @Override
+                        public void create(List<SwarmReviewPanel.Reviewer> reviewers, P4ChangelistId changelistId) {
+                            // FIXME implement
+                            LOG.warn("FIXME implement create swarm review for " + changelistId);
+                            SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId),
+                                    new Exception("Create swarm review: Not implemented yet"));
+                            sink.resolve(-1);
+                        }
+
+                        @Override
+                        public void cancel() {
+                            sink.resolve(-1);
+                        }
+                    });
+        });
     }
 
-    private static Integer updateSwarmReview(Project project, ClientConfig clientConfig, P4ChangelistId changelistId,
-            int[] reviewIds) {
+    @NotNull
+    private static Answer<Integer> updateSwarmReview(Project project, ClientConfig clientConfig, P4ChangelistId changelistId,
+            List<Review> reviews) {
+        // TODO map reviews to fetched changelists.
+
         // FIXME implement
-        LOG.warn("implement update swarm review dialog: " + changelistId + " -> " + Arrays.toString(reviewIds));
+        LOG.warn("implement update swarm review dialog: " + changelistId + " -> " + reviews);
         SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId),
                 new Exception("Not implemented yet"));
-        return null;
+        return Answer.resolve(-1);
     }
 }

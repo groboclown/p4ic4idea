@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.p4plugin.ui.swarm.SwarmReviewPanel">
+  <grid id="27dc6" binding="root" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="692" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <splitpane id="5c7ac">
+        <constraints border-constraint="Center"/>
+        <properties>
+          <orientation value="0"/>
+        </properties>
+        <border type="none"/>
+        <children>
+          <grid id="789b2" layout-manager="BorderLayout" hgap="0" vgap="0">
+            <constraints>
+              <splitpane position="left"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="4568d" class="javax.swing.JLabel">
+                <constraints border-constraint="North"/>
+                <properties>
+                  <labelFor value="cd4b0"/>
+                  <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="swarm-review.create.description"/>
+                </properties>
+              </component>
+              <component id="cd4b0" class="javax.swing.JTextArea" binding="reviewDescription">
+                <constraints border-constraint="Center"/>
+                <properties>
+                  <lineWrap value="true"/>
+                  <rows value="4"/>
+                  <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="swarm-review.create.description.tooltip"/>
+                  <wrapStyleWord value="true"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <splitpane id="61aaf">
+            <constraints>
+              <splitpane position="right"/>
+            </constraints>
+            <properties>
+              <orientation value="1"/>
+              <resizeWeight value="0.5"/>
+            </properties>
+            <border type="none"/>
+            <children>
+              <scrollpane id="2a8ad">
+                <constraints>
+                  <splitpane position="left"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="d326d" class="javax.swing.JTable" binding="fileSelectionTable" custom-create="true">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </scrollpane>
+              <grid id="b5e03" binding="userSelectionPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
+                <constraints>
+                  <splitpane position="right"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children/>
+              </grid>
+            </children>
+          </splitpane>
+        </children>
+      </splitpane>
+    </children>
+  </grid>
+</form>

@@ -14,17 +14,25 @@
 
 package net.groboclown.p4plugin.components;
 
+import com.intellij.credentialStore.OneTimeString;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.simpleswarm.SwarmLogger;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * A component to manage connections to the swarm server.  Eventually, this might cache connection settings.
@@ -45,12 +53,28 @@ public class SwarmConnectionComponent
     }
 
     @NotNull
-    public P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmClientFor(@NotNull ClientConfig clientConfig) {
-        return P4ServerComponent.query(project, clientConfig.getServerConfig(), SwarmConfigQuery.INSTANCE)
-                .mapQuery(r -> {
-                    r.getSwarmConfig().withLogger(SWARM_LOGGER);
-                    return r;
-                });
+    public P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmClientFor(@NotNull final ClientConfig clientConfig) {
+        SwarmConfigQuery query = new SwarmConfigQuery(
+                // TODO This is EXTREMELY experimental code.
+                // The user may need to use SSO to authenticate to get a ticket, or use an already established
+                // ticket on the server.  Just need some use cases to discover the real usage.
+                // Right now, this just uses passwords.
+                serverConfig -> Answer.resolve(
+                        new SwarmConfigQuery.AuthorizationOption(
+                                () -> Answer.resolve(null)
+                                        .futureMap((o, sink) ->
+                                                ApplicationPasswordRegistry.getInstance().getOrAskFor(null, serverConfig)
+                                                        .processed(sink::resolve)
+                                                        .rejected((t) -> {
+                                                            LOG.warn("Problem loading the password", t);
+                                                            sink.resolve(new OneTimeString(new char[0]));
+                                                        })),
+                                () -> ApplicationPasswordRegistry.getInstance().remove(serverConfig)
+                        )
+                ),
+                SWARM_LOGGER
+        );
+        return P4ServerComponent.query(project, clientConfig.getServerConfig(), query);
     }
 
     @NotNull
@@ -85,7 +109,6 @@ public class SwarmConnectionComponent
     }
 
     private static class SwarmLoggerImpl implements SwarmLogger {
-
         @Override
         public boolean isDebugEnabled() {
             return LOG.isDebugEnabled();

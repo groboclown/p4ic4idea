@@ -25,6 +25,7 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.ILabelSummary;
+import com.perforce.p4java.core.IUserSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileStatAncilliaryOptions;
 import com.perforce.p4java.core.file.FileStatOutputOptions;
@@ -50,6 +51,7 @@ import com.perforce.p4java.option.server.GetFileContentsOptions;
 import com.perforce.p4java.option.server.GetJobsOptions;
 import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
+import com.perforce.p4java.option.server.GetUsersOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
@@ -498,5 +500,12 @@ public class P4CommandUtil {
     public List<IFileSpec> getSpecLocations(IClient client, List<IFileSpec> specs)
             throws ConnectionException, AccessException {
         return client.where(specs);
+    }
+
+    public List<IUserSummary> findUsers(IOptionsServer server, int maxResults)
+            throws P4JavaException {
+        GetUsersOptions options = new GetUsersOptions();
+        options.setMaxUsers(maxResults);
+        return server.getUsers(null, options);
     }
 }

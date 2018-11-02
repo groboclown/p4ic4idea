@@ -82,6 +82,6 @@ public final class ClientServerRef {
 
     @Override
     public String toString() {
-        return clientName + ":" + serverName.getDisplayName();
+        return clientName + "@" + serverName.getDisplayName();
     }
 }

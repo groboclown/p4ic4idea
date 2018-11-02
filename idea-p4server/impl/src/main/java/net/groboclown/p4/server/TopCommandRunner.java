@@ -535,9 +535,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query) {
-        // FIXME implement
-        LOG.warn("FIXME implement listUsers");
-        return null;
+        return onlineQuery(config,
+                () -> server.listUsers(config, query),
+                () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
     }
 
     @NotNull

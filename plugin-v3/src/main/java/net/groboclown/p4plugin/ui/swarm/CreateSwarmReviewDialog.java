@@ -15,8 +15,9 @@
 package net.groboclown.p4plugin.ui.swarm;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.changes.ChangeList;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.ui.SwingUtil;
 import org.jetbrains.annotations.NotNull;
@@ -27,15 +28,15 @@ import java.util.List;
 
 public class CreateSwarmReviewDialog extends JDialog {
     public interface OnCompleteListener {
-        void create(List<SwarmReviewPanel.Reviewer> reviewers, P4ChangelistId changelistId);
+        void create(String description, List<SwarmReviewPanel.Reviewer> reviewers, List<FilePath> files);
         void cancel();
     }
 
     public static void show(@NotNull Project project,
             @NotNull final ClientConfig clientConfig,
-            @NotNull final P4ChangelistId changelistId,
+            @NotNull final ChangeList changeList,
             @NotNull final OnCompleteListener onCompleteListener) {
-        CreateSwarmReviewDialog dialog = new CreateSwarmReviewDialog(project, clientConfig, changelistId,
+        CreateSwarmReviewDialog dialog = new CreateSwarmReviewDialog(project, clientConfig, changeList,
                 onCompleteListener);
         SwingUtil.centerDialog(dialog);
         dialog.setVisible(true);
@@ -43,19 +44,23 @@ public class CreateSwarmReviewDialog extends JDialog {
 
 
     private CreateSwarmReviewDialog(final Project project, ClientConfig clientConfig,
-            final P4ChangelistId changelistId,
+            final ChangeList changeList,
             final OnCompleteListener onCompleteListener) {
+        JButton buttonOK = new JButton();
+
         JPanel contentPane = new JPanel(new BorderLayout());
-        SwarmReviewPanel reviewPanel = new SwarmReviewPanel(project, clientConfig, changelistId);
+        SwarmReviewPanel reviewPanel = new SwarmReviewPanel(project, clientConfig,
+                changeList, buttonOK::setEnabled);
         contentPane.add(reviewPanel.getRoot(), BorderLayout.CENTER);
+
         JPanel buttonPane = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         contentPane.add(buttonPane, BorderLayout.SOUTH);
-        JButton buttonOK = new JButton();
         SwingUtil.loadButtonText(buttonOK, P4Bundle.getString("button.ok"));
         buttonPane.add(buttonOK);
         buttonOK.addActionListener((e) -> {
-            onCompleteListener.create(reviewPanel.getReviewers(), changelistId);
+            // Make sure we remove the dialog first.
             dispose();
+            onCompleteListener.create(reviewPanel.getDescription(), reviewPanel.getReviewers(), reviewPanel.getFiles());
         });
         JButton buttonCancel = new JButton();
         SwingUtil.loadButtonText(buttonCancel, P4Bundle.getString("button.cancel"));

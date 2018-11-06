@@ -18,19 +18,20 @@ import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.SwarmLogger;
 import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import org.junit.jupiter.api.Test;
 
-public class BasicRequestTest {
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+
+class BasicRequestTest {
 
     @Test
-    public void get_path_401()
+    void get_path_401()
             throws IOException {
         MockHttpRequester mock = new MockHttpRequester();
         mock.withCall()
@@ -49,7 +50,7 @@ public class BasicRequestTest {
     }
 
     @Test
-    public void postJson() {
+    void postJson() {
     }
 
     @Test
@@ -57,19 +58,19 @@ public class BasicRequestTest {
     }
 
     @Test
-    public void patch() {
+    void patch() {
     }
 
     @Test
-    public void toQuery() {
+    void toQuery() {
     }
 
     @Test
-    public void toEncodedValues() {
+    void toEncodedValues() {
     }
 
     @Test
-    public void toUrl() {
+    void toUrl() {
     }
 
     private static SwarmConfig createConfig() {

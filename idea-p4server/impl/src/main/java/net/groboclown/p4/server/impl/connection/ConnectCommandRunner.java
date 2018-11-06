@@ -93,6 +93,8 @@ import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
+import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
+import net.groboclown.p4.server.api.commands.file.ShelveFilesResult;
 import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
 import net.groboclown.p4.server.api.commands.server.ListLabelsResult;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
@@ -194,6 +196,12 @@ public class ConnectCommandRunner
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
                     ((MoveFilesToChangelistAction) action).getCommonDir(),
                     (client) -> moveFilesToChangelist(client, config, (MoveFilesToChangelistAction) action))));
+
+        register(P4CommandRunner.ClientActionCmd.SHELVE_FILES,
+            (ClientActionRunner<ShelveFilesResult>) (config, action) ->
+                new ActionAnswerImpl<>(connectionManager.withConnection(config,
+                    ((ShelveFilesAction) action).getCommonDir(),
+                    (client) -> shelveFiles(client, config, (ShelveFilesAction) action))));
 
         register(P4CommandRunner.ClientActionCmd.ADD_JOB_TO_CHANGELIST,
             (ClientActionRunner<AddJobToChangelistResult>) (config, action) ->
@@ -701,6 +709,23 @@ public class ConnectCommandRunner
             }
         }
         return new MoveFilesToChangelistResult(config, action.getChangelistId(), info, files);
+    }
+
+    private ShelveFilesResult shelveFiles(IClient client, ClientConfig config, ShelveFilesAction action)
+            throws P4JavaException {
+        if (action.getFiles().isEmpty()) {
+            throw new IllegalArgumentException("must provide at least one file to shelve");
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Shelving files for " + action.getChangelistId() + " / " +
+                    action.getFiles());
+        }
+
+        List<IFileSpec> specs = FileSpecBuildUtil.forFilePaths(action.getFiles());
+        List<IFileSpec> res = cmd.shelveFiles(client, specs, action.getChangelistId().getChangelistId());
+        MessageStatusUtil.throwIfError(res);
+        LOG.info("Server returned " + res);
+        return new ShelveFilesResult(config, action.getChangelistId(), action.getFiles());
     }
 
     private AddJobToChangelistResult addJobToChangelist(IClient client, ClientConfig config,

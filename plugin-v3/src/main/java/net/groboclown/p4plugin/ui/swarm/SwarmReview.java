@@ -14,22 +14,34 @@
 
 package net.groboclown.p4plugin.ui.swarm;
 
+import com.intellij.ide.browsers.BrowserLauncher;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.changes.ChangeList;
+import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.AnswerSink;
+import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
+import net.groboclown.p4.server.api.commands.file.ShelveFilesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.SwarmErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.commands.AnswerUtil;
+import net.groboclown.p4.server.impl.commands.QueryAnswerImpl;
 import net.groboclown.p4.simpleswarm.SwarmClient;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
 import net.groboclown.p4.simpleswarm.model.Review;
+import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.SwarmConnectionComponent;
+import net.groboclown.p4plugin.messages.UserMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -40,13 +52,15 @@ public class SwarmReview {
 
     /**
      *
-     * @param project
-     * @param registry
-     * @param changelistId
+     * @param project project
+     * @param registry config registry
+     * @param changelistId changelist to turn into a review
      * @return the review ID, or < 0 if the review wasn't edited or created.
      */
     public static Answer<Integer> createOrEditSwarmReview(@NotNull Project project,
-            @NotNull ProjectConfigRegistry registry, @NotNull P4ChangelistId changelistId) {
+            @NotNull ProjectConfigRegistry registry,
+            @NotNull ChangeList ideChangeList,
+            @NotNull P4ChangelistId changelistId) {
         if (changelistId.getState() != P4ChangelistId.State.NUMBERED) {
             SwarmErrorMessage.send(project).notNumberedChangelist(new SwarmErrorMessage.SwarmEvent(changelistId));
             return Answer.resolve(-1);
@@ -70,7 +84,7 @@ public class SwarmReview {
             try {
                 int[] reviewIds = swarmClient.getReviewIdsForChangelist(changelistId.getChangelistId());
                 if (reviewIds == null || reviewIds.length <= 0) {
-                    createSwarmReview(project, clientConfig, changelistId)
+                    createSwarmReview(project, clientConfig, swarmClient, ideChangeList, changelistId)
                             .whenCompleted(sink::resolve)
                             .whenFailed(sink::reject);
                 } else {
@@ -81,7 +95,7 @@ public class SwarmReview {
                             reviews.add(review);
                         }
                     }
-                    updateSwarmReview(project, clientConfig, changelistId, reviews)
+                    updateSwarmReview(project, clientConfig, changelistId, swarmClient, reviews)
                             .whenCompleted(sink::resolve)
                             .whenFailed(sink::reject);
                 }
@@ -98,30 +112,33 @@ public class SwarmReview {
 
     @NotNull
     private static Answer<Integer> createSwarmReview(@NotNull final Project project,
-            @NotNull final ClientConfig clientConfig, @NotNull final P4ChangelistId changelistId) {
-        return Answer.background(sink -> {
-            CreateSwarmReviewDialog.show(project, clientConfig, changelistId,
+            @NotNull final ClientConfig clientConfig,
+            @NotNull final SwarmClient swarmClient, @NotNull final ChangeList ideChangelist,
+            @NotNull final P4ChangelistId changelistId) {
+        return Answer.background(sink ->
+            CreateSwarmReviewDialog.show(project, clientConfig, ideChangelist,
                     new CreateSwarmReviewDialog.OnCompleteListener() {
                         @Override
-                        public void create(List<SwarmReviewPanel.Reviewer> reviewers, P4ChangelistId changelistId) {
-                            // FIXME implement
-                            LOG.warn("FIXME implement create swarm review for " + changelistId);
-                            SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId),
-                                    new Exception("Create swarm review: Not implemented yet"));
-                            sink.resolve(-1);
+                        public void create(String description, List<SwarmReviewPanel.Reviewer> reviewers,
+                                List<FilePath> files) {
+                            shelveFiles(project, clientConfig, changelistId, files)
+                                    .mapQueryAsync(r -> sendCreateReview(project, swarmClient,
+                                            description, changelistId, reviewers))
+                                    .whenCompleted(sink::resolve)
+                                    .whenServerError(e -> sink.resolve(-1));
                         }
 
                         @Override
                         public void cancel() {
                             sink.resolve(-1);
                         }
-                    });
-        });
+                    })
+        );
     }
 
     @NotNull
-    private static Answer<Integer> updateSwarmReview(Project project, ClientConfig clientConfig, P4ChangelistId changelistId,
-            List<Review> reviews) {
+    private static Answer<Integer> updateSwarmReview(Project project, ClientConfig clientConfig,
+            P4ChangelistId changelistId, SwarmClient swarmClient, List<Review> reviews) {
         // TODO map reviews to fetched changelists.
 
         // FIXME implement
@@ -129,5 +146,59 @@ public class SwarmReview {
         SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId),
                 new Exception("Not implemented yet"));
         return Answer.resolve(-1);
+    }
+
+    private static P4CommandRunner.ActionAnswer<ShelveFilesResult> shelveFiles(Project project,
+            ClientConfig clientConfig, P4ChangelistId changelistId, List<FilePath> files) {
+        return P4ServerComponent.perform(project, clientConfig, new ShelveFilesAction(changelistId, files))
+                .whenServerError(e -> {
+                    // Error messages are handled by the user error section
+                    SwarmErrorMessage.send(project).couldNotShelveFiles(new SwarmErrorMessage.SwarmEvent(changelistId),
+                            P4Bundle.message("swarm-client.shelve.failed", e.getLocalizedMessage()));
+                })
+                .whenOffline(() -> {
+                    SwarmErrorMessage.send(project).couldNotShelveFiles(new SwarmErrorMessage.SwarmEvent(changelistId),
+                            P4Bundle.message("swarm-client.shelve.offline"));
+                });
+    }
+
+
+    private static P4CommandRunner.QueryAnswer<Integer> sendCreateReview(Project project,
+            SwarmClient swarmClient,
+            String description, P4ChangelistId changelistId,
+            List<SwarmReviewPanel.Reviewer> reviewers) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Creating swarm review for " + changelistId);
+            }
+            Review review = swarmClient.createReview(description, changelistId.getChangelistId(),
+                    reviewers.stream()
+                            .filter(r -> !r.required)
+                            .map(r -> r.user.getUsername())
+                            .toArray(String[]::new),
+                    reviewers.stream()
+                            .filter(r -> r.required)
+                            .map(r -> r.user.getUsername())
+                            .toArray(String[]::new));
+            LOG.info("Created review " + review.getId() + " for changelist " + changelistId);
+
+            // TODO find a better place to stick this bit of code.
+            final URI uri = review.getReviewUri(swarmClient.getConfig());
+            UserMessage.showNotification(project,
+                    UserMessage.ALWAYS,
+                    uri.toString(),
+                    "Created Review " + review.getId(),
+                    NotificationType.INFORMATION,
+                    (notification, hyperlinkEvent) -> {
+                        BrowserLauncher.getInstance().browse(uri);
+                    },
+                    () -> {});
+
+            return new QueryAnswerImpl<>(Answer.resolve(review.getId()));
+        } catch (IOException | SwarmServerResponseException e) {
+            LOG.warn("Create review for " + changelistId + " caused error", e);
+            SwarmErrorMessage.send(project).reviewCreateFailed(new SwarmErrorMessage.SwarmEvent(changelistId), e);
+            return new QueryAnswerImpl<>(Answer.resolve(-1));
+        }
     }
 }

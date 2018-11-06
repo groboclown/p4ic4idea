@@ -15,13 +15,13 @@
 package net.groboclown.p4plugin.ui.swarm;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.ListTableModel;
-import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.api.values.P4User;
 import net.groboclown.p4.simpleswarm.model.Review;
@@ -33,7 +33,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -43,26 +46,67 @@ import java.util.stream.Collectors;
 public class SwarmReviewPanel {
     private final Project project;
     private final ClientConfig clientConfig;
+    private final ValidChangeListener listener;
 
     private JPanel root;
-    private JTextArea reviewDescription;
     private JTable fileSelectionTable;
     private JPanel userSelectionPanel;
+    private JTextArea descriptionTextArea;
     private SearchSelectPanel<Reviewer> reviewersPanel;
 
     private ListTableModel<FileRow> fileTableModel;
 
     private int oldReviewId = -1;
+    private volatile int userSelectedCount = 0;
 
-    public SwarmReviewPanel(@NotNull final Project project, @NotNull final ClientConfig clientConfig,
-            @NotNull P4ChangelistId changelist) {
+    public interface ValidChangeListener {
+        void onValidChange(boolean valid);
+    }
+
+    SwarmReviewPanel(@NotNull final Project project, @NotNull final ClientConfig clientConfig,
+            @NotNull ChangeList changelist,
+            @NotNull final ValidChangeListener listener) {
         this.project = project;
         this.clientConfig = clientConfig;
+        this.listener = listener;
 
         $$$setupUI$$$();
-        this.fileTableModel.setSortable(true);
 
+        this.fileTableModel.setSortable(true);
         userSelectionPanel.add(reviewersPanel, BorderLayout.CENTER);
+        fileTableModel.setItems(
+                changelist.getChanges().stream()
+                        .flatMap(c -> {
+                            List<FilePath> files = new ArrayList<>(2);
+                            if (c.getBeforeRevision() != null) {
+                                files.add(c.getBeforeRevision().getFile());
+                            }
+                            if (c.getAfterRevision() != null) {
+                                files.add(c.getAfterRevision().getFile());
+                            }
+                            return files.stream();
+                        })
+                        .map(FileRow::new)
+                        .collect(Collectors.toList())
+        );
+        descriptionTextArea.setText(changelist.getComment());
+        descriptionTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                fireValidChange();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                fireValidChange();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                fireValidChange();
+            }
+        });
+        SwingUtilities.invokeLater(this::fireValidChange);
     }
 
     public JComponent getRoot() {
@@ -73,31 +117,67 @@ public class SwarmReviewPanel {
         return reviewersPanel.getSelectedItems().collect(Collectors.toList());
     }
 
-    public List<String> getFiles() {
+    @NotNull
+    public String getDescription() {
+        String ret = descriptionTextArea.getText();
+        return ret == null ? "" : ret;
+    }
+
+    public List<FilePath> getFiles() {
         return fileTableModel.getItems().stream()
                 .filter(r -> r.selected)
                 .map(r -> r.name)
                 .collect(Collectors.toList());
     }
 
-    public void setReview(Review existingReview, List<P4RemoteChangelist> changelists) {
-        if (existingReview == null) {
+    public void setReview(@NotNull Review existingReview, @NotNull List<P4RemoteChangelist> changelists) {
+        if (changelists.isEmpty()) {
             oldReviewId = -1;
             return;
         }
-        // TODO implement
         oldReviewId = existingReview.getId();
-        //reviewerTableModel.setItems();
-        //fileTableModel.setItems();
+        descriptionTextArea.setText(existingReview.getDescription());
+        // TODO the reviewers needs proper query of the perforce users
+        // reviewersPanel.setItems(existingReview.getParticipants());
+        // TODO the files will probably need to be contained in another way.
+        //fileTableModel.setItems(changelists.stream()
+        //    .flatMap(rc -> rc.getFiles().stream())
+        //    .map(c -> new FileRow(c.getDepotPath().getDepotPath()))
+        //    .collect(Collectors.toList()));
+    }
+
+    private void fireValidChange() {
+        listener.onValidChange(
+                userSelectedCount > 0
+                        && !getDescription().isEmpty()
+                        && !getReviewers().isEmpty()
+                        && !getFiles().isEmpty());
     }
 
     private void createUIComponents() {
         fileTableModel = new ListTableModel<>(
                 new ColumnInfo<FileRow, String>(P4Bundle.getString("swarm-review.files.name")) {
-                    @Nullable
                     @Override
                     public String valueOf(FileRow o) {
-                        return o.name;
+                        return o.name.getName();
+                    }
+
+                    @Override
+                    public Comparator<FileRow> getComparator() {
+                        return FILE_ROW_NAME_COMPARATOR;
+                    }
+
+                    @Override
+                    public String getMaxStringValue() {
+                        return "MMMMMMMMMMMMMMMMMMMMMMMMM";
+                    }
+                },
+                new ColumnInfo<FileRow, String>(P4Bundle.getString("swarm-review.files.directory")) {
+                    @Override
+                    public String valueOf(FileRow o) {
+                        return o.name.getParentPath() != null
+                                ? o.name.getParentPath().getPath()
+                                : "";
                     }
 
                     @Override
@@ -109,8 +189,10 @@ public class SwarmReviewPanel {
                     public String getMaxStringValue() {
                         return "MMMMMMMMMMMMMMMMMMMMMMMMM";
                     }
-                },
-                new BooleanColumnInfo<FileRow>(P4Bundle.getString("swarm-review.files.selected"), true) {
+                }
+                /* For now, leave this out.  It implies a bunch of additional overhead that the plugin
+                isn't ready to support yet.  Specifically, removing shelved files and shelving others.
+                , new BooleanColumnInfo<FileRow>(P4Bundle.getString("swarm-review.files.selected"), true) {
                     @Override
                     protected boolean booleanValue(FileRow o) {
                         return o.selected;
@@ -119,71 +201,76 @@ public class SwarmReviewPanel {
                     @Override
                     protected void setBooleanValue(FileRow fileRow, boolean value) {
                         fileRow.selected = value;
+                        fireValidChange();
                     }
                 }
+                */
         );
         fileSelectionTable = new JBTable(fileTableModel);
 
         this.reviewersPanel = new SearchSelectPanel<>(
                 P4ServerComponent.query(project, clientConfig.getServerConfig(),
                         new ListUsersQuery(-1))
-                .mapQuery(r -> r.getUsers().stream()
-                    .map(Reviewer::new)
-                    .collect(Collectors.toList())),
-                null,
+                        .mapQuery(r -> r.getUsers().stream()
+                                .map(Reviewer::new)
+                                .collect(Collectors.toList())),
+                count -> {
+                    userSelectedCount = count;
+                    fireValidChange();
+                },
                 Arrays.asList(
-                    new ColumnInfo<Reviewer, String>(P4Bundle.getString("swarm-review.reviewers.username")) {
-                        @Nullable
-                        @Override
-                        public String valueOf(Reviewer o) {
-                            return o.user.getUsername();
-                        }
+                        new ColumnInfo<Reviewer, String>(P4Bundle.getString("swarm-review.reviewers.username")) {
+                            @Nullable
+                            @Override
+                            public String valueOf(Reviewer o) {
+                                return o.user.getUsername();
+                            }
 
-                        @Override
-                        public Comparator<Reviewer> getComparator() {
-                            return REVIEWER_USERNAME_ROW_COMPARATOR;
-                        }
+                            @Override
+                            public Comparator<Reviewer> getComparator() {
+                                return REVIEWER_USERNAME_ROW_COMPARATOR;
+                            }
 
-                        @Override
-                        public String getMaxStringValue() {
-                            return "MMMMMMMMMMMMMMMMMMMMMMMMM";
-                        }
-                    },
-                    new ColumnInfo<Reviewer, String>(P4Bundle.getString("swarm-review.reviewers.fullname")) {
-                        @Nullable
-                        @Override
-                        public String valueOf(Reviewer o) {
-                            return o.user.getFullName();
-                        }
+                            @Override
+                            public String getMaxStringValue() {
+                                return "MMMMMMMMMMMMMMMMMMMMMMMMM";
+                            }
+                        },
+                        new ColumnInfo<Reviewer, String>(P4Bundle.getString("swarm-review.reviewers.fullname")) {
+                            @Nullable
+                            @Override
+                            public String valueOf(Reviewer o) {
+                                return o.user.getFullName();
+                            }
 
-                        @Override
-                        public Comparator<Reviewer> getComparator() {
-                            return REVIEWER_FULLNAME_ROW_COMPARATOR;
-                        }
+                            @Override
+                            public Comparator<Reviewer> getComparator() {
+                                return REVIEWER_FULLNAME_ROW_COMPARATOR;
+                            }
 
-                        @Override
-                        public String getMaxStringValue() {
-                            return "MMMMMMMMMMMMMMMMMMMMMMMMM";
-                        }
-                    },
-                    new BooleanColumnInfo<Reviewer>(P4Bundle.getString("swarm-review.reviewers.selected"), true) {
-                        @Override
-                        protected boolean booleanValue(Reviewer o) {
-                            return o.required;
-                        }
+                            @Override
+                            public String getMaxStringValue() {
+                                return "MMMMMMMMMMMMMMMMMMMMMMMMM";
+                            }
+                        },
+                        new BooleanColumnInfo<Reviewer>(P4Bundle.getString("swarm-review.reviewers.selected"), true) {
+                            @Override
+                            protected boolean booleanValue(Reviewer o) {
+                                return o.required;
+                            }
 
-                        @Override
-                        protected void setBooleanValue(Reviewer reviewer, boolean value) {
-                            reviewer.required = value;
+                            @Override
+                            protected void setBooleanValue(Reviewer reviewer, boolean value) {
+                                reviewer.required = value;
+                            }
                         }
-                    }
                 )
         );
     }
 
-    public static class Reviewer {
+    static class Reviewer {
         final P4User user;
-        private boolean required;
+        boolean required;
 
         private Reviewer(P4User user) {
             this.user = user;
@@ -191,18 +278,20 @@ public class SwarmReviewPanel {
     }
 
     private static class FileRow {
-        private final String name;
-        private boolean selected;
+        private final FilePath name;
+        private boolean selected = true;
 
-        private FileRow(String name) {
+        private FileRow(FilePath name) {
             this.name = name;
         }
     }
 
-    private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(o -> o.name);
-    private static final Comparator<Reviewer> REVIEWER_USERNAME_ROW_COMPARATOR = Comparator.comparing(o -> o.user.getUsername());
+    private static final Comparator<FileRow> FILE_ROW_NAME_COMPARATOR = Comparator.comparing(o -> o.name.getName());
+    private static final Comparator<FileRow> FILE_ROW_COMPARATOR = Comparator.comparing(o -> o.name.getPath());
+    private static final Comparator<Reviewer> REVIEWER_USERNAME_ROW_COMPARATOR =
+            Comparator.comparing(o -> o.user.getUsername());
     private static final Comparator<Reviewer> REVIEWER_FULLNAME_ROW_COMPARATOR =
-           Comparator.comparing(o -> o.user.getFullName());
+            Comparator.comparing(o -> o.user.getFullName());
 
     /**
      * Method generated by IntelliJ IDEA GUI Designer
@@ -216,62 +305,29 @@ public class SwarmReviewPanel {
         root = new JPanel();
         root.setLayout(new BorderLayout(0, 0));
         final JSplitPane splitPane1 = new JSplitPane();
-        splitPane1.setOrientation(0);
+        splitPane1.setOrientation(1);
+        splitPane1.setResizeWeight(0.5);
         root.add(splitPane1, BorderLayout.CENTER);
-        final JPanel panel1 = new JPanel();
-        panel1.setLayout(new BorderLayout(0, 0));
-        splitPane1.setLeftComponent(panel1);
-        final JLabel label1 = new JLabel();
-        this.$$$loadLabelText$$$(label1, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("swarm-review.create.description"));
-        panel1.add(label1, BorderLayout.NORTH);
-        reviewDescription = new JTextArea();
-        reviewDescription.setLineWrap(true);
-        reviewDescription.setRows(4);
-        reviewDescription.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("swarm-review.create.description.tooltip"));
-        reviewDescription.setWrapStyleWord(true);
-        panel1.add(reviewDescription, BorderLayout.CENTER);
-        final JSplitPane splitPane2 = new JSplitPane();
-        splitPane2.setOrientation(1);
-        splitPane2.setResizeWeight(0.5);
-        splitPane1.setRightComponent(splitPane2);
         final JScrollPane scrollPane1 = new JScrollPane();
-        splitPane2.setLeftComponent(scrollPane1);
+        splitPane1.setLeftComponent(scrollPane1);
         scrollPane1.setViewportView(fileSelectionTable);
         userSelectionPanel = new JPanel();
-        userSelectionPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
-        splitPane2.setRightComponent(userSelectionPanel);
-        label1.setLabelFor(reviewDescription);
-    }
-
-    /**
-     * @noinspection ALL
-     */
-    private void $$$loadLabelText$$$(JLabel component, String text) {
-        StringBuffer result = new StringBuffer();
-        boolean haveMnemonic = false;
-        char mnemonic = '\0';
-        int mnemonicIndex = -1;
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == '&') {
-                i++;
-                if (i == text.length()) {
-                    break;
-                }
-                if (!haveMnemonic && text.charAt(i) != '&') {
-                    haveMnemonic = true;
-                    mnemonic = text.charAt(i);
-                    mnemonicIndex = result.length();
-                }
-            }
-            result.append(text.charAt(i));
-        }
-        component.setText(result.toString());
-        if (haveMnemonic) {
-            component.setDisplayedMnemonic(mnemonic);
-            component.setDisplayedMnemonicIndex(mnemonicIndex);
-        }
+        userSelectionPanel.setLayout(new BorderLayout(0, 0));
+        splitPane1.setRightComponent(userSelectionPanel);
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new BorderLayout(0, 0));
+        root.add(panel1, BorderLayout.SOUTH);
+        panel1.setBorder(BorderFactory.createTitledBorder(
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("swarm.create.description")));
+        final JScrollPane scrollPane2 = new JScrollPane();
+        panel1.add(scrollPane2, BorderLayout.CENTER);
+        descriptionTextArea = new JTextArea();
+        descriptionTextArea.setLineWrap(true);
+        descriptionTextArea.setRows(4);
+        descriptionTextArea.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("swarm.create.description.tooltip"));
+        descriptionTextArea.setWrapStyleWord(true);
+        scrollPane2.setViewportView(descriptionTextArea);
     }
 
     /**

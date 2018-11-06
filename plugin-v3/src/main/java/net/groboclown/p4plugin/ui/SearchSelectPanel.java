@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SearchSelectPanel<T> extends JPanel {
@@ -54,18 +55,6 @@ public class SearchSelectPanel<T> extends JPanel {
             @Nullable final SelectionChangedListener listener, @NotNull List<ColumnInfo<T, ?>> columns) {
         super(new BorderLayout());
 
-        ColumnInfo[] columnArray = new ColumnInfo[columns.size() + 1];
-        columnArray[0] = new BooleanColumnInfo<SelectedItem<T>>(P4Bundle.getString("search-select.column.selected"), true) {
-            @Override
-            protected boolean booleanValue(SelectedItem<T> o) {
-                return o.selected;
-            }
-
-            @Override
-            protected void setBooleanValue(SelectedItem<T> o, boolean value) {
-                o.selected = value;
-            }
-        };
         Runnable onSelectionChange = () -> {
             if (listener == null) {
                 return;
@@ -80,6 +69,21 @@ public class SearchSelectPanel<T> extends JPanel {
             }
             listener.selectionCount(count);
         };
+
+        ColumnInfo[] columnArray = new ColumnInfo[columns.size() + 1];
+        columnArray[0] = new BooleanColumnInfo<SelectedItem<T>>(P4Bundle.getString("search-select.column.selected"), true) {
+            @Override
+            protected boolean booleanValue(SelectedItem<T> o) {
+                return o.selected;
+            }
+
+            @Override
+            protected void setBooleanValue(SelectedItem<T> o, boolean value) {
+                o.selected = value;
+                onSelectionChange.run();
+            }
+        };
+
         this.searchableColumns = new ArrayList<>(columns.size());
         for (int i = 0; i < columns.size(); i++) {
             ColumnInfo<T, ?> column = columns.get(i);
@@ -136,6 +140,14 @@ public class SearchSelectPanel<T> extends JPanel {
         return tableModel.getItems().stream()
                 .filter(t -> t.selected)
                 .map(t -> t.value);
+    }
+
+    public void setItems(Collection<T> items) {
+        tableModel.setItems(
+                items.stream()
+                    .map(SelectedItem::new)
+                    .collect(Collectors.toList())
+        );
     }
 
 

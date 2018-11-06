@@ -42,6 +42,7 @@ import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
+import com.perforce.p4java.option.client.ShelveFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
@@ -310,6 +311,22 @@ public class P4CommandUtil {
             options.setJobIds(jobIds);
         }
         return changelist.submit(options);
+    }
+
+    public List<IFileSpec> shelveFiles(IClient client, List<IFileSpec> specs, int changelistId)
+            throws P4JavaException {
+        ShelveFilesOptions options = new ShelveFilesOptions();
+        options.setDeleteFiles(false);
+        // options.setForceShelve(true); // Cannot be used with the "replace files" instruction
+        options.setReplaceFiles(true);
+        // TODO enable only for distributed configurations.
+        // options.setPromotesShelvedChangeIfDistributedConfigured(true);
+
+        // This is only if the replace is false.
+        // return client.shelveFiles(specs, changelistId, options);
+
+        // This is if the replace is true.
+        return client.shelveFiles(Collections.emptyList(), changelistId, options);
     }
 
     public IChangelist createChangelist(IClient client, String description)

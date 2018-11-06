@@ -350,6 +350,18 @@ public class UserErrorComponent implements ProjectComponent {
                         "Swarm Server Connection Error"
                         );
             }
+
+            @Override
+            public void couldNotShelveFiles(@NotNull SwarmErrorMessage.SwarmEvent e, @NotNull String message) {
+                simpleError(message,
+                        "Shelve Problem Prevented Swarm Review Update");
+            }
+
+            @Override
+            public void reviewCreateFailed(@NotNull SwarmErrorMessage.SwarmEvent swarmEvent, @NotNull Exception e) {
+                simpleError(e.getMessage(),
+                        "Create Review Returned Error");
+            }
         });
     }
 

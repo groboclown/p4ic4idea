@@ -30,6 +30,7 @@ public class UserProjectPreferences
     public static final int USER_MESSAGE_LEVEL_INFO = 3;
     public static final int USER_MESSAGE_LEVEL_WARNING = 4;
     public static final int USER_MESSAGE_LEVEL_ERROR = 5;
+    public static final int USER_MESSAGE_LEVEL_ALWAYS = Integer.MAX_VALUE;
 
 
     public static final int DEFAULT_SERVER_CONNECTIONS = 2;

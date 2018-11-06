@@ -19,23 +19,20 @@ import net.groboclown.p4.simpleswarm.impl.http.HttpClientRequester;
 import net.groboclown.p4.simpleswarm.impl.http.RequestFunction;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
-import org.apache.http.ProtocolVersion;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MockHttpRequester implements HttpClientRequester {
     public interface Verifier<T> {
@@ -139,8 +136,9 @@ public class MockHttpRequester implements HttpClientRequester {
     public <T> T execute(HttpUriRequest request, HttpClientContext context, RequestFunction<T> func)
             throws IOException, UnauthorizedAccessException {
         executeIndex++;
-        assertTrue("Expected " + executeVerifiers.size() + " invocations, but encountered more",
-                executeIndex < executeVerifiers.size());
+        assertTrue(
+                executeIndex < executeVerifiers.size(),
+                "Expected " + executeVerifiers.size() + " invocations, but " + "encountered more");
         ExecuteBuilder builder = executeVerifiers.get(executeIndex);
         return handle((ExecuteBuilder<T>) builder, request, context, null, func);
     }
@@ -151,8 +149,9 @@ public class MockHttpRequester implements HttpClientRequester {
             RequestFunction<T> func)
             throws IOException, UnauthorizedAccessException {
         executeIndex++;
-        assertTrue("Expected " + executeVerifiers.size() + " invocations, but encountered more",
-                executeIndex < executeVerifiers.size());
+        assertTrue(
+                executeIndex < executeVerifiers.size(),
+                "Expected " + executeVerifiers.size() + " invocations, but encountered more");
         ExecuteBuilder builder = executeVerifiers.get(executeIndex);
         return handle((ExecuteBuilder<T>) builder, request, context, provider, func);
     }

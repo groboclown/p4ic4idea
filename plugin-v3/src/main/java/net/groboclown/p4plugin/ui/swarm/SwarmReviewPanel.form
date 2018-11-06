@@ -7,73 +7,60 @@
     <properties/>
     <border type="none"/>
     <children>
-      <splitpane id="5c7ac">
+      <splitpane id="61aaf">
         <constraints border-constraint="Center"/>
         <properties>
-          <orientation value="0"/>
+          <orientation value="1"/>
+          <resizeWeight value="0.5"/>
         </properties>
         <border type="none"/>
         <children>
-          <grid id="789b2" layout-manager="BorderLayout" hgap="0" vgap="0">
+          <scrollpane id="2a8ad">
             <constraints>
               <splitpane position="left"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <component id="4568d" class="javax.swing.JLabel">
-                <constraints border-constraint="North"/>
-                <properties>
-                  <labelFor value="cd4b0"/>
-                  <text resource-bundle="net/groboclown/p4plugin/P4Bundle" key="swarm-review.create.description"/>
-                </properties>
+              <component id="d326d" class="javax.swing.JTable" binding="fileSelectionTable" custom-create="true">
+                <constraints/>
+                <properties/>
               </component>
-              <component id="cd4b0" class="javax.swing.JTextArea" binding="reviewDescription">
-                <constraints border-constraint="Center"/>
+            </children>
+          </scrollpane>
+          <grid id="b5e03" binding="userSelectionPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
+            <constraints>
+              <splitpane position="right"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children/>
+          </grid>
+        </children>
+      </splitpane>
+      <grid id="c080e" layout-manager="BorderLayout" hgap="0" vgap="0">
+        <constraints border-constraint="South"/>
+        <properties/>
+        <border type="none" title-resource-bundle="net/groboclown/p4plugin/P4Bundle" title-key="swarm.create.description"/>
+        <children>
+          <scrollpane id="eab0e">
+            <constraints border-constraint="Center"/>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="5f6fe" class="javax.swing.JTextArea" binding="descriptionTextArea">
+                <constraints/>
                 <properties>
                   <lineWrap value="true"/>
                   <rows value="4"/>
-                  <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="swarm-review.create.description.tooltip"/>
+                  <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="swarm.create.description.tooltip"/>
                   <wrapStyleWord value="true"/>
                 </properties>
               </component>
             </children>
-          </grid>
-          <splitpane id="61aaf">
-            <constraints>
-              <splitpane position="right"/>
-            </constraints>
-            <properties>
-              <orientation value="1"/>
-              <resizeWeight value="0.5"/>
-            </properties>
-            <border type="none"/>
-            <children>
-              <scrollpane id="2a8ad">
-                <constraints>
-                  <splitpane position="left"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="d326d" class="javax.swing.JTable" binding="fileSelectionTable" custom-create="true">
-                    <constraints/>
-                    <properties/>
-                  </component>
-                </children>
-              </scrollpane>
-              <grid id="b5e03" binding="userSelectionPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
-                <constraints>
-                  <splitpane position="right"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children/>
-              </grid>
-            </children>
-          </splitpane>
+          </scrollpane>
         </children>
-      </splitpane>
+      </grid>
     </children>
   </grid>
 </form>

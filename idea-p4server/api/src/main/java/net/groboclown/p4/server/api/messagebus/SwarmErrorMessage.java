@@ -54,6 +54,8 @@ public class SwarmErrorMessage extends ProjectMessage<SwarmErrorMessage.Listener
         void notOnServer(@NotNull SwarmEvent e, @NotNull ChangeList ideChangeList);
         void notNumberedChangelist(@NotNull SwarmEvent e);
         void problemContactingServer(@NotNull SwarmEvent swarmEvent, @NotNull Exception e);
+        void couldNotShelveFiles(@NotNull SwarmEvent e, @NotNull String message);
+        void reviewCreateFailed(@NotNull SwarmEvent swarmEvent, @NotNull Exception e);
     }
 
     public static class ListenerAdapter implements Listener {
@@ -69,6 +71,16 @@ public class SwarmErrorMessage extends ProjectMessage<SwarmErrorMessage.Listener
 
         @Override
         public void problemContactingServer(@NotNull SwarmEvent swarmEvent, @NotNull Exception e) {
+
+        }
+
+        @Override
+        public void couldNotShelveFiles(@NotNull SwarmEvent e, @NotNull String message) {
+
+        }
+
+        @Override
+        public void reviewCreateFailed(@NotNull SwarmEvent swarmEvent, @NotNull Exception e) {
 
         }
     }

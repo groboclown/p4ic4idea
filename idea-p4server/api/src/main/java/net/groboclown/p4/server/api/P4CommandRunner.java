@@ -289,6 +289,8 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult
          */
         SUBMIT_CHANGELIST,
+
+        SHELVE_FILES,
     }
 
     enum ServerActionCmd implements ServerCmd {

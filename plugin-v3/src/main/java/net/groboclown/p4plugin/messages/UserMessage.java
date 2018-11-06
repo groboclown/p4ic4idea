@@ -35,6 +35,7 @@ public class UserMessage {
     public static final int INFO = UserProjectPreferences.USER_MESSAGE_LEVEL_INFO;
     public static final int WARNING = UserProjectPreferences.USER_MESSAGE_LEVEL_WARNING;
     public static final int ERROR = UserProjectPreferences.USER_MESSAGE_LEVEL_ERROR;
+    public static final int ALWAYS = UserProjectPreferences.USER_MESSAGE_LEVEL_ALWAYS;
 
     /**
      * Shows a notification.  Can be invoked from any thread.

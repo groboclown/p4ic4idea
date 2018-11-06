@@ -123,6 +123,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
             case DELETE_CHANGELIST:
             case EDIT_CHANGELIST_DESCRIPTION:
             case MOVE_FILES_TO_CHANGELIST:
+            case SHELVE_FILES:
                 return performNonFileAction(config, action);
 
             // Special cases
@@ -133,7 +134,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
             case SUBMIT_CHANGELIST:
                 return (ActionAnswer<R>) submitChangelist(config, (SubmitChangelistAction) action);
             default:
-                throw new IllegalStateException("Incompatible class: should match " + ClientActionCmd.class);
+                throw new IllegalStateException(action + ": Incompatible class; should match " + ClientActionCmd.class);
         }
     }
 

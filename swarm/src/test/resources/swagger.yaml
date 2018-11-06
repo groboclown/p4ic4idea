@@ -49,6 +49,7 @@ tags:
     url: "https://www.perforce.com/perforce/doc.current/manuals/swarm/api.endpoints.html#api.endpoints.Reviews"
 - name: "dashboards"
   description: User dashboards
+# Version numbers are found in module\Api\src\Api\Controller\IndexController.php
 - name: v1
   description: Original Swarm release, which was never made public (or at least isn't currently public)
 - name: v1.1
@@ -63,6 +64,12 @@ tags:
   description: Swarm v5 release (2016.3/1472982)
 - name: v6
   description: Swarm v6 release (2017.1/1513269)
+- name: v7
+  description: Swarm v7 release (2017.3/?)
+- name: v8
+  description: Swarm v8 release (2017.4/?)
+- name: v9
+  description: Swarm v9 release (2018.1/?)
 paths:
   api/v1.1/activity:
     post:

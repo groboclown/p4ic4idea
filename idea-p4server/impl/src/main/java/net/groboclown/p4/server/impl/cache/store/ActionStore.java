@@ -28,6 +28,7 @@ import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
+import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4FileType;
@@ -155,6 +156,10 @@ public class ActionStore {
             case DELETE_CHANGELIST:
                 return new DeleteChangelistAction(state.actionId,
                         state.data.getChangelistIdNotNull("cl-id"));
+            case SHELVE_FILES:
+                return new ShelveFilesAction(state.actionId,
+                        state.data.getChangelistIdNotNull("cl-id"),
+                        state.data.getFilePathList("files"));
             case FETCH_FILES:
                 throw new IllegalArgumentException("Should not attempt to store a sync action");
             case SUBMIT_CHANGELIST:
@@ -245,6 +250,13 @@ public class ActionStore {
                 ret.data
                         .putChangelistId("cl-id", ((DeleteChangelistAction) action).getChangelistId());
                 break;
+            case SHELVE_FILES: {
+                ShelveFilesAction a = (ShelveFilesAction) action;
+                ret.data
+                        .putChangelistId("cl-id", a.getChangelistId())
+                        .putFilePathList("files", a.getFiles());
+                break;
+            }
             case FETCH_FILES:
                 throw new IllegalArgumentException("Should not attempt to store a submit action");
             case SUBMIT_CHANGELIST:

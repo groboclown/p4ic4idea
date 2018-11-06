@@ -17,9 +17,11 @@ package net.groboclown.p4.simpleswarm.model;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.exceptions.ResponseFormatException;
 import net.groboclown.p4.simpleswarm.impl.JsonUtil;
 
+import java.net.URI;
 import java.util.Date;
 import java.util.Map;
 
@@ -220,5 +222,9 @@ public class Review {
 
     public Date getUpdated() {
         return updated;
+    }
+
+    public URI getReviewUri(SwarmConfig config) {
+        return config.getUri().resolve("reviews/" + getId());
     }
 }

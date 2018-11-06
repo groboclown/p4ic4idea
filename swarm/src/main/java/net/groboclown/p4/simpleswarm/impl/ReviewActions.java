@@ -19,7 +19,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
-import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import net.groboclown.p4.simpleswarm.model.Review;
 
 import java.io.IOException;
@@ -45,7 +44,7 @@ public class ReviewActions {
     public Review create(String description, int changelistId,
             String[] reviewers, String[] requiredReviewers)
             throws IOException, SwarmServerResponseException {
-        Map<String, Object> form = new HashMap<String, Object>();
+        Map<String, Object> form = new HashMap<>();
         if (description != null) {
             form.put("description", description);
         }
@@ -88,12 +87,12 @@ public class ReviewActions {
 
     public int[] getReviewIdsForChangelist(int changelistId)
             throws IOException, SwarmServerResponseException {
-        Map<String, Object> query = new HashMap<String, Object>();
+        Map<String, Object> query = new HashMap<>();
         query.put("change[]", changelistId);
         query.put("fields", "id");
 
         // Simple paging
-        List<Integer> ids = new ArrayList<Integer>();
+        List<Integer> ids = new ArrayList<>();
 
         while (true) {
             BasicResponse resp = requester.get(config, "review", query);

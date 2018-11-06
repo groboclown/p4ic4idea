@@ -91,7 +91,8 @@ The SSO is not tested.
 
 ### Swarm Integration
 
-Swarm integration needs to be re-instated.
+Swarm integration creates the review, but does not allow for modifying an existing review.  There is also no way to see
+beforehand which changelist has a review associated with it.
 
 ### Revert Unchanged
 
@@ -185,7 +186,8 @@ These pieces of functionality are not required for the 0.10 release, but should 
 
 ### Shelved file support
 
-Re-add support for showing shelved files and managing shelved files.
+Re-add support for showing shelved files and managing shelved files.  Shelving files is currently only supported when
+a Swarm review is created.
 
 ### Additional History Browsing Support
 

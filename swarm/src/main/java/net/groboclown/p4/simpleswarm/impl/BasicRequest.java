@@ -125,13 +125,18 @@ class BasicRequest {
         context.setCredentialsProvider(provider);
         context.setAuthCache(authCache);
 
-        return http.execute(request, context, provider, (HttpResponse response) -> {
+        BasicResponse ret = http.execute(request, context, provider, (HttpResponse response) -> {
             if (response.getStatusLine().getStatusCode() == 401) {
                 throw new UnauthorizedAccessException(response.getStatusLine().getReasonPhrase(),
                         response.getStatusLine().getStatusCode());
             }
             return new BasicResponse(config.getLogger(), config.getVersion(), response);
         });
+        if (config.getLogger().isDebugEnabled()) {
+            config.getLogger().debug("Request for " + request.getURI() + " returned " +
+                    ret.getStatusCode() + ": " + ret.getRawBody());
+        }
+        return ret;
     }
 
 

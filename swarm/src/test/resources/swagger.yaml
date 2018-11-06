@@ -5293,8 +5293,12 @@ definitions:
       pending:
         type: boolean
       projects:
-        # TODO find out what the array really contains
-        $ref: '#/definitions/stringArray'
+        description: >-
+          map between the project name and the list of depots in the project.
+          Ex. {"string": ["string", "string"]}
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/stringArray'
       state:
         # TODO replace with valid enum
         # known entries: needsReview

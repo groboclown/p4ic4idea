@@ -33,3 +33,6 @@ local.properties.*
 !/.idea/modules/*/*/*.iml
 
 /p4-c-client-2018-1
+
+# Don't check-in generated pact files.
+/*/target/pacts/

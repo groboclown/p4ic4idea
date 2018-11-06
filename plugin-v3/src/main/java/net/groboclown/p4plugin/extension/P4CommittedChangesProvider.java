@@ -79,6 +79,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -261,7 +262,10 @@ public class P4CommittedChangesProvider implements
     public ChangeListColumn[] getColumns() {
         LOG.debug("Getting columns");
         return new ChangeListColumn[] {
-                ChangeListColumn.NUMBER,
+                // Need to support revision or changelist view...  See #180
+                // ChangeListColumn.NUMBER,
+                new RevisionColumn(project),
+
                 ChangeListColumn.NAME,
                 ChangeListColumn.DESCRIPTION,
                 ChangeListColumn.DATE,
@@ -671,6 +675,31 @@ public class P4CommittedChangesProvider implements
         }
     }
 
+    private static class RevisionColumn extends ChangeListColumn<P4CommittedChangelist> {
+        private final Project project;
+
+        private RevisionColumn(Project project) {
+            this.project = project;
+        }
+
+        @Override
+        public String getTitle() {
+            return NUMBER.getTitle();
+        }
+
+        @Override
+        public Object getValue(P4CommittedChangelist p4CommittedChangelist) {
+            if (UserProjectPreferences.getPreferRevisionsForFiles(project)) {
+                return p4CommittedChangelist.getNumber();
+            }
+            return p4CommittedChangelist.getSummary().getChangelistId().getChangelistId();
+        }
+
+        @NotNull
+        public Comparator<P4CommittedChangelist> getComparator() {
+            return Comparator.comparing(CommittedChangeList::getNumber);
+        }
+    };
 
     static final ChangeListColumn<P4CommittedChangelist> HAS_SHELVED = new ChangeListColumn<P4CommittedChangelist>() {
         @Override

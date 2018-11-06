@@ -60,6 +60,10 @@ class BasicResponse {
         return code;
     }
 
+    String getRawBody() {
+        return body;
+    }
+
     JsonObject getBodyAsJson()
             throws SwarmServerResponseException {
         try {

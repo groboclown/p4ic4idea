@@ -43,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -144,7 +145,7 @@ public class SwarmReview {
         // FIXME implement
         LOG.warn("implement update swarm review dialog: " + changelistId + " -> " + reviews);
         SwarmErrorMessage.send(project).problemContactingServer(new SwarmErrorMessage.SwarmEvent(changelistId),
-                new Exception("Not implemented yet"));
+                new Exception("Update swarm review (" + reviews + ") - not implemented yet"));
         return Answer.resolve(-1);
     }
 

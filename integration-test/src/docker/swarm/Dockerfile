@@ -8,6 +8,7 @@ VOLUME /opt/swarm/data
 # swarm version name as part of the directory.
 ADD swarm.tgz /opt
 
+# TODO NEED TO INSTAL libstdc++.so.6
 RUN cp -R /opt/swarm-*/* /opt/swarm/. \
     && apk --no-cache add apache2 php7-apache2 \
     && mkdir /run/apache2

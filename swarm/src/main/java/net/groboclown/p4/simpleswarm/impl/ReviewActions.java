@@ -95,9 +95,9 @@ public class ReviewActions {
         List<Integer> ids = new ArrayList<>();
 
         while (true) {
-            BasicResponse resp = requester.get(config, "review", query);
+            BasicResponse resp = requester.get(config, "reviews", query);
             if (resp.getStatusCode() != 200) {
-                throw resp.getResponseException("review", "get", resp.getStatusCode());
+                throw resp.getResponseException("reviews", "get", resp.getStatusCode());
             }
             JsonObject body = resp.getBodyAsJson();
 

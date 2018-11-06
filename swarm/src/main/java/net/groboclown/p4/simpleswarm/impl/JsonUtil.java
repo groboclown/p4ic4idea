@@ -23,6 +23,9 @@ import net.groboclown.p4.simpleswarm.exceptions.ResponseFormatException;
 import net.groboclown.p4.simpleswarm.exceptions.SwarmServerResponseException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -66,10 +69,18 @@ public class JsonUtil {
 
     public static String[] getNullableStringArrayKey(JsonObject obj, String key)
             throws ResponseFormatException {
-        JsonArray vay = getNullableArrayKey(obj, key);
-        if (vay == null) {
+        return asNullableStringArray(key, getNullableArrayKey(obj, key));
+    }
+
+    public static String[] asNullableStringArray(String key, JsonElement el)
+            throws ResponseFormatException {
+        if (el == null || el.isJsonNull()) {
             return null;
         }
+        if (! el.isJsonArray()) {
+            throw new ResponseFormatException(key, el);
+        }
+        JsonArray vay = el.getAsJsonArray();
         List<String> ret = new ArrayList<>(vay.size());
         for (int i = 0; i < vay.size(); i++) {
             JsonElement vi = vay.get(i);
@@ -81,7 +92,7 @@ public class JsonUtil {
                 throw new ResponseFormatException(key + '[' + i + ']', vi);
             }
         }
-        return ret.toArray(new String[ret.size()]);
+        return ret.toArray(new String[0]);
     }
 
     public static String getNullableStringKey(JsonObject obj, String key)
@@ -164,6 +175,26 @@ public class JsonUtil {
         }
         return ret;
     }
+
+
+    public static Map<String, Collection<String>> getNullableMapStringArrayKey(JsonObject obj, String key)
+            throws ResponseFormatException {
+        Map<String, Collection<String>> ret = new HashMap<>();
+        JsonElement el = getNullableKey(obj, key);
+        if (el == null) {
+            return ret;
+        }
+        if (! el.isJsonObject()) {
+            throw new ResponseFormatException(key, el);
+        }
+        JsonObject jo = el.getAsJsonObject();
+        for (Map.Entry<String, JsonElement> entry : jo.entrySet()) {
+            String[] v = asNullableStringArray(key + "." + entry.getKey(), entry.getValue());
+            ret.put(entry.getKey(), v == null ? Collections.emptyList() : Arrays.asList(v));
+        }
+        return ret;
+    }
+
 
 
     public static boolean getNullableBooleanKey(JsonObject obj, String key, boolean defaultValue)

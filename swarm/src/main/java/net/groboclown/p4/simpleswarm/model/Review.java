@@ -22,6 +22,7 @@ import net.groboclown.p4.simpleswarm.exceptions.ResponseFormatException;
 import net.groboclown.p4.simpleswarm.impl.JsonUtil;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ public class Review {
     private String description;
     private Map<String, JsonElement> participants;
     private boolean pending;
-    private JsonArray projects;
+    private Map<String, Collection<String>> projects;
     private String state;
     private String stateLabel;
     private JsonArray testDetails;
@@ -98,8 +99,12 @@ public class Review {
       pending:
         type: boolean
       projects:
-        # TODO find out what the array really contains
-        $ref: '#/definitions/stringArray'
+        description: >-
+          map between the project name and the list of depots in the project.
+          Ex. {"string": ["string", "string"]}
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/stringArray'
       state:
         # TODO replace with valid enum
         # known entries: needsReview
@@ -139,7 +144,7 @@ public class Review {
         this.description = JsonUtil.getNullableStringKey(json, "description");
         this.participants = JsonUtil.getNullableMapKey(json, "participants");
         this.pending = JsonUtil.getNullableBooleanKey(json, "pending", true);
-        this.projects = JsonUtil.getNullableArrayKey(json, "projects");
+        this.projects = JsonUtil.getNullableMapStringArrayKey(json, "projects");
         this.state = JsonUtil.getNullableStringKey(json, "state");
         this.stateLabel = JsonUtil.getNullableStringKey(json, "stateLabel");
         this.testDetails = JsonUtil.getNullableArrayKey(json, "testDetails");
@@ -196,7 +201,7 @@ public class Review {
         return pending;
     }
 
-    public JsonArray getProjects() {
+    public Map<String, Collection<String>> getProjects() {
         return projects;
     }
 
@@ -226,5 +231,10 @@ public class Review {
 
     public URI getReviewUri(SwarmConfig config) {
         return config.getUri().resolve("reviews/" + getId());
+    }
+
+    @Override
+    public String toString() {
+        return Integer.toString(id);
     }
 }

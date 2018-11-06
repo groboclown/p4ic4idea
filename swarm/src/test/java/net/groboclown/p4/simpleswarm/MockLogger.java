@@ -19,7 +19,7 @@ import java.util.List;
 
 public class MockLogger
         implements SwarmLogger {
-    public static enum V {
+    public enum V {
         DEBUG, INFO, WARN, ERROR
     }
     public static class Entry {

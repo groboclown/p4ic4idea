@@ -34,7 +34,7 @@ if [ -z "$P4D_VERSION" ]; then
 fi
 
 cd $(dirname "$0") || exit 1
-cp ../../../../p4java/src/test/resources/bin/$P4D_VERSION/bin.$P4D_PLATFORM/p4d p4d/p4d.bin || exit 1
+cp ../../../p4java/src/test/resources/bin/$P4D_VERSION/bin.$P4D_PLATFORM/p4d p4d/p4d.bin || exit 1
 
 if [ ! -f "swarm-$SWARM_VERSION.tgz" ]; then
     curl -L -o "swarm-$SWARM_VERSION.tgz" "$SWARM_URL" || exit 1

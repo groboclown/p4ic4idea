@@ -699,9 +699,10 @@ public class P4CommittedChangesProvider implements
         public Comparator<P4CommittedChangelist> getComparator() {
             return Comparator.comparing(CommittedChangeList::getNumber);
         }
-    };
+    }
 
-    static final ChangeListColumn<P4CommittedChangelist> HAS_SHELVED = new ChangeListColumn<P4CommittedChangelist>() {
+    private static final ChangeListColumn<P4CommittedChangelist> HAS_SHELVED =
+            new ChangeListColumn<P4CommittedChangelist>() {
         @Override
         public String getTitle() {
             return P4Bundle.message("changelist.shelved");

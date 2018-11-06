@@ -33,7 +33,7 @@ public class P4CommittedChangelistImpl implements P4CommittedChangelist {
     private final Date commitDate;
     private AbstractVcs vcs;
 
-    public P4CommittedChangelistImpl(P4ChangelistSummary summary,
+    public P4CommittedChangelistImpl(@NotNull P4ChangelistSummary summary,
             Collection<Change> changes, Date commitDate) {
         this.summary = summary;
         // The list of changes MUST be modifiable (the IDE calls sort on it)
@@ -110,5 +110,10 @@ public class P4CommittedChangelistImpl implements P4CommittedChangelist {
     @Override
     public String getComment() {
         return summary.getComment();
+    }
+
+    @Override
+    public String toString() {
+        return summary.getChangelistId().toString();
     }
 }

@@ -265,6 +265,9 @@ public class P4HistoryProvider
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                     TimeUnit.MILLISECONDS);
                     if (result.getFiles().isEmpty()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("No file details found for " + path);
+                        }
                         return null;
                     }
                     return result.getFiles().get(0).getRevisionNumber();

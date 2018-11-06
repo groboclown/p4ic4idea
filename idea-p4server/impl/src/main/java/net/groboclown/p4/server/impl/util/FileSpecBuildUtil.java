@@ -126,17 +126,44 @@ public class FileSpecBuildUtil {
             if (path == null) {
                 throw new IllegalArgumentException("null file spec in arguments");
             }
-            int pos = path.lastIndexOf('#');
-            if (pos >= 0) {
-                path = path.substring(0, pos);
-            }
-            pos = path.lastIndexOf('@');
-            if (pos >= 0) {
-                path = path.substring(0, pos);
-            }
-            request.add(path + newRevision);
+            request.add(replaceRevisionStr(path, newRevision));
         }
         return FileSpecBuilder.makeFileSpecList(request);
+    }
+
+    public static List<IFileSpec> replaceBestPathRevisions(@NotNull List<IFileSpec> files,
+            @NotNull String newRevision) {
+        List<String> request = new ArrayList<>(files.size());
+        for (IFileSpec file : files) {
+            String path = file.getDepotPathString();
+            if (path == null) {
+                path = file.getClientPathString();
+                if (path == null) {
+                    path = file.getLocalPathString();
+                }
+                if (path == null) {
+                    path = file.getOriginalPathString();
+                    if (path == null) {
+                        throw new IllegalArgumentException("null file spec in arguments");
+                    }
+                }
+            }
+            request.add(replaceRevisionStr(path, newRevision));
+        }
+        return FileSpecBuilder.makeFileSpecList(request);
+    }
+
+
+    private static String replaceRevisionStr(@NotNull String srcPath, @NotNull String newRevision) {
+        int pos = srcPath.lastIndexOf('#');
+        if (pos >= 0) {
+            srcPath = srcPath.substring(0, pos);
+        }
+        pos = srcPath.lastIndexOf('@');
+        if (pos >= 0) {
+            srcPath = srcPath.substring(0, pos);
+        }
+        return srcPath + newRevision;
     }
 
 

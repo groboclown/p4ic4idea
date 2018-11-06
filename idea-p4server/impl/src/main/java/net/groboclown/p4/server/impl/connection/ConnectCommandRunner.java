@@ -351,11 +351,10 @@ public class ConnectCommandRunner
 
             List<IFileSpec> specs = query.getLocation().getFileSpecs();
             if (!specs.isEmpty() && query.getSpecFilter() != null) {
-                // FIXME DOUBLE CHECK THAT THE SPECS ARE ALWAYS DEPOT PATHS
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Using revision range " + query.getSpecFilter() + " for " + specs);
                 }
-                specs = FileSpecBuildUtil.replaceDepotRevisions(specs, query.getSpecFilter());
+                specs = FileSpecBuildUtil.replaceBestPathRevisions(specs, query.getSpecFilter());
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Querying changelists with specs " + specs);
@@ -367,6 +366,7 @@ public class ConnectCommandRunner
                     res.stream()
                     .map((summary) -> {
                         // FIXME scan for files on changelist, using the "describe changelist" action.
+                        LOG.warn("FIXME scan for files on changelist, using the \"describe changelist\" action.");
                         return new P4CommittedChangelistImpl(
                                 new P4ChangelistSummaryImpl(
                                     config.getServerConfig(), config.getClientServerRef(), summary),

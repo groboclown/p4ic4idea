@@ -19,17 +19,27 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vcs.VcsDataKeys;
+import com.intellij.openapi.vcs.changes.ChangeList;
+import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.ui.history.ChangelistDetails;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 public class ChangelistDescriptionAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ChangelistDescriptionAction.class);
@@ -45,43 +55,150 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
     public void actionPerformed(AnActionEvent e) {
         final Project project = getEventProject(e);
         if (project == null || project.isDisposed()) {
+            LOG.info("Skipping because project is disposed");
             return;
         }
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
         if (registry == null || registry.isDisposed()) {
+            LOG.info("Skipping because no config registry known");
             return;
         }
 
+        Pair<ServerConfig, P4ChangelistId> setup = getReferencedChangelistId(project, registry, e);
+        if (setup == null) {
+            LOG.info("Skipping because no changelist associated to context item could be found");
+            return;
+        }
+
+        P4ServerComponent
+                .query(project, setup.first, new DescribeChangelistQuery(setup.second))
+                .whenCompleted((r) -> {
+                    if (r.getRemoteChangelist() != null) {
+                        ChangelistDetails.showDocked(project, r.getRemoteChangelist());
+                    }
+                });
+    }
+
+
+    private Pair<ServerConfig, P4ChangelistId> getReferencedChangelistId(Project project,
+            ProjectConfigRegistry registry, AnActionEvent e) {
+        Pair<ServerConfig, P4ChangelistId> ret;
+        ret = findAttachedChangelist(project, registry, e);
+        if (ret != null) {
+            return ret;
+        }
+        ret = findAttachedFileRevision(e);
+
+        return ret;
+    }
+
+
+    private Pair<ServerConfig, P4ChangelistId> findAttachedChangelist(Project project, ProjectConfigRegistry registry,
+            AnActionEvent e) {
+        ChangeList[] changeLists = VcsDataKeys.CHANGE_LISTS.getData(e.getDataContext());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Found changelists on context item: " + Arrays.toString(changeLists));
+        }
+        if (changeLists == null || changeLists.length <= 0) {
+            return null;
+        }
+
+        // Check for easy changelists first
+        for (ChangeList changeList : changeLists) {
+            if (changeList instanceof P4CommittedChangelist) {
+                P4CommittedChangelist p4cl = (P4CommittedChangelist) changeList;
+                ServerConfig serverConfig = getServerConfigForChangelistId(registry,
+                        p4cl.getSummary().getChangelistId());
+                if (serverConfig != null) {
+                    return Pair.create(serverConfig, p4cl.getSummary().getChangelistId());
+                } else {
+                    LOG.warn("Skipped " + p4cl + " / " + p4cl.getSummary().getChangelistId() +
+                            " because no server registration known to exist for " +
+                            p4cl.getSummary().getChangelistId().getClientServerRef());
+                }
+            }
+        }
+
+        // Check for harder ones second
+        for (ChangeList changeList : changeLists) {
+            if (changeList instanceof LocalChangeList) {
+                LocalChangeList ide = (LocalChangeList) changeList;
+                try {
+                    Collection<P4ChangelistId> p4ChangeLists = CacheComponent.getInstance(project).getServerOpenedCache()
+                            .first.getP4ChangesFor(ide);
+                    if (p4ChangeLists.isEmpty()) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("No cached P4 changelist known for IDE change list " + ide);
+                        }
+                        continue;
+                    }
+
+                    VirtualFile file = e.getData(VcsDataKeys.VCS_VIRTUAL_FILE);
+                    if (file != null) {
+                        ClientConfigRoot root = registry.getClientFor(file);
+                        if (root != null) {
+                            for (P4ChangelistId p4ChangeList : p4ChangeLists) {
+                                if (p4ChangeList.isIn(root.getServerConfig())) {
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Using changelist " + p4ChangeList);
+                                    }
+                                    return Pair.create(root.getServerConfig(), p4ChangeList);
+                                }
+                            }
+                        }
+                    }
+
+                    // Pick one
+                    P4ChangelistId first = p4ChangeLists.iterator().next();
+                    ServerConfig serverConfig = getServerConfigForChangelistId(registry, first);
+                    if (serverConfig != null) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Using changelist " + first + " out of " + p4ChangeLists);
+                        }
+                        return Pair.create(serverConfig, first);
+                    }
+
+                    // Unknown...
+                    LOG.warn("No known client associated with p4 changelist " + first + "; probably a caching issue?");
+                } catch (InterruptedException ex) {
+                    LOG.warn(ex);
+                }
+            }
+        }
+        return null;
+    }
+
+    private ServerConfig getServerConfigForChangelistId(ProjectConfigRegistry registry, P4ChangelistId p4cl) {
+        ClientConfig clientConfig = registry.getRegisteredClientConfigState(p4cl.getClientServerRef());
+        if (clientConfig != null) {
+            return clientConfig.getServerConfig();
+        }
+        return null;
+    }
+
+
+
+    private Pair<ServerConfig, P4ChangelistId> findAttachedFileRevision(AnActionEvent e) {
         final VirtualFile file;
         {
             final Boolean nonLocal = e.getData(VcsDataKeys.VCS_NON_LOCAL_HISTORY_SESSION);
             if (Boolean.TRUE.equals(nonLocal)) {
                 LOG.info("non-local VCS history session; ignoring changelist description action");
-                return;
+                return null;
             }
             file = e.getData(VcsDataKeys.VCS_VIRTUAL_FILE);
             if (file == null || file.isDirectory()) {
                 LOG.info("No VCS virtual file associated with changelist description action; ignoring request.");
-                return;
+                return null;
             }
         }
 
         final VcsFileRevision revision = e.getData(VcsDataKeys.VCS_FILE_REVISION);
         if (!(revision instanceof P4HistoryVcsFileRevision)) {
             LOG.info("No file revision associated with file " + file);
-            return;
+            return null;
         }
-        P4HistoryVcsFileRevision p4Rev = (P4HistoryVcsFileRevision) revision;
-        ServerConfig serverConfig = p4Rev.getServerConfig();
-
-        P4ChangelistId changelistId = p4Rev.getChangelistId();
-
-        P4ServerComponent
-                .query(project, serverConfig, new DescribeChangelistQuery(changelistId))
-                .whenCompleted((r) -> {
-                    if (r.getRemoteChangelist() != null) {
-                        ChangelistDetails.showDocked(project, r.getRemoteChangelist());
-                    }
-                });
+        P4HistoryVcsFileRevision history = (P4HistoryVcsFileRevision) revision;
+        return Pair.create(history.getServerConfig(), history.getChangelistId());
     }
 }

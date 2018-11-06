@@ -178,8 +178,7 @@ public class CacheStoreUpdateListener implements Disposable {
     }
 
     private void addChangelistDetails(P4ChangelistId requestedChangelist, P4RemoteChangelist updatedChangelist) {
-        // FIXME add the cached data
-        LOG.warn("FIXME cache the changelist details");
+        // Note: not caching the committed changelist details, because the IDE handles that for us.
     }
 
     private void handleClientAction(@NotNull ClientActionMessage.Event event)

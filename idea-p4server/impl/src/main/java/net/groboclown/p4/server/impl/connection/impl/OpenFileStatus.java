@@ -177,6 +177,7 @@ public class OpenFileStatus {
      */
     public void throwIfError()
             throws RequestException {
+        // TODO look at calling out to MessageStatusUtil
         for (IServerMessage msg : messages) {
             if (msg != null && msg.isError()) {
                 throw new RequestException(msg);

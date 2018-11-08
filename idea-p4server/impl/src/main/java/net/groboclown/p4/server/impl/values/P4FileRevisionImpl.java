@@ -44,19 +44,35 @@ public class P4FileRevisionImpl
     private final String charset;
 
     public static P4FileRevision getHead(ClientServerRef ref, IExtendedFileSpec spec) {
-        return new P4FileRevisionImpl(new P4RemoteFileImpl(spec), new P4ChangelistIdImpl(spec.getChangelistId(), ref),
+        return new P4FileRevisionImpl(new P4RemoteFileImpl(spec), new P4ChangelistIdImpl(spec.getHeadChange(), ref),
                 new P4Revision(spec.getHeadRev()),
                 P4FileAction.convert(spec.getHeadAction()),
-                P4FileType.convert(spec.getFileType()), null, new P4Revision(spec.getHeadRev()),
-                spec.getHeadModTime(), spec.getCharset());
+                P4FileType.convert(spec.getHeadType()), null, new P4Revision(spec.getHeadRev()),
+                spec.getHeadTime(), spec.getHeadCharset());
     }
 
     public static P4FileRevision getHave(ClientServerRef ref, IExtendedFileSpec spec) {
-        return new P4FileRevisionImpl(new P4RemoteFileImpl(spec), new P4ChangelistIdImpl(spec.getChangelistId(), ref),
+        final int changeId = (spec.getChangelistId() > 0)
+            ? spec.getChangelistId()
+            : spec.getHeadChange();
+        final FileAction action = (spec.getAction() != null)
+            ? spec.getAction()
+            : spec.getHeadAction();
+        final Date date = (spec.getDate() != null)
+            ? spec.getDate()
+            : spec.getHeadTime();
+        final String charset = (spec.getCharset() != null)
+            ? spec.getCharset()
+            : spec.getHeadCharset();
+        final String fileType = (spec.getFileType() != null)
+            ? spec.getFileType()
+            : spec.getHeadType();
+
+        return new P4FileRevisionImpl(new P4RemoteFileImpl(spec), new P4ChangelistIdImpl(changeId, ref),
                 new P4Revision(spec.getHaveRev()),
-                P4FileAction.convert(spec.getAction()),
-                P4FileType.convert(spec.getFileType()), null, new P4Revision(spec.getHeadRev()),
-                spec.getDate(), spec.getCharset());
+                P4FileAction.convert(action),
+                P4FileType.convert(fileType), null, new P4Revision(spec.getHeadRev()),
+                date, charset);
     }
 
     public P4FileRevisionImpl(@NotNull ClientServerRef ref, @NotNull IFileRevisionData data) {

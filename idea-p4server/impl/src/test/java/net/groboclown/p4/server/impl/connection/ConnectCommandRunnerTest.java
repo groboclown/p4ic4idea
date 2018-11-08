@@ -52,6 +52,8 @@ import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
+import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
@@ -60,6 +62,9 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4AnnotatedLine;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
+import net.groboclown.p4.server.api.values.P4FileAction;
+import net.groboclown.p4.server.api.values.P4FileRevision;
+import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4JobField;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
@@ -985,6 +990,310 @@ class ConnectCommandRunnerTest {
                     assertThat(e.getResultError().getMessage().orElse(null),
                             containsString(e.getLocalizedMessage()));
                 });
+    }
+
+
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void listFilesDetails_have_is_head(TemporaryFolder tmpDir) throws IOException {
+        idea.useInlineThreading(null);
+        MockConfigPart part = new MockConfigPart()
+                // By using the RSH port, it means that the connection will be kept open
+                // (NTS connection).  By keeping the connection open until explicitly
+                // disconnected, this will indirectly be testing that the
+                // SimpleConnectionManager closes the connection.
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword()
+                .withClientname("client1");
+        final ServerConfig serverConfig = ServerConfig.createFrom(part);
+        final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        final File clientRoot = tmpDir.newFile("clientRoot");
+        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
+        final int[] committedChangelistId = { 0 };
+
+        setupClient(clientConfig, tmpDir, clientRoot)
+                .map(ConnectCommandRunner::new)
+                .futureMap((runner, sink) ->
+                        // Add the file and submit, so that head == have.
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
+                                .mapQueryAsync((res) -> runner.listFilesDetails(
+                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                                Collections.singletonList(newFile.getParentPath()),
+                                                ListFilesDetailsQuery.RevState.HAVE, 100)))
+                                .whenCompleted(sink::resolve)
+                                .whenServerError(sink::reject)
+                )
+                .whenCompleted((r) -> {
+                    assertNotNull(r);
+                    assertThat(r, instanceOf(ListFilesDetailsResult.class));
+                    ListFilesDetailsResult res = (ListFilesDetailsResult) r;
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertSize(1, res.getFiles());
+                    assertEquals(1, res.getFiles().size());
+
+                    P4FileRevision details = res.getFiles().get(0);
+                    assertNotNull(details.getDate());
+
+                    // Should have been the first checkin.
+                    assertNotNull(details.getChangelistId());
+                    assertEquals(committedChangelistId[0], details.getChangelistId().getChangelistId());
+                    assertEquals(1, details.getRevision().getLongRevisionNumber());
+
+                    assertEquals(P4FileAction.ADD, details.getFileAction());
+                    assertEquals(P4FileType.BaseType.TEXT, details.getFileType().getBaseType());
+                    assertNull(details.getIntegratedFrom());
+
+                    P4RemoteFile file = details.getFile();
+                    assertNotNull(file);
+                    assertEquals("//depot/a%40b.txt", file.getDepotPath());
+                    assertEquals("//depot/a@b.txt", file.getDisplayName());
+                })
+                .whenFailed(Assertions::fail);
+    }
+
+
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void listFilesDetails_have_not_head(TemporaryFolder tmpDir) throws IOException {
+        idea.useInlineThreading(null);
+        MockConfigPart part = new MockConfigPart()
+                // By using the RSH port, it means that the connection will be kept open
+                // (NTS connection).  By keeping the connection open until explicitly
+                // disconnected, this will indirectly be testing that the
+                // SimpleConnectionManager closes the connection.
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword()
+                .withClientname("client1");
+        final ServerConfig serverConfig = ServerConfig.createFrom(part);
+        final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        final File clientRoot = tmpDir.newFile("clientRoot");
+        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
+        final int[] committedChangelistId = { 0, 0 };
+
+        setupClient(clientConfig, tmpDir, clientRoot)
+                .map(ConnectCommandRunner::new)
+                .futureMap((runner, sink) ->
+                        // Add the file, create a second revision, and fetch the first, so that
+                        // have is different than head.
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                                // Submit the add
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
+                                // Open for edit
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                // Submit the open file
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
+                                // Fetch the first submit version
+                                .mapActionAsync(res -> runner.perform(
+                                        clientConfig, new FetchFilesAction(Collections.singletonList(newFile),
+                                                "@" + committedChangelistId[0], false)))
+                                // Get the have files
+                                .mapQueryAsync((res) -> runner.listFilesDetails(
+                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                                Collections.singletonList(newFile.getParentPath()),
+                                                ListFilesDetailsQuery.RevState.HAVE, 100)))
+                                .whenCompleted(sink::resolve)
+                                .whenServerError(sink::reject)
+                )
+                .whenCompleted((r) -> {
+                    assertNotNull(r);
+                    assertThat(r, instanceOf(ListFilesDetailsResult.class));
+                    ListFilesDetailsResult res = (ListFilesDetailsResult) r;
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertSize(1, res.getFiles());
+                    assertEquals(1, res.getFiles().size());
+
+                    P4FileRevision details = res.getFiles().get(0);
+                    assertNotNull(details.getDate());
+
+                    // Should have been the first checkin.
+                    assertNotNull(details.getChangelistId());
+                    assertEquals(committedChangelistId[0], details.getChangelistId().getChangelistId());
+                    assertEquals(1, details.getRevision().getLongRevisionNumber());
+
+                    assertEquals(P4FileAction.ADD, details.getFileAction());
+                    assertEquals(P4FileType.BaseType.TEXT, details.getFileType().getBaseType());
+                    assertNull(details.getIntegratedFrom());
+
+                    P4RemoteFile file = details.getFile();
+                    assertNotNull(file);
+                    assertEquals("//depot/a%40b.txt", file.getDepotPath());
+                    assertEquals("//depot/a@b.txt", file.getDisplayName());
+                })
+                .whenFailed(Assertions::fail);
+    }
+
+
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void listFilesDetails_head_have_head(TemporaryFolder tmpDir) throws IOException {
+        idea.useInlineThreading(null);
+        MockConfigPart part = new MockConfigPart()
+                // By using the RSH port, it means that the connection will be kept open
+                // (NTS connection).  By keeping the connection open until explicitly
+                // disconnected, this will indirectly be testing that the
+                // SimpleConnectionManager closes the connection.
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword()
+                .withClientname("client1");
+        final ServerConfig serverConfig = ServerConfig.createFrom(part);
+        final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        final File clientRoot = tmpDir.newFile("clientRoot");
+        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
+        final int[] committedChangelistId = { 0, 0 };
+
+        setupClient(clientConfig, tmpDir, clientRoot)
+                .map(ConnectCommandRunner::new)
+                .futureMap((runner, sink) ->
+                        // Open for Add
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                                // Submit the add
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
+                                // Open for edit
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                // Submit the open file
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
+                                .mapQueryAsync((res) -> runner.listFilesDetails(
+                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                                Collections.singletonList(newFile.getParentPath()),
+                                                ListFilesDetailsQuery.RevState.HEAD, 100)))
+                                .whenCompleted(sink::resolve)
+                                .whenServerError(sink::reject)
+                )
+                .whenCompleted((r) -> {
+                    assertNotNull(r);
+                    assertThat(r, instanceOf(ListFilesDetailsResult.class));
+                    ListFilesDetailsResult res = (ListFilesDetailsResult) r;
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertSize(1, res.getFiles());
+                    assertEquals(1, res.getFiles().size());
+
+                    P4FileRevision details = res.getFiles().get(0);
+                    assertNotNull(details.getDate());
+
+                    // Should have been the second checkin.
+                    assertNotNull(details.getChangelistId());
+                    assertEquals(committedChangelistId[1], details.getChangelistId().getChangelistId());
+                    assertEquals(2, details.getRevision().getLongRevisionNumber());
+
+                    assertEquals(P4FileAction.EDIT, details.getFileAction());
+                    assertEquals(P4FileType.BaseType.TEXT, details.getFileType().getBaseType());
+                    assertNull(details.getIntegratedFrom());
+
+                    P4RemoteFile file = details.getFile();
+                    assertNotNull(file);
+                    assertEquals("//depot/a%40b.txt", file.getDepotPath());
+                    assertEquals("//depot/a@b.txt", file.getDisplayName());
+                })
+                .whenFailed(Assertions::fail);
+    }
+
+
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void listFilesDetails_head_have_not_head(TemporaryFolder tmpDir) throws IOException {
+        idea.useInlineThreading(null);
+        MockConfigPart part = new MockConfigPart()
+                // By using the RSH port, it means that the connection will be kept open
+                // (NTS connection).  By keeping the connection open until explicitly
+                // disconnected, this will indirectly be testing that the
+                // SimpleConnectionManager closes the connection.
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword()
+                .withClientname("client1");
+        final ServerConfig serverConfig = ServerConfig.createFrom(part);
+        final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        final File clientRoot = tmpDir.newFile("clientRoot");
+        final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "a@b.txt"));
+        final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
+        final int[] committedChangelistId = { 0, 0 };
+
+        setupClient(clientConfig, tmpDir, clientRoot)
+                .map(ConnectCommandRunner::new)
+                .futureMap((runner, sink) ->
+                        // Open for Add
+                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                                // Submit the add
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
+                                // Open for edit
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                // Submit the open file
+                                .mapActionAsync((res) -> runner.perform(
+                                        clientConfig, new SubmitChangelistAction(
+                                                new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
+                                                null, "add file", null)))
+                                .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
+                                // Fetch the first submit version
+                                .mapActionAsync(res -> runner.perform(
+                                        clientConfig, new FetchFilesAction(Collections.singletonList(newFile),
+                                                "@" + committedChangelistId[0], false)))
+                                .mapQueryAsync((res) -> runner.listFilesDetails(
+                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                                Collections.singletonList(newFile.getParentPath()),
+                                                ListFilesDetailsQuery.RevState.HEAD, 100)))
+                                .whenCompleted(sink::resolve)
+                                .whenServerError(sink::reject)
+                )
+                .whenCompleted((r) -> {
+                    assertNotNull(r);
+                    assertThat(r, instanceOf(ListFilesDetailsResult.class));
+                    ListFilesDetailsResult res = (ListFilesDetailsResult) r;
+                    assertSame(serverConfig, res.getServerConfig());
+                    assertSize(1, res.getFiles());
+                    assertEquals(1, res.getFiles().size());
+
+                    P4FileRevision details = res.getFiles().get(0);
+                    assertNotNull(details.getDate());
+
+                    // Should have been the second checkin.
+                    assertNotNull(details.getChangelistId());
+                    assertEquals(committedChangelistId[1], details.getChangelistId().getChangelistId());
+                    assertEquals(2, details.getRevision().getLongRevisionNumber());
+
+                    assertEquals(P4FileAction.EDIT, details.getFileAction());
+                    assertEquals(P4FileType.BaseType.TEXT, details.getFileType().getBaseType());
+                    assertNull(details.getIntegratedFrom());
+
+                    P4RemoteFile file = details.getFile();
+                    assertNotNull(file);
+                    assertEquals("//depot/a%40b.txt", file.getDepotPath());
+                    assertEquals("//depot/a@b.txt", file.getDisplayName());
+                })
+                .whenFailed(Assertions::fail);
     }
 
 

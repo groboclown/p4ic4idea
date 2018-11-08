@@ -413,7 +413,7 @@ public class UserErrorComponent implements ProjectComponent {
             @NotNull @Nls(capitalization = Nls.Capitalization.Title) String title,
             @NotNull NotificationType icon) {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Reporting [" + message + "]", new Exception());
+            LOG.debug("Reporting [" + message + "]");
         }
         UserMessage.showNotification(project, level, message, title, icon);
     }

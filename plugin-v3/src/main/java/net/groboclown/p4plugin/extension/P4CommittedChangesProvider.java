@@ -146,17 +146,17 @@ public class P4CommittedChangesProvider implements
                             new SyncListFilesDetailsQuery(root));
         } else {
             try {
-                LOG.debug("Loading file location from the server");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Loading file location from the server for " + root);
+                }
                 details = P4ServerComponent
                         .query(project, client.getClientConfig().getServerConfig(),
                                 new ListFilesDetailsQuery(client.getClientConfig().getClientServerRef(),
                                         Collections.singletonList(root),  ListFilesDetailsQuery.RevState.HAVE, 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-                LOG.warn(e);
-                details = P4ServerComponent
-                        .syncCachedQuery(project, client.getClientConfig().getServerConfig(),
-                                new SyncListFilesDetailsQuery(root));
+                LOG.warn("Encountered error looking for files under " + root, e);
+                return null;
             }
         }
         return RepositoryLocationFactory.getLocationFor(root, client, details);

@@ -27,6 +27,7 @@ import com.perforce.p4java.core.IJobSpec;
 import com.perforce.p4java.core.ILabelSummary;
 import com.perforce.p4java.core.IUserSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.FileStatAncilliaryOptions;
 import com.perforce.p4java.core.file.FileStatOutputOptions;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
@@ -35,6 +36,7 @@ import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.changelist.SubmitOptions;
@@ -56,6 +58,7 @@ import com.perforce.p4java.option.server.GetUsersOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessageCode;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
@@ -370,7 +373,7 @@ public class P4CommandUtil {
         return ret.get(0);
     }
 
-    public Map<IFileSpec, IExtendedFileSpec> getFilesDetails(IServer server, String clientname, List<IFileSpec> sources)
+    public List<IExtendedFileSpec> getFilesDetails(IServer server, String clientname, List<IFileSpec> sources)
             throws P4JavaException {
         if (clientname != null) {
             // For fetching the local File information, we need a client to perform the mapping.
@@ -382,17 +385,18 @@ public class P4CommandUtil {
         if (LOG.isDebugEnabled()) {
             LOG.debug("File details for " + sources + ": " + res);
         }
-        MessageStatusUtil.throwIfMessageOrEmpty("get file details", res);
-        Map<IFileSpec, IExtendedFileSpec> ret = new HashMap<>();
-        Iterator<IFileSpec> sourceIter = sources.iterator();
+
+        // "file(s) not on client" should not generate an error.
+        // Likewise, empty values should not generate an error,
+        // especially since the command usually includes paths ("...").
+        MessageStatusUtil.throwIf(res,
+                m -> m.getGeneric() != MessageGenericCode.EV_EMPTY);
+
+        List<IExtendedFileSpec> ret = new ArrayList<>();
         for (IExtendedFileSpec extendedFileSpec : res) {
-            if (extendedFileSpec.getStatusMessage() != null) {
-                if (!sourceIter.hasNext()) {
-                    throw new P4JavaException("Incorrect Perforce server result: too many responses for fstat; "
-                            + "invoked p4 fstat " +
-                            sources.stream().map(IFileSpec::toString).collect(Collectors.joining(" ")));
-                }
-                ret.put(sourceIter.next(), extendedFileSpec);
+            // FIXME Original version validated that getStatusMessage() != null ... is that right?
+            if (extendedFileSpec.getOpStatus() == FileSpecOpStatus.VALID) {
+                ret.add(extendedFileSpec);
             }
         }
         return ret;

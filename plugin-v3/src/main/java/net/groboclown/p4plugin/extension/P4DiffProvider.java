@@ -66,6 +66,9 @@ public class P4DiffProvider extends DiffProviderEx
     @Nullable
     @Override
     public VcsRevisionNumber getCurrentRevision(VirtualFile file) {
+        if (file.isDirectory()) {
+            return null;
+        }
         // TODO this needs to return the "have", not "head" revision
         ClientConfigRoot root = getRootFor(file);
         if (root == null) {
@@ -117,6 +120,9 @@ public class P4DiffProvider extends DiffProviderEx
     @Nullable
     @Override
     public ItemLatestState getLastRevision(FilePath filePath) {
+        if (filePath.isDirectory()) {
+            return null;
+        }
         ClientConfigRoot root = getRootFor(filePath);
         if (root == null) {
             if (LOG.isDebugEnabled()) {

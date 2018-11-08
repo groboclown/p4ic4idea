@@ -27,6 +27,10 @@ import java.util.List;
 public class P4FileType {
     private static final P4FileType UNKNOWN = new P4FileType(BaseType.UNKNOWN, -1, Collections.emptyList(), KeywordExpansion.NONE);
 
+    public BaseType getBaseType() {
+        return baseType;
+    }
+
     public enum BaseType {
         TEXT,
         BINARY,

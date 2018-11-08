@@ -17,6 +17,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.DiffFromHistoryHandler;
@@ -29,6 +30,9 @@ import com.intellij.openapi.vcs.history.VcsHistorySession;
 import com.intellij.openapi.vcs.history.VcsHistoryUtil;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.ColoredTableCellRenderer;
+import com.intellij.ui.dualView.DualViewColumnInfo;
+import com.intellij.ui.speedSearch.SpeedSearchUtil;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcs.history.VcsHistoryProviderEx;
 import com.intellij.vcsUtil.VcsUtil;
@@ -41,6 +45,9 @@ import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4.server.api.values.P4FileRevision;
+import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.actions.ChangelistDescriptionAction;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
@@ -50,7 +57,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.TableCellRenderer;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +79,7 @@ public class P4HistoryProvider
 
     @Override
     public VcsDependentHistoryComponents getUICustomization(VcsHistorySession session, JComponent forShortcutRegistration) {
-        return VcsDependentHistoryComponents.createOnlyColumns(new ColumnInfo[0]);
+        return VcsDependentHistoryComponents.createOnlyColumns(ADDITIONAL_HISTORY_COLUMNS);
     }
 
     @Override
@@ -82,7 +91,8 @@ public class P4HistoryProvider
 
     @Override
     public boolean isDateOmittable() {
-        return true;
+        // Show the date column.
+        return false;
     }
 
     @Nullable
@@ -110,7 +120,6 @@ public class P4HistoryProvider
         }
         FilePath fp = VcsUtil.getFilePath(file);
         return fp != null && getRootFor(fp) != null;
-
     }
 
     @Nullable
@@ -311,4 +320,60 @@ public class P4HistoryProvider
             VcsHistoryUtil.showDifferencesInBackground(project, filePath, revision1, revision2);
         }
     }
+
+
+    private static class ChangelistColumnInfo extends DualViewColumnInfo<VcsFileRevision, String>
+            implements Comparator<VcsFileRevision> {
+        @NotNull
+        private final ColoredTableCellRenderer myRenderer = new ColoredTableCellRenderer() {
+            protected void customizeCellRenderer(JTable table, Object value, boolean selected, boolean hasFocus, int row, int column) {
+                this.setOpaque(selected);
+                this.append(value.toString());
+                SpeedSearchUtil.applySpeedSearchHighlighting(table, this, false, selected);
+            }
+        };
+
+        public ChangelistColumnInfo() {
+            super(P4Bundle.getString("history.columns.changelist"));
+        }
+
+        Integer getDataOf(VcsFileRevision rev) {
+            if (rev instanceof P4FileRevision) {
+                return ((P4FileRevision) rev).getChangelistId().getChangelistId();
+            }
+            if (rev instanceof P4HistoryVcsFileRevision) {
+                return ((P4HistoryVcsFileRevision) rev).getChangelistId().getChangelistId();
+            }
+            return null;
+        }
+
+        public Comparator<VcsFileRevision> getComparator() {
+            return this;
+        }
+
+        public String valueOf(VcsFileRevision object) {
+            Integer result = this.getDataOf(object);
+            return result == null ? "" : result.toString();
+        }
+
+        public int compare(VcsFileRevision o1, VcsFileRevision o2) {
+            return Comparing.compare(this.getDataOf(o1), this.getDataOf(o2));
+        }
+
+        public boolean shouldBeShownIsTheTree() {
+            return true;
+        }
+
+        public boolean shouldBeShownIsTheTable() {
+            return true;
+        }
+
+        @Nullable
+        public TableCellRenderer getRenderer(VcsFileRevision revision) {
+            return this.myRenderer;
+        }
+    }
+
+    private static ChangelistColumnInfo CHANGELIST_COLUMN_INFO = new ChangelistColumnInfo();
+    private static ColumnInfo[] ADDITIONAL_HISTORY_COLUMNS = new ColumnInfo[] { CHANGELIST_COLUMN_INFO };
 }

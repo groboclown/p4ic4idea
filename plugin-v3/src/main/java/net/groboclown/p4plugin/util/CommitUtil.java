@@ -72,6 +72,9 @@ public class CommitUtil {
         Map<ClientConfigRoot, List<FilePath>> filesByRoot = mapChangedFilesByRoot(registry, changes);
         List<VcsException> errors = new ArrayList<>();
 
+        // This bit of code can incorrectly duplicate changelist items to submit.  Need to protect against that.
+        Set<P4ChangelistId> submitted = new HashSet<>();
+
         try {
             boolean completed = filesByRoot.entrySet().stream()
                     .map((entry) -> new Pair<>(entry.getKey(), getFileChangelists(project,
@@ -82,10 +85,20 @@ public class CommitUtil {
                                 P4CommandRunner.ActionAnswer<SubmitChangelistResult> ret =
                                         new DoneActionAnswer<>(null);
                                 for (P4ChangelistId changelistId : pair.second) {
-                                    ret = ret.mapActionAsync((r) -> P4ServerComponent
-                                            .perform(project, pair.first.getClientConfig(),
-                                                    new SubmitChangelistAction(changelistId,
-                                                            associatedJobs, preparedComment, submitStatus)));
+                                    if (submitted.contains(changelistId)) {
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("Skipped double submit for " + changelistId);
+                                        }
+                                    } else {
+                                        if (LOG.isDebugEnabled()) {
+                                            LOG.debug("Requesting submit for " + changelistId);
+                                        }
+                                        submitted.add(changelistId);
+                                        ret = ret.mapActionAsync((r) -> P4ServerComponent
+                                                .perform(project, pair.first.getClientConfig(),
+                                                        new SubmitChangelistAction(changelistId,
+                                                                associatedJobs, preparedComment, submitStatus)));
+                                    }
                                 }
                                 return ret;
                             }))

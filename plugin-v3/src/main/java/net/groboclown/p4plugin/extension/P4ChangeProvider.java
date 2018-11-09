@@ -495,6 +495,12 @@ public class P4ChangeProvider
                     }
                     builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
                     return false;
+                } else if (ChangeListManager.getInstance(project).getChangeList(localChangeList.getId()) == null) {
+                    // This can happen after submit, and is a sign that the cache is out of date.
+                    LOG.info("Encountered deleted changelist " + localChangeList +
+                            "; cache is probably out of date and needs a refresh.");
+                    builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
+                    return false;
                 } else {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Adding change " + file + " to IDE changelist " + localChangeList);

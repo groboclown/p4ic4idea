@@ -245,7 +245,8 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.SUBMIT_CHANGELIST,
             (ClientActionRunner<SubmitChangelistResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
-                    // TODO does this need a directory for AltRoot purposes?  Probably.
+                    // TODO does this need a directory for AltRoot purposes?  Yes, when the
+                    // code is updated to shuffle non-project files out of the changelist.
                     (client) -> submitChangelist(client, config, (SubmitChangelistAction) action))));
     }
 
@@ -643,8 +644,10 @@ public class ConnectCommandRunner
         } else {
             change = cmd.getChangelistDetails(client.getServer(), action.getChangelistId().getChangelistId());
         }
-        if (change == null || change.getStatus() == ChangelistStatus.SUBMITTED) {
-            throw new P4JavaException("No such pending change on server: " + change);
+        if (change == null) {
+            throw new P4JavaException("No such pending change on server: " + action.getChangelistId());
+        } else if (change.getStatus() == ChangelistStatus.SUBMITTED) {
+            throw new P4JavaException("Change " + change.getId() + " already submitted");
         }
         if (action.getUpdatedDescription() != null && !action.getUpdatedDescription().isEmpty()) {
             change.setDescription(action.getUpdatedDescription());

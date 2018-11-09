@@ -1,4 +1,4 @@
-p4d/p4d.bin
-p4d-ssl/p4d.bin
-swarm-*.tgz
-swarm/swarm.tgz
+/p4d/p4d.bin
+p4.bin
+*.tar.gz
+*.tgz

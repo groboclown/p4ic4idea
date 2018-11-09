@@ -1,39 +1,39 @@
-FROM alpine:3.8
+FROM frolvlad/alpine-glibc:alpine-3.8_glibc-2.28
 
-VOLUME /opt/perforce
+# P4D requires glibc libraries.
+
+VOLUME /opt/perforce/logs.d
+VOLUME /opt/perforce/root.d
 EXPOSE 1666
 
-ENV P4JOURNAL /opt/perforce/journal
-ENV P4LOG /opt/perforce/p4.log
+ENV P4JOURNAL /opt/perforce/logs.d/journal
+ENV P4LOG /opt/perforce/logs.d/p4.log
 ENV P4PORT ssl:1666
-ENV P4ROOT /opt/perforce/depot.d
+ENV P4ROOT /opt/perforce/root.d
 ENV P4SSLDIR /opt/perforce/ssl.d
 
 ADD p4d.bin /usr/local/sbin/
+ADD p4.bin /usr/local/bin/
 
-# TODO libs are wrong for alpine + p4d:
-# $ ldd /usr/local/sbin/p4d.bin
-#         /lib64/ld-linux-x86-64.so.2 (0x7f6bda4a2000)
-#         librt.so.1 => /lib64/ld-linux-x86-64.so.2 (0x7f6bda4a2000)
-#         libdl.so.2 => /lib64/ld-linux-x86-64.so.2 (0x7f6bda4a2000)
-#         libm.so.6 => /lib64/ld-linux-x86-64.so.2 (0x7f6bda4a2000)
-#         libpthread.so.0 => /lib64/ld-linux-x86-64.so.2 (0x7f6bda4a2000)
-#         libc.so.6 => /lib64/ld-linux-x86-64.so.2 (0x7f6bda4a2000)
-# Error relocating /usr/local/sbin/p4d.bin: __rawmemchr: symbol not found
-# Error relocating /usr/local/sbin/p4d.bin: sys_errlist: symbol not found
-# Error relocating /usr/local/sbin/p4d.bin: sys_nerr: symbol not found
-# Error relocating /usr/local/sbin/p4d.bin: __morecore: symbol not found
+COPY sampledepot.tar.gz /opt/
+ADD p4d-start.sh /opt/
+ADD server-sso-script.sh /opt/
 
-RUN chmod +x /usr/local/sbin/p4d.bin && \
-    ( \
-        test "$P4PORT" == ssl:1666 && ( \
-            mkdir "$P4SSLDIR" && \
-            chmod 700 $P4SSLDIR && \
-            /usr/local/sbin/p4d.bin -Gc ) \
-        || echo "No SSL" \
-    )
+RUN apk --no-cache update && \
+    apk --no-cache add \
+        dos2unix \
+        && \
+    dos2unix \
+        /opt/p4d-start.sh \
+        /opt/server-sso-script.sh && \
+    chmod +x \
+        /usr/local/sbin/p4d.bin \
+        /opt/p4d-start.sh \
+        /opt/server-sso-script.sh \
+        /usr/local/bin/p4.bin
 
 WORKDIR /opt/perforce
 
 # ENTRYPOINT /usr/local/sbin/p4d.bin -v 3
+# ENTRYPOINT /opt/p4d-start.sh
 CMD /bin/sh

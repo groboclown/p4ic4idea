@@ -552,6 +552,14 @@ public class ConnectCommandRunner
         }
 
         // First, discover if the file is known by the server.
+
+        // TODO check for symlink handling; without this, the setup:
+        //       a/b.txt
+        //       c -> symlink to a
+        // This would cause the local file "c/b.txt" to be detected as an ADD operation, when it should be an
+        // EDIT of a/b.txt.
+        // See FileActionsServerCacheSync.updateFilesForSymlink
+
         List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
         OpenFileStatus status = new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFiles, 1000));
         status.throwIfError();

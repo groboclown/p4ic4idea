@@ -1,0 +1,46 @@
+version: '3'
+
+volumes:
+  # According to standard Perforce administration best practices, the
+  # journal and dbs should be on separate disks.
+  # Persistent db and files
+  p4d-root:
+    driver: local
+  # Persistent logs
+  p4d-logs:
+    driver: local
+
+  # Persistent configuration
+  swarm-data:
+    driver: local
+
+
+services:
+  perforce:
+    container_name: perforce
+    build:
+      context: p4d/.
+    ports:
+      - "21666:1666"
+    environment:
+      P4PORT: "ssl:1666"
+    volumes:
+      - p4d-root:/opt/perforce/root.d
+      - p4d-logs:/opt/perforce/logs.d
+    command: /opt/p4d-start.sh
+    #restart: unless-stopped
+
+  swarm:
+    container_name: swarm
+    build:
+      context: swarm/.
+    ports:
+      - "10080:80"
+    environment:
+      P4PORT: "ssl:perforce:1666"
+    volumes:
+      - swarm-data:/opt/swarm/data
+    #restart: unless-stopped
+    command: /opt/start-apache.sh
+    links:
+      - perforce

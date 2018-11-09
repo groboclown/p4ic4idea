@@ -43,6 +43,7 @@
     * The new project will need to be configured after the synchronize; the settings used to synchronize the project directory, unfortunately, cannot be put into the new project settings.
 * Repository changelist history view
     * The Version Control Repository panel now shows changelist history.
+    * Individual file history shows revision number as the primary column, but also shows the changelist number.
 * Upgraded p4java dependency to r18-1
     * Requires additional dependent jars.
     * Allows for more thorough unit testing.

@@ -77,6 +77,13 @@ This might be fixed now.  The API has changed to force usage that prevents serio
 
 In the 0.10 release, these pieces of old functionality are either broken or disabled.
 
+### Symlink Files
+
+The symlink file checks that were a major effort in the old plugin were not transferred over.
+
+The code was located in `FileActionsServerCacheSync`.  The new code needs to be located in
+`ConnectCommandRunner.addEditFile`.
+
 ### Ignore File
 
 The `P4ChangeProvider` and `P4VFSListener` and `P4EditFileProvider` classes must inspect the `IgnoreFileSet` for
@@ -85,18 +92,9 @@ file status.
 
 The `P4EditAction` should respect the user's request and force the add.
 
-### SSO
+### SSO Testing
 
 The SSO is not tested.
-
-### Swarm Integration
-
-Swarm integration creates the review, but does not allow for modifying an existing review.  There is also no way to see
-beforehand which changelist has a review associated with it.
-
-### Revert Unchanged
-
-Re-add implementation.
 
 ### Pending Action Consolidation
 
@@ -104,10 +102,6 @@ When a user performs an action, the internal mechanisms must first check the pen
 duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
 
 Some of this work has started.  It is handled in `PendingActionCurator`.
-
-### Symlink Files
-
-The symlink file checks that were a major effort in the old plugin were not transferred over.
 
 
 ## Code Items Needing Attention
@@ -188,6 +182,15 @@ These pieces of functionality are not required for the 0.10 release, but should 
 
 Re-add support for showing shelved files and managing shelved files.  Shelving files is currently only supported when
 a Swarm review is created.
+
+### Swarm Integration
+
+Swarm integration creates the review, but does not allow for modifying an existing review.  There is also no way to see
+beforehand which changelist has a review associated with it.
+
+### Revert Unchanged
+
+Re-add implementation.
 
 ### Additional History Browsing Support
 

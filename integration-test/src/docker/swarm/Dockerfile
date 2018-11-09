@@ -24,6 +24,7 @@ RUN apk --no-cache update && \
     cp -R /opt/swarm-*/* /opt/swarm/. && \
     apk --no-cache add \
         dos2unix \
+        curl \
         apache2 \
         libstdc++ \
         php5-apache2 \

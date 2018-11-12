@@ -28,9 +28,9 @@ import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
-import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4Job;
@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class CommitUtil {
     private static final Logger LOG = Logger.getInstance(CommitUtil.class);
@@ -77,30 +78,24 @@ public class CommitUtil {
 
         try {
             boolean completed = filesByRoot.entrySet().stream()
-                    .map((entry) -> new Pair<>(entry.getKey(), getFileChangelists(project,
-                            entry.getKey().getClientConfig(), entry.getValue())))
-                    .map((pair) -> getJobsIn(project, pair.first.getServerConfig(), jobs)
+                    .map(entry -> getJobsIn(project, entry.getKey(),entry.getValue(), jobs))
+                    .flatMap(data -> getFileChangelists(project, data).stream())
+                    .map(data -> data.answer
                             .mapActionAsync((associatedJobs) -> {
-                                // TODO have a better message report.
-                                P4CommandRunner.ActionAnswer<SubmitChangelistResult> ret =
-                                        new DoneActionAnswer<>(null);
-                                for (P4ChangelistId changelistId : pair.second) {
-                                    if (submitted.contains(changelistId)) {
-                                        if (LOG.isDebugEnabled()) {
-                                            LOG.debug("Skipped double submit for " + changelistId);
-                                        }
-                                    } else {
-                                        if (LOG.isDebugEnabled()) {
-                                            LOG.debug("Requesting submit for " + changelistId);
-                                        }
-                                        submitted.add(changelistId);
-                                        ret = ret.mapActionAsync((r) -> P4ServerComponent
-                                                .perform(project, pair.first.getClientConfig(),
-                                                        new SubmitChangelistAction(changelistId,
-                                                                associatedJobs, preparedComment, submitStatus)));
+                                if (submitted.contains(data.changelistId)) {
+                                    LOG.warn("Skipped double submit for " + data.changelistId);
+                                    return new DoneActionAnswer<>(null);
+                                } else {
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Requesting submit for " + data.changelistId);
                                     }
+                                    submitted.add(data.changelistId);
+                                    return P4ServerComponent
+                                            .perform(project, data.root.getClientConfig(),
+                                                    new SubmitChangelistAction(data.changelistId,
+                                                            data.files,
+                                                            associatedJobs, preparedComment, submitStatus));
                                 }
-                                return ret;
                             }))
                     .collect(ErrorCollectors.collectActionErrors(errors))
                     .blockingWait(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
@@ -116,7 +111,7 @@ public class CommitUtil {
 
 
     @NotNull
-    public static Map<ClientConfigRoot, List<FilePath>> mapChangedFilesByRoot(@NotNull ProjectConfigRegistry registry,
+    private static Map<ClientConfigRoot, List<FilePath>> mapChangedFilesByRoot(@NotNull ProjectConfigRegistry registry,
             @NotNull Collection<Change> changes) {
         Map<ClientConfigRoot, List<FilePath>> ret = new HashMap<>();
         for (Change change : changes) {
@@ -141,30 +136,45 @@ public class CommitUtil {
     }
 
 
+    private static JobData getJobsIn(Project project, ClientConfigRoot root,
+            List<FilePath> files, List<P4Job> jobs) {
+        return new JobData(root, files, getJobsIn(project, root.getServerConfig(), jobs));
+    }
+
     @NotNull
-    public static List<P4ChangelistId> getFileChangelists(Project project, ClientConfig config,
-            Collection<FilePath> files) {
-        List<P4ChangelistId> ret = new ArrayList<>();
+    private static List<SubmitChangelistData> getFileChangelists(Project project, JobData data) {
+        Map<P4ChangelistId, List<FilePath>> ret = new HashMap<>();
         Pair<IdeChangelistMap, IdeFileMap>
                 cachePair = CacheComponent.getInstance(project).getServerOpenedCache();
-        for (FilePath file : files) {
+        List<P4LocalFile> noChangelistFiles = new ArrayList<>();
+        for (FilePath file : data.files) {
             P4LocalFile p4File = cachePair.second.forIdeFile(file);
             if (p4File != null) {
                 P4ChangelistId change = p4File.getChangelistId();
-                if (change != null) {
-                    ret.add(change);
+                if (change == null) {
+                    noChangelistFiles.add(p4File);
                 } else {
-                    LOG.warn("No perforce change associated with file " + file);
+                    ret.computeIfAbsent(change, c -> new ArrayList<>()).add(file);
                 }
             } else {
-                LOG.warn("No perforce file associated with " + file);
+                LOG.warn("No cached perforce file associated with " + file);
             }
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Associated changes " + ret + " to files " + files);
+        if (! noChangelistFiles.isEmpty()) {
+            // This scenario should never happen. But if it does...
+            // Should it just add/edit on the default changelist and submit with everything else?
+            LOG.warn("No perforce change associated with files " + noChangelistFiles);
+            InternalErrorMessage.send(project).p4ApiInternalError(new ErrorEvent<>(
+                    new Exception("Attempted to submit files that weren't open for edit/add: " + noChangelistFiles)));
         }
-        return ret;
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Associated changes " + ret + " to files " + data.files);
+        }
+        return ret.entrySet().stream()
+                .map(e -> new SubmitChangelistData(data, e.getValue(), e.getKey()))
+                .collect(Collectors.toList());
     }
 
 
@@ -182,4 +192,32 @@ public class CommitUtil {
         return ret;
     }
 
+
+    static class SubmitChangelistData {
+        final ClientConfigRoot root;
+        final List<FilePath> files;
+        final P4ChangelistId changelistId;
+        final P4CommandRunner.QueryAnswer<Set<P4Job>> answer;
+
+        SubmitChangelistData(@NotNull JobData data,
+                @NotNull List<FilePath> files, @NotNull P4ChangelistId changelistId) {
+            this.root = data.root;
+            this.files = files;
+            this.answer = data.jobAnswer;
+            this.changelistId = changelistId;
+        }
+    }
+
+    static class JobData {
+        final ClientConfigRoot root;
+        final List<FilePath> files;
+        final P4CommandRunner.QueryAnswer<Set<P4Job>> jobAnswer;
+
+        JobData(@NotNull ClientConfigRoot root, @NotNull List<FilePath> files,
+                @NotNull P4CommandRunner.QueryAnswer<Set<P4Job>> jobAnswer) {
+            this.root = root;
+            this.files = files;
+            this.jobAnswer = jobAnswer;
+        }
+    }
 }

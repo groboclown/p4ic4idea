@@ -338,7 +338,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
                                 .whenCompleted(sink::resolve)
@@ -390,7 +390,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, null, null)))
+                                                Collections.singletonList(newFile), null, null, null)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -559,7 +559,7 @@ class ConnectCommandRunnerTest {
                         MessageStatusUtil.throwIfError(msgs);
                         IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                         change.setDescription("add initial file");
-                        msgs = cmd.submitChangelist(null, null, change);
+                        msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                         MessageStatusUtil.throwIfError(msgs);
                         return runner;
                     })
@@ -831,7 +831,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
                                 .mapQueryAsync((res) ->
@@ -910,7 +910,7 @@ class ConnectCommandRunnerTest {
 
     @ExtendWith(TemporaryFolderExtension.class)
     @Test
-    void getClientsForUser_nonExistant(TemporaryFolder tmpDir) throws IOException {
+    void getClientsForUser_nonExistent(TemporaryFolder tmpDir) throws IOException {
         idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
@@ -1021,7 +1021,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 .mapQueryAsync((res) -> runner.listFilesDetails(
                                         serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
@@ -1041,7 +1041,7 @@ class ConnectCommandRunnerTest {
                     P4FileRevision details = res.getFiles().get(0);
                     assertNotNull(details.getDate());
 
-                    // Should have been the first checkin.
+                    // Should have been the first check-in.
                     assertNotNull(details.getChangelistId());
                     assertEquals(committedChangelistId[0], details.getChangelistId().getChangelistId());
                     assertEquals(1, details.getRevision().getLongRevisionNumber());
@@ -1089,7 +1089,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 // Open for edit
                                 .mapActionAsync((res) -> runner.perform(
@@ -1098,7 +1098,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
                                 // Fetch the first submit version
                                 .mapActionAsync(res -> runner.perform(
@@ -1123,7 +1123,7 @@ class ConnectCommandRunnerTest {
                     P4FileRevision details = res.getFiles().get(0);
                     assertNotNull(details.getDate());
 
-                    // Should have been the first checkin.
+                    // Should have been the first check-in.
                     assertNotNull(details.getChangelistId());
                     assertEquals(committedChangelistId[0], details.getChangelistId().getChangelistId());
                     assertEquals(1, details.getRevision().getLongRevisionNumber());
@@ -1170,7 +1170,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 // Open for edit
                                 .mapActionAsync((res) -> runner.perform(
@@ -1179,7 +1179,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
                                 .mapQueryAsync((res) -> runner.listFilesDetails(
                                         serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
@@ -1199,7 +1199,7 @@ class ConnectCommandRunnerTest {
                     P4FileRevision details = res.getFiles().get(0);
                     assertNotNull(details.getDate());
 
-                    // Should have been the second checkin.
+                    // Should have been the second check-in.
                     assertNotNull(details.getChangelistId());
                     assertEquals(committedChangelistId[1], details.getChangelistId().getChangelistId());
                     assertEquals(2, details.getRevision().getLongRevisionNumber());
@@ -1246,7 +1246,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 // Open for edit
                                 .mapActionAsync((res) -> runner.perform(
@@ -1255,7 +1255,7 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
-                                                null, "add file", null)))
+                                                Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
                                 // Fetch the first submit version
                                 .mapActionAsync(res -> runner.perform(
@@ -1279,7 +1279,7 @@ class ConnectCommandRunnerTest {
                     P4FileRevision details = res.getFiles().get(0);
                     assertNotNull(details.getDate());
 
-                    // Should have been the second checkin.
+                    // Should have been the second check-in.
                     assertNotNull(details.getChangelistId());
                     assertEquals(committedChangelistId[1], details.getChangelistId().getChangelistId());
                     assertEquals(2, details.getRevision().getLongRevisionNumber());

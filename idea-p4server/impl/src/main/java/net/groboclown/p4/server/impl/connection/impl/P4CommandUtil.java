@@ -58,7 +58,6 @@ import com.perforce.p4java.option.server.GetUsersOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
-import com.perforce.p4java.server.IServerMessageCode;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
@@ -72,11 +71,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Keeps all the different server commands that need to be run in one place.  Allows for
@@ -300,7 +296,7 @@ public class P4CommandUtil {
     public List<IFileSpec> submitChangelist(
             JobStatus jobStatus,
             Collection<P4Job> updatedJobs,
-            IChangelist changelist)
+            IChangelist changelist, List<FilePath> files)
             throws P4JavaException {
         SubmitOptions options = new SubmitOptions();
         if (jobStatus != null) {
@@ -313,6 +309,12 @@ public class P4CommandUtil {
             }
             options.setJobIds(jobIds);
         }
+        List<IFileSpec> liveFiles = changelist.getFiles(false);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Replacing files in changelist " + liveFiles + " with " + files);
+        }
+        liveFiles.clear();
+        liveFiles.addAll(FileSpecBuildUtil.forFilePaths(files));
         return changelist.submit(options);
     }
 

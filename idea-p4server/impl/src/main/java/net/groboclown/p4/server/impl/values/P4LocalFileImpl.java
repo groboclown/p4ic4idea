@@ -31,6 +31,7 @@ import net.groboclown.p4.server.api.values.P4Revision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
@@ -231,6 +232,7 @@ public class P4LocalFileImpl implements P4LocalFile {
         return depot;
     }
 
+    @Nonnull
     @NotNull
     @Override
     public Optional<P4RemoteFile> getClientDepotPath() {

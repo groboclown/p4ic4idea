@@ -184,7 +184,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Get the status
@@ -242,7 +242,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for edit
@@ -304,7 +304,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for delete

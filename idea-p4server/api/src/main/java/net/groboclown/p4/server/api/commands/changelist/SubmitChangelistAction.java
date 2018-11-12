@@ -14,30 +14,35 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
+import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.AbstractNonCachedClientAction;
-import net.groboclown.p4.server.api.commands.ActionUtil;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class SubmitChangelistAction extends AbstractNonCachedClientAction<SubmitChangelistResult> {
     private final P4ChangelistId changelistId;
     private final Collection<P4Job> updatedJobs;
     private final String updatedDescription;
     private final JobStatus jobStatus;
+    private final List<FilePath> files;
 
     public SubmitChangelistAction(@NotNull P4ChangelistId changelistId,
-            @Nullable Collection<P4Job> updatedJobs, @Nullable String updatedDescription,
+            @NotNull List<FilePath> files, @Nullable Collection<P4Job> updatedJobs,
+            @Nullable String updatedDescription,
             @Nullable JobStatus jobStatus) {
         this.changelistId = changelistId;
         this.updatedJobs = updatedJobs;
         this.updatedDescription = updatedDescription;
         this.jobStatus = jobStatus;
+        this.files = new ArrayList<>(files);
     }
 
     @NotNull
@@ -69,5 +74,10 @@ public class SubmitChangelistAction extends AbstractNonCachedClientAction<Submit
     @Nullable
     public JobStatus getJobStatus() {
         return jobStatus;
+    }
+
+    @NotNull
+    public List<FilePath> getFiles() {
+        return files;
     }
 }

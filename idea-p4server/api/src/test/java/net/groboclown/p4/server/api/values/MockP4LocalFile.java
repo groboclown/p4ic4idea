@@ -21,6 +21,7 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ public class MockP4LocalFile implements P4LocalFile {
         return depotPath;
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public Optional<P4RemoteFile> getClientDepotPath() {
         return Optional.empty();

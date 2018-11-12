@@ -26,7 +26,6 @@ import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.impl.connection.MockP4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
@@ -86,7 +85,7 @@ class P4FileActionTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             client.editFiles(srcFiles, new EditFilesOptions());
@@ -147,7 +146,7 @@ class P4FileActionTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Delete the target file
@@ -157,7 +156,7 @@ class P4FileActionTest {
                             assertFalse(toFile.getIOFile().exists());
                             change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("delete target file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
                             // make sure the file's still gone.
                             assertFalse(toFile.getIOFile().exists());

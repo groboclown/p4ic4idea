@@ -95,7 +95,7 @@ class MoveResponseTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             client.editFiles(srcFiles, new EditFilesOptions());
@@ -152,7 +152,7 @@ class MoveResponseTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             msgs = client.getServer().moveFile(
@@ -212,7 +212,7 @@ class MoveResponseTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             msgs = client.editFiles(srcFiles, new EditFilesOptions());
@@ -274,7 +274,7 @@ class MoveResponseTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             msgs = client.editFiles(srcFiles, new EditFilesOptions());
@@ -340,7 +340,7 @@ class MoveResponseTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change);
+                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for edit source and target.

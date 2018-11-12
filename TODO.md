@@ -3,8 +3,35 @@
 Some of the to-dos are listed in the bug list on Github.  This list itself should be handled better in the project view
 of Github.
 
+## Retest
+
+These items need retesting.
+
+### Submit
+
+1. Multi-root submit.
+2. With / without jobs.
+
+### SSO
+
+Connect with SSO server.
+
+
 
 ## Bugs
+
+### Revert File Logic
+
+**Priority: Blocker**
+
+Revert file functionality might have an issue in terms of where it's being applied.  See #181 for reference.
+
+* Request to move a file when the source is known by the server and the target is open for add, edit, or delete; the
+  target is reverted.  This logic MUST be re-examined for correct behavior.
+* Multiple file operations.  Because of the OpenFileStatus grouped files, only the similarly organized files can be
+  reverted.
+
+Because of the complexity of file moving, the logic is now in the specialized class `MoveFile`.
 
 ### File Cache Conflict
 
@@ -92,86 +119,12 @@ file status.
 
 The `P4EditAction` should respect the user's request and force the add.
 
-### SSO Testing
-
-The SSO is not tested.
-
 ### Pending Action Consolidation
 
 When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
 duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
 
 Some of this work has started.  It is handled in `PendingActionCurator`.
-
-
-## Code Items Needing Attention
-
-All the "FIXME" items in the codebase.
-
-### ClientNamePartUI
-
-If there's a login issue, such as a bad password, the user is not notified.
-Specifically, the user isn't given an opportunity to enter the correct password.
-
-### RemoteFileUtil
-
-Causes the UI to show a relative path instead of the depot path.
-
-### ActiveConnectionPanel
-
-The tree is collapsed every time it is refreshed.
-
-### P4LineAnnotationAspect
-
-Implement showAffectedPaths
-
-### P4MergeProvider
-
-Needs implementation, and tie into P4Vcs.  If not, then delete it.
-
-### P4IntegrateEnvironment
-
-Needs implementation, and tie into P4Vcs.  If not, then delete it.
-
-### P4CommittedChangesProvider
-
-Implement getForNonLocal, createFilters for shelved files, and HAS_SHELVED.getValue.
-
-### InvalidPasswordMonitorComponent
-
-Better project detection.
-
-### TopCommandRunner
-
-A few low-level commands aren't implemented, because they aren't needed yet.
-
-### ProjectConfigRegistryImpl
-
-Needs to correctly dispose of removed client configs.
-
-### P4LocalChangelistBuilder and P4LocalChangelistImpl.Builder
-
-Choose one.
-
-### ConnectCommandRunner
-
-Few fiddly bits need corrections.
-
-### SimpleConnectionManager
-
-Some connection questions need answers.
-
-### FileConfigPart
-
-Need to figure out how to bundle message referenced here.
-
-### CacheQueryHandlerImpl
-
-Implement getCachedChangelist callback.
-
-### P4ResolveType
-
-Implement correct resolve types.
 
 
 ## Near-Term Functionality

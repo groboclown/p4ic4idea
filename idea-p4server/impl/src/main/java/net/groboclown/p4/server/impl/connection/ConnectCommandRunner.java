@@ -89,7 +89,6 @@ import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
-import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
@@ -109,7 +108,6 @@ import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
-import net.groboclown.p4.server.api.values.P4User;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.client.OpenedFilesChangesFactory;
@@ -120,6 +118,7 @@ import net.groboclown.p4.server.impl.connection.impl.FileAnnotationParser;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
+import net.groboclown.p4.server.impl.connection.operations.MoveFile;
 import net.groboclown.p4.server.impl.repository.AddedExtendedFileSpec;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
@@ -145,7 +144,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -174,6 +172,7 @@ public class ConnectCommandRunner
 
     public ConnectCommandRunner(@NotNull ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
+        MoveFile.INSTANCE.withCmd(cmd);
 
         register(P4CommandRunner.ServerActionCmd.CREATE_JOB,
             (ServerActionRunner<CreateJobResult>) (config, action) ->
@@ -233,8 +232,8 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.MOVE_FILE,
             (ClientActionRunner<MoveFileResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
-                    ((MoveFileAction) action).getTargetFile().getIOFile().getParentFile(),
-                    (client) -> moveFile(client, config, (MoveFileAction) action))));
+                    MoveFile.INSTANCE.getExecDir(action),
+                    (client) -> MoveFile.INSTANCE.moveFile(client, config, action))));
 
         register(P4CommandRunner.ClientActionCmd.REVERT_FILE,
             (ClientActionRunner<RevertFileResult>) (config, action) ->
@@ -246,7 +245,7 @@ public class ConnectCommandRunner
             (ClientActionRunner<SubmitChangelistResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
                     // TODO does this need a directory for AltRoot purposes?  Yes, when the
-                    // code is updated to shuffle non-project files out of the changelist.
+                    //  code is updated to shuffle non-project files out of the changelist.
                     (client) -> submitChangelist(client, config, (SubmitChangelistAction) action))));
     }
 
@@ -545,6 +544,7 @@ public class ConnectCommandRunner
         return new CreateJobResult(cfg, job);
     }
 
+    // TODO move to an operations class.
     private AddEditResult addEditFile(IClient client, ClientConfig config, AddEditAction action)
             throws P4JavaException {
         if (LOG.isDebugEnabled()) {
@@ -629,6 +629,7 @@ public class ConnectCommandRunner
     }
 
 
+    // TODO move to an operations class.
     private SubmitChangelistResult submitChangelist(IClient client, ClientConfig config,
             SubmitChangelistAction action)
             throws P4JavaException {
@@ -660,7 +661,7 @@ public class ConnectCommandRunner
             LOG.debug("Submitting changelist " + action.getChangelistId());
         }
         List<IFileSpec> res = cmd.submitChangelist(
-                action.getJobStatus(), action.getUpdatedJobs(), change);
+                action.getJobStatus(), action.getUpdatedJobs(), change, action.getFiles());
 
 
         List<P4RemoteFile> submitted = new ArrayList<>(res.size());
@@ -775,6 +776,7 @@ public class ConnectCommandRunner
         return new DeleteChangelistResult(config, res);
     }
 
+    // TODO move to an operations class
     private DeleteFileResult deleteFile(IClient client, ClientConfig config, DeleteFileAction action)
             throws P4JavaException {
         if (LOG.isDebugEnabled()) {
@@ -872,104 +874,7 @@ public class ConnectCommandRunner
         return new RevertFileResult(config, action.getFile(), reverted);
     }
 
-    private MoveFileResult moveFile(IClient client, ClientConfig config, MoveFileAction action)
-            throws P4JavaException {
-        List<IFileSpec> srcFile = FileSpecBuildUtil.escapedForFilePaths(action.getSourceFile());
-        List<IFileSpec> tgtFile = FileSpecBuildUtil.escapedForFilePaths(action.getTargetFile());
-        if (srcFile.size() != 1 || tgtFile.size() != 1) {
-            throw new IllegalStateException("Must have 1 source and 1 target, have " + srcFile + "; " + tgtFile);
-        }
-        LOG.info("Running move command for `" + srcFile + "` to `" + tgtFile + "`");
-        // Note the two separate fstat calls.  These are limited, and are okay, but it might
-        // be better to join them together into a single call.
-        List<IExtendedFileSpec> srcStatusResponse = cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFile, 1);
-        OpenFileStatus srcStatus = new OpenFileStatus(srcStatusResponse);
-        OpenFileStatus tgtStatus =
-                new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), tgtFile, 1));
-        if (srcStatus.hasAdd()) {
-            // source is open for add.  Revert it and mark the target as open for edit/add.
-            LOG.debug("Source file is open for add.  Reverting add, and will just open for edit or add the target.");
-            List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
-            MessageStatusUtil.throwIfError(reverted);
-            // TODO bundle message for separator
-            if (tgtStatus.hasDelete()) {
-                // Currently marked as deleted, so it exists on the server.  Revert the delete then edit it.
-                LOG.debug("Target file open for delete.  Reverting that and just opening it for edit.");
-                reverted = cmd.revertFiles(client, tgtFile, false);
-                MessageStatusUtil.throwIfError(reverted);
-                List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
-                MessageStatusUtil.throwIfError(edited);
-                return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
-            } else if (tgtStatus.isNotOnServer()) {
-                // Target not on server
-                LOG.debug("Target file not known by server.  Opening for add.");
-                List<IFileSpec> added = cmd.addFiles(client, tgtFile, null, action.getChangelistId(), null);
-                MessageStatusUtil.throwIfError(added);
-                return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
-            } else if (!tgtStatus.hasOpen()) {
-                // On server and not open
-                LOG.debug("Target file not open.  Opening for edit.");
-                List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
-                MessageStatusUtil.throwIfError(edited);
-                return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
-            } else {
-                // Nothing to do
-                LOG.debug("Target file already open for edit or add.  Skipping.");
-                // TODO bundle message
-                return new MoveFileResult(config, "Already open");
-            }
-        } else if (srcStatus.hasDelete()) {
-            // source is already open for delete.  Revert it and continue with normal move.
-            LOG.debug("Source is open for delete.  Reverting delete to allow move operation to do it right.");
-            List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
-            MessageStatusUtil.throwIfError(reverted);
-        } else if (srcStatus.isNotOnServer()) {
-            // The source is not on the server, so it's an add or edit.
-            if (tgtStatus.hasAddEdit() || tgtStatus.hasAdd()) {
-                // Do nothing
-                LOG.debug("Source not on server, and target already open for add or edit.  Skipping.");
-                // TODO bundle message
-                return new MoveFileResult(config, "Nothing to do");
-            }
-            if (tgtStatus.hasOpen()) {
-                LOG.debug("Source not on server, and target already open (for delete?).  Reverting target operation.");
-                List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
-                MessageStatusUtil.throwIfError(reverted);
-            } else if (tgtStatus.isNotOnServer()) {
-                LOG.debug("Source and target not on server.  Opening target for add.");
-                List<IFileSpec> added = cmd.addFiles(client, tgtFile, null, action.getChangelistId(), null);
-                MessageStatusUtil.throwIfError(added);
-                return new MoveFileResult(config, MessageStatusUtil.getMessages(added, "\n"));
-            }
-            LOG.debug("Source not on server, target not open.  Opening target for edit.");
-            List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
-            MessageStatusUtil.throwIfError(edited);
-            return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"));
-        } else if (!srcStatus.hasOpen()) {
-            LOG.debug("Source not open.  Move requires the source to be open for edit.");
-            List<IFileSpec> edited = cmd.editFiles(client, srcFile, null, action.getChangelistId(), null);
-            MessageStatusUtil.throwIfError(edited);
-        } else {
-            LOG.debug("Source file is already open for edit");
-        }
-
-        // Check target status, to see what we need to do there.
-        if (tgtStatus.hasOpen()) {
-            LOG.debug("Target file open for edit.  Reverting before performing move.");
-            List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
-            MessageStatusUtil.throwIfError(reverted);
-        }
-
-        // Standard move operation.
-        LOG.debug("Performing move operation");
-        List<IFileSpec> results = cmd.moveFile(client, srcFile.get(0), tgtFile.get(0), action.getChangelistId());
-        MessageStatusUtil.throwIfError(results);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Move messages: " + MessageStatusUtil.getMessages(results, "; "));
-        }
-        return new MoveFileResult(config, MessageStatusUtil.getMessages(results, "\n"));
-    }
-
+    // TODO move to an operations class
     private ListOpenedFilesChangesResult listOpenedFilesChanges(IClient client, ClientConfig config,
             int maxChangelistResults, int maxFileResults)
             throws P4JavaException {

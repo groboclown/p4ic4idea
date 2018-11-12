@@ -43,6 +43,7 @@ import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
+import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.ShelveFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
@@ -396,7 +397,6 @@ public class P4CommandUtil {
 
         List<IExtendedFileSpec> ret = new ArrayList<>();
         for (IExtendedFileSpec extendedFileSpec : res) {
-            // FIXME Original version validated that getStatusMessage() != null ... is that right?
             if (extendedFileSpec.getOpStatus() == FileSpecOpStatus.VALID) {
                 ret.add(extendedFileSpec);
             }
@@ -530,5 +530,14 @@ public class P4CommandUtil {
         GetUsersOptions options = new GetUsersOptions();
         options.setMaxUsers(maxResults);
         return server.getUsers(null, options);
+    }
+
+    public List<IFileSpec> integrateFileTo(IClient client, IFileSpec src, IFileSpec tgt, P4ChangelistId changelistId)
+            throws P4JavaException {
+        IntegrateFilesOptions options = new IntegrateFilesOptions()
+            .setForceIntegration(true)
+            .setPropagateType(true)
+            .setChangelistId(changelistId.getChangelistId());
+        return client.integrateFiles(src, tgt, null, options);
     }
 }

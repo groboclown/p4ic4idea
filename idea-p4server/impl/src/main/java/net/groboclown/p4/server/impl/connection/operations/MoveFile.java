@@ -140,15 +140,27 @@ public class MoveFile {
         }
 
         // Check target status, to see what we need to do there.
-        if (tgtStatus.hasOpen()) {
-            // FIXME this isn't accurate in all situations.
-            //  If the file is open for add, then it should be reverted and a normal move happens.  The code below
-            //  works fine.
-            //  If the file is open for delete or edit, then it should be reverted, and the next line takes effect.
-            //  If the file is on the server but not open, then this should be a manual integrate + source delete.
-            LOG.debug("Target file open for edit.  Reverting before performing move.");
+        if (tgtStatus.hasAdd()) {
+            // If the file is open for add, then it should be reverted and a normal move happens.
+            LOG.debug("Target file open for add.  Reverting before performing move.");
             List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
             MessageStatusUtil.throwIfError(reverted);
+        } else {
+            // See #181
+            if (tgtStatus.hasOpen()) {
+                // The file is open for delete or edit, then it should be reverted, and fall through.
+                LOG.debug("Target file open for edit.  Reverting before performing move.");
+                List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+                MessageStatusUtil.throwIfError(reverted);
+            }
+            //  The file is on the server but not open, then this should be a manual integrate + source delete.
+            List<IFileSpec> results = cmd.integrateFileTo(client, srcFile.get(0), tgtFile.get(0), action.getChangelistId());
+            MessageStatusUtil.throwIfError(results);
+            results.addAll(cmd.deleteFiles(client, srcFile, action.getChangelistId()));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Move as a integrate+delete messages: " + MessageStatusUtil.getMessages(results, "; "));
+            }
+            return new MoveFileResult(config, MessageStatusUtil.getMessages(results, "\n"));
         }
 
         // Standard move operation.

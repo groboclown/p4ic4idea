@@ -559,7 +559,7 @@ class ConnectCommandRunnerTest {
                         MessageStatusUtil.throwIfError(msgs);
                         IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                         change.setDescription("add initial file");
-                        msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                        msgs = cmd.submitChangelist(null, null, change, Collections.singletonList(newFile));
                         MessageStatusUtil.throwIfError(msgs);
                         return runner;
                     })

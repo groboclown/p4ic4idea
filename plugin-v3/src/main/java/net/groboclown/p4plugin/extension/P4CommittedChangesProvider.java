@@ -49,7 +49,6 @@ import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
@@ -67,6 +66,7 @@ import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4CommittedChangesProvider.P4ChangeBrowserSettings;
 import net.groboclown.p4plugin.revision.P4RemoteFileContentRevision;
+import net.groboclown.p4plugin.util.HistoryContentLoaderImpl;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -92,12 +92,11 @@ public class P4CommittedChangesProvider implements
     private static final Logger LOG = Logger.getInstance(P4CommittedChangesProvider.class);
 
     private final Project project;
-
-    // TODO set the loader
-    private final HistoryContentLoader loader = null;
+    private final HistoryContentLoader loader;
 
     P4CommittedChangesProvider(@NotNull final P4Vcs vcs) {
         this.project = vcs.getProject();
+        this.loader = new HistoryContentLoaderImpl(vcs.getProject());
     }
 
 
@@ -567,10 +566,7 @@ public class P4CommittedChangesProvider implements
             // 5. Charset - utf
             Charset charset = Charset.forName(dataInput.readUTF());
 
-            // TODO should this be set?  How?
-            ServerConfig serverConfig = null;
-
-            return new P4RemoteFileContentRevision(file, path, rev, serverConfig, loader, charset);
+            return P4RemoteFileContentRevision.delayCreation(project, file, path, rev, loader, charset);
         } else {
             return null;
         }

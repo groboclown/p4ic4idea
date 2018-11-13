@@ -20,7 +20,6 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.function.BiFunction;
 
 public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFileContentsResult> {
     private final String depotPath;
@@ -28,10 +27,10 @@ public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFile
     private final String clientname;
     private final int rev;
 
-    public GetFileContentsQuery(@NotNull String depotPath) {
+    public GetFileContentsQuery(@NotNull String depotPath, @NotNull String clientname) {
         this.depotPath = depotPath;
         this.localPath = null;
-        this.clientname = null;
+        this.clientname = clientname;
         this.rev = -1;
     }
 
@@ -61,6 +60,10 @@ public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFile
             return depotFile.apply(depotPath);
         }
         return localFile.apply(clientname, localPath, rev);
+    }
+
+    public String getClientname() {
+        return clientname;
     }
 
 

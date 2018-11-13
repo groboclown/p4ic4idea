@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.perforce.p4java.client.IClient;
@@ -140,6 +141,7 @@ import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
 import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -388,10 +390,22 @@ public class ConnectCommandRunner
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("get file contents for " + depot + ": " + specs);
                         }
-                        return cmd.loadContents(server, specs.get(0), null);
+                        return cmd.loadContents(server, specs.get(0), query.getClientname());
                     },
-                    (clientname, localFile, rev) -> cmd.loadContents(server,
-                            FileSpecBuildUtil.escapedForFilePathRev(localFile, rev).get(0), clientname)
+                    (clientname, localFile, rev) -> {
+                        if (rev <= 0 && localFile.getIOFile().exists()) {
+                            return FileUtil.loadFileBytes(localFile.getIOFile());
+                        } else {
+                            IClient client = server.getClient(query.getClientname());
+                            List<IFileSpec> locations = cmd.getSpecLocations(client, FileSpecBuildUtil.escapedForFilePathRev(localFile, -1));
+                            if (locations.isEmpty()) {
+                                locations = FileSpecBuildUtil.escapedForFilePathRev(localFile, rev);
+                            } else {
+                                locations = FileSpecBuildUtil.replaceDepotRevisions(locations, "@" + rev);
+                            }
+                            return cmd.loadContents(server, locations.get(0), clientname);
+                        }
+                    }
             );
             return query.when(
                     // TODO find correct charset
@@ -408,7 +422,7 @@ public class ConnectCommandRunner
         final List<IFileSpec> fileSpec = FileSpecBuildUtil.escapedForFilePaths(query.getFile());
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
                 new ListFileHistoryResult(config, createFileHistoryList(
-                    config, query.getFile(), cmd.getHistory(server,
+                    config, query.getClientServerRef().getClientName(), query.getFile(), cmd.getHistory(server,
                             query.getClientServerRef().getClientName(), fileSpec,
                             query.getMaxResults())))));
     }
@@ -524,12 +538,16 @@ public class ConnectCommandRunner
 
     @NotNull
     private ListFileHistoryResult.VcsFileRevisionFactory createFileHistoryList(
-            @NotNull final ServerConfig config, @NotNull final FilePath file,
+            @NotNull final ServerConfig config, @Nullable final String clientname, @NotNull final FilePath file,
             @NotNull final List<IFileRevisionData> history) {
+        if (clientname == null) {
+            LOG.info("Using null clientname for request of history on " + file);
+        }
         return (formatter, loader) -> {
             List<VcsFileRevision> ret = new ArrayList<>(history.size());
             history.forEach((d) -> {
-                P4HistoryVcsFileRevision rev = new P4HistoryVcsFileRevision(file, config, d, formatter, loader);
+                P4HistoryVcsFileRevision rev = new P4HistoryVcsFileRevision(file, config, d, clientname, formatter,
+                        loader);
                 ret.add(rev);
             });
             return ret;

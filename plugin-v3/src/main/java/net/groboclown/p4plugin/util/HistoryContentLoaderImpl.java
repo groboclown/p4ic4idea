@@ -17,10 +17,10 @@ package net.groboclown.p4plugin.util;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.config.ServerConfig;
-import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
@@ -38,18 +38,12 @@ public class HistoryContentLoaderImpl implements HistoryContentLoader {
 
     @Nullable
     @Override
-    public byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
+    public byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String clientname,
+            @NotNull String depotPath, int rev)
             throws VcsException {
-        return loadContent(config, new GetFileContentsQuery(depotPath + '#' + rev))
+        return loadContent(config,
+                    new GetFileContentsQuery(getDepotPathForRev(depotPath, rev), clientname))
                 .getData();
-    }
-
-    @Nullable
-    @Override
-    public String loadStringContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
-            throws IOException, VcsException {
-        return loadContent(config, new GetFileContentsQuery(depotPath + '#' + rev))
-                .getStringData();
     }
 
     @Nullable
@@ -81,5 +75,12 @@ public class HistoryContentLoaderImpl implements HistoryContentLoader {
             // TODO better exception?
             throw new VcsException(e);
         }
+    }
+
+    private String getDepotPathForRev(String depotPath, int rev) {
+        if (rev > 0) {
+            return depotPath + '#' + rev;
+        }
+        return depotPath;
     }
 }

@@ -53,6 +53,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
 
     private final FilePath file;
     private final ServerConfig config;
+    private final String clientname;
     private final P4FileAnnotation annotatedFile;
     private final P4FileRevision head;
     private final String content;
@@ -86,11 +87,13 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
     };
 
     public P4AnnotatedFileImpl(@NotNull Project project,
+            @Nullable String clientname,
             @NotNull FilePath file,
             @Nullable HistoryMessageFormatter formatter,
             @Nullable HistoryContentLoader loader,
             @NotNull AnnotateFileResult annotatedFileResult) {
         super(project);
+        this.clientname = clientname;
         this.file = file;
         this.config = annotatedFileResult.getServerConfig();
         this.annotatedFile = annotatedFileResult.getAnnotatedFile();
@@ -222,7 +225,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
         for (P4AnnotatedLine line : annotatedFile.getAnnotatedLines()) {
             if (line != null) {
                 P4HistoryVcsFileRevision fileRev = new P4HistoryVcsFileRevision(
-                        file, config, line.getRevisionData(), formatter, loader);
+                        file, config, line.getRevisionData(), clientname, formatter, loader);
                 revs.add(fileRev);
             }
         }

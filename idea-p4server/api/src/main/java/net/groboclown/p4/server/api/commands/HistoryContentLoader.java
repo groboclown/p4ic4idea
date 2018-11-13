@@ -18,16 +18,14 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 public interface HistoryContentLoader {
     @Nullable
-    byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
-            throws IOException, VcsException;
-    @Nullable
-    String loadStringContentForRev(@NotNull ServerConfig config, @NotNull String depotPath, int rev)
+    byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String clientname,
+            @NotNull String depotPath, int rev)
             throws IOException, VcsException;
 
     @Nullable

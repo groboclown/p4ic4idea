@@ -654,12 +654,12 @@ public class P4ChangeProvider
                                 file.getDepotPath() + " ; " + file.getClientDepotPath() + " -> " +
                                 file.getIntegrateFrom());
                     }
-                    before = new P4RemoteFileContentRevision(file.getIntegrateFrom(),
+                    before = P4RemoteFileContentRevision.create(file.getIntegrateFrom(),
                             RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom()),
-                            null, config.getServerConfig(), loader, null);
+                            config, loader, null);
                 } else if (file.getDepotPath() != null) {
-                    before = new P4RemoteFileContentRevision(
-                            file.getDepotPath(), file.getFilePath(), file.getHaveRevision(), config.getServerConfig(),
+                    before = P4RemoteFileContentRevision.create(
+                            file.getDepotPath(), file.getFilePath(), file.getHaveRevision(), config,
                             loader, file.getCharset());
                 } else {
                     before = new P4LocalFileContentRevision(config, file, loader);
@@ -683,9 +683,9 @@ public class P4ChangeProvider
                         usedMovedFrom = true;
                     }
                 } else {
-                    before = new P4RemoteFileContentRevision(
+                    before = P4RemoteFileContentRevision.create(
                             file.getDepotPath(), file.getFilePath(),
-                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
+                            file.getHaveRevision(), config, loader, file.getCharset());
                 }
                 after = new CurrentContentRevision(file.getFilePath());
                 status = FileStatus.MERGE;
@@ -695,9 +695,9 @@ public class P4ChangeProvider
                     // TODO needs to reference the source file.
                     before = new P4DeletedLocalFileRevision(file);
                 } else {
-                    before = new P4RemoteFileContentRevision(
+                    before = P4RemoteFileContentRevision.create(
                             file.getDepotPath(), file.getFilePath(),
-                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
+                            file.getHaveRevision(), config, loader, file.getCharset());
                 }
                 status = FileStatus.DELETED;
                 break;
@@ -714,9 +714,9 @@ public class P4ChangeProvider
                                 file.getIntegrateFrom());
                     }
                     FilePath relativeFrom = RemoteFileUtil.findRelativeRemotePath(file, file.getIntegrateFrom());
-                    before = new P4RemoteFileContentRevision(
+                    before = P4RemoteFileContentRevision.create(
                             file.getIntegrateFrom(), relativeFrom,
-                            file.getHaveRevision(), config.getServerConfig(), loader, file.getCharset());
+                            file.getHaveRevision(), config, loader, file.getCharset());
                 }
                 after = new CurrentContentRevision(file.getFilePath());
                 // Even though the status is "ADD", the UI will notice the different before/after

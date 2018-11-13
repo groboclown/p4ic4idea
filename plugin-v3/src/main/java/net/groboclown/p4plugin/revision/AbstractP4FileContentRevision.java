@@ -14,92 +14,36 @@
 
 package net.groboclown.p4plugin.revision;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.RemoteFilePath;
-import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
-import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 
-public class AbstractP4FileContentRevision
+public abstract class AbstractP4FileContentRevision
         implements ContentRevision {
     private final FilePath filePath;
     private final String serverFilePath;
     private final VcsRevisionNumber.Int rev;
-    private final ServerConfig serverConfig;
-    private final ClientConfig clientConfig;
     private final HistoryContentLoader loader;
     private final Charset charset;
 
 
-    public AbstractP4FileContentRevision(
-            @NotNull ClientConfig clientConfig,
+    AbstractP4FileContentRevision(
             @NotNull FilePath filePath,
             @NotNull String serverFilePath,
             @NotNull VcsRevisionNumber.Int rev,
             @Nullable HistoryContentLoader loader,
             @Nullable Charset charset) {
-        this.clientConfig = clientConfig;
-        this.serverConfig = clientConfig.getServerConfig();
         this.filePath = filePath;
         this.serverFilePath = serverFilePath;
         this.loader = loader;
-        this.charset = charset == null
-                // TODO better charset
-                ? Charset.defaultCharset()
-                : charset;
+        this.charset = ContentRevisionUtil.getNonNullCharset(charset);
         this.rev = rev;
-    }
-
-
-    public AbstractP4FileContentRevision(
-            @Nullable ServerConfig serverConfig,
-            @NotNull FilePath filePath,
-            @NotNull String serverFilePath,
-            @NotNull VcsRevisionNumber.Int rev,
-            @Nullable HistoryContentLoader loader,
-            @Nullable Charset charset) {
-        this.clientConfig = null;
-        this.serverConfig = serverConfig;
-        this.filePath = filePath;
-        this.serverFilePath = serverFilePath;
-        this.loader = loader;
-        this.charset = charset == null
-            // TODO better charset
-            ? Charset.defaultCharset()
-            : charset;
-        this.rev = rev;
-    }
-
-    @Nullable
-    @Override
-    public String getContent()
-            throws VcsException {
-        if (serverConfig == null || loader == null) {
-            return null;
-        }
-        try {
-            byte[] ret;
-            if (clientConfig != null && clientConfig.getClientname() != null) {
-                ret = loader.loadContentForLocal(serverConfig, clientConfig.getClientname(), getFile(), rev.getValue());
-            } else {
-                ret = loader.loadContentForRev(serverConfig, serverFilePath, rev.getValue());
-            }
-            if (ret == null) {
-                return null;
-            }
-            return new String(ret, charset);
-        } catch (IOException e) {
-            throw new VcsException(e);
-        }
     }
 
     @NotNull
@@ -127,5 +71,10 @@ public class AbstractP4FileContentRevision
     @Override
     public String toString() {
         return serverFilePath + "@" + rev;
+    }
+
+    @Nullable
+    HistoryContentLoader getLoader() {
+        return loader;
     }
 }

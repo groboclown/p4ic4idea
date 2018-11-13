@@ -101,7 +101,7 @@ public class P4AnnotationProvider
             throw new VcsException("No workspace name set for Perforce connection for " + file);
         }
         try {
-            return new P4AnnotatedFileImpl(project, fp,
+            return new P4AnnotatedFileImpl(project, clientname, fp,
                     messageFormatter, contentLoader,
                     P4ServerComponent
                         .query(project, client.getServerConfig(), new AnnotateFileQuery(clientname, fp, rev))

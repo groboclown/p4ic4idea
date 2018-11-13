@@ -40,17 +40,20 @@ public class P4HistoryVcsFileRevision
     private final IFileRevisionData data;
     private final HistoryMessageFormatter formatter;
     private final HistoryContentLoader loader;
+    private final String clientname;
     private boolean loadedContent;
     private byte[] content;
 
     public P4HistoryVcsFileRevision(@NotNull FilePath file,
             @NotNull ServerConfig config,
             @NotNull IFileRevisionData data,
+            @NotNull String clientname,
             @Nullable HistoryMessageFormatter formatter,
             @Nullable HistoryContentLoader loader) {
         this.loader = loader;
         this.file = file;
         this.data = data;
+        this.clientname = clientname;
         this.formatter = formatter;
         this.config = config;
     }
@@ -120,7 +123,7 @@ public class P4HistoryVcsFileRevision
             throws IOException, VcsException {
         if (!loadedContent && loader != null) {
             loadedContent = true;
-            content = loader.loadContentForRev(config, data.getDepotFileName(), data.getRevision());
+            content = loader.loadContentForRev(config, clientname, data.getDepotFileName(), data.getRevision());
         }
         return content;
     }

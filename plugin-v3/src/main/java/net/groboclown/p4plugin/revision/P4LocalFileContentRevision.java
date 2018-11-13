@@ -14,6 +14,7 @@
 
 package net.groboclown.p4plugin.revision;
 
+import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4LocalFile;
@@ -24,12 +25,13 @@ import static com.intellij.openapi.util.Comparing.equal;
 
 public class P4LocalFileContentRevision extends AbstractP4FileContentRevision {
     private final P4LocalFile file;
+    private final ClientConfig clientConfig;
 
-    public P4LocalFileContentRevision(@Nullable ClientConfig clientConfig, @NotNull P4LocalFile file,
+    public P4LocalFileContentRevision(@NotNull ClientConfig clientConfig, @NotNull P4LocalFile file,
             @Nullable HistoryContentLoader loader) {
-        super(clientConfig, file.getFilePath(), file.getFilePath().getPath(), file.getHaveRevision(), loader,
-                // TODO use the correct charset
-                null);
+        super(file.getFilePath(), file.getFilePath().getPath(), file.getHaveRevision(), loader,  null);
+        assert clientConfig.getClientname() != null: "null client name will cause issues when calling to Perforce.";
+        this.clientConfig = clientConfig;
         this.file = file;
     }
 
@@ -55,5 +57,16 @@ public class P4LocalFileContentRevision extends AbstractP4FileContentRevision {
     @Override
     public String toString() {
         return file.toString();
+    }
+
+    @Nullable
+    @Override
+    public String getContent()
+            throws VcsException {
+        if (getLoader() == null || clientConfig.getClientname() == null) {
+            return null;
+        }
+        return ContentRevisionUtil.getContent(clientConfig.getServerConfig(), clientConfig.getClientname(),
+                getLoader(), getFile(), getIntRevisionNumber().getValue(), getCharset());
     }
 }

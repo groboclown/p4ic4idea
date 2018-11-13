@@ -145,7 +145,7 @@ public class MoveFile {
             LOG.debug("Target file open for add.  Reverting before performing move.");
             List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
             MessageStatusUtil.throwIfError(reverted);
-        } else {
+        } else if (! tgtStatus.isNotOnServer()) {
             // See #181
             if (tgtStatus.hasOpen()) {
                 // The file is open for delete or edit, then it should be reverted, and fall through.

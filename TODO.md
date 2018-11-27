@@ -11,6 +11,8 @@ These items need retesting.
 
 1. Multi-root submit.
 2. With / without jobs.
+3. Sub-set of files with the default changelist.
+4. Sub-set of files with a numbered changelist. 
 
 ### SSO
 
@@ -27,7 +29,7 @@ Connect with SSO server.
 
 **Priority: Blocker**
 
-Revert file functionality might have an issue in terms of where it's being applied.  See #181 for reference.
+(#181) Revert file functionality might have an issue in terms of where it's being applied.
 
 * Request to move a file when the source is known by the server and the target is open for add, edit, or delete; the
   target is reverted.  This logic MUST be re-examined for correct behavior.
@@ -53,6 +55,20 @@ project.  The submission should only submit the files that the user sees.
 
 The unseen files should be moved to the default changelist before submission.  If the default changelist is
 submitted, then the code will need to create a changelist before submission, just like how the job association works.
+
+### Undo File Move
+
+**Priority: Major**
+
+(#184) Steps to reproduce:
+
+1. Open a file for edit, so that the contents are different locally than what's on the server.
+2. In the IDE, move the file to another directory.
+3. Perform "Undo" (Ctrl-Z in Windows/Linux) to cause the IDE to undo the move operation.
+
+This leaves the IDE state and the Perforce state in conflict. Perforce keeps the file in the "p4 move" state, but the local file state reflects the pre-move state.
+
+This issue is particularly hairy because in order to fix the "p4 move" state, you need to perform a revert, but that undoes local changes to the file.
 
 ### File Change Operations Do Not Refresh Change List View
 

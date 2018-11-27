@@ -53,7 +53,7 @@
       </p>
       <ul style="margin-left:2em;">
         <li>Does not indicate to the user whether a file is
-        synchronized to the head revision or not.</li>
+        synchronized to the head revision or not, or if the file is locked in Perforce.</li>
         <li>No resolving merge conflicts.</li>
         <li>Symlinks not properly supported.</li>
       </ul>

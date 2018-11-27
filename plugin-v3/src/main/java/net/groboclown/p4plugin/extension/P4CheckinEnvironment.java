@@ -200,9 +200,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                         P4ServerComponent
                                 .perform(project, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null))
                                 .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate(true))
-                                // TODO report issues.  Is this necessary?
-                                //.whenServerError(asdf)
-                                //.whenOffline(asdf)
                                 ;
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running add/edit command in EDT; will not wait for server errors.");
@@ -276,11 +273,13 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
 
             @Override
             public boolean canExecute(Collection<Change> changes, String commitMessage) {
-                // TODO set the ok action as enabled/disabled depending upon
+                // Set the ok action as enabled/disabled depending upon
                 // whether the comment is empty or not (bug #52).  Probably
                 // should just set a warning, though, but that doesn't do anything.
                 // We will also need a notification for when the comment is changed,
                 // which will require a poll thread, which isn't ideal.
+
+                // Unfortunately, this class is never used.
 
                 return !changes.isEmpty() && commitMessage != null && !commitMessage.isEmpty();
             }
@@ -346,7 +345,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
             this.dataConsumer = additionalDataConsumer;
             this.model = new SubmitModel(project);
             this.panel = new SubmitPanel(model);
-            //this.root = new JBScrollPane(this.panel.getRoot());
             this.root = new WrapperPanel(this.panel.getRoot(), false, false);
             model.setSelectedCurrentChanges(panel.getSelectedChanges());
         }

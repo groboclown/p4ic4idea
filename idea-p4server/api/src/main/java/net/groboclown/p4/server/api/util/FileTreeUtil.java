@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 public class FileTreeUtil {
@@ -189,5 +191,27 @@ public class FileTreeUtil {
 
         return getPathDepth(child, parent) >= 0;
     }
-}
 
+    @Nullable
+    public static FilePath getCommonRoot(@NotNull Collection<FilePath> files) {
+        Iterator<FilePath> iter = files.iterator();
+        if (! iter.hasNext()) {
+            return null;
+        }
+        FilePath match = iter.next();
+        if (match == null || match.getIOFile() == null) {
+            return null;
+        }
+        while (iter.hasNext()) {
+            FilePath next = iter.next();
+            while (! isSameOrUnder(match, next)) {
+                FilePath prev = match;
+                match = match.getParentPath();
+                if (match == null || match.getIOFile() == null || prev.equals(match)) {
+                    return null;
+                }
+            }
+        }
+        return match;
+    }
+}

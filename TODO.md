@@ -12,7 +12,16 @@ These items need retesting.
 1. Multi-root submit.
 2. With / without jobs.
 3. Sub-set of files with the default changelist.
+    * Recheck before closing off #176
 4. Sub-set of files with a numbered changelist. 
+    * Recheck before closing off #176
+5. Submit with empty comment.
+    * Update #52:
+    
+        Note that `P4CheckinEnvironment` supplies an implementation for `createCommitSession()`, which has a hook for
+        `boolean canExecute(Collection<Change> changes, String commitMessage)`, but that isn't used.  At least, it's not
+        called for commit message updates.
+
 
 ### SSO
 
@@ -31,7 +40,7 @@ Connect with SSO server.
 
 ### Revert File Logic
 
-**Priority: Blocker**
+**Priority: Critical**
 
 (#181) Revert file functionality might have an issue in terms of where it's being applied.
 
@@ -42,6 +51,13 @@ Connect with SSO server.
 
 Because of the complexity of file moving, the logic is now in the specialized class `MoveFile`.
 
+(Dropped down to Critical due to additional mitigating code, and inability to reproduce.)
+
+This might also be affected by the `PendingActionCurator`, as it can drop actions leading to an unexpected
+revert if the connection to the server is slow.
+
+To help with this, include more unit tests for `MoveFile` and `PendingActionCurator`.
+
 ### File Cache Conflict
 
 **Priority: Critical**
@@ -49,16 +65,6 @@ Because of the complexity of file moving, the logic is now in the specialized cl
 (#174) "File Cache Conflict" popup happens every 5-10 minutes.  Typically happens during heavy iteration of perforce
 backed files. "I do a lot of editing followed by alt+tab to another application, back and forth. I think idea
 automatically saves the file any time the window loses focus."
-
-### Submit changelist that includes files not in project
-
-**Priority: Critical**
-
-(#176) When you submit a changelist, it can include files that are not visible, because they are outside the scope of the
-project.  The submission should only submit the files that the user sees.
-
-The unseen files should be moved to the default changelist before submission.  If the default changelist is
-submitted, then the code will need to create a changelist before submission, just like how the job association works.
 
 ### Undo File Move
 
@@ -79,13 +85,6 @@ This issue is particularly hairy because in order to fix the "p4 move" state, yo
 **Priority: Major**
 
 (#88) Selecting "Show Diff" from the annotation gutter shows only "Can not load data to show diff".
-
-### Submit with empty comment attempts submit
-
-**Priority: Major**
-
-(#52) The UI allows pressing the "Submit" button with an empty comment, and there are no hooks provided by the API to
-prevent this from happening.  Instead, add in some checks to report an error that empty comments are not allowed.
 
 ### File Change Operations Do Not Refresh Change List View
 

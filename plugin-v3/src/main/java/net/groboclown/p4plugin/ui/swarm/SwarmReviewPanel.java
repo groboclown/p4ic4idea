@@ -20,6 +20,8 @@ import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.util.ui.ListTableModel;
+import com.jgoodies.forms.layout.CellConstraints;
+import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
@@ -328,6 +330,15 @@ public class SwarmReviewPanel {
                 .getString("swarm.create.description.tooltip"));
         descriptionTextArea.setWrapStyleWord(true);
         scrollPane2.setViewportView(descriptionTextArea);
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new FormLayout("fill:d:noGrow", "center:d:noGrow"));
+        root.add(panel2, BorderLayout.NORTH);
+        final JLabel label1 = new JLabel();
+        label1.setHorizontalAlignment(0);
+        label1.setHorizontalTextPosition(0);
+        label1.setText("Swarm Review Creation is in Beta");
+        CellConstraints cc = new CellConstraints();
+        panel2.add(label1, cc.xy(1, 1));
     }
 
     /**

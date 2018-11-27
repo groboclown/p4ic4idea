@@ -120,6 +120,7 @@ import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.connection.operations.MoveFile;
+import net.groboclown.p4.server.impl.connection.operations.SubmitChangelist;
 import net.groboclown.p4.server.impl.repository.AddedExtendedFileSpec;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
@@ -175,6 +176,7 @@ public class ConnectCommandRunner
     public ConnectCommandRunner(@NotNull ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         MoveFile.INSTANCE.withCmd(cmd);
+        SubmitChangelist.INSTANCE.withCmd(cmd);
 
         register(P4CommandRunner.ServerActionCmd.CREATE_JOB,
             (ServerActionRunner<CreateJobResult>) (config, action) ->
@@ -246,9 +248,8 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.SUBMIT_CHANGELIST,
             (ClientActionRunner<SubmitChangelistResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
-                    // TODO does this need a directory for AltRoot purposes?  Yes, when the
-                    //  code is updated to shuffle non-project files out of the changelist.
-                    (client) -> submitChangelist(client, config, (SubmitChangelistAction) action))));
+                    SubmitChangelist.INSTANCE.getExecDir(action),
+                    (client) -> SubmitChangelist.INSTANCE.submitChangelist(client, config, action))));
     }
 
     @Override
@@ -644,64 +645,6 @@ public class ConnectCommandRunner
         }
         return new AddEditResult(config, action.getFile(), addFile, P4FileType.convert(ret.get(0).getFileType()),
                 retChange, new P4RemoteFileImpl(ret.get(0)));
-    }
-
-
-    // TODO move to an operations class.
-    private SubmitChangelistResult submitChangelist(IClient client, ClientConfig config,
-            SubmitChangelistAction action)
-            throws P4JavaException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Running submit against the server for " + action.getChangelistId());
-        }
-
-        IChangelist change;
-        if (action.getChangelistId().getState() == P4ChangelistId.State.PENDING_CREATION) {
-            change = cmd.createChangelist(client, action.getUpdatedDescription());
-        } else if (action.getChangelistId().isDefaultChangelist()) {
-            change = cmd.getChangelistDetails(client.getServer(), IChangelist.DEFAULT);
-        } else {
-            change = cmd.getChangelistDetails(client.getServer(), action.getChangelistId().getChangelistId());
-        }
-        if (change == null) {
-            throw new P4JavaException("No such pending change on server: " + action.getChangelistId());
-        } else if (change.getStatus() == ChangelistStatus.SUBMITTED) {
-            throw new P4JavaException("Change " + change.getId() + " already submitted");
-        }
-        if (action.getUpdatedDescription() != null && !action.getUpdatedDescription().isEmpty()) {
-            change.setDescription(action.getUpdatedDescription());
-        } else if (change.getDescription() == null) {
-            throw new P4JavaException("Must include a description for new changelists");
-        }
-
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Submitting changelist " + action.getChangelistId());
-        }
-        List<IFileSpec> res = cmd.submitChangelist(client,
-                action.getJobStatus(), action.getUpdatedJobs(), change, action.getFiles());
-
-
-        List<P4RemoteFile> submitted = new ArrayList<>(res.size());
-        IServerMessage info = null;
-        for (IFileSpec spec : res) {
-            IServerMessage msg = spec.getStatusMessage();
-            if (msg != null) {
-                if (msg.isInfo()) {
-                    info = msg;
-                }
-                if (msg.isWarning() || msg.isError()) {
-                    throw new RequestException(msg);
-                }
-            } else {
-                submitted.add(new P4RemoteFileImpl(spec));
-            }
-        }
-
-        // Submitting a change successfully requires that the corresponding changelist is deleted in the cache.
-
-        return new SubmitChangelistResult(config, new P4ChangelistIdImpl(change.getId(), config.getClientServerRef()),
-                submitted, info == null ? null : info.getLocalizedMessage());
     }
 
     private CreateChangelistResult createChangelist(IClient client, ClientConfig config, CreateChangelistAction action)

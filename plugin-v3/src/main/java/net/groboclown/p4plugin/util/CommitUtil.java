@@ -63,6 +63,12 @@ public class CommitUtil {
     public static List<VcsException> commit(@NotNull Project project, @NotNull List<Change> changes,
             @NotNull String preparedComment,
             @NotNull List<P4Job> jobs, @Nullable JobStatus submitStatus) {
+        // See #52
+        if (preparedComment.trim().isEmpty()) {
+            // TODO bundle message
+            return Collections.singletonList(new VcsException("Must provide a comment on submit"));
+        }
+
         // Need to split up the files and jobs by server.
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
         if (registry == null || registry.isDisposed()) {

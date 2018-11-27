@@ -57,6 +57,8 @@ public class UserProjectPreferences
     public static final boolean DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES = false;
     public static final boolean DEFAULT_REMOVE_P4_CHANGELISTS = true;
     public static final int DEFAULT_USER_MESSAGE_LEVEL = USER_MESSAGE_LEVEL_WARNING;
+    public static final int DEFAULT_MAX_CHANGELIST_NAME_LENGTH = 67;
+    public static final int MINIMUM_CHANGELIST_NAME_LENGTH = 33;
 
     @NotNull
     private State state = new State();
@@ -106,6 +108,8 @@ public class UserProjectPreferences
         public boolean removeP4Changelists = DEFAULT_REMOVE_P4_CHANGELISTS;
 
         public int userMessageLevel = DEFAULT_USER_MESSAGE_LEVEL;
+
+        public int maxChangelistNameLength = DEFAULT_MAX_CHANGELIST_NAME_LENGTH;
     }
 
     @Nullable
@@ -455,6 +459,20 @@ public class UserProjectPreferences
 
     public void setUserMessageLevel(final int value) {
         state.userMessageLevel = value;
+    }
+
+
+    public static int getMaxChangelistNameLength(@Nullable final Project project) {
+        return getValue(project, DEFAULT_MAX_CHANGELIST_NAME_LENGTH,
+                (prefs) -> prefs.getMaxChangelistNameLength());
+    }
+
+    public int getMaxChangelistNameLength() {
+        return Math.max(MINIMUM_CHANGELIST_NAME_LENGTH, state.maxChangelistNameLength);
+    }
+
+    public void setMaxChangelistNameLength(int len) {
+        state.maxChangelistNameLength = Math.max(MINIMUM_CHANGELIST_NAME_LENGTH, len);
     }
 
 

@@ -89,7 +89,6 @@ import java.util.stream.Collectors;
 public class P4ChangeProvider
         implements ChangeProvider {
     private static final Logger LOG = Logger.getInstance(P4ChangeProvider.class);
-    private static final int CHANGELIST_NAME_LENGTH = 32;
 
     private final Project project;
     private final P4Vcs vcs;
@@ -345,7 +344,7 @@ public class P4ChangeProvider
                         // Create a new IDE changelist and link to that.
                         ideChangeList = addGate.addChangeList(
                                 ChangelistUtil.createUniqueIdeChangeListName(changelist, null, existingLocalChangeLists,
-                                        CHANGELIST_NAME_LENGTH),
+                                        UserProjectPreferences.getMaxChangelistNameLength(project)),
                                 changelist.getComment());
                         // Mark the just-created changelist as added, so that we don't attempt to use the name a
                         // second time.
@@ -366,7 +365,8 @@ public class P4ChangeProvider
                         if (!EqualUtil.isEqual(changelist.getComment(), ideChangeList.getComment())) {
                             addGate.editComment(ideChangeList.getName(), changelist.getComment());
                             String newName = ChangelistUtil.createUniqueIdeChangeListName(changelist, ideChangeList,
-                                    existingLocalChangeLists, CHANGELIST_NAME_LENGTH);
+                                    existingLocalChangeLists,
+                                    UserProjectPreferences.getMaxChangelistNameLength(project));
                             if (!EqualUtil.isEqual(ideChangeList.getName(), newName)) {
                                 addGate.editName(ideChangeList.getName(), newName);
                             }

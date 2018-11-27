@@ -22,6 +22,10 @@ Connect with SSO server.
 
 1. Curate action combinations
 
+### "import+" Streams
+
+(See #167) Investigate support for imports in streams.
+
 
 ## Bugs
 
@@ -70,11 +74,24 @@ This leaves the IDE state and the Perforce state in conflict. Perforce keeps the
 
 This issue is particularly hairy because in order to fix the "p4 move" state, you need to perform a revert, but that undoes local changes to the file.
 
+### Annotation diff
+
+**Priority: Major**
+
+(#88) Selecting "Show Diff" from the annotation gutter shows only "Can not load data to show diff".
+
+### Submit with empty comment attempts submit
+
+**Priority: Major**
+
+(#52) The UI allows pressing the "Submit" button with an empty comment, and there are no hooks provided by the API to
+prevent this from happening.  Instead, add in some checks to report an error that empty comments are not allowed.
+
 ### File Change Operations Do Not Refresh Change List View
 
 **Priority: Minor** (first minor to tackle)
 
-After file operations (add, edit, delete, move), the change list view does not refresh itself.  The user must manually
+(#185) After file operations (add, edit, delete, move), the change list view does not refresh itself.  The user must manually
 refresh the view before the changes show up.  Revert works correctly.
 
 Looks like it could be due to pushing events off into worker threads.  The view refresh is triggered *after* the cache
@@ -86,7 +103,7 @@ the trick?
 
 **Priority: Minor**
 
-When the pending actions in the Active Connection panel are removed, the UI does not refresh.  A forced refresh shows it
+(#186) When the pending actions in the Active Connection panel are removed, the UI does not refresh.  A forced refresh shows it
 removed.   `CachePendingActionHandlerImpl` will need to send out an event on remove.
 
 This will need to be done in order to have IdeChangelistCacheStore remove action links if the action is deleted.
@@ -95,24 +112,8 @@ This will need to be done in order to have IdeChangelistCacheStore remove action
 
 **Priority: Minor**
 
-When offline, pressing the "connect" button doesn't change the connection state.  The user must perform some other
-server action to have this state change.
-
-### Check Connection from VCS Root Directory Configuration memory leak
-
-**Priority: Minor** (because of its extremely limited usage now)
-
-If you check the connection from the VCS root directory configuration dialog, a serious memory leak happens that puts
-the breaks on the IDE.
-
-This occurs during the New Project from Version Control, and might occur under normal circumstances.
-
-Source: `P4VcsRootConfigurable`
-
-Note that, under New Project from Version Control, the Vcs Root in the `P4RootConfigPanel` can change, but the panel
-won't be updated with the new root.  This could be the source of at least one issue.
-
-This might be fixed now.  The API has changed to force usage that prevents serious memory leaks from spreading.
+(#187) When offline, pressing the "connect" button doesn't change the displayed connection state in the Active Connection
+panel.  The user must perform some other server action to have this state change.
 
 ### Plugin Option Screen Revamp
 
@@ -197,3 +198,7 @@ duplicates existing pending actions.  The pending action list must be altered to
 
 Most of this work has been done.  It is handled in `PendingActionCurator`.  A few other cases still should be handled,
 but it's not necessary for correct operation.
+
+### Annotation Gutter Options
+
+There are many grayed-out options in the context menu for the Annotation gutter.  Explore ways to enable these.

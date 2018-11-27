@@ -96,7 +96,20 @@ public class CommitUtil {
                                                             data.files,
                                                             associatedJobs, preparedComment, submitStatus));
                                 }
-                            }))
+                            })
+                            .whenCompleted(res -> {
+                                // Submit requires that the corresponding link between the changelist and the
+                                // IDE change list be severed.  We do this by telling the cache that the P4 changelist
+                                // was "deleted" (that is, no longer pending).
+                                try {
+                                    CacheComponent.getInstance(project)
+                                            .getServerOpenedCache().first
+                                            .changelistDeleted(res.getChangelistId());
+                                } catch (InterruptedException e) {
+                                    LOG.info("Timed out waiting for cache to become available", e);
+                                }
+                            })
+                    )
                     .collect(ErrorCollectors.collectActionErrors(errors))
                     .blockingWait(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             if (!completed) {

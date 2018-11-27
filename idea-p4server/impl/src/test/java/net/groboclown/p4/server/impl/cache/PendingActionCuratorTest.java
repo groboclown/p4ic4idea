@@ -13,11 +13,15 @@
  */
 package net.groboclown.p4.server.impl.cache;
 
+import net.groboclown.idea.mock.MockVirtualFile;
+import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
+import net.groboclown.p4.server.api.commands.file.AddEditAction;
+import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.server.LoginAction;
 import net.groboclown.p4.server.impl.cache.store.ActionStore;
@@ -25,8 +29,12 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
+import static net.groboclown.idea.ExtAsserts.assertContainsExactly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -161,9 +169,43 @@ class PendingActionCuratorTest {
         assertEquals(PendingActionCurator.KEEP_EXISTING_REMOVE_ADDED, res);
     }
 
-    // TODO test the changelist actions.
+    @Test
+    void curateFirstAction() {
+        PendingActionCurator.PendingActionFactory actionFactory = mock(PendingActionCurator.PendingActionFactory.class);
+        PendingActionCurator curator = new PendingActionCurator(actionFactory);
+        List<ActionStore.PendingAction> actions = new ArrayList<>();
 
-    // The rest of the cases, though appropriately tested here, can be better tested in context with the
-    // CachePendingActionHandlerImpl.  That tells me that the corresponding loop may be better handled in
-    // this class.
+        CreateJobAction addedAction = new CreateJobAction(new P4JobImpl("j1", "j1", null));
+        ActionStore.PendingAction added = ActionStore.createPendingAction(REF_A, addedAction);
+
+        curator.curateActionList(added, actions);
+
+        assertContainsExactly(actions, added);
+    }
+
+    @Test
+    void curateFile_add_delete() {
+        Map<String, MockVirtualFile> fs = MockVirtualFileSystem.createTree(
+                "a.txt", "abc"
+        );
+        MockVirtualFile f1 = fs.get("a.txt");
+
+        PendingActionCurator.PendingActionFactory actionFactory = mock(PendingActionCurator.PendingActionFactory.class);
+        PendingActionCurator curator = new PendingActionCurator(actionFactory);
+        List<ActionStore.PendingAction> actions = new ArrayList<>();
+        P4ChangelistIdImpl cl = new P4ChangelistIdImpl(100, REF_A1);
+
+        ActionStore.PendingAction addFile = ActionStore.createPendingAction(REF_A1, new AddEditAction(
+                f1.asFilePath(), null, cl, (String) null));
+        actions.add(addFile);
+        ActionStore.PendingAction deleteFile =
+                ActionStore.createPendingAction(REF_A1, new DeleteFileAction(f1.asFilePath(), cl));
+
+        curator.curateActionList(deleteFile, actions);
+
+        // Delete file cannot tell if the file was open for add or edit, so it must be left alone.
+        assertContainsExactly(actions, addFile, deleteFile);
+    }
+
+    // FIXME add many more situations.
 }

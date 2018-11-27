@@ -697,6 +697,9 @@ public class ConnectCommandRunner
                 submitted.add(new P4RemoteFileImpl(spec));
             }
         }
+
+        // Submitting a change successfully requires that the corresponding changelist is deleted in the cache.
+
         return new SubmitChangelistResult(config, new P4ChangelistIdImpl(change.getId(), config.getClientServerRef()),
                 submitted, info == null ? null : info.getLocalizedMessage());
     }

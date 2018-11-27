@@ -23,8 +23,9 @@ import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 public class SubmitChangelistAction extends AbstractNonCachedClientAction<SubmitChangelistResult> {
@@ -32,7 +33,7 @@ public class SubmitChangelistAction extends AbstractNonCachedClientAction<Submit
     private final Collection<P4Job> updatedJobs;
     private final String updatedDescription;
     private final JobStatus jobStatus;
-    private final List<FilePath> files;
+    private final Collection<FilePath> files;
 
     public SubmitChangelistAction(@NotNull P4ChangelistId changelistId,
             @NotNull List<FilePath> files, @Nullable Collection<P4Job> updatedJobs,
@@ -42,7 +43,9 @@ public class SubmitChangelistAction extends AbstractNonCachedClientAction<Submit
         this.updatedJobs = updatedJobs;
         this.updatedDescription = updatedDescription;
         this.jobStatus = jobStatus;
-        this.files = new ArrayList<>(files);
+
+        // Make sure we only have distinct files.
+        this.files = Collections.unmodifiableCollection(new HashSet<>(files));
     }
 
     @NotNull
@@ -77,7 +80,7 @@ public class SubmitChangelistAction extends AbstractNonCachedClientAction<Submit
     }
 
     @NotNull
-    public List<FilePath> getFiles() {
+    public Collection<FilePath> getFiles() {
         return files;
     }
 }

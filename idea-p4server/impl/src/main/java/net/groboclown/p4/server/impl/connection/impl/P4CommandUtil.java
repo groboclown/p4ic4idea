@@ -298,7 +298,7 @@ public class P4CommandUtil {
             IClient client,
             JobStatus jobStatus,
             Collection<P4Job> updatedJobs,
-            IChangelist changelist, List<FilePath> files)
+            IChangelist changelist, Collection<FilePath> files)
             throws P4JavaException {
         SubmitOptions options = new SubmitOptions();
         if (jobStatus != null) {
@@ -311,6 +311,12 @@ public class P4CommandUtil {
             }
             options.setJobIds(jobIds);
         }
+
+        // Only submit the selected files, not the entire changelist.  This is so that non-project files won't
+        // be submitted (the user can't see those from the IDE), and so that the concept of just submitting a few
+        // files is still correct.
+        // FIXME BUG this is a problem if the changelist is the default one.  In that case, we need to create a new
+        //  changelist.
         List<IFileSpec> clientFiles = getSpecLocations(client, FileSpecBuildUtil.escapedForFilePaths(files));
         MessageStatusUtil.throwIfError(clientFiles);
         if (clientFiles.size() != files.size()) {
@@ -322,6 +328,7 @@ public class P4CommandUtil {
         }
         liveFiles.clear();
         liveFiles.addAll(clientFiles);
+
         return changelist.submit(options);
     }
 

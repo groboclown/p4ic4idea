@@ -582,9 +582,6 @@ public class P4ChangeProvider
         // this one changelist: if it's already in the changelist, then skip it; if it's
         // in another changelist, then move it; if it's not in a changelist, then add it.
 
-        // TODO ensure the new move operations are used correctly.
-        // Until the move operations are encapsulated into a single change, this can have an unexpected side-effect for
-        // move operations!
         if (change.getBeforeRevision() != null) {
             VirtualFile vf = change.getBeforeRevision().getFile().getVirtualFile();
             if (vf != null) {
@@ -614,6 +611,7 @@ public class P4ChangeProvider
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding change " + change + " to IDE change list " + localChangeList);
         }
+
         builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
     }
 

@@ -17,17 +17,28 @@ package net.groboclown.p4.server.impl.cache;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.commands.changelist.AddJobToChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateJobAction;
+import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.RemoveJobFromChangelistAction;
+import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
+import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
+import net.groboclown.p4.server.api.util.EqualUtil;
+import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.cache.store.ActionStore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Examines newly added actions and checks how that impacts existing actions in the pending list.
@@ -77,15 +88,49 @@ class PendingActionCurator {
             }
             return previousExistingAction;
         }
+
+        // For unit tests...
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (o instanceof CurateResult) {
+                CurateResult that = (CurateResult) o;
+                return that.removeExisting == this.removeExisting
+                        && that.removeAdded == this.removeAdded
+                        && EqualUtil.isEqual(that.replacedExistingAction, this.replacedExistingAction)
+                        && EqualUtil.isEqual(that.replacedAddedAction, this.replacedAddedAction);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return (removeAdded ? 97 : 0) +
+                    (removeExisting ? 23 : 0) +
+                    (replacedAddedAction == null ? 0 : replacedAddedAction.hashCode()) +
+                    (replacedExistingAction == null ? 0 : replacedExistingAction.hashCode());
+        }
+
+        @Override
+        public String toString() {
+            return "CurateReseult(removeAdded: " + removeAdded
+                    + ", removeExisting: " + removeExisting
+                    + ", replaceAdded: " + replacedAddedAction
+                    + ", replaceExisting: " + replacedExistingAction
+                    + ")";
+        }
     }
 
-    private static final CurateResult KEEP_EXISTING_REMOVE_ADDED =
+    // Should be private, but unit tests...
+    static final CurateResult KEEP_EXISTING_REMOVE_ADDED =
             new CurateResult(false, true, null, null);
-    private static final CurateResult KEEP_ADDED_REMOVE_EXISTING =
+    static final CurateResult KEEP_ADDED_REMOVE_EXISTING =
             new CurateResult(true, false, null, null);
-    private static final CurateResult KEEP_BOTH =
+    static final CurateResult KEEP_BOTH =
             new CurateResult(true, true, null, null);
-    private static final CurateResult REMOVE_BOTH =
+    static final CurateResult REMOVE_BOTH =
             new CurateResult(false, false, null, null);
 
     private final PendingActionFactory actionFactory;
@@ -93,6 +138,37 @@ class PendingActionCurator {
     PendingActionCurator(@NotNull PendingActionFactory actionFactory) {
         this.actionFactory = actionFactory;
     }
+
+
+    /**
+     * Modify the list of actions by adding in the new action, along with curation of the list due to the changes
+     * caused by adding the new action.  The existing list is appended to with each new action (so oldest first).
+     *
+     * @param added new action
+     * @param actions existing list of actions.
+     */
+    void curateActionList(@NotNull ActionStore.PendingAction added, @NotNull List<ActionStore.PendingAction> actions) {
+        // Curate the pending list of actions.
+        // Curation MUST be done in reverse order of the existing pending actions.
+        final ListIterator<ActionStore.PendingAction> iter = actions.listIterator(actions.size());
+        while (iter.hasPrevious()) {
+            final ActionStore.PendingAction existingAction = iter.previous();
+            PendingActionCurator.CurateResult result = curate(added, existingAction);
+            added = result.replacedAdded(added);
+            if (result.removeExisting) {
+                iter.remove();
+            } else {
+                iter.set(result.replacedExisting(existingAction));
+            }
+            if (result.removeAdded) {
+                // Halt the add operation
+                return;
+            }
+        }
+
+        actions.add(added);
+    }
+
 
     /**
      *
@@ -132,7 +208,7 @@ class PendingActionCurator {
                 if (added.sourceId.equals(existing.sourceId) &&
                         added.serverAction.getActionId().equals(existing.serverAction.getActionId())) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Skipping duplicate action " + added.clientAction);
+                        LOG.debug("Skipping duplicate action " + added.serverAction);
                     }
                     return KEEP_EXISTING_REMOVE_ADDED;
                 }
@@ -152,17 +228,19 @@ class PendingActionCurator {
                     if (((CreateJobAction) added).getJob().getJobId().equals(
                             ((CreateJobAction) existing).getJob().getJobId())) {
                         // Duplicate add of the same job ID
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Remove duplicate action `create job " +
+                                    ((CreateJobAction) added).getJob().getJobId() + "`");
+                        }
                         return KEEP_EXISTING_REMOVE_ADDED;
                     }
                 }
                 return KEEP_BOTH;
 
             case LOGIN:
-                // Shouldn't ever be in the pending list, but for completeness...
-                if (existing.getCmd() == P4CommandRunner.ServerActionCmd.LOGIN) {
-                    return KEEP_EXISTING_REMOVE_ADDED;
-                }
-                return KEEP_BOTH;
+                // Shouldn't ever be in the pending list...
+                LOG.warn("Purging LOGIN actions from list; should never have been added");
+                return KEEP_EXISTING_REMOVE_ADDED;
 
             default:
                 return KEEP_BOTH;
@@ -187,39 +265,26 @@ class PendingActionCurator {
             case MOVE_FILES_TO_CHANGELIST:
                 return curateMoveFilesToChangelistRequest((MoveFilesToChangelistAction) added, existing);
             case EDIT_CHANGELIST_DESCRIPTION:
-                // FIXME implement
-                LOG.warn("FIXME implement changelist action consolidation");
-                return KEEP_BOTH;
+                return curateEditChangelistDescriptionRequest((EditChangelistAction) added, existing);
             case ADD_JOB_TO_CHANGELIST:
-                // FIXME implement
-                LOG.warn("FIXME implement changelist action consolidation");
-                return KEEP_BOTH;
+                return curateAddJobToChangelistRequest((AddJobToChangelistAction) added, existing);
             case REMOVE_JOB_FROM_CHANGELIST:
-                // FIXME implement
-                LOG.warn("FIXME implement changelist action consolidation");
-                return KEEP_BOTH;
+                return curateRemoveJobFromChangelistRequest((RemoveJobFromChangelistAction) added, existing);
             case CREATE_CHANGELIST:
-                // FIXME implement
-                LOG.warn("FIXME implement changelist action consolidation");
-                return KEEP_BOTH;
+                return curateCreateChangelistRequest((CreateChangelistAction) added, existing);
             case DELETE_CHANGELIST:
-                // FIXME implement
-                LOG.warn("FIXME implement changelist action consolidation");
-                return KEEP_BOTH;
+                return curateDeleteChangelistRequest((DeleteChangelistAction) added, existing);
 
             // Doesn't have an effect on the list of actions.  Shouldn't be in the pending list anyway.
+            // Shouldn't ever be in the pending list...
             case FETCH_FILES:
             case SUBMIT_CHANGELIST:
+                LOG.warn("Purging " + added.getCmd() + " actions from list; should never have been added");
+                return KEEP_EXISTING_REMOVE_ADDED;
+
             default:
                 return KEEP_BOTH;
         }
-    }
-
-    private boolean haveNoCommonFiles(P4CommandRunner.ClientAction<?> a, P4CommandRunner.ClientAction<?>  b) {
-        HashSet<FilePath> commonFiles = new HashSet<>(a.getAffectedFiles());
-        int aSize = commonFiles.size();
-        commonFiles.removeAll(b.getAffectedFiles());
-        return aSize == commonFiles.size();
     }
 
     @NotNull
@@ -258,6 +323,10 @@ class PendingActionCurator {
                 if (existing.getSourceFile().equals(added.getSourceFile())) {
                     if (existing.getTargetFile().equals(added.getTargetFile())) {
                         // Duplicate action
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Removing duplicate action `move " + existing.getSourceFile() + " to " +
+                                    existing.getTargetFile() + "`");
+                        }
                         return KEEP_EXISTING_REMOVE_ADDED;
                     }
 
@@ -292,6 +361,11 @@ class PendingActionCurator {
                     if (existing.getTargetFile().equals(added.getSourceFile())) {
                         // Requested to move A to B, then B to A.
                         // These cancel each other out.
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Removed actions because they cancel each other out: `move " +
+                                    existing.getSourceFile() + " to " + existing.getTargetFile() + "` and `move " +
+                                    added.getSourceFile() + " to " + added.getTargetFile() + "`");
+                        }
                         return REMOVE_BOTH;
                     }
 
@@ -314,6 +388,11 @@ class PendingActionCurator {
                 // move target was marked for add or edit.  In both cases, the move action will
                 // replace the original request.
 
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Remove existing action `add/edit " + existing.getFile() +
+                            "` because of a later move for the same file.");
+                }
+
                 return KEEP_ADDED_REMOVE_EXISTING;
             }
             case DELETE_FILE: {
@@ -323,6 +402,11 @@ class PendingActionCurator {
                 // move target was originally marked for delete (because of the !hasCommonFiles at the start).
                 // In both cases, the move will either just replace the original, or will perform an
                 // alternate behavior that negates the original behavior.  So just remove the original action.
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Remove existing action `delete " + existing.getFile() +
+                            "` because of a later move for the same file.");
+                }
 
                 return KEEP_ADDED_REMOVE_EXISTING;
             }
@@ -409,5 +493,340 @@ class PendingActionCurator {
         // But, because we don't, there is no situation where a server action
         // is influenced by an existing action, or vice versa.
         return KEEP_BOTH;
+    }
+
+    @NotNull
+    private CurateResult curateEditChangelistDescriptionRequest(
+            @NotNull EditChangelistAction added,
+            @NotNull P4CommandRunner.ClientAction<?> existing) {
+        if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
+            // They do not share the same changelist ID.  Keep both actions.
+            return KEEP_BOTH;
+        }
+
+        // Changelists match (ID and client/server)
+        switch (existing.getCmd()) {
+            case CREATE_CHANGELIST:
+                // TODO if the local changelist IDs match, then consolidate down to a single create.
+                // As this code stands now, this particular block is unreachable, because create changelist has no
+                // changelist ID.
+                return KEEP_BOTH;
+            case DELETE_CHANGELIST: {
+                // Changelists match...
+                DeleteChangelistAction ex = (DeleteChangelistAction) existing;
+
+                // Remove the newly added value, because it doesn't make sense in this context?
+                // Report this as an error, because it should never happen.  If it does, then this is a situation
+                // that needs to be considered.  And with my luck, it does need special handling.
+                LOG.error(
+                        "Attempted to change the description of a deleted changelist: " + ex.getChangelistId());
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+            case SUBMIT_CHANGELIST: {
+                // Changelists match...
+                SubmitChangelistAction ex = (SubmitChangelistAction) existing;
+
+                // Remove the newly added value, because it doesn't make sense in this context?
+                // Report this as an error, because it should never happen.  If it does, then this is a situation
+                // that needs to be considered.  And with my luck, it does need special handling.
+                LOG.error("Attempted to change the description of a submitted changelist: " +
+                        ex.getChangelistId());
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+            case EDIT_CHANGELIST_DESCRIPTION:
+                // Replace the original change description with the new one.
+                return KEEP_ADDED_REMOVE_EXISTING;
+            case ADD_JOB_TO_CHANGELIST:
+                // Does not affect the existing action.
+                return KEEP_BOTH;
+
+            // These do not affect changelist descriptions.
+            case MOVE_FILE:
+            case ADD_EDIT_FILE:
+            case DELETE_FILE:
+            case REVERT_FILE:
+            case MOVE_FILES_TO_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
+            case FETCH_FILES:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH;
+        }
+    }
+
+    @NotNull
+    private CurateResult curateAddJobToChangelistRequest(
+            @NotNull AddJobToChangelistAction added,
+            @NotNull P4CommandRunner.ClientAction<?> existing) {
+        if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
+            // They do not share the same changelist ID.  Keep both actions.
+            return KEEP_BOTH;
+        }
+
+        // Changelists must match (ID and client/server).
+        switch (existing.getCmd()) {
+            case ADD_JOB_TO_CHANGELIST: {
+                AddJobToChangelistAction ex = (AddJobToChangelistAction) existing;
+                if (ex.getJob().equals(added.getJob())) {
+                    LOG.info("Removing duplicate call to add the same job " + added.getJob() +
+                            " to changelist " + added.getChangelistId());
+                    return KEEP_EXISTING_REMOVE_ADDED;
+                }
+                return KEEP_BOTH;
+            }
+            case REMOVE_JOB_FROM_CHANGELIST: {
+                RemoveJobFromChangelistAction ex = (RemoveJobFromChangelistAction) existing;
+                if (ex.getJob().equals(added.getJob())) {
+                    // Removed the job then added it.
+                    LOG.info("Removing remove then re-add for same job " + added.getJob() +
+                            " for changelist " + added.getChangelistId());
+                    return REMOVE_BOTH;
+                }
+                return KEEP_BOTH;
+            }
+            case SUBMIT_CHANGELIST: {
+                // Know that the changelists match...
+                SubmitChangelistAction ex = (SubmitChangelistAction) existing;
+
+                // Remove the newly added value, because it doesn't make sense in this context?
+                // Report this as an error, because it should never happen.  If it does, then this is a situation
+                // that needs to be considered.  And with my luck, it does need special handling.
+                LOG.error("Attempted to change the description of a submitted changelist: " + ex.getChangelistId());
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+            case DELETE_CHANGELIST: {
+                // Know that the changelists match...
+                DeleteChangelistAction ex = (DeleteChangelistAction) existing;
+
+                // Remove the newly added value, because it doesn't make sense in this context?
+                // Report this as an error, because it should never happen.  If it does, then this is a situation
+                // that needs to be considered.  And with my luck, it does need special handling.
+                LOG.error(
+                        "Attempted to change the description of a deleted changelist: " + ex.getChangelistId());
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+
+            // These actions are not affected by jobs on a changelist
+            case MOVE_FILE:
+            case ADD_EDIT_FILE:
+            case DELETE_FILE:
+            case REVERT_FILE:
+            case MOVE_FILES_TO_CHANGELIST:
+            case EDIT_CHANGELIST_DESCRIPTION:
+            case CREATE_CHANGELIST:
+            case FETCH_FILES:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH;
+        }
+    }
+
+    @NotNull
+    private CurateResult curateRemoveJobFromChangelistRequest(
+            @NotNull RemoveJobFromChangelistAction added,
+            @NotNull P4CommandRunner.ClientAction<?> existing) {
+        if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
+            // They do not share the same changelist ID.  Keep both actions.
+            return KEEP_BOTH;
+        }
+
+        // The actions share the same changelist reference (changelist Id and client/server).
+        switch (existing.getCmd()) {
+            case ADD_JOB_TO_CHANGELIST: {
+                AddJobToChangelistAction ex = (AddJobToChangelistAction) existing;
+                if (ex.getJob().equals(added.getJob())) {
+                    // Attempted to remove a job that was added earlier.
+                    LOG.info("Removed then added job " + ex.getJob() + " from changelist " + ex.getChangelistId());
+                    return REMOVE_BOTH;
+                }
+                return KEEP_BOTH;
+            }
+            case REMOVE_JOB_FROM_CHANGELIST: {
+                RemoveJobFromChangelistAction ex = (RemoveJobFromChangelistAction) existing;
+                if (ex.getJob().equals(added.getJob())) {
+                    // Attempted to remove the same job twice.
+                    LOG.info("Removed the job " + ex.getJob() + " twice from changelist " + ex.getChangelistId());
+                    return KEEP_EXISTING_REMOVE_ADDED;
+                }
+                return KEEP_BOTH;
+            }
+            case SUBMIT_CHANGELIST: {
+                // Know the changelists match...
+                SubmitChangelistAction ex = (SubmitChangelistAction) existing;
+
+                // Remove the newly added value, because it doesn't make sense in this context?
+                // Report this as an error, because it should never happen.  If it does, then this is a situation
+                // that needs to be considered.  And with my luck, it does need special handling.
+                LOG.error("Attempted to change the description of a submitted changelist: " + ex.getChangelistId());
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+            case DELETE_CHANGELIST: {
+                // Know the changelists match...
+                DeleteChangelistAction ex = (DeleteChangelistAction) existing;
+
+                // Remove the newly added value, because it doesn't make sense in this context?
+                // Report this as an error, because it should never happen.  If it does, then this is a situation
+                // that needs to be considered.  And with my luck, it does need special handling.
+                LOG.error(
+                        "Attempted to change the description of a deleted changelist: " + ex.getChangelistId());
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+
+            // These actions are not affected by jobs on changelist
+            case MOVE_FILE:
+            case ADD_EDIT_FILE:
+            case DELETE_FILE:
+            case REVERT_FILE:
+            case MOVE_FILES_TO_CHANGELIST:
+            case EDIT_CHANGELIST_DESCRIPTION:
+            case CREATE_CHANGELIST:
+            case FETCH_FILES:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH;
+        }
+    }
+
+    @NotNull
+    private CurateResult curateCreateChangelistRequest(
+            @NotNull CreateChangelistAction added,
+            @NotNull P4CommandRunner.ClientAction<?> existing) {
+        // Create changelist does not have an associated changelist ID, so we can't match it well.
+
+        switch (existing.getCmd()) {
+            case CREATE_CHANGELIST: {
+                CreateChangelistAction ex = (CreateChangelistAction) existing;
+                if (ex.getClientServerRef().equals(added.getClientServerRef())
+                        && ex.getLocalChangelistId().equals(added.getLocalChangelistId())) {
+                    LOG.info("Attempted to create a second changelist for an existing one.");
+                    return KEEP_EXISTING_REMOVE_ADDED;
+                }
+                return KEEP_BOTH;
+            }
+
+            // Not affected by create changelist action
+            case ADD_JOB_TO_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
+            case EDIT_CHANGELIST_DESCRIPTION:
+            case DELETE_CHANGELIST:
+            case SUBMIT_CHANGELIST:
+            case MOVE_FILE:
+            case ADD_EDIT_FILE:
+            case DELETE_FILE:
+            case REVERT_FILE:
+            case MOVE_FILES_TO_CHANGELIST:
+            case FETCH_FILES:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH;
+        }
+    }
+
+    @NotNull
+    private CurateResult curateDeleteChangelistRequest(
+            @NotNull DeleteChangelistAction added,
+            @NotNull P4CommandRunner.ClientAction<?> existing) {
+        if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
+            // They do not share the same changelist ID.  Keep both actions.
+            return KEEP_BOTH;
+        }
+
+        switch (existing.getCmd()) {
+            case EDIT_CHANGELIST_DESCRIPTION: {
+                EditChangelistAction ex = (EditChangelistAction) existing;
+
+                // This is definitely not needed.  The changelist is deleted after we change its description.
+                LOG.info("Removing action `edit description of " + ex.getChangelistId() +
+                        "` because the changelist was deleted later.");
+                return KEEP_ADDED_REMOVE_EXISTING;
+            }
+            case ADD_JOB_TO_CHANGELIST: {
+                AddJobToChangelistAction ex = (AddJobToChangelistAction) existing;
+
+                // Not needed, because the changelist is deleted after the job is added.
+                LOG.info("Removing action `add job " + ex.getJob() + " to changelist " + ex.getChangelistId() +
+                        "` because the changelist was deleted later.");
+                return KEEP_ADDED_REMOVE_EXISTING;
+            }
+            case REMOVE_JOB_FROM_CHANGELIST: {
+                RemoveJobFromChangelistAction ex = (RemoveJobFromChangelistAction) existing;
+
+                // Not needed, because the changelist is deleted after the job is added.
+                LOG.info("Removing action `remove job " + ex.getJob() + " from changelist " + ex.getChangelistId() +
+                        "` because the changelist was deleted later.");
+                return KEEP_ADDED_REMOVE_EXISTING;
+            }
+            // FIXME IMPLEMENT
+            case DELETE_CHANGELIST: {
+                DeleteChangelistAction ex = (DeleteChangelistAction) existing;
+
+                // The changelist was already marked for delete.
+                LOG.info("Removing second action `remove changelist " + ex.getChangelistId() + "`");
+                return KEEP_EXISTING_REMOVE_ADDED;
+            }
+
+
+            // TODO these actions should be checked for their effects.
+            // However, this has very complex implications when mucking around with these actions.
+            case MOVE_FILE:
+            case ADD_EDIT_FILE:
+            case DELETE_FILE:
+            case MOVE_FILES_TO_CHANGELIST:
+
+            // Creating a changelist does not give it a changelist ID, so we can't corroborate the changes.
+            // Additionally, because the create changelist action doesn't have an ID, this switch statement
+            // can't be reached.
+            case CREATE_CHANGELIST:
+
+            // Not affected by delete changelist action
+            case REVERT_FILE:
+            case FETCH_FILES:
+            case SUBMIT_CHANGELIST:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH;
+        }
+    }
+
+    private boolean haveNoCommonFiles(P4CommandRunner.ClientAction<?> a, P4CommandRunner.ClientAction<?>  b) {
+        HashSet<FilePath> commonFiles = new HashSet<>(a.getAffectedFiles());
+        int aSize = commonFiles.size();
+        commonFiles.removeAll(b.getAffectedFiles());
+        return aSize == commonFiles.size();
+    }
+
+    @Nullable
+    private P4ChangelistId getAssociatedChangelistId(@NotNull P4CommandRunner.ClientAction<?> action) {
+        switch (action.getCmd()) {
+            case MOVE_FILE:
+                return ((MoveFileAction) action).getChangelistId();
+            case ADD_EDIT_FILE:
+                return ((AddEditAction) action).getChangelistId();
+            case DELETE_FILE:
+                return ((DeleteFileAction) action).getChangelistId();
+            case REVERT_FILE:
+                return null;
+            case MOVE_FILES_TO_CHANGELIST:
+                return ((MoveFilesToChangelistAction) action).getChangelistId();
+            case EDIT_CHANGELIST_DESCRIPTION:
+                return ((EditChangelistAction) action).getChangelistId();
+            case ADD_JOB_TO_CHANGELIST:
+                return ((AddJobToChangelistAction) action).getChangelistId();
+            case REMOVE_JOB_FROM_CHANGELIST:
+                return ((RemoveJobFromChangelistAction) action).getChangelistId();
+            case CREATE_CHANGELIST:
+                // No changelist created for this request!
+                return null;
+            case DELETE_CHANGELIST:
+                return ((DeleteChangelistAction) action).getChangelistId();
+            case FETCH_FILES:
+                return null;
+            case SUBMIT_CHANGELIST:
+                return ((SubmitChangelistAction) action).getChangelistId();
+            case SHELVE_FILES:
+                return ((ShelveFilesAction) action).getChangelistId();
+            default:
+                return null;
+        }
     }
 }

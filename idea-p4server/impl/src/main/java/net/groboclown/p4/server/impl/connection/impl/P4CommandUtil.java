@@ -295,6 +295,7 @@ public class P4CommandUtil {
     }
 
     public List<IFileSpec> submitChangelist(
+            IClient client,
             JobStatus jobStatus,
             Collection<P4Job> updatedJobs,
             IChangelist changelist, List<FilePath> files)
@@ -310,12 +311,17 @@ public class P4CommandUtil {
             }
             options.setJobIds(jobIds);
         }
+        List<IFileSpec> clientFiles = getSpecLocations(client, FileSpecBuildUtil.escapedForFilePaths(files));
+        MessageStatusUtil.throwIfError(clientFiles);
+        if (clientFiles.size() != files.size()) {
+            throw new P4JavaException("Unable to find depot path for files " + files);
+        }
         List<IFileSpec> liveFiles = changelist.getFiles(false);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Replacing files in changelist " + liveFiles + " with " + files);
+            LOG.debug("Replacing files in changelist " + liveFiles + " with " + files + " as " + clientFiles);
         }
         liveFiles.clear();
-        liveFiles.addAll(FileSpecBuildUtil.forFilePaths(files));
+        liveFiles.addAll(clientFiles);
         return changelist.submit(options);
     }
 

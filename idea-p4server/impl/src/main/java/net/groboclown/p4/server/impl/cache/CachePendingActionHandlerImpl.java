@@ -168,23 +168,7 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
             // Curate the pending list of actions.
             // Curation MUST be done in reverse order of the existing pending actions.
             ActionStore.PendingAction addedAction = ActionStore.createPendingAction(clientServerRef, action);
-            final ListIterator<ActionStore.PendingAction> iter = actions.listIterator(actions.size());
-            while (iter.hasPrevious()) {
-                final ActionStore.PendingAction existingAction = iter.previous();
-                PendingActionCurator.CurateResult result = curator.curate(addedAction, existingAction);
-                addedAction = result.replacedAdded(addedAction);
-                if (result.removeExisting) {
-                    iter.remove();
-                } else {
-                    iter.set(result.replacedExisting(existingAction));
-                }
-                if (result.removeAdded) {
-                    // Halt the add operation
-                    return;
-                }
-            }
-
-            actions.add(addedAction);
+            curator.curateActionList(addedAction, actions);
         }
 
         @Override
@@ -192,22 +176,7 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
             // Curate the pending list of actions.
             // Curation MUST be done in reverse order of the existing pending actions.
             ActionStore.PendingAction addedAction = ActionStore.createPendingAction(serverName, action);
-            final ListIterator<ActionStore.PendingAction> iter = actions.listIterator(actions.size());
-            while (iter.hasPrevious()) {
-                final ActionStore.PendingAction existingAction = iter.previous();
-                PendingActionCurator.CurateResult result = curator.curate(addedAction, existingAction);
-                addedAction = result.replacedAdded(addedAction);
-                if (result.removeExisting) {
-                    iter.remove();
-                }
-                iter.set(result.replacedExisting(existingAction));
-                if (result.removeAdded) {
-                    // Halt the add operation
-                    return;
-                }
-            }
-
-            actions.add(addedAction);
+            curator.curateActionList(addedAction, actions);
         }
 
         @NotNull

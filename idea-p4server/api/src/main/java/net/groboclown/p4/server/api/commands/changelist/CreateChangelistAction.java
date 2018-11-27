@@ -24,15 +24,19 @@ public class CreateChangelistAction extends AbstractAction
     private final String actionId;
     private final ClientServerRef ref;
     private final String comment;
+    private final String localChangelistId;
 
-    public CreateChangelistAction(@NotNull ClientServerRef ref, @NotNull String comment) {
-        this(createActionId(CreateChangelistAction.class), ref, comment);
+    public CreateChangelistAction(@NotNull ClientServerRef ref, @NotNull String comment,
+            @NotNull String localChangelistId) {
+        this(createActionId(CreateChangelistAction.class), ref, comment, localChangelistId);
     }
 
-    public CreateChangelistAction(@NotNull String actionId, @NotNull ClientServerRef ref, @NotNull String comment) {
+    public CreateChangelistAction(@NotNull String actionId, @NotNull ClientServerRef ref, @NotNull String comment,
+            @NotNull String localChangelistId) {
         this.actionId = actionId;
         this.ref = ref;
         this.comment = comment;
+        this.localChangelistId = localChangelistId;
     }
 
     @NotNull
@@ -63,6 +67,10 @@ public class CreateChangelistAction extends AbstractAction
     }
 
     @NotNull
+    public String getLocalChangelistId() {
+        return localChangelistId;
+    }
+    @NotNull
     @Override
     public String[] getDisplayParameters() {
         String p = comment;
@@ -71,4 +79,5 @@ public class CreateChangelistAction extends AbstractAction
         }
         return new String[] { p };
     }
+
 }

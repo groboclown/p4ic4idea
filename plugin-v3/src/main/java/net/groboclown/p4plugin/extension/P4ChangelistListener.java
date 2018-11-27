@@ -200,7 +200,7 @@ public class P4ChangelistListener
                     // No server changelist associated with this ide change.  Create one.
                     CreateChangelistAction action =
                             new CreateChangelistAction(clientConfigRoot.getClientConfig().getClientServerRef(),
-                                    toDescription(local));
+                                    toDescription(local), local.getId());
                     P4ServerComponent.perform(myProject, clientConfigRoot.getClientConfig(), action)
                             .whenCompleted((res) -> {
                                 sink.resolve(new P4ChangelistIdImpl(

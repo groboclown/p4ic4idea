@@ -46,7 +46,7 @@
     * Individual file history shows revision number as the primary column, but also shows the changelist number.
 * Upgraded p4java dependency to r18-1
     * Requires additional dependent jars.
-    * Allows for more thorough unit testing.
+    * Allows for more thorough plugin unit tests.
 * Shipped as single Jar file.
     * Due to unknown issues with IDEA loading a zip file, the plugin is now distributed as a single jar file with all dependencies unpacked inside it.
 * Updated build.

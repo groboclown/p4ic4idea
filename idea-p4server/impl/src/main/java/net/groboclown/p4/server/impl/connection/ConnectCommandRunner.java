@@ -678,7 +678,7 @@ public class ConnectCommandRunner
         if (LOG.isDebugEnabled()) {
             LOG.debug("Submitting changelist " + action.getChangelistId());
         }
-        List<IFileSpec> res = cmd.submitChangelist(
+        List<IFileSpec> res = cmd.submitChangelist(client,
                 action.getJobStatus(), action.getUpdatedJobs(), change, action.getFiles());
 
 

@@ -433,7 +433,8 @@ class ConnectCommandRunnerTest {
                                 new CreateJobAction(new P4JobImpl("j1", "x", jobDetails)))
                         .mapActionAsync((res) ->
                                 runner.perform(clientConfig,
-                                    new CreateChangelistAction(clientConfig.getClientServerRef(), "a change")))
+                                    new CreateChangelistAction(clientConfig.getClientServerRef(), "a change",
+                                            "local-id")))
                         .mapActionAsync((res) ->
                                 runner.perform(clientConfig, new AddJobToChangelistAction(
                                     new P4ChangelistIdImpl(res.getChangelistId(), clientConfig.getClientServerRef()),
@@ -475,7 +476,8 @@ class ConnectCommandRunnerTest {
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
-                                new CreateChangelistAction(clientConfig.getClientServerRef(), "simple"))
+                                new CreateChangelistAction(clientConfig.getClientServerRef(), "simple",
+                                        "local-id"))
                         .whenCompleted(sink::resolve)
                         .whenServerError(sink::reject)
                 )
@@ -511,7 +513,8 @@ class ConnectCommandRunnerTest {
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
-                                new CreateChangelistAction(clientConfig.getClientServerRef(), "new change"))
+                                new CreateChangelistAction(clientConfig.getClientServerRef(), "new change",
+                                        "local-id"))
                             .mapActionAsync((res) ->
                                 runner.perform(clientConfig, new DeleteChangelistAction(new P4ChangelistIdImpl(res.getChangelistId(),
                                         clientConfig.getClientServerRef())))
@@ -559,7 +562,7 @@ class ConnectCommandRunnerTest {
                         MessageStatusUtil.throwIfError(msgs);
                         IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                         change.setDescription("add initial file");
-                        msgs = cmd.submitChangelist(null, null, change, Collections.singletonList(newFile));
+                        msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(newFile));
                         MessageStatusUtil.throwIfError(msgs);
                         return runner;
                     })
@@ -609,7 +612,8 @@ class ConnectCommandRunnerTest {
                 .map(ConnectCommandRunner::new)
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
-                                new CreateChangelistAction(clientConfig.getClientServerRef(),"old comment"))
+                                new CreateChangelistAction(clientConfig.getClientServerRef(),"old comment",
+                                        "local-id"))
                         .mapActionAsync((res) ->
                                 runner.perform(clientConfig, new EditChangelistAction(
                                     new P4ChangelistIdImpl(res.getChangelistId(), clientConfig.getClientServerRef()), "new comment")))
@@ -736,7 +740,7 @@ class ConnectCommandRunnerTest {
                                 runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                         .mapActionAsync((res) -> runner.perform(clientConfig,
                                                 new CreateChangelistAction(clientConfig.getClientServerRef(),
-                                                        "Destination change")))
+                                                        "Destination change", "local-id")))
                                         .mapActionAsync((res) -> runner.perform(clientConfig,
                                                 new MoveFilesToChangelistAction(
                                                     new P4ChangelistIdImpl(res.getChangelistId(), clientConfig.getClientServerRef()),

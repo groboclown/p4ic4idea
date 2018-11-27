@@ -16,6 +16,9 @@ These items need retesting.
 
 Connect with SSO server.
 
+### Offline
+
+1. Curate action combinations
 
 
 ## Bugs
@@ -119,13 +122,6 @@ file status.
 
 The `P4EditAction` should respect the user's request and force the add.
 
-### Pending Action Consolidation
-
-When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
-duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
-
-Some of this work has started.  It is handled in `PendingActionCurator`.
-
 
 ## Near-Term Functionality
 
@@ -177,3 +173,11 @@ extreme care must be taken to properly clean up the cached data.  This means tig
 ### Check Description Length in Submit Dialog
 
 Really old, long standing issue.  The UI should prevent submitting a change if the description is empty.
+
+### Pending Action Consolidation
+
+When a user performs an action, the internal mechanisms must first check the pending cache to see if it alters or
+duplicates existing pending actions.  The pending action list must be altered to reflect the new action.
+
+Most of this work has been done.  It is handled in `PendingActionCurator`.  A few other cases still should be handled,
+but it's not necessary for correct operation.

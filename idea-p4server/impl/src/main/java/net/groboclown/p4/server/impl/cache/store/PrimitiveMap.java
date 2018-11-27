@@ -39,16 +39,19 @@ import java.util.stream.Stream;
 /**
  * A map that stores only Strings, so that it can easily be persisted through XMLSerializer.  It
  * provides conversion methods.
+ *
+ * Must be public for serializer to work properly.
  */
 public final class PrimitiveMap {
     private static final Logger LOG = Logger.getInstance(PrimitiveMap.class);
 
 
     // Public so the serializer can work properly.  Do not access directly.
+    @SuppressWarnings("WeakerAccess")
     public Map<String, String> $proxy$ = new HashMap<>();
 
 
-    public static class UnmarshalException extends Exception {
+    static class UnmarshalException extends Exception {
         UnmarshalException(String key, String expectedType, Object found) {
             super("Could not unmarshall [" + key + "]: expected " + expectedType + ", found " + found);
         }
@@ -58,63 +61,62 @@ public final class PrimitiveMap {
     }
 
 
-    public int getIntNullable(@NotNull String key, int defaultValue)
+    int getIntNullable(@NotNull String key, int defaultValue)
             throws UnmarshalException {
         return getNotNull(key, defaultValue, "int", Integer::parseInt);
     }
 
     @NotNull
-    public PrimitiveMap putInt(@NotNull String key, int value) {
+    PrimitiveMap putInt(@NotNull String key, int value) {
         $proxy$.put(key, Integer.toString(value));
         return this;
     }
 
 
-    public long getLongNullable(@NotNull String key, long defaultValue)
+    long getLongNullable(@NotNull String key, long defaultValue)
             throws UnmarshalException {
         return getNotNull(key, defaultValue, "long", Long::parseLong);
     }
 
     @NotNull
-    public PrimitiveMap putLong(@NotNull String key, long value) {
+    PrimitiveMap putLong(@NotNull String key, long value) {
         $proxy$.put(key, Long.toString(value));
         return this;
     }
 
-    public boolean getBooleanNullable(@NotNull String key, boolean defaultValue)
+    boolean getBooleanNullable(@NotNull String key, boolean defaultValue)
             throws UnmarshalException {
         return getNotNull(key, defaultValue, "boolean", Boolean::parseBoolean);
     }
 
     @NotNull
-    public PrimitiveMap putBoolean(@NotNull String key, boolean value) {
+    PrimitiveMap putBoolean(@NotNull String key, boolean value) {
         $proxy$.put(key, Boolean.toString(value));
         return this;
     }
 
     @Nullable
-    public String getStringNullable(String key, @Nullable String defaultValue)
+    String getStringNullable(String key, @Nullable String defaultValue)
             throws UnmarshalException {
         return getNullable(key, defaultValue, "string", (s) -> s);
     }
 
     @NotNull
-    public String getStringNotNull(String key)
+    String getStringNotNull(String key)
             throws UnmarshalException {
         return getNotNull(key, "string", (s) -> s);
     }
 
     @NotNull
-    public PrimitiveMap putString(@NotNull String key, @Nullable String value) {
+    PrimitiveMap putString(@NotNull String key, @Nullable String value) {
         if (value != null) {
             $proxy$.put(key, value);
         }
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @NotNull
-    public List<String> getStringList(String key)
+    List<String> getStringList(String key)
             throws UnmarshalException {
         int size = getIntNullable(key + "__len", -1);
         if (size <= 0) {
@@ -128,7 +130,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public PrimitiveMap putStringList(@NotNull String key, @Nullable List<String> values) {
+    PrimitiveMap putStringList(@NotNull String key, @Nullable List<String> values) {
         if (values != null) {
             putInt(key + "__len", values.size());
             for (int i = 0; i < values.size(); i++) {
@@ -139,14 +141,14 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public PrimitiveMap putStringList(@NotNull String key, @Nullable Stream<String> values) {
+    PrimitiveMap putStringList(@NotNull String key, @Nullable Stream<String> values) {
         if (values != null) {
             putStringList(key, values.collect(Collectors.toList()));
         }
         return this;
     }
 
-    public boolean containsKey(String key) {
+    boolean containsKey(String key) {
         return $proxy$.containsKey(key);
     }
 
@@ -154,7 +156,7 @@ public final class PrimitiveMap {
     // Higher level getters and setters.  Still stores only the primitive data, but makes it easier to use.
 
     @Nullable
-    public FilePath getFilePathNullable(String key)
+    FilePath getFilePathNullable(String key)
             throws UnmarshalException {
         String path = getStringNullable(key, null);
         if (path == null) {
@@ -164,14 +166,14 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public FilePath getFilePathNotNull(String key)
+    FilePath getFilePathNotNull(String key)
             throws UnmarshalException {
         String path = getStringNotNull(key);
         return VcsUtil.getFilePath(path);
     }
 
     @NotNull
-    public PrimitiveMap putFilePath(@NotNull String key, @Nullable FilePath path) {
+    PrimitiveMap putFilePath(@NotNull String key, @Nullable FilePath path) {
         if (path != null) {
             return putString(key, path.getPath());
         }
@@ -179,7 +181,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public List<FilePath> getFilePathList(@NotNull String key)
+    List<FilePath> getFilePathList(@NotNull String key)
             throws UnmarshalException {
         return getStringList(key)
                 .stream()
@@ -188,7 +190,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public PrimitiveMap putFilePathList(String key, @Nullable List<FilePath> paths) {
+    PrimitiveMap putFilePathList(String key, @Nullable List<FilePath> paths) {
         if (paths != null) {
             return putStringList(key, paths.stream()
                 .map(FilePath::getPath));
@@ -197,7 +199,7 @@ public final class PrimitiveMap {
     }
 
     @Nullable
-    public ClientServerRef getClientServerRefNullable(@NotNull String key)
+    ClientServerRef getClientServerRefNullable(@NotNull String key)
             throws UnmarshalException {
         String serverPort = getStringNullable(key + "__serverPort", null);
         String clientName = getStringNullable(key + "__clientName", null);
@@ -209,7 +211,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public ClientServerRef getClientServerRefNotNull(@NotNull String key)
+    ClientServerRef getClientServerRefNotNull(@NotNull String key)
             throws UnmarshalException {
         String serverPort = getStringNotNull(key + "__serverPort");
         String clientName = getStringNullable(key + "__clientName", null);
@@ -218,7 +220,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public PrimitiveMap putClientServerRef(@NotNull String key, @Nullable ClientServerRef ref) {
+    PrimitiveMap putClientServerRef(@NotNull String key, @Nullable ClientServerRef ref) {
         if (ref == null) {
             return this;
         }
@@ -228,7 +230,7 @@ public final class PrimitiveMap {
     }
 
     @Nullable
-    public P4ChangelistId getChangelistIdNullable(@NotNull String key)
+    P4ChangelistId getChangelistIdNullable(@NotNull String key)
             throws UnmarshalException {
         ClientServerRef ref = getClientServerRefNullable(key + "__ref");
         if (ref == null) {
@@ -242,7 +244,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public P4ChangelistId getChangelistIdNotNull(@NotNull String key)
+    P4ChangelistId getChangelistIdNotNull(@NotNull String key)
             throws UnmarshalException {
         ClientServerRef ref = getClientServerRefNullable(key + "__ref");
         if (ref == null) {
@@ -254,7 +256,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public PrimitiveMap putChangelistId(@NotNull String key, @Nullable P4ChangelistId id) {
+    PrimitiveMap putChangelistId(@NotNull String key, @Nullable P4ChangelistId id) {
         if (id == null) {
             return this;
         }
@@ -263,7 +265,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public P4Job getP4Job(@NotNull String key)
+    P4Job getP4Job(@NotNull String key)
             throws UnmarshalException {
         String jobId = getStringNotNull(key + "__id");
         String description = getStringNotNull(key + "__desc");
@@ -288,7 +290,7 @@ public final class PrimitiveMap {
     }
 
     @NotNull
-    public PrimitiveMap putP4Job(@NotNull String key, @Nullable P4Job job) {
+    PrimitiveMap putP4Job(@NotNull String key, @Nullable P4Job job) {
         if (job == null) {
             return this;
         }

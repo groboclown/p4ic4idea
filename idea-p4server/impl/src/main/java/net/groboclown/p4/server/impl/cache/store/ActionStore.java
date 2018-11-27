@@ -152,7 +152,8 @@ public class ActionStore {
             case CREATE_CHANGELIST:
                 return new CreateChangelistAction(state.actionId,
                         state.data.getClientServerRefNotNull("ref"),
-                        state.data.getStringNotNull("comment"));
+                        state.data.getStringNotNull("comment"),
+                        state.data.getStringNotNull("localid"));
             case DELETE_CHANGELIST:
                 return new DeleteChangelistAction(state.actionId,
                         state.data.getChangelistIdNotNull("cl-id"));
@@ -243,7 +244,8 @@ public class ActionStore {
                 CreateChangelistAction a = (CreateChangelistAction) action;
                 ret.data
                         .putClientServerRef("ref", a.getClientServerRef())
-                        .putString("comment", a.getComment());
+                        .putString("comment", a.getComment())
+                        .putString("localid", a.getLocalChangelistId());
                 break;
             }
             case DELETE_CHANGELIST:

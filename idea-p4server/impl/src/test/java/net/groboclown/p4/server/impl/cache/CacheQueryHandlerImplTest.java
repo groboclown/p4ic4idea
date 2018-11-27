@@ -121,7 +121,8 @@ class CacheQueryHandlerImplTest {
                 .withClientname(clientConfig.getClientname())
                 .withUsername(serverConfig.getUsername())
                 .build();
-        CreateChangelistAction addChangelistAction = new CreateChangelistAction(clientConfig.getClientServerRef(), "my comment");
+        CreateChangelistAction addChangelistAction = new CreateChangelistAction(
+                clientConfig.getClientServerRef(), "my comment", "local-id");
 
         // Simulated P4ChangeProvider action.
         MockLocalChangeList ideChangeList = new MockLocalChangeList();

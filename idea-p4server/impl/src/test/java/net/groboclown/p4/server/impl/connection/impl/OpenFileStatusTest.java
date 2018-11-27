@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
@@ -184,7 +185,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                            msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(newFile));
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Get the status
@@ -242,7 +243,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                            msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(newFile));
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for edit
@@ -304,7 +305,7 @@ class OpenFileStatusTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                            msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(newFile));
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Open for delete

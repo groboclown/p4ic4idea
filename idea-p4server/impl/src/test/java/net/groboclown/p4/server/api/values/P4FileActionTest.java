@@ -37,6 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static net.groboclown.p4.server.impl.ClientTestUtil.setupClient;
@@ -85,7 +87,7 @@ class P4FileActionTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                            msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(newFile));
                             MessageStatusUtil.throwIfError(msgs);
 
                             client.editFiles(srcFiles, new EditFilesOptions());
@@ -146,7 +148,7 @@ class P4FileActionTest {
                             MessageStatusUtil.throwIfError(msgs);
                             IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("add initial file");
-                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                            msgs = cmd.submitChangelist(client, null, null, change, Arrays.asList(fromFile, toFile));
                             MessageStatusUtil.throwIfError(msgs);
 
                             // Delete the target file
@@ -156,7 +158,7 @@ class P4FileActionTest {
                             assertFalse(toFile.getIOFile().exists());
                             change = client.getServer().getChangelist(IChangelist.DEFAULT);
                             change.setDescription("delete target file");
-                            msgs = cmd.submitChangelist(null, null, change, action.getFiles());
+                            msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(toFile));
                             MessageStatusUtil.throwIfError(msgs);
                             // make sure the file's still gone.
                             assertFalse(toFile.getIOFile().exists());

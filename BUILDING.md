@@ -12,7 +12,7 @@ First, you need to install the prerequisite software.
    with JDK9.*
 1. **Git repo** - clone the Git repo from GitHub.
    
-   ```
+   ```(bash)
    $ git clone (repository name)
    ```
 
@@ -20,7 +20,7 @@ First, you need to install the prerequisite software.
 
 From the root directory, simply run:
 
-```
+```(bash)
 $ ./gradlew build
 ```
 
@@ -69,4 +69,5 @@ the previous version, so that changes in the code can be tracked.
 
 The source code contains JavaDoc and comments to help in understanding the immediate
 concerns of the code, but the general overall documentation is located under the
-[developer documentation](plugin/docs/developers).
+[developer documentation](plugin/docs/developers).  Expect this to be moderately
+out of date.

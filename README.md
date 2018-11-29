@@ -15,9 +15,10 @@ in the `135-compat` branch.
 * [Getting Started](#getting-started)
 * [Setting Up The Plugin](#setting-up-the-plugin)
 * [Workflow](#workflow)
-* [Known Issues](#known-issues)
+* [Compatibility Issues](#compatibility-issues)
 * [License](#license)
-* [Progress Report](TODO.md)
+* [Future Roadmap](TODO.md)
+* [Contribute](#contributing)
 
 
 # Getting Started
@@ -34,7 +35,7 @@ in the `135-compat` branch.
            or from the [Github releases](https://github.com/groboclown/p4ic4idea/releases/latest)
         1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
         1. Navigate to the Plugins panel.
-        1. Click the ![gear](plugin/docs/img/settings-gear-icon-1.png) icon, and select the
+        1. Click the ![gear](docs/img/settings-gear-icon-1.png) icon, and select the
            **Install plugin from disk...** item from the pop-up menu.
         1. Select the downloaded file from the file selection dialog.
     * Build it yourself:
@@ -55,7 +56,7 @@ in the `135-compat` branch.
 To view the Version Control settings, open the IDE settings dialog ( **File** -> **Settings...** ) and select the
 **Version Control** panel.
 
-![Version Control Settings Dialog](plugin/docs/img/settings-vc-1.png)
+![Version Control Settings Dialog](docs/img/settings-vc-1.png)
 
 In the Version Control settings, you will need to define the root directories that are under Perforce control.  Any
 file in your project outside one of these root directories won't be managed by Perforce.  You can have multiple
@@ -66,7 +67,7 @@ for each root directory, and select "Perforce".  To add another directory, use t
 (marked **2.** in the image above).
 
 Then, you will need to [configure the connection settings](#connecting-to-your-perforce-server) for each Perforce
-controlled root directory by pressing the ![pencil](plugin/docs/img/settings-vc-pencil-icon-1.png) button in the side
+controlled root directory by pressing the ![pencil](docs/img/settings-vc-pencil-icon-1.png) button in the side
 toolbar.
 
 ## Connecting to Your Perforce Server
@@ -74,7 +75,7 @@ toolbar.
 The configuration dialog allows you to configure the VCS root directory, the VCS provider, and connection information
 specific to that provider.
 
-![Connection Properties Tab](plugin/docs/img/settings-connection-properties-v10-2.png)
+![Connection Properties Tab](docs/img/settings-connection-properties-2.png)
 
 For the p4ic4idea plugin, this is where you configure how the root directory finds the Perforce server.  You can
 configure each root directory to point to different servers or client workspaces, or have them reference the same
@@ -155,23 +156,19 @@ mechanism.
 
 ## Checking Connection Properties
 
-*TODO FIX FOR v0.10*
-
-![Server Connection tab](plugin/docs/img/settings-connection-resolved-1.png)
-
-The *Server Connection* tab allows you to review the resolved properties for 
-each identified root directory.  Press
-the ![refresh](plugin/docs/img/settings-connection-properties-refresh.png) button
-to re-examine the configuration properties and look for root directories.
+The *Resolved Properties* tab allows you to review the resolved properties for the current VCS root.  The
+**Check Connection** button will refresh the list.  Note that passwords are never shown.
 
 
 ## User Preferences
 
-*TODO FIX FOR v0.10*
-
 The *User Preferences* tab allows you to change the general operation of the
 plugin. 
 
+*Note: This section needs updates to reflect the new 0.10 version of the plugin.*
+
+**WARNING** This dialog does not reflect the list of user-configurable properties for v0.10 of the plugin.
+Future releases will fix this.  If you want to help, see bug #178.
 
 
 # Workflow
@@ -190,15 +187,14 @@ association will only be used when the changelist is actually submitted.
 You can view the active server connections for your project through the **Version Control** panel, in the "Active
 Connections" tab.
 
-![active connections view](plugin/docs/img/p4ic-connections-1.png)
+![active connections view](docs/img/p4ic-connections-1.png)
 
 If you are working disconnected from the server, Perforce requests are queued up in the "Pending Actions" list.  You
 can also use this view to reconnect to a server, disconnect from a server, configure a VCS root folder configuration,
 and manage the pending actions list. 
 
 
-# Known Issues
-
+# Compatibility Issues
 
 ## Symlinks on Windows
 
@@ -208,6 +204,24 @@ special permissions to allow your user to create symlinks.
 See [this article on superuser.com](https://superuser.com/questions/104845/permission-to-make-symbolic-links-in-windows-7)
 for details on how to do this.
 
+
+# Contributing
+
+You can help make the plugin better!
+
+## Submit Bug Reports
+
+Submitting bug reports is one of the easiest way to help the project.  Bugs can't be fixed if they aren't known.
+
+
+## Fix It Yourself
+
+See [BULDING.md](BUILDING.md) for information on downloading the source and 
+
+
+## Looking For Work?
+
+Please see the bug list for the project, and the [TODO.md] file for details on the future direction of the plugin.
 
 
 # License

@@ -20,3 +20,9 @@ unit tests is present as their own projects.  Likewise, code should
 be written so that it's easily testable.  Some actions, like reading
 from the system properties, should be delegated to helper classes
 to make unit testing easy.
+
+Behavior that directly depends upon the core IDE behavior is still not
+well tested, due to reluctance to use heavyweight Idea test cases.
+Currently, where this is used in test cases, it is simulated.  This is
+a half measure, as it doesn't guarantee that future versions of the IDE
+will continue to behave that way. 

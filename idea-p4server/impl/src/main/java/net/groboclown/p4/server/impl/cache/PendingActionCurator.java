@@ -33,6 +33,7 @@ import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
 import net.groboclown.p4.server.api.util.EqualUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.cache.store.ActionStore;
+import net.groboclown.p4.server.impl.connection.operations.MoveFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,18 +57,24 @@ class PendingActionCurator {
     static class CurateResult {
         final boolean removeExisting;
         final boolean removeAdded;
+        final boolean stopSearch;
         private final ActionStore.PendingAction replacedAddedAction;
         private final ActionStore.PendingAction replacedExistingAction;
 
         CurateResult(boolean keepAdded, boolean keepExisting,
                 @Nullable ActionStore.PendingAction replacedAddedAction,
-                @Nullable ActionStore.PendingAction replacedExistingAction) {
+                @Nullable ActionStore.PendingAction replacedExistingAction,
+                boolean stopSearch) {
             this.removeAdded = !keepAdded;
             this.removeExisting = !keepExisting;
+            this.stopSearch = stopSearch;
             this.replacedAddedAction = replacedAddedAction;
             this.replacedExistingAction = replacedExistingAction;
             if (removeExisting && replacedExistingAction != null) {
                 throw new IllegalStateException("Cannot both replace existing and remove existing");
+            }
+            if (removeAdded && ! stopSearch) {
+                throw new IllegalStateException("Cannot remove the added item and keep searching");
             }
         }
 
@@ -124,14 +131,18 @@ class PendingActionCurator {
     }
 
     // Should be private, but unit tests...
-    static final CurateResult KEEP_EXISTING_REMOVE_ADDED =
-            new CurateResult(false, true, null, null);
-    static final CurateResult KEEP_ADDED_REMOVE_EXISTING =
-            new CurateResult(true, false, null, null);
-    static final CurateResult KEEP_BOTH =
-            new CurateResult(true, true, null, null);
-    static final CurateResult REMOVE_BOTH =
-            new CurateResult(false, false, null, null);
+    static final CurateResult KEEP_EXISTING_REMOVE_ADDED_STOP =
+            new CurateResult(false, true, null, null, true);
+    static final CurateResult KEEP_ADDED_REMOVE_EXISTING_CONTINUE =
+            new CurateResult(true, false, null, null, false);
+    static final CurateResult KEEP_ADDED_REMOVE_EXISTING_STOP =
+            new CurateResult(true, false, null, null, true);
+    static final CurateResult KEEP_BOTH_CONTINUE =
+            new CurateResult(true, true, null, null, false);
+    static final CurateResult KEEP_BOTH_STOP =
+            new CurateResult(true, true, null, null, true);
+    static final CurateResult REMOVE_BOTH_STOP =
+            new CurateResult(false, false, null, null, true);
 
     private final PendingActionFactory actionFactory;
 
@@ -164,6 +175,10 @@ class PendingActionCurator {
                 // Halt the add operation
                 return;
             }
+            if (result.stopSearch) {
+                // Don't look further for curation.
+                break;
+            }
         }
 
         actions.add(added);
@@ -180,7 +195,7 @@ class PendingActionCurator {
     CurateResult curate(@NotNull ActionStore.PendingAction added, @NotNull ActionStore.PendingAction existing) {
         // Simple duplicate check
         if (added.equals(existing)) {
-            return KEEP_EXISTING_REMOVE_ADDED;
+            return KEEP_EXISTING_REMOVE_ADDED_STOP;
         }
 
         if (added.clientAction != null) {
@@ -191,7 +206,7 @@ class PendingActionCurator {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Skipping duplicate action " + added.clientAction);
                     }
-                    return KEEP_EXISTING_REMOVE_ADDED;
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
                 }
                 return curateClientActions(added.clientAction, existing.clientAction);
             }
@@ -210,12 +225,12 @@ class PendingActionCurator {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Skipping duplicate action " + added.serverAction);
                     }
-                    return KEEP_EXISTING_REMOVE_ADDED;
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
                 }
                 return curateServerActions(added.serverAction, existing.serverAction);
             }
         }
-        return KEEP_BOTH;
+        return KEEP_BOTH_CONTINUE;
     }
 
     @NotNull
@@ -232,18 +247,18 @@ class PendingActionCurator {
                             LOG.debug("Remove duplicate action `create job " +
                                     ((CreateJobAction) added).getJob().getJobId() + "`");
                         }
-                        return KEEP_EXISTING_REMOVE_ADDED;
+                        return KEEP_EXISTING_REMOVE_ADDED_STOP;
                     }
                 }
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
 
             case LOGIN:
                 // Shouldn't ever be in the pending list...
                 LOG.warn("Purging LOGIN actions from list; should never have been added");
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
 
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
@@ -261,7 +276,7 @@ class PendingActionCurator {
             case REVERT_FILE:
                 // FIXME implement.  Requires local history tracking.
                 LOG.warn("FIXME implement revert file action consolidation");
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             case MOVE_FILES_TO_CHANGELIST:
                 return curateMoveFilesToChangelistRequest((MoveFilesToChangelistAction) added, existing);
             case EDIT_CHANGELIST_DESCRIPTION:
@@ -280,39 +295,158 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SUBMIT_CHANGELIST:
                 LOG.warn("Purging " + added.getCmd() + " actions from list; should never have been added");
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
 
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
     @NotNull
     private CurateResult curateAddEditRequest(AddEditAction added, P4CommandRunner.ClientAction<?> existing) {
         if (haveNoCommonFiles(added, existing)) {
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
-        // FIXME implement
-        LOG.warn("FIXME implement add/edit action consolidation");
-        return KEEP_BOTH;
+        switch (existing.getCmd()) {
+            case MOVE_FILE: {
+                MoveFileAction ex = (MoveFileAction) existing;
+
+                // FIXME implement
+                LOG.warn("FIXME implement curation of move then add");
+                return KEEP_BOTH_STOP;
+            }
+            case ADD_EDIT_FILE: {
+                AddEditAction ex = (AddEditAction) existing;
+
+                // If the original request was an add and this one is an edit, it doesn't change the underlying
+                // gone-online behavior.  The key difference between the requests is the explicit file type and
+                // charset, and the changelist ID.  We want to keep the more precise charset and file type
+                // (later one overrides first one), and the later changelist.  Due to the ordering of actions
+                // requirements, this should *replace* the original value.
+
+                // FIXME implement
+                LOG.warn("FIXME implement consolidation of duplicate add/edit requests.");
+                return KEEP_BOTH_STOP;
+            }
+            case DELETE_FILE: {
+                DeleteFileAction ex = (DeleteFileAction) existing;
+
+                // Deleted then added/edited the original file.  Remove the delete action.
+                LOG.info("Delete for file " + ex.getFile() + " removed due to later request to edit the file");
+
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
+            }
+
+            // Revert a file then add file - we don't know the intent of the revert, so keep both.
+            case REVERT_FILE:
+                return KEEP_BOTH_STOP;
+
+            // Not affected by an add/edit request
+            case MOVE_FILES_TO_CHANGELIST:
+            case EDIT_CHANGELIST_DESCRIPTION:
+            case ADD_JOB_TO_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
+            case CREATE_CHANGELIST:
+            case DELETE_CHANGELIST:
+            case FETCH_FILES:
+            case SUBMIT_CHANGELIST:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH_CONTINUE;
+        }
     }
 
     @NotNull
     private CurateResult curateDeleteRequest(DeleteFileAction added, P4CommandRunner.ClientAction<?> existing) {
         if (haveNoCommonFiles(added, existing)) {
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
-        // FIXME implement
-        LOG.warn("FIXME implement delete action consolidation");
-        return KEEP_BOTH;
+        switch (existing.getCmd()) {
+            case MOVE_FILE: {
+                MoveFileAction ex = (MoveFileAction) existing;
+
+                if (ex.getSourceFile().equals(added.getFile())) {
+                    // Request to delete the source file.  However, for a move, this implies deleting the source file,
+                    // so ignore the delete.
+                    LOG.info("Request to move file " + ex.getSourceFile() + " to " + ex.getTargetFile() +
+                            " implies that delete request for file " + ex.getSourceFile() + " is ignored.");
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
+                }
+
+                if (ex.getTargetFile().equals(added.getFile())) {
+                    // This implies a delete of the source and target.
+
+                    // Replace the existing move with a delete of the source, and remove the added delete.
+                    // The move command on the source should have already curated before that to reflect the
+                    // delete.
+                    LOG.info("Changing a move of " + ex.getSourceFile() + " to " + ex.getTargetFile() +
+                            " followed by delete of " + added.getFile() + " into a single delete of the source");
+
+                    return new CurateResult(false, true,
+                            null,
+                            // Use the changelist of the original move command.
+                            actionFactory.create(new DeleteFileAction(ex.getSourceFile(), ex.getChangelistId())),
+                            // The original move should have resolved the source delete behavior.
+                            true);
+                }
+
+                // Files aren't shared?  That shouldn't happen here.
+                return KEEP_BOTH_CONTINUE;
+            }
+            case DELETE_FILE: {
+                DeleteFileAction ex = (DeleteFileAction) existing;
+
+                // This should have already been done, but it's here for completeness.
+                if (! ex.getFile().equals(added.getFile())) {
+                    return KEEP_BOTH_CONTINUE;
+                }
+
+                // Requested to delete the same file twice.  The changelist could be different, though.
+                if (ex.getChangelistId().equals(added.getChangelistId())) {
+                    // The changelists are the same, so keep only the first changelist.
+                    LOG.info("Duplicate delete request in " + ex.getChangelistId() + " against file " +
+                            ex.getFile() + " curated to keep the original.");
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
+                }
+
+                // Retain the intent of the second changelist.
+                LOG.info("Duplicate delete request for file " + ex.getFile() + " resolved to use changelist " +
+                        added.getChangelistId());
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
+            }
+
+            // An add operation followed by delete should remove both operations, while an
+            // edit should be removing the edit and keeping the delete.  Because we don't know
+            // while offline if it's an add or edit, we must instead delay this decision until we're
+            // online.  So, keep both.
+            case ADD_EDIT_FILE:
+                return KEEP_BOTH_STOP;
+
+            // Delete a reverted file is fine, and indeed should be the right course of action.
+            case REVERT_FILE:
+                return KEEP_BOTH_STOP;
+
+            // Delete does not affect these actions.
+            case MOVE_FILES_TO_CHANGELIST:
+            case EDIT_CHANGELIST_DESCRIPTION:
+            case ADD_JOB_TO_CHANGELIST:
+            case REMOVE_JOB_FROM_CHANGELIST:
+            case CREATE_CHANGELIST:
+            case DELETE_CHANGELIST:
+            case FETCH_FILES:
+            case SUBMIT_CHANGELIST:
+            case SHELVE_FILES:
+            default:
+                return KEEP_BOTH_CONTINUE;
+        }
     }
 
     @NotNull
     private CurateResult curateMoveRequest(MoveFileAction added, P4CommandRunner.ClientAction<?> existingSrc) {
         if (haveNoCommonFiles(added, existingSrc)) {
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
         switch (existingSrc.getCmd()) {
@@ -327,13 +461,13 @@ class PendingActionCurator {
                             LOG.debug("Removing duplicate action `move " + existing.getSourceFile() + " to " +
                                     existing.getTargetFile() + "`");
                         }
-                        return KEEP_EXISTING_REMOVE_ADDED;
+                        return KEEP_EXISTING_REMOVE_ADDED_STOP;
                     }
 
                     // This shouldn't happen.
                     LOG.warn("Confusing set of changes.  Requested move the same file (" + added.getSourceFile() +
                             ") to both " + existing.getTargetFile() + " and " + added.getTargetFile());
-                    return KEEP_BOTH;
+                    return KEEP_BOTH_CONTINUE;
                 }
                 if (existing.getTargetFile().equals(added.getTargetFile())) {
                     // Putting different sources to the same target.
@@ -344,7 +478,9 @@ class PendingActionCurator {
                             // added action stays the same
                             null,
                             // existing action changes to a delete
-                            actionFactory.create(new DeleteFileAction(existing.getSourceFile(), existing.getChangelistId())));
+                            actionFactory.create(new DeleteFileAction(existing.getSourceFile(),
+                                    existing.getChangelistId())),
+                            false);
                 }
                 if (existing.getTargetFile().equals(added.getSourceFile())) {
                     // Requested a move from A to B, then from B to A.
@@ -355,7 +491,8 @@ class PendingActionCurator {
                     return new CurateResult(true, false,
                             actionFactory.create(new MoveFileAction(existing.getSourceFile(), added.getTargetFile(),
                                     added.getChangelistId())),
-                            null);
+                            null,
+                            false);
                 }
                 if (existing.getSourceFile().equals(added.getTargetFile())) {
                     if (existing.getTargetFile().equals(added.getSourceFile())) {
@@ -366,7 +503,7 @@ class PendingActionCurator {
                                     existing.getSourceFile() + " to " + existing.getTargetFile() + "` and `move " +
                                     added.getSourceFile() + " to " + added.getTargetFile() + "`");
                         }
-                        return REMOVE_BOTH;
+                        return REMOVE_BOTH_STOP;
                     }
 
                     // Requested to move A to B, then C to A.
@@ -374,11 +511,11 @@ class PendingActionCurator {
                     // Really, the existing operation should be turned into an integrate, and the
                     // added one kept the same.
                     // TODO double check if this works as expected.
-                    return KEEP_BOTH;
+                    return KEEP_BOTH_CONTINUE;
                 }
 
                 // Shouldn't happen, but for completeness, keep this line.
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
 
             case ADD_EDIT_FILE: {
@@ -393,7 +530,7 @@ class PendingActionCurator {
                             "` because of a later move for the same file.");
                 }
 
-                return KEEP_ADDED_REMOVE_EXISTING;
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
             }
             case DELETE_FILE: {
                 DeleteFileAction existing = (DeleteFileAction) existingSrc;
@@ -408,7 +545,7 @@ class PendingActionCurator {
                             "` because of a later move for the same file.");
                 }
 
-                return KEEP_ADDED_REMOVE_EXISTING;
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
             }
             case REVERT_FILE: {
                 RevertFileAction existing = (RevertFileAction) existingSrc;
@@ -417,7 +554,7 @@ class PendingActionCurator {
                 // move target was originally marked to be reverted.  In both cases, the move command
                 // will perform the correct behavior to the open-for-edit/whatever of the source file.
 
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
 
             // Move shouldn't affect these actions.
@@ -430,14 +567,14 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SUBMIT_CHANGELIST:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
     @NotNull
     private CurateResult curateMoveFilesToChangelistRequest(MoveFilesToChangelistAction added, P4CommandRunner.ClientAction<?> existing) {
         if (haveNoCommonFiles(added, existing)) {
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
         // This has the potential to modify the existing and added actions.
@@ -445,19 +582,19 @@ class PendingActionCurator {
             case MOVE_FILE:
                 // FIXME implement
                 LOG.warn("FIXME implement move moved files to changelist consolidation");
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             case ADD_EDIT_FILE:
                 // FIXME implement
                 LOG.warn("FIXME implement move add/edit files to changelist consolidation");
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             case DELETE_FILE:
                 // FIXME implement
                 LOG.warn("FIXME implement move delete file to changelist consolidation");
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             case MOVE_FILES_TO_CHANGELIST:
                 // FIXME implement
                 LOG.warn("FIXME implement move move-files-to-changelist to changelist consolidation");
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
 
             // Actions not affected by move-file-to-changelists.
             case REVERT_FILE:
@@ -469,7 +606,7 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SUBMIT_CHANGELIST:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
@@ -481,7 +618,7 @@ class PendingActionCurator {
         // for deleting a job, then we'd have to handle ADD_JOB_TO_CHANGELIST.
         // But, because we don't, there is no situation where a server action
         // is influenced by an existing action, or vice versa.
-        return KEEP_BOTH;
+        return KEEP_BOTH_CONTINUE;
     }
 
     @NotNull
@@ -492,7 +629,7 @@ class PendingActionCurator {
         // for deleting a job, then we'd have to handle ADD_JOB_TO_CHANGELIST.
         // But, because we don't, there is no situation where a server action
         // is influenced by an existing action, or vice versa.
-        return KEEP_BOTH;
+        return KEEP_BOTH_CONTINUE;
     }
 
     @NotNull
@@ -501,7 +638,7 @@ class PendingActionCurator {
             @NotNull P4CommandRunner.ClientAction<?> existing) {
         if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
             // They do not share the same changelist ID.  Keep both actions.
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
         // Changelists match (ID and client/server)
@@ -510,7 +647,7 @@ class PendingActionCurator {
                 // TODO if the local changelist IDs match, then consolidate down to a single create.
                 // As this code stands now, this particular block is unreachable, because create changelist has no
                 // changelist ID.
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             case DELETE_CHANGELIST: {
                 // Changelists match...
                 DeleteChangelistAction ex = (DeleteChangelistAction) existing;
@@ -520,7 +657,7 @@ class PendingActionCurator {
                 // that needs to be considered.  And with my luck, it does need special handling.
                 LOG.error(
                         "Attempted to change the description of a deleted changelist: " + ex.getChangelistId());
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
             case SUBMIT_CHANGELIST: {
                 // Changelists match...
@@ -531,14 +668,14 @@ class PendingActionCurator {
                 // that needs to be considered.  And with my luck, it does need special handling.
                 LOG.error("Attempted to change the description of a submitted changelist: " +
                         ex.getChangelistId());
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
             case EDIT_CHANGELIST_DESCRIPTION:
                 // Replace the original change description with the new one.
-                return KEEP_ADDED_REMOVE_EXISTING;
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
             case ADD_JOB_TO_CHANGELIST:
                 // Does not affect the existing action.
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
 
             // These do not affect changelist descriptions.
             case MOVE_FILE:
@@ -550,7 +687,7 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SHELVE_FILES:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
@@ -560,7 +697,7 @@ class PendingActionCurator {
             @NotNull P4CommandRunner.ClientAction<?> existing) {
         if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
             // They do not share the same changelist ID.  Keep both actions.
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
         // Changelists must match (ID and client/server).
@@ -570,9 +707,9 @@ class PendingActionCurator {
                 if (ex.getJob().equals(added.getJob())) {
                     LOG.info("Removing duplicate call to add the same job " + added.getJob() +
                             " to changelist " + added.getChangelistId());
-                    return KEEP_EXISTING_REMOVE_ADDED;
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
                 }
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
             case REMOVE_JOB_FROM_CHANGELIST: {
                 RemoveJobFromChangelistAction ex = (RemoveJobFromChangelistAction) existing;
@@ -580,9 +717,9 @@ class PendingActionCurator {
                     // Removed the job then added it.
                     LOG.info("Removing remove then re-add for same job " + added.getJob() +
                             " for changelist " + added.getChangelistId());
-                    return REMOVE_BOTH;
+                    return REMOVE_BOTH_STOP;
                 }
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
             case SUBMIT_CHANGELIST: {
                 // Know that the changelists match...
@@ -592,7 +729,7 @@ class PendingActionCurator {
                 // Report this as an error, because it should never happen.  If it does, then this is a situation
                 // that needs to be considered.  And with my luck, it does need special handling.
                 LOG.error("Attempted to change the description of a submitted changelist: " + ex.getChangelistId());
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
             case DELETE_CHANGELIST: {
                 // Know that the changelists match...
@@ -603,7 +740,7 @@ class PendingActionCurator {
                 // that needs to be considered.  And with my luck, it does need special handling.
                 LOG.error(
                         "Attempted to change the description of a deleted changelist: " + ex.getChangelistId());
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
 
             // These actions are not affected by jobs on a changelist
@@ -617,7 +754,7 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SHELVE_FILES:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
@@ -627,7 +764,7 @@ class PendingActionCurator {
             @NotNull P4CommandRunner.ClientAction<?> existing) {
         if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
             // They do not share the same changelist ID.  Keep both actions.
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
         // The actions share the same changelist reference (changelist Id and client/server).
@@ -637,18 +774,18 @@ class PendingActionCurator {
                 if (ex.getJob().equals(added.getJob())) {
                     // Attempted to remove a job that was added earlier.
                     LOG.info("Removed then added job " + ex.getJob() + " from changelist " + ex.getChangelistId());
-                    return REMOVE_BOTH;
+                    return REMOVE_BOTH_STOP;
                 }
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
             case REMOVE_JOB_FROM_CHANGELIST: {
                 RemoveJobFromChangelistAction ex = (RemoveJobFromChangelistAction) existing;
                 if (ex.getJob().equals(added.getJob())) {
                     // Attempted to remove the same job twice.
                     LOG.info("Removed the job " + ex.getJob() + " twice from changelist " + ex.getChangelistId());
-                    return KEEP_EXISTING_REMOVE_ADDED;
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
                 }
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
             case SUBMIT_CHANGELIST: {
                 // Know the changelists match...
@@ -658,7 +795,7 @@ class PendingActionCurator {
                 // Report this as an error, because it should never happen.  If it does, then this is a situation
                 // that needs to be considered.  And with my luck, it does need special handling.
                 LOG.error("Attempted to change the description of a submitted changelist: " + ex.getChangelistId());
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
             case DELETE_CHANGELIST: {
                 // Know the changelists match...
@@ -669,7 +806,7 @@ class PendingActionCurator {
                 // that needs to be considered.  And with my luck, it does need special handling.
                 LOG.error(
                         "Attempted to change the description of a deleted changelist: " + ex.getChangelistId());
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
 
             // These actions are not affected by jobs on changelist
@@ -683,7 +820,7 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SHELVE_FILES:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
@@ -699,9 +836,9 @@ class PendingActionCurator {
                 if (ex.getClientServerRef().equals(added.getClientServerRef())
                         && ex.getLocalChangelistId().equals(added.getLocalChangelistId())) {
                     LOG.info("Attempted to create a second changelist for an existing one.");
-                    return KEEP_EXISTING_REMOVE_ADDED;
+                    return KEEP_EXISTING_REMOVE_ADDED_STOP;
                 }
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
             }
 
             // Not affected by create changelist action
@@ -718,7 +855,7 @@ class PendingActionCurator {
             case FETCH_FILES:
             case SHELVE_FILES:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 
@@ -728,7 +865,7 @@ class PendingActionCurator {
             @NotNull P4CommandRunner.ClientAction<?> existing) {
         if (! added.getChangelistId().equals(getAssociatedChangelistId(existing))) {
             // They do not share the same changelist ID.  Keep both actions.
-            return KEEP_BOTH;
+            return KEEP_BOTH_CONTINUE;
         }
 
         switch (existing.getCmd()) {
@@ -738,7 +875,7 @@ class PendingActionCurator {
                 // This is definitely not needed.  The changelist is deleted after we change its description.
                 LOG.info("Removing action `edit description of " + ex.getChangelistId() +
                         "` because the changelist was deleted later.");
-                return KEEP_ADDED_REMOVE_EXISTING;
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
             }
             case ADD_JOB_TO_CHANGELIST: {
                 AddJobToChangelistAction ex = (AddJobToChangelistAction) existing;
@@ -746,7 +883,7 @@ class PendingActionCurator {
                 // Not needed, because the changelist is deleted after the job is added.
                 LOG.info("Removing action `add job " + ex.getJob() + " to changelist " + ex.getChangelistId() +
                         "` because the changelist was deleted later.");
-                return KEEP_ADDED_REMOVE_EXISTING;
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
             }
             case REMOVE_JOB_FROM_CHANGELIST: {
                 RemoveJobFromChangelistAction ex = (RemoveJobFromChangelistAction) existing;
@@ -754,7 +891,7 @@ class PendingActionCurator {
                 // Not needed, because the changelist is deleted after the job is added.
                 LOG.info("Removing action `remove job " + ex.getJob() + " from changelist " + ex.getChangelistId() +
                         "` because the changelist was deleted later.");
-                return KEEP_ADDED_REMOVE_EXISTING;
+                return KEEP_ADDED_REMOVE_EXISTING_CONTINUE;
             }
             // FIXME IMPLEMENT
             case DELETE_CHANGELIST: {
@@ -762,7 +899,7 @@ class PendingActionCurator {
 
                 // The changelist was already marked for delete.
                 LOG.info("Removing second action `remove changelist " + ex.getChangelistId() + "`");
-                return KEEP_EXISTING_REMOVE_ADDED;
+                return KEEP_EXISTING_REMOVE_ADDED_STOP;
             }
 
 
@@ -784,7 +921,7 @@ class PendingActionCurator {
             case SUBMIT_CHANGELIST:
             case SHELVE_FILES:
             default:
-                return KEEP_BOTH;
+                return KEEP_BOTH_CONTINUE;
         }
     }
 

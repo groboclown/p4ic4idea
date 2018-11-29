@@ -31,6 +31,7 @@ import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.util.EqualUtil;
 import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,6 +77,28 @@ public class ActionStore {
             }
             assert serverAction != null;
             return serverAction.getActionId();
+        }
+
+        // For tests
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (o instanceof PendingAction) {
+                PendingAction that = (PendingAction) o;
+                return sourceId.equals(that.sourceId)
+                        && EqualUtil.isEqual(serverAction, that.serverAction)
+                        && EqualUtil.isEqual(clientAction, that.clientAction);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return sourceId.hashCode()
+                    + (serverAction == null ? 0 : serverAction.hashCode())
+                    + (clientAction == null ? 0 : clientAction.hashCode());
         }
     }
 

@@ -42,7 +42,6 @@ import net.groboclown.p4.server.api.commands.changelist.GetJobSpecResult;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
-import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;

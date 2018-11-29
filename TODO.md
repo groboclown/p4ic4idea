@@ -136,6 +136,11 @@ The `P4EditAction` should respect the user's request and force the add.
 
 These pieces of functionality are not required for the 0.10 release, but should be implemented soon after release.
 
+### Auto-Refresh of Active Connections
+
+The Active Connections view requires the user to click refresh, even when empty.  This has to do with component
+loading order, but it still is an extra action the user shouldn't have to do.
+
 ### Shelved file support
 
 Re-add support for showing shelved files and managing shelved files.  Shelving files is currently only supported when

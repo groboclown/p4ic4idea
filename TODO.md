@@ -107,13 +107,6 @@ removed.   `CachePendingActionHandlerImpl` will need to send out an event on rem
 
 This will need to be done in order to have IdeChangelistCacheStore remove action links if the action is deleted.
 
-### Requesting Online Mode Doesn't Change Active Connection State
-
-**Priority: Minor**
-
-(#187) When offline, pressing the "connect" button doesn't change the displayed connection state in the Active Connection
-panel.  The user must perform some other server action to have this state change.
-
 ### Plugin Option Screen Revamp
 
 (#178) Some options are not shown, some are not used.  These need to be cleaned up.

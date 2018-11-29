@@ -78,6 +78,11 @@ public class SubmitChangelist {
         if (action.getChangelistId().getState() == P4ChangelistId.State.PENDING_CREATION) {
             change = cmd.createChangelist(client, action.getUpdatedDescription());
         } else if (action.getChangelistId().isDefaultChangelist()) {
+            // See #52.  Do not use whatever the API designates as a changelist name if the name is null or empty.
+            if (action.getUpdatedDescription() == null || action.getUpdatedDescription().isEmpty()) {
+                throw new P4JavaException("Change description missing.  You must enter one.");
+            }
+
             // See #176.  Because we're changing the list of files to submit, we must create
             // a new changelist to put those files into.  It's just how Perforce works.
             change = cmd.createChangelist(client, action.getUpdatedDescription());

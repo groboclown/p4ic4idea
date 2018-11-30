@@ -13,8 +13,6 @@
  */
 package net.groboclown.p4plugin.extension;
 
-import com.intellij.notification.NotificationType;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
@@ -49,7 +47,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.idea.p4ic.compat.CompatFactoryLoader;
 import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
@@ -57,7 +54,6 @@ import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
 import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.ui.ColorUtil;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
 import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
@@ -583,10 +579,12 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     }
 
 
-    // TODO IMPLEMENT THIS
     /**
      * Can be temporarily forbidden, for instance, when authorization credentials are wrong - to
      * don't repeat wrong credentials passing (in some cases it can produce user's account blocking)
+     *
+     * This is handled better by P4V in connection management.  Invalid credentials still allow offline action
+     * caching.
      */
     @Override
     public boolean isVcsBackgroundOperationsAllowed(final VirtualFile root) {

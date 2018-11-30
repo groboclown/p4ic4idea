@@ -18,7 +18,6 @@ import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsFileUtil;
-import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.cache.messagebus.FileCacheUpdatedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +35,7 @@ public class CacheViewRefreshComponent implements ProjectComponent {
 
     public void refreshFileView(@NotNull Collection<VirtualFile> affectedFiles) {
         VcsFileUtil.markFilesDirty(project, affectedFiles);
-        VcsCompat.getInstance().refreshFiles(project, affectedFiles);
+        // An explicit file refresh has not been necessary since IDEA 15.
     }
 
     @NotNull

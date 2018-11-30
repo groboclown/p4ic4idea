@@ -47,7 +47,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.idea.p4ic.compat.VcsCompat;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
@@ -284,7 +283,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
             myVFSListener = new P4VFSListener(getProject(), this);
         }
 
-        VcsCompat.getInstance().setupPlugin(myProject);
+        // VcsCompat.getInstance().setupPlugin(myProject);
+
         ChangeListManager.getInstance(myProject).addChangeListListener(changelistListener);
 
         projectMessageBusConnection = myProject.getMessageBus().connect();

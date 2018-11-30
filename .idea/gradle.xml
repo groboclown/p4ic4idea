@@ -10,9 +10,6 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/buildSrc" />
-            <option value="$PROJECT_DIR$/idea-compat" />
-            <option value="$PROJECT_DIR$/idea-compat/compat-api" />
-            <option value="$PROJECT_DIR$/idea-compat/v171" />
             <option value="$PROJECT_DIR$/idea-p4server" />
             <option value="$PROJECT_DIR$/idea-p4server/api" />
             <option value="$PROJECT_DIR$/idea-p4server/impl" />
@@ -20,7 +17,6 @@
             <option value="$PROJECT_DIR$/integration-test" />
             <option value="$PROJECT_DIR$/p4d-test-core" />
             <option value="$PROJECT_DIR$/p4java" />
-            <option value="$PROJECT_DIR$/plugin" />
             <option value="$PROJECT_DIR$/plugin-v3" />
             <option value="$PROJECT_DIR$/swarm" />
           </set>

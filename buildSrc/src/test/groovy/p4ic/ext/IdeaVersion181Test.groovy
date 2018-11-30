@@ -20,71 +20,73 @@ import org.junit.Assert
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNull
 
-class IdeaVersionTest {
+class IdeaVersion181Test {
+    static final IV = new IdeaVersion181()
+    
     @Test
     void testMatches_exact() {
         Set<String> values = asSet("a.jar", "b")
-        assertEquals("a.jar", IdeaVersion.matches("a.jar", values))
+        assertEquals(a("a.jar"), IV.matches("a.jar", values))
     }
 
     @Test
     void testMatches_strippedExt() {
         Set<String> values = asSet("a", "b")
-        assertEquals("a", IdeaVersion.matches("a.jar", values))
+        assertEquals(a("a"), IV.matches("a.jar", values))
     }
 
     @Test
     void testMatches_strippedSnapshot() {
         Set<String> values = asSet("a", "b")
-        assertEquals("a", IdeaVersion.matches("a-SNAPSHOT.jar", values))
+        assertEquals(a("a"), IV.matches("a-SNAPSHOT.jar", values))
     }
 
     @Test
     void testMatches_strippedPatched() {
         Set<String> values = asSet("a", "b")
-        assertEquals("a", IdeaVersion.matches("a-patched.jar", values))
+        assertEquals(a("a"), IV.matches("a-patched.jar", values))
     }
 
     @Test
     void testMatches_strippedVersion1() {
         Set<String> values = asSet("abc", "b")
-        assertEquals("abc", IdeaVersion.matches("abc-1.jar", values))
+        assertEquals(a("abc"), IV.matches("abc-1.jar", values))
     }
 
     @Test
     void testMatches_strippedVersion2() {
         Set<String> values = asSet("abc", "b")
-        assertEquals("abc", IdeaVersion.matches("abc-1.2.jar", values))
+        assertEquals(a("abc"), IV.matches("abc-1.2.jar", values))
     }
 
     @Test
     void testMatches_strippedVersion3() {
         Set<String> values = asSet("abc", "b")
-        assertEquals("abc", IdeaVersion.matches("abc-12.20.313.jar", values))
+        assertEquals(a("abc"), IV.matches("abc-12.20.313.jar", values))
     }
 
     @Test
     void testMatches_strippedSnapshotVersion() {
         Set<String> values = asSet("a", "b")
-        assertEquals("a", IdeaVersion.matches("a-1.2-SNAPSHOT.jar", values))
+        assertEquals(a("a"), IV.matches("a-1.2-SNAPSHOT.jar", values))
     }
 
     @Test
     void testMatches_idea18Name() {
         Set<String> values = asSet("a-b-c")
-        assertEquals("a-b-c", IdeaVersion.matches("intellij.a.b.c.jar", values))
+        assertEquals(a("a-b-c"), IV.matches("intellij.a.b.c.jar", values))
     }
 
     @Test
     void testMatches_idea18PlatformName() {
         Set<String> values = asSet("a-b-c")
-        assertEquals("a-b-c", IdeaVersion.matches("intellij.platform.a.b.c.jar", values))
+        assertEquals(a("a-b-c"), IV.matches("intellij.platform.a.b.c.jar", values))
     }
 
     @Test
     void testMatches_NoMatch() {
         Set<String> values = asSet("abc", "b")
-        assertNull(IdeaVersion.matches("a-1.2-SNAPSHOT.jar", values))
+        assertNull(IV.matches("a-1.2-SNAPSHOT.jar", values))
     }
 
 
@@ -94,6 +96,13 @@ class IdeaVersionTest {
             ret.add(s)
         }
         return ret
+    }
+
+
+    private static String[] a(String v) {
+        def r = new String[1]
+        r[0] = v
+        return r
     }
 
 

@@ -28,9 +28,12 @@ that's fine.  We don't want those files anyway.
 $ jardir=$( this 182 directory )
 $ cd out/idea-ce/classes/production
 $ for i in *; do test -d "$i" && ( cd "$i" && zip -9r "$jardir/$i.jar" * ) ; done
-$ cp ../../dist.all/LICENSE.txt ../../out/idea-ce/dist.all/NOTICE.txt "$jardir/."
-$ rm "$jardir/android*.jar"
-$ rm "$jardir/intellij.android*.jar"
+$ cp ../../dist.all/LICENSE.txt ../../dist.all/NOTICE.txt "$jardir/."
+$ rm "$jardir"/android*.jar
+$ rm "$jardir"/intellij.android*.jar
+$ rm "$jardir"/intellij.python*.jar
+$ rm "$jardir"/intellij.pycharm*.jar
+$ rm "$jardir"/intellij.*.resources*.jar
 ```
 
 ## Dependent Jars
@@ -40,10 +43,9 @@ The dependent jars that initellij depends on also need to be included.
 ```
 $ jardir=$( this 181 directory )
 $ mkdir "$jardir/deps"
-$ cp lib/*.jar "$jardir/deps/."
 $ cp license/* "$jardir/deps/."
 $ cp build/dependencies/build/kotlin/Kotlin/lib/kotlin-stdlib.jar "$jardir/deps/kotlin-runtime.jar"
-$ cp out/idea-ce/dist.all/lib/trove4j.jar "$jardir/deps/."
+$ cp out/idea-ce/dist.all/lib/*.jar "$jardir/deps/."
 ```
 
 The `kotlin-runtime.jar` is pulled by the dependency build (run by `ant init`), which in turn downloads it from

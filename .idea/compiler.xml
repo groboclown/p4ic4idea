@@ -3,6 +3,16 @@
   <component name="CompilerConfiguration">
     <addNotNullAssertions enabled="false" />
     <bytecodeTargetLevel target="8">
+      <module name="compat-api_main" target="1.8" />
+      <module name="compat-api_mainIdea172" target="1.8" />
+      <module name="compat-api_mainIdea173" target="1.8" />
+      <module name="compat-api_mainIdea181" target="1.8" />
+      <module name="compat-api_mainIdea182" target="1.8" />
+      <module name="compat-api_test" target="1.8" />
+      <module name="compat-api_testIdea172" target="1.8" />
+      <module name="compat-api_testIdea173" target="1.8" />
+      <module name="compat-api_testIdea181" target="1.8" />
+      <module name="compat-api_testIdea182" target="1.8" />
       <module name="net.groboclown.p4ic4idea.api.main" target="1.8" />
       <module name="net.groboclown.p4ic4idea.api.mainIdea172" target="1.8" />
       <module name="net.groboclown.p4ic4idea.api.mainIdea173" target="1.8" />
@@ -61,6 +71,16 @@
       <module name="net.groboclown.p4ic4idea.swarm.test" target="1.8" />
       <module name="net.groboclown.p4ic4idea.v171.main" target="1.8" />
       <module name="net.groboclown.p4ic4idea.v171.test" target="1.8" />
+      <module name="plugin_main" target="1.8" />
+      <module name="plugin_mainIdea172" target="1.8" />
+      <module name="plugin_mainIdea173" target="1.8" />
+      <module name="plugin_mainIdea181" target="1.8" />
+      <module name="plugin_test" target="1.8" />
+      <module name="plugin_testIdea172" target="1.8" />
+      <module name="plugin_testIdea173" target="1.8" />
+      <module name="plugin_testIdea181" target="1.8" />
+      <module name="v171_main" target="1.8" />
+      <module name="v171_test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

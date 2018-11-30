@@ -23,7 +23,10 @@ import javax.annotation.Nonnull
 
 class IdeaVersionUtil {
     public static final String LOWEST_COMPATIBLE_VERSION_NAME = "171"
-    public static final String LOWEST_COMPATIBLE_VERSION_NAME_JDK9 = "181"
+
+    // See https://github.com/JetBrains/gradle-intellij-plugin/issues/235
+    // JDK9 only builds using the tools from 182+
+    public static final String LOWEST_COMPATIBLE_VERSION_NAME_JDK9 = "182"
 
     @Nonnull
     static IdeaVersion lowestCompatible(@Nonnull Project project) {

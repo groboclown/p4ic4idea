@@ -124,21 +124,15 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         FileCollection cp = classPath.call()
         logger.info("Setting up instrumentation with classpath " + cp.asPath)
 
-        // Looks like the intellij instrumentation class doesn't correctly load in the JDK libraries (jmod files)
-        if (IdeaVersionUtil.isJdk9()) {
-            // modpath = findJModPath()
-            logger.warn("WARNING: Running in JDK9 or higher; skipping @NotNull instrumentation.")
-        } else {
-            ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
-                    destdir: outputDir, classpath: cp.asPath,
+        ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
+                destdir: outputDir, classpath: cp.asPath,
 
-                    // This doesn't change anything.
-                    // modulepath: modpath,
+                // This doesn't cause jdk9 to start working
+                modulepath: modpath,
 
-                    includeantruntime: false, instrumentNotNull: instrumentNotNull) {
-                if (instrumentNotNull) {
-                    ant.skip(pattern: 'kotlin/Metadata')
-                }
+                includeantruntime: false, instrumentNotNull: instrumentNotNull) {
+            if (instrumentNotNull) {
+                ant.skip(pattern: 'kotlin/Metadata')
             }
         }
         if (headlessOldValue != null) {

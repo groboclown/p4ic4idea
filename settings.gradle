@@ -4,12 +4,14 @@ include (
         'p4d-test-core',
         'p4java',
         'swarm',
-        'idea-compat:compat-api',
-        'idea-compat:v171',
-        'plugin',
         'idea-test-core',
         'idea-p4server:api',
         'idea-p4server:impl',
         'plugin-v3',
-        'integration-test'
+        'integration-test',
+
+        // No longer support the plugin project, because its API is no longer compatible with 182+
+        // 'idea-compat:compat-api',
+        // 'idea-compat:v171',
+        // 'plugin',
 )

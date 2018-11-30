@@ -69,6 +69,19 @@ public class MockPasswordSafe extends PasswordSafe {
         set(credentialAttributes, credentials, true);
     }
 
+    // TODO Idea182 Compat
+    //@Override
+    public void setRememberPasswordByDefault(boolean value) {
+        // ignore
+    }
+
+    // TODO Idea182 Compat
+    //@Override
+    public boolean isRememberPasswordByDefault() {
+        return true;
+    }
+
+
     private String getPasswordKey(CredentialAttributes attr) {
         return attr.getServiceName() + '\u263a' + attr.getUserName();
     }

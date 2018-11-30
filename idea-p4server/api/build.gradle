@@ -34,13 +34,11 @@ dependencies {
     //compatApi ()
     compatImplementation (
             project(':p4java'),
-            project(':idea-compat:compat-api'),
             project(':swarm'),
             'org.apache.commons:commons-lang3:3.7'
     )
     compatTest(
             project(':idea-test-core'),
-            project(':idea-compat:compat-api'),
 
             // TODO pull in the test jars from the test-core as part of the build.
             'junit:junit:4.12',

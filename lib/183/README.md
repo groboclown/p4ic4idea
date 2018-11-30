@@ -25,7 +25,7 @@ that's fine.  We don't want those files anyway.
 ## Assembly Instructions
 
 ```
-$ jardir=$( this 181 directory )
+$ jardir=$( this 183 directory )
 $ cd out/idea-ce/classes/production
 $ for i in *; do test -d "$i" && ( cd "$i" && zip -9r "$jardir/$i.jar" * ) ; done
 $ cp ../../dist.all/LICENSE.txt ../../out/idea-ce/dist.all/NOTICE.txt "$jardir/."

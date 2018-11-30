@@ -14,8 +14,8 @@ $ cd intellij-community
 $ git fetch -t
 $ git checkout -b local-182 idea/182.4640
 $ ./getPlugins.sh
-$ ( cd android && git checkout -b local-182 idea/182.5107.6 )
-$ ( cd android/tools-base && git checkout -b local-182 idea/182.5107.6 )
+$ ( cd android && git checkout -b local-182 idea/182.5107.41 )
+$ ( cd android/tools-base && git checkout -b local-182 idea/182.5107.41 )
 $ ant
 ```
 
@@ -25,7 +25,7 @@ that's fine.  We don't want those files anyway.
 ## Assembly Instructions
 
 ```
-$ jardir=$( this 181 directory )
+$ jardir=$( this 182 directory )
 $ cd out/idea-ce/classes/production
 $ for i in *; do test -d "$i" && ( cd "$i" && zip -9r "$jardir/$i.jar" * ) ; done
 $ cp ../../dist.all/LICENSE.txt ../../out/idea-ce/dist.all/NOTICE.txt "$jardir/."

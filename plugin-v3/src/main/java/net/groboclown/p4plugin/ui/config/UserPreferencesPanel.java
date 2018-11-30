@@ -66,7 +66,7 @@ public class UserPreferencesPanel {
     private JSpinner mySocketSoTimeoutSecondsSpinner;
     private JCheckBox myAutoCheckoutCheckBox;
     private JSpinner myMaxConnectionsSpinner;
-    private JSpinner myMaxClientRetrieveCountSpinner;
+    private JSpinner myMaxClientRetrieveSpinner;
     private JSpinner myMaxChangelistRetrieveSpinner;
     private JSpinner myMaxFileRetrieveSpinner;
     private JCheckBox myRemoveP4ChangelistCheckBox;
@@ -77,53 +77,43 @@ public class UserPreferencesPanel {
 
     UserPreferencesPanel() {
         LOG.debug("UI constructed, now setting up models");
-        myMaxTimeoutSecondsSpinner.setModel(new DoubleMinMaxSpinnerModel(
+        setupSpinner(myMaxTimeoutSecondsSpinner, new DoubleMinMaxSpinnerModel(
                 millisToSeconds(UserProjectPreferences.MIN_LOCK_WAIT_TIMEOUT_MILLIS),
                 millisToSeconds(UserProjectPreferences.MAX_LOCK_WAIT_TIMEOUT_MILLIS),
                 0.5,
                 millisToSeconds(UserProjectPreferences.DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS)));
-        myMaxTimeoutSecondsSpinner.getEditor().setEnabled(true);
-        mySocketSoTimeoutSecondsSpinner.setModel((new DoubleMinMaxSpinnerModel(
+        setupSpinner(mySocketSoTimeoutSecondsSpinner, new DoubleMinMaxSpinnerModel(
                 millisToSeconds(UserProjectPreferences.MIN_SOCKET_SO_TIMEOUT_MILLIS),
                 millisToSeconds(UserProjectPreferences.MAX_SOCKET_SO_TIMEOUT_MILLIS),
                 .1,
-                millisToSeconds(UserProjectPreferences.DEFAULT_SOCKET_SO_TIMEOUT_MILLIS)
-        )));
-        mySocketSoTimeoutSecondsSpinner.getEditor().setEnabled(true);
-        myMaxConnectionsSpinner.setModel((new IntMinMaxSpinnerModel(
+                millisToSeconds(UserProjectPreferences.DEFAULT_SOCKET_SO_TIMEOUT_MILLIS)));
+        setupSpinner(myMaxConnectionsSpinner, new IntMinMaxSpinnerModel(
                 UserProjectPreferences.MIN_SERVER_CONNECTIONS,
                 UserProjectPreferences.MAX_SERVER_CONNECTIONS,
                 1,
-                UserProjectPreferences.DEFAULT_SERVER_CONNECTIONS
-        )));
-        myMaxConnectionsSpinner.getEditor().setEnabled(true);
-        myMaxChangelistNameSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.DEFAULT_SERVER_CONNECTIONS));
+        setupSpinner(myMaxChangelistNameSpinner, new IntMinMaxSpinnerModel(
                 UserProjectPreferences.MIN_CHANGELIST_NAME_LENGTH,
                 UserProjectPreferences.MAX_CHANGELIST_NAME_LENGTH,
                 1,
-                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_NAME_LENGTH
-        )));
-        myMaxChangelistNameSpinner.getEditor().setEnabled(true);
-        myMaxClientRetrieveCountSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_NAME_LENGTH));
+        // FIXME is not persisted
+        setupSpinner(myMaxClientRetrieveSpinner, new IntMinMaxSpinnerModel(
                 UserProjectPreferences.MIN_CLIENT_RETRIEVE_COUNT,
                 UserProjectPreferences.MAX_CLIENT_RETRIEVE_COUNT,
                 5,
-                UserProjectPreferences.DEFAULT_MAX_CLIENT_RETRIEVE_COUNT
-        )));
-        myMaxClientRetrieveCountSpinner.getEditor().setEnabled(true);
-        myMaxChangelistRetrieveSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.DEFAULT_MAX_CLIENT_RETRIEVE_COUNT));
+        // FIXME is not persisted
+        setupSpinner(myMaxChangelistRetrieveSpinner, new IntMinMaxSpinnerModel(
                 UserProjectPreferences.MIN_CHANGELIST_RETRIEVE_COUNT,
                 UserProjectPreferences.MAX_CHANGELIST_RETRIEVE_COUNT,
                 5,
-                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT
-        )));
-        myMaxChangelistRetrieveSpinner.getEditor().setEnabled(true);
-        myMaxFileRetrieveSpinner.setModel((new IntMinMaxSpinnerModel(
-                UserProjectPreferences.MIN_CHANGELIST_RETRIEVE_COUNT,
-                UserProjectPreferences.MAX_CHANGELIST_RETRIEVE_COUNT,
-                5,
-                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT
-        )));
+                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT));
+        setupSpinner(myMaxFileRetrieveSpinner, new IntMinMaxSpinnerModel(
+                UserProjectPreferences.MIN_FILE_RETRIEVE_COUNT,
+                UserProjectPreferences.MAX_FILE_RETRIEVE_COUNT,
+                50,
+                UserProjectPreferences.DEFAULT_MAX_FILE_RETRIEVE_COUNT));
         myMaxFileRetrieveSpinner.getEditor().setEnabled(true);
         for (UserMessageLevel value : UserMessageLevel.values()) {
             myUserMessageLevelComboBox.addItem(value);
@@ -150,8 +140,8 @@ public class UserPreferencesPanel {
                 , true);
         myConcatenateChangelistNameCommentCheckBox.setSelected(userPrefs.getConcatenateChangelistNameComment());
         myAutoCheckoutCheckBox.setSelected(userPrefs.getAutoCheckoutModifiedFiles());
-        myMaxClientRetrieveCountSpinner.setValue(userPrefs.getMaxClientRetrieveCount());
-        myMaxChangelistRetrieveSpinner.setValue(userPrefs.getMaxClientRetrieveCount());
+        myMaxClientRetrieveSpinner.setValue(userPrefs.getMaxClientRetrieveCount());
+        myMaxChangelistRetrieveSpinner.setValue(userPrefs.getMaxChangelistRetrieveCount());
         myMaxFileRetrieveSpinner.setValue(userPrefs.getMaxFileRetrieveCount());
         myRemoveP4ChangelistCheckBox.setSelected(userPrefs.getRemoveP4Changelist());
         myUserMessageLevelComboBox.setSelectedItem(messageLevelFromInt(userPrefs.getUserMessageLevel()));
@@ -168,7 +158,7 @@ public class UserPreferencesPanel {
         userPrefs.setPreferRevisionsForFiles(getPreferRevisionsForFiles());
         userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
         userPrefs.setAutoCheckoutModifiedFiles(getAutoCheckout());
-        userPrefs.setMaxChangelistRetrieveCount(getMaxClientRetrieveCount());
+        userPrefs.setMaxClientRetrieveCount(getMaxClientRetrieveCount());
         userPrefs.setMaxChangelistRetrieveCount(getMaxChangelistRetrieveCount());
         userPrefs.setMaxFileRetrieveCount(getMaxFileRetrieveCount());
         userPrefs.setRemoveP4Changelist(getRemoveP4Changelist());
@@ -180,17 +170,17 @@ public class UserPreferencesPanel {
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
         return
                 getMaxTimeoutMillis() != preferences.getLockWaitTimeoutMillis() ||
-                        getSocketSoTimeoutMillis() != preferences.getSocketSoTimeoutMillis() ||
-                        getMaxServerConnections() != preferences.getMaxServerConnections() ||
-                        getMaxChangelistNameLength() != preferences.getMaxChangelistNameLength() ||
-                        getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
-                        getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
-                        getAutoCheckout() != preferences.getAutoCheckoutModifiedFiles() ||
-                        getMaxClientRetrieveCount() != preferences.getMaxClientRetrieveCount() ||
-                        getMaxChangelistRetrieveCount() != preferences.getMaxChangelistRetrieveCount() ||
-                        getMaxFileRetrieveCount() != preferences.getMaxFileRetrieveCount() ||
-                        getRemoveP4Changelist() != preferences.getRemoveP4Changelist() ||
-                        getUserMessageLevel() != preferences.getUserMessageLevel();
+                getSocketSoTimeoutMillis() != preferences.getSocketSoTimeoutMillis() ||
+                getMaxServerConnections() != preferences.getMaxServerConnections() ||
+                getMaxChangelistNameLength() != preferences.getMaxChangelistNameLength() ||
+                getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
+                getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
+                getAutoCheckout() != preferences.getAutoCheckoutModifiedFiles() ||
+                getMaxClientRetrieveCount() != preferences.getMaxClientRetrieveCount() ||
+                getMaxChangelistRetrieveCount() != preferences.getMaxChangelistRetrieveCount() ||
+                getMaxFileRetrieveCount() != preferences.getMaxFileRetrieveCount() ||
+                getRemoveP4Changelist() != preferences.getRemoveP4Changelist() ||
+                getUserMessageLevel() != preferences.getUserMessageLevel();
         // Future settings here
     }
 
@@ -217,7 +207,7 @@ public class UserPreferencesPanel {
     }
 
     private int getMaxClientRetrieveCount() {
-        return toInt(myMaxClientRetrieveCountSpinner);
+        return toInt(myMaxClientRetrieveSpinner);
     }
 
     private boolean getConcatenateChangelistNameComment() {
@@ -268,6 +258,13 @@ public class UserPreferencesPanel {
 
     private static int toInt(JSpinner spinner) {
         return ((Number) spinner.getModel().getValue()).intValue();
+    }
+
+    private static void setupSpinner(JSpinner spinner, SpinnerModel model) {
+        spinner.setModel(model);
+        JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) spinner.getEditor();
+        editor.setEnabled(true);
+        editor.getTextField().setEditable(true);
     }
 
     private static UserMessageLevel messageLevelFromInt(int value) {
@@ -499,8 +496,8 @@ public class UserPreferencesPanel {
                 .getString("user.prefs.max_client_retrieve.tooltip"));
         myRootPanel.add(label6, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myMaxClientRetrieveCountSpinner = new JSpinner();
-        myRootPanel.add(myMaxClientRetrieveCountSpinner,
+        myMaxClientRetrieveSpinner = new JSpinner();
+        myRootPanel.add(myMaxClientRetrieveSpinner,
                 new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
@@ -554,8 +551,8 @@ public class UserPreferencesPanel {
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         label1.setLabelFor(myMaxTimeoutSecondsSpinner);
         label3.setLabelFor(myMaxConnectionsSpinner);
-        label6.setLabelFor(myMaxClientRetrieveCountSpinner);
-        label7.setLabelFor(myMaxClientRetrieveCountSpinner);
+        label6.setLabelFor(myMaxClientRetrieveSpinner);
+        label7.setLabelFor(myMaxClientRetrieveSpinner);
         label8.setLabelFor(myMaxFileRetrieveSpinner);
         label9.setLabelFor(myUserMessageLevelComboBox);
         label10.setLabelFor(myMaxChangelistNameSpinner);

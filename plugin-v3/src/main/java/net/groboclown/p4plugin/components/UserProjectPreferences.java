@@ -51,6 +51,8 @@ public class UserProjectPreferences
     public static final int MIN_CHANGELIST_RETRIEVE_COUNT = 20;
     public static final int MAX_CHANGELIST_RETRIEVE_COUNT = 1000;
     public static final int DEFAULT_MAX_FILE_RETRIEVE_COUNT = 5000;
+    public static final int MIN_FILE_RETRIEVE_COUNT = 500;
+    public static final int MAX_FILE_RETRIEVE_COUNT = 50000;
     public static final boolean DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES = false;
     public static final boolean DEFAULT_REMOVE_P4_CHANGELISTS = true;
     public static final int DEFAULT_USER_MESSAGE_LEVEL = USER_MESSAGE_LEVEL_WARNING;
@@ -260,7 +262,6 @@ public class UserProjectPreferences
         return state.maxClientRetrieveCount;
     }
 
-    // TODO wire up to UI
     public void setMaxClientRetrieveCount(final int count) {
         state.maxClientRetrieveCount = count;
     }
@@ -283,7 +284,6 @@ public class UserProjectPreferences
         return state.maxChangelistRetrieveCount;
     }
 
-    // TODO wire up to UI
     public void setMaxChangelistRetrieveCount(final int count) {
         state.maxChangelistRetrieveCount = count;
     }
@@ -300,7 +300,6 @@ public class UserProjectPreferences
         return state.maxFileRetrieveCount;
     }
 
-    // TODO wire up to UI
     public void setMaxFileRetrieveCount(final int count) {
         state.maxFileRetrieveCount = count;
     }
@@ -333,7 +332,6 @@ public class UserProjectPreferences
         return state.removeP4Changelists;
     }
 
-    // TODO wire up to UI
     public void setRemoveP4Changelist(final boolean value) {
         state.removeP4Changelists = value;
     }
@@ -354,7 +352,6 @@ public class UserProjectPreferences
         return state.userMessageLevel;
     }
 
-    // TODO wire up to UI
     public void setUserMessageLevel(final int value) {
         state.userMessageLevel = value;
     }
@@ -371,7 +368,6 @@ public class UserProjectPreferences
         return Math.max(MIN_CHANGELIST_NAME_LENGTH, state.maxChangelistNameLength);
     }
 
-    // TODO wire up to UI
     public void setMaxChangelistNameLength(int len) {
         state.maxChangelistNameLength = Math.max(MIN_CHANGELIST_NAME_LENGTH, len);
     }

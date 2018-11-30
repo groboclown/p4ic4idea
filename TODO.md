@@ -107,10 +107,6 @@ removed.   `CachePendingActionHandlerImpl` will need to send out an event on rem
 
 This will need to be done in order to have IdeChangelistCacheStore remove action links if the action is deleted.
 
-### Plugin Option Screen Revamp
-
-(#178) Some options are not shown, some are not used.  These need to be cleaned up.
-
 
 ## Required Missing Functionality
 

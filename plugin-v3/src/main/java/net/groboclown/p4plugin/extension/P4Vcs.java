@@ -273,18 +273,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     @Override
     protected void start() throws VcsException {
-        if (!CompatFactoryLoader.isSupported()) {
-            ApplicationManager.getApplication().invokeLater(() ->
-                UserMessage.showNotification(myProject, UserMessage.ERROR,
-                    P4Bundle.message("ide.not.supported.message",
-                            ApplicationInfo.getInstance().getApiVersion(),
-                            P4Bundle.getString("p4ic.name"),
-                            P4Bundle.getString("p4ic.bug.url")),
-                    P4Bundle.message("ide.not.supported.title"),
-                    NotificationType.ERROR));
-            // Exception Ok: Tell the IDE that the plugin isn't supported with this version of the IDE>
-            throw new VcsException(P4Bundle.message("ide.not.supported.title"));
-        }
     }
 
     @Override
@@ -378,6 +366,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     /*
     Executors are an attempt to regain control over whether the "submit" button is enabled or not (bug #52).
     Unfortunately, the checkin executors are ignored for the purpose of UI and button state.
+
+    TODO maybe just use P4CheckinEnvironment in the getCommitExecutors(), rather than the createCheckinEnvironment?
+
     private P4CheckinEnvironment checkinEnvironment;
 
     @Override

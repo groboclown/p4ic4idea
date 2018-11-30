@@ -57,14 +57,10 @@ dependencies {
     //compatApi ()
 
     compatImplementation (
-            project(':idea-compat:compat-api'),
             project(':idea-p4server:api'),
             project(':idea-p4server:impl'),
             project(':p4java'),
             project(':swarm')
-    )
-    runtime (
-            project(':idea-compat:v171')
     )
     compatTest(
             'org.junit.jupiter:junit-jupiter-engine:5.1.0',

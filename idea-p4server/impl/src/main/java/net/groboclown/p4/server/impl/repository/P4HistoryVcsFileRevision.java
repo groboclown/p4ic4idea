@@ -158,4 +158,11 @@ public class P4HistoryVcsFileRevision
                 ? data.getDescription()
                 : formatter.format(data);
     }
+
+    //@Override TODO 2018 capability
+    boolean isDeleted() {
+        return data.getRevision() <= 0;
+    }
+
+
 }

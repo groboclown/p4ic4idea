@@ -34,31 +34,29 @@ public class UserProjectPreferences
 
 
     public static final int DEFAULT_SERVER_CONNECTIONS = 2;
-    public static final boolean DEFAULT_INTEGRATE_ON_COPY = false;
-    public static final boolean DEFAULT_EDIT_IN_SEPARATE_THREAD = false;
+    public static final int MIN_SERVER_CONNECTIONS = 1;
+    public static final int MAX_SERVER_CONNECTIONS = 5;
     public static final boolean DEFAULT_PREFER_REVISIONS_FOR_FILES = true;
-    public static final boolean DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY = false;
-    public static final int DEFAULT_MAX_AUTHENTICATION_RETRIES = 3;
-    public static final int MIN_MAX_AUTHENTICATION_RETRIES = 0;
-    public static final int MAX_MAX_AUTHENTICATION_RETRIES = 5;
-    public static final boolean DEFAULT_RECONNECT_WITH_EACH_REQUEST = false;
     public static final boolean DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT = false;
-    public static final boolean DEFAULT_AUTO_OFFLINE = false;
     public static final int DEFAULT_SOCKET_SO_TIMEOUT_MILLIS = 30000;
     public static final int MIN_SOCKET_SO_TIMEOUT_MILLIS = 20000;
     public static final int MAX_SOCKET_SO_TIMEOUT_MILLIS = 5 * 60 * 1000;
     public static final int MIN_LOCK_WAIT_TIMEOUT_MILLIS = 20 * 1000;
     public static final int MAX_LOCK_WAIT_TIMEOUT_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS = 30 * 1000;
-    public static final boolean DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES = true;
     public static final int DEFAULT_MAX_CLIENT_RETRIEVE_COUNT = 500;
+    public static final int MIN_CLIENT_RETRIEVE_COUNT = 20;
+    public static final int MAX_CLIENT_RETRIEVE_COUNT = 1000;
     public static final int DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT = 500;
+    public static final int MIN_CHANGELIST_RETRIEVE_COUNT = 20;
+    public static final int MAX_CHANGELIST_RETRIEVE_COUNT = 1000;
     public static final int DEFAULT_MAX_FILE_RETRIEVE_COUNT = 5000;
     public static final boolean DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES = false;
     public static final boolean DEFAULT_REMOVE_P4_CHANGELISTS = true;
     public static final int DEFAULT_USER_MESSAGE_LEVEL = USER_MESSAGE_LEVEL_WARNING;
     public static final int DEFAULT_MAX_CHANGELIST_NAME_LENGTH = 67;
-    public static final int MINIMUM_CHANGELIST_NAME_LENGTH = 33;
+    public static final int MIN_CHANGELIST_NAME_LENGTH = 33;
+    public static final int MAX_CHANGELIST_NAME_LENGTH = 200;
 
     @NotNull
     private State state = new State();
@@ -71,31 +69,34 @@ public class UserProjectPreferences
         @Deprecated
         public int maxConnectionWaitTimeMillis = 0;
 
-        public boolean integrateOnCopy = DEFAULT_INTEGRATE_ON_COPY;
+        @Deprecated
+        public boolean integrateOnCopy = false;
 
-        public boolean editInSeparateThread = DEFAULT_EDIT_IN_SEPARATE_THREAD;
+        @Deprecated
+        public boolean editInSeparateThread = false;
 
         public boolean preferRevisionsForFiles = DEFAULT_PREFER_REVISIONS_FOR_FILES;
 
-        // This value needs to default to "false" so that existing
-        // users of the plugin will continue to work as it was before.
-        // This makes for the cumbersome naming here, and the inverse
-        // getter / setter.
-        public boolean editedWithoutCheckoutDontVerify = DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
+        @Deprecated
+        public boolean editedWithoutCheckoutDontVerify = false;
 
-        public int maxAuthenticationRetries = DEFAULT_MAX_AUTHENTICATION_RETRIES;
+        @Deprecated
+        public int maxAuthenticationRetries = 0;
 
-        public boolean reconnectWithEachRequest = DEFAULT_RECONNECT_WITH_EACH_REQUEST;
+        @Deprecated
+        public boolean reconnectWithEachRequest = false;
 
         public boolean concatenateChangelistNameComment = DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
 
-        public boolean isAutoOffline = DEFAULT_AUTO_OFFLINE;
+        @Deprecated
+        public boolean isAutoOffline = false;
 
         public int socketSoTimeoutMillis = DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
 
         public int lockWaitTimeoutMillis = DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
 
-        public boolean showDialogConnectionMessages = DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
+        @Deprecated
+        public boolean showDialogConnectionMessages = false;
 
         public int maxClientRetrieveCount = DEFAULT_MAX_CLIENT_RETRIEVE_COUNT;
 
@@ -140,39 +141,8 @@ public class UserProjectPreferences
         this.state = state;
     }
 
-
-    public boolean getIntegrateOnCopy() {
-        return state.integrateOnCopy;
-    }
-
-
-    public void setIntegrateOnCopy(boolean value) {
-        state.integrateOnCopy = value;
-    }
-
-
-    public static boolean getEditInSeparateThread(@Nullable Project project) {
-        if (project == null) {
-            return DEFAULT_EDIT_IN_SEPARATE_THREAD;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return DEFAULT_EDIT_IN_SEPARATE_THREAD;
-        }
-        return prefs.getEditInSeparateThread();
-    }
-
-
-    public boolean getEditInSeparateThread() {
-        return state.editInSeparateThread;
-    }
-
-
-    public void setEditInSeparateThread(boolean value) {
-        state.editInSeparateThread = value;
-    }
-
-
+    // ====================================
+    // Used by P4ServerComponent
     public static int getMaxServerConnections(@Nullable Project project) {
         return getValue(project, DEFAULT_SERVER_CONNECTIONS, (p) -> p.getMaxServerConnections());
     }
@@ -186,6 +156,8 @@ public class UserProjectPreferences
     }
 
 
+    // ====================================
+    // Used by P4AnnotatedFileImpl and others
     public static boolean getPreferRevisionsForFiles(@Nullable Project project) {
         if (project == null) {
             return DEFAULT_PREFER_REVISIONS_FOR_FILES;
@@ -205,83 +177,8 @@ public class UserProjectPreferences
         state.preferRevisionsForFiles = value;
     }
 
-    public static boolean getEditedWithoutCheckoutVerify(@Nullable Project project) {
-        if (project == null) {
-            return ! DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return ! DEFAULT_EDITED_WITHOUT_CHECKOUT_DONT_VERIFY;
-        }
-        return prefs.getEditedWithoutCheckoutVerify();
-    }
-
-    public boolean getEditedWithoutCheckoutVerify() {
-        return ! state.editedWithoutCheckoutDontVerify;
-    }
-
-    public void setEditedWithoutCheckoutVerify(boolean value) {
-        state.editedWithoutCheckoutDontVerify = ! value;
-    }
-
-    public static int getMaxAuthenticationRetries(@Nullable final Project project) {
-        if (project == null) {
-            return DEFAULT_MAX_AUTHENTICATION_RETRIES;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return DEFAULT_MAX_AUTHENTICATION_RETRIES;
-        }
-        return prefs.getMaxAuthenticationRetries();
-    }
-
-    public int getMaxAuthenticationRetries() {
-        return state.maxAuthenticationRetries;
-    }
-
-    public void setMaxAuthenticationRetries(int value) {
-        state.maxAuthenticationRetries = value;
-    }
-
-    public boolean isAutoOffline() {
-        return state.isAutoOffline;
-    }
-
-    public void setAutoOffline(boolean value) {
-        state.isAutoOffline = value;
-    }
-
-    public static boolean isAutoOffline(@Nullable final Project project) {
-        if (project == null) {
-            return DEFAULT_AUTO_OFFLINE;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return DEFAULT_AUTO_OFFLINE;
-        }
-        return prefs.isAutoOffline();
-    }
-
-    public static boolean getReconnectWithEachRequest(@Nullable final Project project) {
-        if (project == null) {
-            return DEFAULT_RECONNECT_WITH_EACH_REQUEST;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return DEFAULT_RECONNECT_WITH_EACH_REQUEST;
-        }
-        return prefs.getReconnectWithEachRequest();
-    }
-
-    public boolean getReconnectWithEachRequest() {
-        return state.reconnectWithEachRequest;
-    }
-
-    public void setReconnectWithEachRequest(boolean value) {
-        state.reconnectWithEachRequest = value;
-    }
-
-
+    // ====================================
+    // Used by ChangelistUtil
     public static boolean getConcatenateChangelistNameComment(@Nullable final Project project) {
         if (project == null) {
             return DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT;
@@ -302,26 +199,8 @@ public class UserProjectPreferences
     }
 
 
-    public static boolean getShowDialogConnectionMessages(@Nullable final Project project) {
-        if (project == null) {
-            return DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
-        }
-        UserProjectPreferences prefs = UserProjectPreferences.getInstance(project);
-        if (prefs == null) {
-            return DEFAULT_SHOW_DIALOG_CONNECTION_MESSAGES;
-        }
-        return prefs.getShowDialogConnectionMessages();
-    }
-
-    public boolean getShowDialogConnectionMessages() {
-        return state.showDialogConnectionMessages;
-    }
-
-    public void setShowDialogConnectionMessages(final boolean showDialogConnectionMessages) {
-        state.showDialogConnectionMessages = showDialogConnectionMessages;
-    }
-
-
+    // ====================================
+    // Used by P4ServerComponent
     public static int getSocketSoTimeoutMillis(@Nullable final Project project) {
         if (project == null) {
             return DEFAULT_SOCKET_SO_TIMEOUT_MILLIS;
@@ -342,6 +221,8 @@ public class UserProjectPreferences
     }
 
 
+    // ====================================
+    // Used just about everywhere.
     public static int getLockWaitTimeoutMillis(@Nullable final Project project) {
         if (project == null) {
             return DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS;
@@ -362,6 +243,8 @@ public class UserProjectPreferences
     }
 
 
+    // ====================================
+    // Used by P4ServerComponent
     public static int getMaxClientRetrieveCount(@Nullable final Project project) {
         if (project == null) {
             return DEFAULT_MAX_CLIENT_RETRIEVE_COUNT;
@@ -377,11 +260,14 @@ public class UserProjectPreferences
         return state.maxClientRetrieveCount;
     }
 
+    // TODO wire up to UI
     public void setMaxClientRetrieveCount(final int count) {
         state.maxClientRetrieveCount = count;
     }
 
 
+    // ====================================
+    // Used by CacheComponent
     public static int getMaxChangelistRetrieveCount(@Nullable final Project project) {
         if (project == null) {
             return DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT;
@@ -397,11 +283,14 @@ public class UserProjectPreferences
         return state.maxChangelistRetrieveCount;
     }
 
+    // TODO wire up to UI
     public void setMaxChangelistRetrieveCount(final int count) {
         state.maxChangelistRetrieveCount = count;
     }
 
 
+    // ====================================
+    // Used by CacheComponent
     public static int getMaxFileRetrieveCount(@Nullable final Project project) {
         return getValue(project, DEFAULT_MAX_FILE_RETRIEVE_COUNT,
                 (prefs) -> prefs.getMaxFileRetrieveCount());
@@ -411,11 +300,14 @@ public class UserProjectPreferences
         return state.maxFileRetrieveCount;
     }
 
+    // TODO wire up to UI
     public void setMaxFileRetrieveCount(final int count) {
         state.maxFileRetrieveCount = count;
     }
 
 
+    // ====================================
+    // Used by P4ChangeProvider
     public static boolean getAutoCheckoutModifiedFiles(@Nullable final Project project) {
         return getValue(project, DEFAULT_AUTO_CHECKOUT_MODIFIED_FILES,
                 (prefs) -> prefs.getAutoCheckoutModifiedFiles());
@@ -430,6 +322,8 @@ public class UserProjectPreferences
     }
 
 
+    // ====================================
+    // Used by P4ChangelistListener
     public static boolean getRemoveP4Changelist(@Nullable final Project project) {
         return getValue(project, DEFAULT_REMOVE_P4_CHANGELISTS,
                 (prefs) -> prefs.getRemoveP4Changelist());
@@ -439,11 +333,14 @@ public class UserProjectPreferences
         return state.removeP4Changelists;
     }
 
+    // TODO wire up to UI
     public void setRemoveP4Changelist(final boolean value) {
         state.removeP4Changelists = value;
     }
 
 
+    // ====================================
+    // Used by UserMessage
     public static boolean isUserMessageLevel(@Nullable final Project project, int level) {
         return level >= getUserMessageLevel(project);
     }
@@ -457,22 +354,26 @@ public class UserProjectPreferences
         return state.userMessageLevel;
     }
 
+    // TODO wire up to UI
     public void setUserMessageLevel(final int value) {
         state.userMessageLevel = value;
     }
 
 
+    // ====================================
+    // Used by P4ChangeProvider
     public static int getMaxChangelistNameLength(@Nullable final Project project) {
         return getValue(project, DEFAULT_MAX_CHANGELIST_NAME_LENGTH,
                 (prefs) -> prefs.getMaxChangelistNameLength());
     }
 
     public int getMaxChangelistNameLength() {
-        return Math.max(MINIMUM_CHANGELIST_NAME_LENGTH, state.maxChangelistNameLength);
+        return Math.max(MIN_CHANGELIST_NAME_LENGTH, state.maxChangelistNameLength);
     }
 
+    // TODO wire up to UI
     public void setMaxChangelistNameLength(int len) {
-        state.maxChangelistNameLength = Math.max(MINIMUM_CHANGELIST_NAME_LENGTH, len);
+        state.maxChangelistNameLength = Math.max(MIN_CHANGELIST_NAME_LENGTH, len);
     }
 
 

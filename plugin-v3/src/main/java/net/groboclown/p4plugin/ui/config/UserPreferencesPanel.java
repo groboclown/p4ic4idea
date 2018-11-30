@@ -18,16 +18,15 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
+import net.groboclown.p4plugin.ui.DoubleMinMaxSpinnerModel;
+import net.groboclown.p4plugin.ui.IntMinMaxSpinnerModel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -36,42 +35,101 @@ import java.util.ResourceBundle;
 public class UserPreferencesPanel {
     private static final Logger LOG = Logger.getInstance(UserPreferencesPanel.class);
 
-    private JSpinner myMaxTimeout;
+    private enum UserMessageLevel {
+        VERBOSE(UserProjectPreferences.USER_MESSAGE_LEVEL_VERBOSE, "verbose"),
+        INFO(UserProjectPreferences.USER_MESSAGE_LEVEL_INFO, "info"),
+        WARNING(UserProjectPreferences.USER_MESSAGE_LEVEL_WARNING, "warn"),
+        ERROR(UserProjectPreferences.USER_MESSAGE_LEVEL_ERROR, "error")
+
+        // "ALWAYS" is not an option.  The least you can set is error.
+        ;
+
+        private final String displayName;
+        final int value;
+
+        UserMessageLevel(int value, String name) {
+            this.value = value;
+            this.displayName = P4Bundle.getString("user.prefs.user_message." + name);
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+    }
+
     private JPanel myRootPanel;
-    private JCheckBox myOpenForEditInCheckBox;
+    private JSpinner myMaxTimeoutSecondsSpinner;
     private JRadioButton myPreferRevisionNumber;
     private JRadioButton myPreferChangelist;
-    private JCheckBox myEditedWithoutCheckoutCheckBox;
-    private JSpinner myMaxRetryAuthenticationSpinner;
-    private JCheckBox myReconnectWithEachRequest;
-    private JCheckBox myConcatenateChangelistNameComment;
-    private JSpinner mySocketSoTimeoutSpinner;
-    private JCheckBox myShowMessageDialog;
-    private JCheckBox myAutoCheckout;
+    private JCheckBox myConcatenateChangelistNameCommentCheckBox;
+    private JSpinner mySocketSoTimeoutSecondsSpinner;
+    private JCheckBox myAutoCheckoutCheckBox;
+    private JSpinner myMaxConnectionsSpinner;
+    private JSpinner myMaxClientRetrieveCountSpinner;
+    private JSpinner myMaxChangelistRetrieveSpinner;
+    private JSpinner myMaxFileRetrieveSpinner;
+    private JCheckBox myRemoveP4ChangelistCheckBox;
+    private JComboBox<UserMessageLevel> myUserMessageLevelComboBox;
+    private JSpinner myMaxChangelistNameSpinner;
     private ButtonGroup myPreferRevisionGroup;
 
 
     UserPreferencesPanel() {
         LOG.debug("UI constructed, now setting up models");
-        myMaxTimeout.setModel(new MinMaxSpinnerModel(
-                UserProjectPreferences.MIN_LOCK_WAIT_TIMEOUT_MILLIS,
-                UserProjectPreferences.MAX_LOCK_WAIT_TIMEOUT_MILLIS,
-                500,
-                UserProjectPreferences.DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS));
-        myMaxTimeout.getEditor().setEnabled(true);
-        myMaxRetryAuthenticationSpinner.setModel(new MinMaxSpinnerModel(
-                UserProjectPreferences.MIN_MAX_AUTHENTICATION_RETRIES,
-                UserProjectPreferences.MAX_MAX_AUTHENTICATION_RETRIES,
-                1,
-                UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES));
-        myMaxRetryAuthenticationSpinner.getEditor().setEnabled(true);
-        mySocketSoTimeoutSpinner.setModel((new MinMaxSpinnerModel(
-                UserProjectPreferences.MIN_SOCKET_SO_TIMEOUT_MILLIS,
-                UserProjectPreferences.MAX_SOCKET_SO_TIMEOUT_MILLIS,
-                100,
-                UserProjectPreferences.DEFAULT_MAX_AUTHENTICATION_RETRIES
+        myMaxTimeoutSecondsSpinner.setModel(new DoubleMinMaxSpinnerModel(
+                millisToSeconds(UserProjectPreferences.MIN_LOCK_WAIT_TIMEOUT_MILLIS),
+                millisToSeconds(UserProjectPreferences.MAX_LOCK_WAIT_TIMEOUT_MILLIS),
+                0.5,
+                millisToSeconds(UserProjectPreferences.DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS)));
+        myMaxTimeoutSecondsSpinner.getEditor().setEnabled(true);
+        mySocketSoTimeoutSecondsSpinner.setModel((new DoubleMinMaxSpinnerModel(
+                millisToSeconds(UserProjectPreferences.MIN_SOCKET_SO_TIMEOUT_MILLIS),
+                millisToSeconds(UserProjectPreferences.MAX_SOCKET_SO_TIMEOUT_MILLIS),
+                .1,
+                millisToSeconds(UserProjectPreferences.DEFAULT_SOCKET_SO_TIMEOUT_MILLIS)
         )));
-        mySocketSoTimeoutSpinner.getEditor().setEnabled(true);
+        mySocketSoTimeoutSecondsSpinner.getEditor().setEnabled(true);
+        myMaxConnectionsSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.MIN_SERVER_CONNECTIONS,
+                UserProjectPreferences.MAX_SERVER_CONNECTIONS,
+                1,
+                UserProjectPreferences.DEFAULT_SERVER_CONNECTIONS
+        )));
+        myMaxConnectionsSpinner.getEditor().setEnabled(true);
+        myMaxChangelistNameSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.MIN_CHANGELIST_NAME_LENGTH,
+                UserProjectPreferences.MAX_CHANGELIST_NAME_LENGTH,
+                1,
+                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_NAME_LENGTH
+        )));
+        myMaxChangelistNameSpinner.getEditor().setEnabled(true);
+        myMaxClientRetrieveCountSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.MIN_CLIENT_RETRIEVE_COUNT,
+                UserProjectPreferences.MAX_CLIENT_RETRIEVE_COUNT,
+                5,
+                UserProjectPreferences.DEFAULT_MAX_CLIENT_RETRIEVE_COUNT
+        )));
+        myMaxClientRetrieveCountSpinner.getEditor().setEnabled(true);
+        myMaxChangelistRetrieveSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.MIN_CHANGELIST_RETRIEVE_COUNT,
+                UserProjectPreferences.MAX_CHANGELIST_RETRIEVE_COUNT,
+                5,
+                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT
+        )));
+        myMaxChangelistRetrieveSpinner.getEditor().setEnabled(true);
+        myMaxFileRetrieveSpinner.setModel((new IntMinMaxSpinnerModel(
+                UserProjectPreferences.MIN_CHANGELIST_RETRIEVE_COUNT,
+                UserProjectPreferences.MAX_CHANGELIST_RETRIEVE_COUNT,
+                5,
+                UserProjectPreferences.DEFAULT_MAX_CHANGELIST_RETRIEVE_COUNT
+        )));
+        myMaxFileRetrieveSpinner.getEditor().setEnabled(true);
+        for (UserMessageLevel value : UserMessageLevel.values()) {
+            myUserMessageLevelComboBox.addItem(value);
+        }
+        // Future settings here
+
         myPreferRevisionGroup = new ButtonGroup();
         myPreferRevisionGroup.add(myPreferChangelist);
         myPreferRevisionGroup.add(myPreferRevisionNumber);
@@ -81,60 +139,64 @@ public class UserPreferencesPanel {
 
     void loadSettingsIntoGUI(@NotNull UserProjectPreferences userPrefs) {
         LOG.debug("Loading settings into UI");
-        myOpenForEditInCheckBox.setSelected(userPrefs.getEditInSeparateThread());
-        myMaxTimeout.setValue(userPrefs.getLockWaitTimeoutMillis());
-        myMaxRetryAuthenticationSpinner.setValue(userPrefs.getMaxAuthenticationRetries());
-        mySocketSoTimeoutSpinner.setValue(userPrefs.getSocketSoTimeoutMillis());
+        myMaxTimeoutSecondsSpinner.setValue(millisToSeconds(userPrefs.getLockWaitTimeoutMillis()));
+        mySocketSoTimeoutSecondsSpinner.setValue(millisToSeconds(userPrefs.getSocketSoTimeoutMillis()));
+        myMaxConnectionsSpinner.setValue(userPrefs.getMaxServerConnections());
+        myMaxChangelistNameSpinner.setValue(userPrefs.getMaxChangelistNameLength());
         myPreferRevisionGroup.setSelected(
                 userPrefs.getPreferRevisionsForFiles()
                         ? myPreferRevisionNumber.getModel()
                         : myPreferChangelist.getModel()
                 , true);
-        myEditedWithoutCheckoutCheckBox.setSelected(userPrefs.getEditedWithoutCheckoutVerify());
-        myReconnectWithEachRequest.setSelected(userPrefs.getReconnectWithEachRequest());
-        myConcatenateChangelistNameComment.setSelected(userPrefs.getConcatenateChangelistNameComment());
-        myShowMessageDialog.setSelected(userPrefs.getShowDialogConnectionMessages());
-        myAutoCheckout.setSelected(userPrefs.getAutoCheckoutModifiedFiles());
+        myConcatenateChangelistNameCommentCheckBox.setSelected(userPrefs.getConcatenateChangelistNameComment());
+        myAutoCheckoutCheckBox.setSelected(userPrefs.getAutoCheckoutModifiedFiles());
+        myMaxClientRetrieveCountSpinner.setValue(userPrefs.getMaxClientRetrieveCount());
+        myMaxChangelistRetrieveSpinner.setValue(userPrefs.getMaxClientRetrieveCount());
+        myMaxFileRetrieveSpinner.setValue(userPrefs.getMaxFileRetrieveCount());
+        myRemoveP4ChangelistCheckBox.setSelected(userPrefs.getRemoveP4Changelist());
+        myUserMessageLevelComboBox.setSelectedItem(messageLevelFromInt(userPrefs.getUserMessageLevel()));
+        // Future settings here
         LOG.debug("Finished loading settings into the UI");
     }
 
 
     void saveSettingsToConfig(@NotNull UserProjectPreferences userPrefs) {
-        userPrefs.setEditInSeparateThread(getOpenForEditInSeparateThread());
-        userPrefs.setLockWaitTimeoutMillis(getMaxTimeout());
-        userPrefs.setSocketSoTimeoutMillis(getSocketSoTimeout());
+        userPrefs.setLockWaitTimeoutMillis(getMaxTimeoutMillis());
+        userPrefs.setSocketSoTimeoutMillis(getSocketSoTimeoutMillis());
+        userPrefs.setMaxServerConnections(getMaxServerConnections());
+        userPrefs.setMaxChangelistNameLength(getMaxChangelistNameLength());
         userPrefs.setPreferRevisionsForFiles(getPreferRevisionsForFiles());
-        userPrefs.setEditedWithoutCheckoutVerify(getEditedWithoutCheckoutVerify());
-        userPrefs.setMaxAuthenticationRetries(getMaxAuthenticationRetries());
-        userPrefs.setReconnectWithEachRequest(getReconnectWithEachRequest());
         userPrefs.setConcatenateChangelistNameComment(getConcatenateChangelistNameComment());
-        userPrefs.setShowDialogConnectionMessages(getShowMessageDialog());
         userPrefs.setAutoCheckoutModifiedFiles(getAutoCheckout());
+        userPrefs.setMaxChangelistRetrieveCount(getMaxClientRetrieveCount());
+        userPrefs.setMaxChangelistRetrieveCount(getMaxChangelistRetrieveCount());
+        userPrefs.setMaxFileRetrieveCount(getMaxFileRetrieveCount());
+        userPrefs.setRemoveP4Changelist(getRemoveP4Changelist());
+        userPrefs.setUserMessageLevel(getUserMessageLevel());
+        // Future settings here
     }
 
 
     boolean isModified(@NotNull final UserProjectPreferences preferences) {
         return
-                getOpenForEditInSeparateThread() != preferences.getEditInSeparateThread() ||
-                        getMaxTimeout() != preferences.getLockWaitTimeoutMillis() ||
-                        getSocketSoTimeout() != preferences.getSocketSoTimeoutMillis() ||
+                getMaxTimeoutMillis() != preferences.getLockWaitTimeoutMillis() ||
+                        getSocketSoTimeoutMillis() != preferences.getSocketSoTimeoutMillis() ||
+                        getMaxServerConnections() != preferences.getMaxServerConnections() ||
+                        getMaxChangelistNameLength() != preferences.getMaxChangelistNameLength() ||
                         getPreferRevisionsForFiles() != preferences.getPreferRevisionsForFiles() ||
-                        getEditedWithoutCheckoutVerify() != preferences.getEditedWithoutCheckoutVerify() ||
-                        getMaxAuthenticationRetries() != preferences.getMaxAuthenticationRetries() ||
-                        getReconnectWithEachRequest() != preferences.getReconnectWithEachRequest() ||
                         getConcatenateChangelistNameComment() != preferences.getConcatenateChangelistNameComment() ||
-                        getShowMessageDialog() != preferences.getShowDialogConnectionMessages() ||
-                        getAutoCheckout() != preferences.getAutoCheckoutModifiedFiles();
+                        getAutoCheckout() != preferences.getAutoCheckoutModifiedFiles() ||
+                        getMaxClientRetrieveCount() != preferences.getMaxClientRetrieveCount() ||
+                        getMaxChangelistRetrieveCount() != preferences.getMaxChangelistRetrieveCount() ||
+                        getMaxFileRetrieveCount() != preferences.getMaxFileRetrieveCount() ||
+                        getRemoveP4Changelist() != preferences.getRemoveP4Changelist() ||
+                        getUserMessageLevel() != preferences.getUserMessageLevel();
+        // Future settings here
     }
 
 
-    private boolean getOpenForEditInSeparateThread() {
-        return myOpenForEditInCheckBox.isSelected();
-    }
-
-
-    private int getMaxTimeout() {
-        return (Integer) myMaxTimeout.getModel().getValue();
+    private int getMaxTimeoutMillis() {
+        return secondsToMillis(myMaxTimeoutSecondsSpinner);
     }
 
     private boolean getPreferRevisionsForFiles() {
@@ -142,32 +204,48 @@ public class UserPreferencesPanel {
                 myPreferRevisionGroup.getSelection() == myPreferRevisionNumber.getModel();
     }
 
-    private boolean getEditedWithoutCheckoutVerify() {
-        return myEditedWithoutCheckoutCheckBox.isSelected();
+    private int getSocketSoTimeoutMillis() {
+        return secondsToMillis(mySocketSoTimeoutSecondsSpinner);
     }
 
-    private int getMaxAuthenticationRetries() {
-        return (Integer) myMaxRetryAuthenticationSpinner.getModel().getValue();
+    private int getMaxServerConnections() {
+        return toInt(myMaxConnectionsSpinner);
     }
 
-    private int getSocketSoTimeout() {
-        return (Integer) mySocketSoTimeoutSpinner.getModel().getValue();
+    private int getMaxChangelistNameLength() {
+        return toInt(myMaxChangelistNameSpinner);
     }
 
-    private boolean getReconnectWithEachRequest() {
-        return myReconnectWithEachRequest.isSelected();
+    private int getMaxClientRetrieveCount() {
+        return toInt(myMaxClientRetrieveCountSpinner);
     }
 
     private boolean getConcatenateChangelistNameComment() {
-        return myConcatenateChangelistNameComment.isSelected();
-    }
-
-    private boolean getShowMessageDialog() {
-        return myShowMessageDialog.isSelected();
+        return myConcatenateChangelistNameCommentCheckBox.isSelected();
     }
 
     private boolean getAutoCheckout() {
-        return myAutoCheckout.isSelected();
+        return myAutoCheckoutCheckBox.isSelected();
+    }
+
+    private int getMaxChangelistRetrieveCount() {
+        return toInt(myMaxChangelistRetrieveSpinner);
+    }
+
+    private int getMaxFileRetrieveCount() {
+        return toInt(myMaxFileRetrieveSpinner);
+    }
+
+    private boolean getRemoveP4Changelist() {
+        return myRemoveP4ChangelistCheckBox.isSelected();
+    }
+
+    private int getUserMessageLevel() {
+        Object level = myUserMessageLevelComboBox.getSelectedItem();
+        if (level instanceof UserMessageLevel) {
+            return ((UserMessageLevel) level).value;
+        }
+        return UserProjectPreferences.DEFAULT_USER_MESSAGE_LEVEL;
     }
 
     private void createUIComponents() {
@@ -176,6 +254,35 @@ public class UserPreferencesPanel {
 
     JPanel getRootPanel() {
         return myRootPanel;
+    }
+
+
+    private static double millisToSeconds(long millis) {
+        return ((double) millis) / 1000.;
+    }
+
+    private static int secondsToMillis(JSpinner secondsSpinner) {
+        double seconds = ((Number) secondsSpinner.getModel().getValue()).doubleValue();
+        return (int) Math.floor(seconds * 1000.);
+    }
+
+    private static int toInt(JSpinner spinner) {
+        return ((Number) spinner.getModel().getValue()).intValue();
+    }
+
+    private static UserMessageLevel messageLevelFromInt(int value) {
+        for (UserMessageLevel userMessageLevel : UserMessageLevel.values()) {
+            if (userMessageLevel.value == value) {
+                return userMessageLevel;
+            }
+        }
+        for (UserMessageLevel userMessageLevel : UserMessageLevel.values()) {
+            if (userMessageLevel.value == UserProjectPreferences.DEFAULT_USER_MESSAGE_LEVEL) {
+                return userMessageLevel;
+            }
+        }
+        LOG.warn("UserProjectPreferences.DEFAULT_USER_MESSAGE_LEVEL is an invalid value");
+        return UserMessageLevel.INFO;
     }
 
     /**
@@ -260,88 +367,55 @@ public class UserPreferencesPanel {
      */
     private void $$$setupUI$$$() {
         myRootPanel = new JPanel();
-        myRootPanel.setLayout(new GridLayoutManager(6, 2, new Insets(0, 0, 0, 0), -1, -1));
+        myRootPanel.setLayout(new GridLayoutManager(11, 2, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_timeout"));
         label1.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_timeout.tooltip"));
-        myRootPanel.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+        myRootPanel.add(label1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myMaxTimeout = new JSpinner();
-        myMaxTimeout.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.max_timeout.tooltip"));
-        myRootPanel.add(myMaxTimeout,
-                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
-                        false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel1,
                 new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
-        myOpenForEditInCheckBox = new JCheckBox();
-        this.$$$loadButtonText$$$(myOpenForEditInCheckBox, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.edit_in_separate_thread"));
-        myOpenForEditInCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.edit_in_separate_thread.tooltip"));
-        panel1.add(myOpenForEditInCheckBox,
+        myConcatenateChangelistNameCommentCheckBox = new JCheckBox();
+        this.$$$loadButtonText$$$(myConcatenateChangelistNameCommentCheckBox,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                        .getString("user.prefs.concatenate-changelist"));
+        myConcatenateChangelistNameCommentCheckBox.setToolTipText(
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                        .getString("user.prefs.concatenate-changelist.tooltip"));
+        panel1.add(myConcatenateChangelistNameCommentCheckBox,
                 new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        myEditedWithoutCheckoutCheckBox = new JCheckBox();
-        this.$$$loadButtonText$$$(myEditedWithoutCheckoutCheckBox,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                        .getString("configuration.user.compare-contents"));
-        myEditedWithoutCheckoutCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.user.compare-contents.tooltip"));
-        panel1.add(myEditedWithoutCheckoutCheckBox,
+        myAutoCheckoutCheckBox = new JCheckBox();
+        this.$$$loadButtonText$$$(myAutoCheckoutCheckBox,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.auto-checkout"));
+        myAutoCheckoutCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.auto-checkout.tooltip"));
+        panel1.add(myAutoCheckoutCheckBox,
                 new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        myReconnectWithEachRequest = new JCheckBox();
-        this.$$$loadButtonText$$$(myReconnectWithEachRequest,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.always_reconnect"));
-        myReconnectWithEachRequest.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.always_reconnect.tooltip"));
-        panel1.add(myReconnectWithEachRequest,
-                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        myConcatenateChangelistNameComment = new JCheckBox();
-        this.$$$loadButtonText$$$(myConcatenateChangelistNameComment,
+        myRemoveP4ChangelistCheckBox = new JCheckBox();
+        this.$$$loadButtonText$$$(myRemoveP4ChangelistCheckBox,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                        .getString("user.prefs.concatenate-changelist"));
-        myConcatenateChangelistNameComment.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.concatenate-changelist.tooltip"));
-        panel1.add(myConcatenateChangelistNameComment,
-                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        myShowMessageDialog = new JCheckBox();
-        this.$$$loadButtonText$$$(myShowMessageDialog,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.message-dialog"));
-        myShowMessageDialog.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.message-dialog.tooltip"));
-        panel1.add(myShowMessageDialog,
-                new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        myAutoCheckout = new JCheckBox();
-        this.$$$loadButtonText$$$(myAutoCheckout,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.auto-checkout"));
-        myAutoCheckout.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.auto-checkout.tooltip"));
-        panel1.add(myAutoCheckout,
-                new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        .getString("user.prefs.remove_p4_changelist"));
+        myRemoveP4ChangelistCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.remove_p4_changelist.tooltip"));
+        panel1.add(myRemoveP4ChangelistCheckBox,
+                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         myRootPanel.add(panel2,
-                new GridConstraints(4, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                new GridConstraints(9, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
@@ -369,38 +443,122 @@ public class UserPreferencesPanel {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         myRootPanel.add(spacer2,
-                new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_auth_retry"));
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.socket-so-timeout"));
         label2.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.max_auth_retry.tooltip"));
-        myRootPanel.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                .getString("user.prefs.socket-so-timeout.tooltip"));
+        myRootPanel.add(label2, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        myMaxRetryAuthenticationSpinner = new JSpinner();
-        myMaxRetryAuthenticationSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.max_auth_retry.tooltip"));
-        myRootPanel.add(myMaxRetryAuthenticationSpinner,
-                new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
-                        false));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.socket-so-timeout"));
-        label3.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("user.prefs.socket-so-timeout.tooltip"));
-        myRootPanel.add(label3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_connections"));
+        myRootPanel.add(label3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        mySocketSoTimeoutSpinner = new JSpinner();
-        mySocketSoTimeoutSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+        myMaxConnectionsSpinner = new JSpinner();
+        myRootPanel.add(myMaxConnectionsSpinner,
+                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        myRootPanel.add(panel3,
+                new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
+        myMaxTimeoutSecondsSpinner = new JSpinner();
+        myMaxTimeoutSecondsSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_timeout.tooltip"));
+        panel3.add(myMaxTimeoutSecondsSpinner);
+        final JLabel label4 = new JLabel();
+        this.$$$loadLabelText$$$(label4,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_timeout.unit"));
+        panel3.add(label4);
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        myRootPanel.add(panel4,
+                new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
+        mySocketSoTimeoutSecondsSpinner = new JSpinner();
+        mySocketSoTimeoutSecondsSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.socket-so-timeout.tooltip"));
-        myRootPanel.add(mySocketSoTimeoutSpinner,
+        panel4.add(mySocketSoTimeoutSecondsSpinner);
+        final JLabel label5 = new JLabel();
+        this.$$$loadLabelText$$$(label5, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.socket-so-timeout.unit"));
+        panel4.add(label5);
+        final JLabel label6 = new JLabel();
+        this.$$$loadLabelText$$$(label6, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_client_retrieve"));
+        label6.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_client_retrieve.tooltip"));
+        myRootPanel.add(label6, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myMaxClientRetrieveCountSpinner = new JSpinner();
+        myRootPanel.add(myMaxClientRetrieveCountSpinner,
+                new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
+        myMaxChangelistRetrieveSpinner = new JSpinner();
+        myRootPanel.add(myMaxChangelistRetrieveSpinner,
+                new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
+        final JLabel label7 = new JLabel();
+        this.$$$loadLabelText$$$(label7, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_changelist_retrieve"));
+        label7.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_changelist_retrieve.tooltip"));
+        myRootPanel.add(label7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myMaxFileRetrieveSpinner = new JSpinner();
+        myRootPanel.add(myMaxFileRetrieveSpinner,
+                new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
+        final JLabel label8 = new JLabel();
+        this.$$$loadLabelText$$$(label8, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_file_retrieve_count"));
+        label8.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_file_retrieve_count.tooltip"));
+        myRootPanel.add(label8, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myUserMessageLevelComboBox = new JComboBox();
+        myRootPanel.add(myUserMessageLevelComboBox,
+                new GridConstraints(7, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
+        final JLabel label9 = new JLabel();
+        this.$$$loadLabelText$$$(label9, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.user_message_level"));
+        label9.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.user_message_level.tooltip"));
+        myRootPanel.add(label9, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myMaxChangelistNameSpinner = new JSpinner();
+        myRootPanel.add(myMaxChangelistNameSpinner,
                 new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
                         false));
-        label1.setLabelFor(myMaxTimeout);
-        label2.setLabelFor(myMaxRetryAuthenticationSpinner);
+        final JLabel label10 = new JLabel();
+        this.$$$loadLabelText$$$(label10, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_changelist_name"));
+        label10.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.max_changelist_name.tooltip"));
+        myRootPanel.add(label10, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label1.setLabelFor(myMaxTimeoutSecondsSpinner);
+        label3.setLabelFor(myMaxConnectionsSpinner);
+        label6.setLabelFor(myMaxClientRetrieveCountSpinner);
+        label7.setLabelFor(myMaxClientRetrieveCountSpinner);
+        label8.setLabelFor(myMaxFileRetrieveSpinner);
+        label9.setLabelFor(myUserMessageLevelComboBox);
+        label10.setLabelFor(myMaxChangelistNameSpinner);
     }
 
     /**
@@ -490,71 +648,4 @@ public class UserPreferencesPanel {
         return myRootPanel;
     }
 
-
-    static class MinMaxSpinnerModel
-            implements SpinnerModel {
-        private final List<ChangeListener> listeners = new ArrayList<>();
-        private final int minValue;
-        private final int maxValue;
-        private final int step;
-        private int value;
-
-        MinMaxSpinnerModel(final int minValue, final int maxValue, final int step, final int initialValue) {
-            this.minValue = minValue;
-            this.maxValue = maxValue;
-            this.step = step;
-            this.value = initialValue;
-        }
-
-        @Override
-        public Object getValue() {
-            return value;
-        }
-
-        @Override
-        public void setValue(final Object value) {
-            if (value == null || !(value instanceof Number)) {
-                return;
-            }
-            int newValue = Math.min(
-                    maxValue,
-                    Math.max(
-                            minValue,
-                            ((Number) value).intValue()));
-            if (newValue != this.value) {
-                this.value = newValue;
-                synchronized (listeners) {
-                    for (ChangeListener listener : listeners) {
-                        listener.stateChanged(new ChangeEvent(this));
-                    }
-                }
-            }
-        }
-
-        @Override
-        public Object getNextValue() {
-            return Math.min(maxValue, value + step);
-        }
-
-        @Override
-        public Object getPreviousValue() {
-            return Math.max(minValue, value - step);
-        }
-
-        @Override
-        public void addChangeListener(final ChangeListener l) {
-            if (l != null) {
-                synchronized (listeners) {
-                    listeners.add(l);
-                }
-            }
-        }
-
-        @Override
-        public void removeChangeListener(final ChangeListener l) {
-            synchronized (listeners) {
-                listeners.remove(l);
-            }
-        }
-    }
 }

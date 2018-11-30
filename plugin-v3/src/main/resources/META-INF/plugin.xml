@@ -44,9 +44,11 @@
     </ul>
     ]]></change-notes>
     <description><![CDATA[
-      <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">[ Open Issues ]</a>
       <p>
       Associate your IDEA project with Perforce ("p4") through the built-in version control.
+      </p>
+      <p>
+      <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue+-label%3A0.9">[ Open Issues ]</a>
       </p>
       <p>
       Limitations:
@@ -100,7 +102,7 @@
       </p>
       <p>
       Please visit the GitHub project
-      <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue">open issues</a>
+      <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue+-label%3A0.9">open issues</a>
       for a list of known issues, or for reporting new ones.
       </p>
     ]]></description>

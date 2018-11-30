@@ -47,7 +47,7 @@ in the `135-compat` branch.
            **Install plugin from disk...** item from the pop-up menu.
         1. Select the downloaded file from the file selection dialog.
 1. In IDEA, [configure the VCS root directory managed by Perforce and its connection properties](#setting-up-the-plugin).
-    
+
 
 # Setting Up The Plugin
 
@@ -212,6 +212,8 @@ You can help make the plugin better!
 ## Submit Bug Reports
 
 Submitting bug reports is the easiest way to help improve the plugin.  Bugs can't be fixed if they aren't known.
+
+Please note that issues with the "0.9" label only affect the `135-compat` branch.
 
 
 ## Fix It Yourself

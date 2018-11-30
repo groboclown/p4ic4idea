@@ -1,5 +1,16 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.10.1::
+
+### Overview
+
+* Added build support for testing against 18.2, 18.3, and 19.1.
+
+### Details
+
+* Added build support for testing against 18.2, 18.3, and 19.1.
+    * Added libraries and build tool support for newer versions of the IDE.
+
 
 ## ::v0.10.0::
 

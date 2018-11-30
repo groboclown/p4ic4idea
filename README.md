@@ -211,12 +211,14 @@ You can help make the plugin better!
 
 ## Submit Bug Reports
 
-Submitting bug reports is one of the easiest way to help the project.  Bugs can't be fixed if they aren't known.
+Submitting bug reports is the easiest way to help improve the plugin.  Bugs can't be fixed if they aren't known.
 
 
 ## Fix It Yourself
 
-See [BULDING.md](BUILDING.md) for information on downloading the source and 
+See [BULDING.md](BUILDING.md) for information on downloading the source and building the plugin.  Additional
+documentation regarding the inner-workings of the plugin are in the
+[docs/dev](docs/dev/README.md) directory.  
 
 
 ## Looking For Work?

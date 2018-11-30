@@ -126,10 +126,6 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
 
         ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
                 destdir: outputDir, classpath: cp.asPath,
-
-                // This doesn't cause jdk9 to start working
-                modulepath: modpath,
-
                 includeantruntime: false, instrumentNotNull: instrumentNotNull) {
             if (instrumentNotNull) {
                 ant.skip(pattern: 'kotlin/Metadata')

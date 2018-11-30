@@ -126,7 +126,11 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
 
         ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
                 destdir: outputDir, classpath: cp.asPath,
-                includeantruntime: false, instrumentNotNull: instrumentNotNull) {
+
+                // Force the class file version, which is necessary if compiling with any other JDK.
+                target: "1.8", source: "1.8",
+
+                includeAntRuntime: false, instrumentNotNull: instrumentNotNull) {
             if (instrumentNotNull) {
                 ant.skip(pattern: 'kotlin/Metadata')
             }

@@ -8,4 +8,11 @@ allprojects {
         description 'Modifies the gradle binary distribution location used by gradle wrapper'
         distributionUrl = uri('http://services.gradle.org/distributions/gradle-4.10-bin.zip')
     }
+
+    tasks.withType(JavaCompile) {
+        // This isn't sufficient.  Need to set the "--release 8" javac argument.
+        // Until this is fixed, JDK9+ can't be used to compile the plugin.
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
 }

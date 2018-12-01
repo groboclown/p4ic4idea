@@ -21,13 +21,12 @@ import p4ic.util.IdeaVersionUtil
 import p4ic.util.P4icUtil
 
 import javax.annotation.Nonnull
-import java.util.regex.Matcher
 
 class IdeaVersion {
     private final static IdeaVersionLibMatcher[] VERSION_LIB_MATCHERS = [
             new IdeaVersion17x(),
             new IdeaVersion181(),
-            new IdeaVersion182()
+            new IdeaVersion182_183()
     ];
 
     @Nonnull

@@ -15,7 +15,6 @@
 package net.groboclown.p4plugin;
 
 import com.intellij.lifecycle.PeriodicalTasksCloser;
-import com.intellij.mock.MockCommandProcessor;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
@@ -32,6 +31,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
+import net.groboclown.idea.mock.MockCommandProcessor;
 import net.groboclown.idea.mock.MockLocalChangeList;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.MockConfigPart;

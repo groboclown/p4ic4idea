@@ -20,7 +20,7 @@ import javax.annotation.Nonnull
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-class IdeaVersion182 implements IdeaVersionLibMatcher {
+class IdeaVersion182_183 implements IdeaVersionLibMatcher {
     private static final String[] VERSION_TYPE_SUFFIXES = [
             "-SNAPSHOT", "-patched", "-preview"
     ]
@@ -44,7 +44,7 @@ class IdeaVersion182 implements IdeaVersionLibMatcher {
             "intellij.java.guiForms.compiler" : "forms-compiler",
     ]
     private static final Pattern VERSION_NUMBER = Pattern.compile("-\\d+(\\.\\d+)*\$")
-    private static final Pattern IDEA_VERSION = Pattern.compile("^182\$")
+    private static final Pattern IDEA_VERSION = Pattern.compile("^18[23]\$")
 
     @Override
     Pattern getIdeaVersionMatch() {
@@ -63,6 +63,9 @@ class IdeaVersion182 implements IdeaVersionLibMatcher {
 
         // Check without .jar
         def shortName = strip(filename, ".jar")
+        if (shortName == 'kotlin-stdlib') {
+            shortName = 'kotlin-runtime'
+        }
         if (choices.contains(shortName)) {
             if (shortName == "annotations") {
                 // special case

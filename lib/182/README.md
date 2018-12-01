@@ -33,6 +33,7 @@ $ rm "$jardir"/android*.jar
 $ rm "$jardir"/intellij.android*.jar
 $ rm "$jardir"/intellij.python*.jar
 $ rm "$jardir"/intellij.pycharm*.jar
+$ chmod -w "$jardir/intellij.platform.resources.en.jar"
 $ rm "$jardir"/intellij.*.resources*.jar
 ```
 

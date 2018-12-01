@@ -76,7 +76,8 @@ public class SingleThreadedMessageBus
 
     @Deprecated
     @NotNull
-    @Override
+    // v183 - removed this method.
+    //@Override
     public <L> L asyncPublisher(@NotNull Topic<L> topic) {
         return syncPublisher(topic);
     }

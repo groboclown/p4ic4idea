@@ -160,7 +160,7 @@ public class P4HistoryVcsFileRevision
     }
 
     //@Override TODO 2018 capability
-    boolean isDeleted() {
+    public boolean isDeleted() {
         return data.getRevision() <= 0;
     }
 

@@ -146,7 +146,8 @@ public class P4HistoryVcsFileRevision
     }
 
     @Nullable
-    //@Override TODO 2018 capability
+    // v181 - introduced new method
+    //@Override
     public Date getAuthorDate() {
         return data.getDate();
     }
@@ -159,10 +160,9 @@ public class P4HistoryVcsFileRevision
                 : formatter.format(data);
     }
 
-    //@Override TODO 2018 capability
+    // v181 - introduced new method
+    //@Override
     public boolean isDeleted() {
         return data.getRevision() <= 0;
     }
-
-
 }

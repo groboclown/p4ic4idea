@@ -1,14 +1,17 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.0</version>
+    <version>0.10.1</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
-      <li><em>0.10.0</em>
-      <ul>
+      <li><em>0.10.1</em><ul>
+        <li>The User Preferences panel now correctly shows the user changeable options.</li>
+        <li>Altered usage of IDE APIs to reflect changes in 18.2 and 18.3.  This should help with compatibility.</li>
+      </ul></li>
+      <li><em>0.10.0</em><ul>
         <li>No longer compatible with versions before 2017.1.</li>
         <li>Updated code to work with 2017.1 features.</li>
         <li>Complete rewrite of connection and caching mechanism.
@@ -27,20 +30,7 @@
         <li>The Version Control Repository panel now shows changelist history.</li>
         <li>Upgraded p4java dependency to r18-1.</li>
         <li>Shipping as single Jar file.</li>
-      </ul>
-      </li>
-      <li><em>0.9.6</em>
-      <ul>
-        <li><b>Last version to support IDE versions before release 2017.1 (Builds before 171.0).</b></li>
-        <li>First step at proper symlink handling when adding a file.  It now better handles the
-        situation where a file's parent is actually a checked-in symlink.</li>
-        <li>Implemented "Shelve files to Server" action.</li>
-        <li>Cleaned up some error messages from the Perforce server (removes the
-        <tt>%'</tt> and <tt>'%</tt> markings).</li>
-        <li>Improved the configuration UI to show the full text of error messages.</li>
-        <li>Fixed color bug that prevented the plugin from loading for some users.</li>
-      </ul>
-      </li>
+      </ul></li>
     </ul>
     ]]></change-notes>
     <description><![CDATA[

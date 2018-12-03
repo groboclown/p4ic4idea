@@ -1,6 +1,7 @@
 package p4ic.tasks
 
 import org.apache.tools.ant.BuildException
+import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.FileVisitDetails
@@ -120,6 +121,14 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     }
 
     private void instrumentCode(@Nonnull FileCollection srcDirs, @Nonnull File outputDir, boolean instrumentNotNull) {
+        if (IdeaVersionUtil.isJdk9()) {
+            // A solution here is to use the boot classpath referencing JDK8.
+            // Without this, some APIs are incorrectly compiling with method references in the wrong interface
+            // or superclass.
+            throw new GradleException("Build incompatible with JDK >9; it produces JRE library API incompatibilities")
+        }
+
+
         def headlessOldValue = System.setProperty('java.awt.headless', 'true')
         FileCollection cp = classPath.call()
         logger.info("Setting up instrumentation with classpath " + cp.asPath)

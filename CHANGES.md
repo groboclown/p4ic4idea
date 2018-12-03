@@ -4,12 +4,17 @@
 
 ### Overview
 
-* Added build support for testing against 18.2, 18.3, and 19.1.
+* Completed the User Preferences.
+* Added build support for testing against 18.2 and 18.3.
 
 ### Details
 
-* Added build support for testing against 18.2, 18.3, and 19.1.
+* Completed the User Preferences.
+    * The User Preferences panel now correctly shows the user changeable options. (#178)
+* Added build support for testing against 18.2 and 18.3.
+    * Altered usage of IDE APIs to reflect changes in 18.2 and 18.3.  This should help with compatibility.
     * Added libraries and build tool support for newer versions of the IDE.
+    * Cut down the number of jars in the lib folder for older IDE versions, to only keep what's needed by the build.
 
 
 ## ::v0.10.0::

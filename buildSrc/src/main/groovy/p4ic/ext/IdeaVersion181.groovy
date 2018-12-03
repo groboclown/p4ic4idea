@@ -63,6 +63,9 @@ class IdeaVersion181 implements IdeaVersionLibMatcher {
 
         // Check without .jar
         def shortName = strip(filename, ".jar")
+        if (shortName == 'kotlin-stdlib') {
+            shortName = 'kotlin-runtime'
+        }
         if (choices.contains(shortName)) {
             return [shortName]
         }

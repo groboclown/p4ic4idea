@@ -45,10 +45,10 @@
     ]]></change-notes>
     <description><![CDATA[
       <p>
-      Associate your IDEA project with Perforce ("p4") through the built-in version control.
+      <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue+-label%3A0.9">[ Open Issues ]</a>
       </p>
       <p>
-      <a href="https://github.com/groboclown/p4ic4idea">[ Github ]</a> | <a href="https://github.com/groboclown/p4ic4idea/issues?q=is%3Aopen+is%3Aissue+-label%3A0.9">[ Open Issues ]</a>
+      Associate your IDEA project with Perforce ("p4") through the built-in version control.
       </p>
       <p>
       Limitations:

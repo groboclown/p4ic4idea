@@ -166,6 +166,10 @@ The passwords stored in the Windows Registry (through the `p4 set PASSWD` comman
 in an encrypted way.  The code should include handling the encrypted values.  The publicly available p4 cli C code
 contains the implementation for how it's done.  However, that code is non-trivial. 
 
+### OSX plist Configuration Support
+
+(#191) The plugin does not look in the plist files for the Perforce configuration information.  
+
 ### Relative P4CONFIG support
 
 The choice was made to eliminate the use of relative P4CONFIG files, and instead managed through the VCS Root mechanism.

@@ -60,6 +60,11 @@ public class TestableP4RequestErrorHandler
         return super.handleError(info, e);
     }
 
+    @Override
+    protected int getMaxRetryCount() {
+        return 0;
+    }
+
 
     @Override
     public void handleOnDisconnectError(@Nonnull ConnectionException e) {

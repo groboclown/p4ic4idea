@@ -69,7 +69,7 @@ public class SimpleConnectionManager implements ConnectionManager {
     private static final char[] EMPTY_PASSWORD = new char[0];
 
     private final File tmpDir;
-    private final int socketSoTimeoutMillis;
+    private int socketSoTimeoutMillis;
     private final String pluginVersion;
     private final P4RequestErrorHandler errorHandler;
 
@@ -79,6 +79,12 @@ public class SimpleConnectionManager implements ConnectionManager {
         this.socketSoTimeoutMillis = socketSoTimeoutMillis;
         this.pluginVersion = pluginVersion;
         this.errorHandler = errorHandler;
+    }
+
+
+    public void setSocketSoTimeoutMillis(int socketSoTimeoutMillis) {
+        this.socketSoTimeoutMillis = socketSoTimeoutMillis;
+        // If this ever caches the connection, then the connection should be closed here.
     }
 
 
@@ -187,7 +193,7 @@ public class SimpleConnectionManager implements ConnectionManager {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Setting up SSO login to execute `" + serverConfig.getLoginSso() + "`");
             }
-            // FIXME pass in a error callback to the callback so that the connection manager can handle errors.
+            // pass in a error callback to the callback so that the connection manager can handle errors.
             // TODO look into registering the sso key through user options.
             server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig, 1000), null);
         }
@@ -205,7 +211,7 @@ public class SimpleConnectionManager implements ConnectionManager {
         // set, then a simple password login attempt should be made.  The P4LOGINSSO will
         // ignore the password.
         // However, we will always perform the SSO login here.
-        // FIXME with the addition of the LoginAction, we should only perform this when absolutely required.
+        // With the addition of the LoginAction, we should only perform this when absolutely required.
         // The original server authentication terribleness is enshrined in v2's ServerAuthenticator.
         if (serverConfig.hasLoginSso() || (serverConfig.usesStoredPassword() && password != null)) {
             final boolean useTicket = serverConfig.getAuthTicket() != null && serverConfig.getAuthTicket().isFile()

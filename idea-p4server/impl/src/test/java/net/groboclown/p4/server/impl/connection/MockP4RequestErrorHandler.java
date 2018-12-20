@@ -52,6 +52,16 @@ public class MockP4RequestErrorHandler extends P4RequestErrorHandler {
         return createServerResultException(e, e.getMessage(), P4CommandRunner.ErrorCategory.INTERNAL);
     }
 
+    @Override
+    protected boolean isRetryableError(@NotNull Exception e) {
+        return false;
+    }
+
+    @Override
+    protected int getMaxRetryCount() {
+        return 0;
+    }
+
 
     @Override
     public void handleOnDisconnectError(@Nonnull ConnectionException e) {

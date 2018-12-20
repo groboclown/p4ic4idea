@@ -16,44 +16,39 @@ package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
-import net.groboclown.p4.server.api.P4ServerName;
 import org.jetbrains.annotations.NotNull;
 
-public class UserSelectedOfflineMessage
-        extends ProjectMessage<UserSelectedOfflineMessage.Listener> {
-    private static final String DISPLAY_NAME = "p4ic4idea:user selected a server to go offline";
+public class UserProjectPreferencesUpdatedMessage
+        extends ProjectMessage<UserProjectPreferencesUpdatedMessage.Listener> {
+    private static final String DISPLAY_NAME = "p4ic4idea:user preferences updated";
     private static final Topic<Listener> TOPIC = new Topic<>(
-            DISPLAY_NAME,
-            Listener.class,
-            Topic.BroadcastDirection.TO_CHILDREN);
+            DISPLAY_NAME, Listener.class, Topic.BroadcastDirection.TO_CHILDREN
+    );
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
-    public static class OfflineEvent
-            extends AbstractMessageEvent {
-        private final P4ServerName name;
-
-        public OfflineEvent(@NotNull P4ServerName name) {
-            this.name = name;
-        }
-
-        @NotNull
-        public P4ServerName getName() {
-            return name;
+    public static class UserPreferencesUpdatedEvent extends AbstractMessageEvent {
+        // Note that the project settings are not passed into this class, because
+        // it's not in scope for this class!
+        public UserPreferencesUpdatedEvent() {
         }
     }
 
     public interface Listener {
-        void userSelectedServerOffline(@NotNull OfflineEvent e);
+        void userPreferencesUpdated(@NotNull UserPreferencesUpdatedEvent e);
     }
 
-    public static class ListenerAdapter
-            implements Listener {
+    public static class ListenerAdapter implements Listener {
         @Override
-        public void userSelectedServerOffline(@NotNull OfflineEvent e) {
+        public void userPreferencesUpdated(@NotNull UserPreferencesUpdatedEvent e) {
         }
     }
 
-
+    /**
+     * Should only be called by {@link net.groboclown.p4.server.api.ProjectConfigRegistry}.  Doesn't conform to
+     * the "send(Project)" standard API, because it can trigger 2 events.
+     *
+     * @param project project to send the message on.
+     */
     public static Listener send(@NotNull Project project) {
         return getListener(project, TOPIC, DEFAULT_LISTENER);
     }

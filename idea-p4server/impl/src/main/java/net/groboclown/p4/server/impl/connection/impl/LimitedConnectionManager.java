@@ -49,6 +49,10 @@ public class LimitedConnectionManager implements ConnectionManager {
         this.proxy = proxy;
     }
 
+    public void setLockTimeout(long timeout, @NotNull TimeUnit timeoutUnit) {
+        this.restriction.setTimeout(timeout, timeoutUnit);
+    }
+
     @NotNull
     @Override
     public <R> Answer<R> withConnection(@NotNull ClientConfig config, @NotNull P4Func<IClient, R> fun) {

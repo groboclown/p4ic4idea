@@ -62,6 +62,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
 import javax.crypto.Cipher;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
@@ -455,6 +456,11 @@ public abstract class MessageP4RequestErrorHandler
                     getMessage("error.P4JavaException", e),
                     P4CommandRunner.ErrorCategory.SERVER_ERROR);
         }
+        if (e instanceof SocketTimeoutException) {
+            // see #193
+            ConnectionErrorMessage.send().connectionError(new ServerErrorEvent.ServerNameErrorEvent<>(
+                    info.getServerName(), info.getServerConfig(), new ConnectionException(e)));
+        }
         if (e instanceof IOException) {
             // This shouldn't be a server connection issue, because those are wrapped in ConnectionException classes.
             // That just leaves local file I/O problems.
@@ -514,6 +520,26 @@ public abstract class MessageP4RequestErrorHandler
                 getMessage("error.internal.api", e),
                 P4CommandRunner.ErrorCategory.INTERNAL);
     }
+
+    protected boolean isRetryableError(@NotNull Exception e) {
+        Throwable next = e;
+        Throwable prev = null;
+        while (next != null && prev != next) {
+            // See #192 - SocketTimeoutException can be a sign that we need to retry the operation.
+            if (next instanceof SocketTimeoutException) {
+                return true;
+            }
+            prev = next;
+            next = next.getCause();
+        }
+        return false;
+    }
+
+
+    protected final Project getProject() {
+        return project;
+    }
+
 
     private static boolean isUnlimitedStrengthEncryptionInstalled() {
         try {

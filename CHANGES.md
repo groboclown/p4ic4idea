@@ -1,6 +1,24 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.2::
+
+### Overview
+
+* Added retry connection on socket timeout.
+* Bug fixes
+
+### Details
+
+* Added retry connection on socket timeout.
+    * Even with an extended socket timeout, the server connection would sometimes
+      fail. (#193)
+* Bug fixes
+    * When the socket timeout or lock timeout change, the new value would
+      not take effect until the project is reopened.  This should now take effect
+      soon after setting the value. 
+
+
 ## ::v0.10.1::
 
 ### Overview

@@ -1,35 +1,21 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.1</version>
+    <version>0.10.2</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.2</em><ul>
+        <li>Added setting to retry connection on socket timeout.</li>
+        <li>Fixed user preferences so that updating the socket timeout or lock timeout
+        change, the new value takes effect immediately.  Before, the change would not happen
+        until a project is opened.</li>
+      </ul></li>
       <li><em>0.10.1</em><ul>
         <li>The User Preferences panel now correctly shows the user changeable options.</li>
         <li>Altered usage of IDE APIs to reflect changes in 18.2 and 18.3.  This should help with compatibility.</li>
-      </ul></li>
-      <li><em>0.10.0</em><ul>
-        <li>No longer compatible with versions before 2017.1.</li>
-        <li>Updated code to work with 2017.1 features.</li>
-        <li>Complete rewrite of connection and caching mechanism.
-        In order to support the 2017.1 per-VCS Root configuration, the
-        plugin now maintains the connection information in the VCS root
-        level.  Relative configuration files are no longer supported.
-        Offline support is better handled through an integrated caching
-        mechanism.
-        Connection and caching are now designed for proper multi-threaded
-        operation, so there should be a significant performance boost.</li>
-        <li>New Active Connection view: rather than using a small status-bar
-        widget, connections are now viewed through a VCS tab called "Active
-        Connections".</li>
-        <li>You can browse for jobs when submitting a changelist, and browse for labels when synchronizing files.</li>
-        <li>The plugin now supports <b>File</b> -> <b>New</b> -> <b>Project from Version Control</b></li>
-        <li>The Version Control Repository panel now shows changelist history.</li>
-        <li>Upgraded p4java dependency to r18-1.</li>
-        <li>Shipping as single Jar file.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

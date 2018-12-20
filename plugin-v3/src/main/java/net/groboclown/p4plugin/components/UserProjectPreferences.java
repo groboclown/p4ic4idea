@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
+@SuppressWarnings("WeakerAccess")
 @State(name = "p4-UserProjectPreferences")
 public class UserProjectPreferences
         implements PersistentStateComponent<UserProjectPreferences.State> {
@@ -40,7 +41,7 @@ public class UserProjectPreferences
     public static final boolean DEFAULT_CONCATENATE_CHANGELIST_NAME_COMMENT = false;
     public static final int DEFAULT_SOCKET_SO_TIMEOUT_MILLIS = 30000;
     public static final int MIN_SOCKET_SO_TIMEOUT_MILLIS = 20000;
-    public static final int MAX_SOCKET_SO_TIMEOUT_MILLIS = 5 * 60 * 1000;
+    public static final int MAX_SOCKET_SO_TIMEOUT_MILLIS = 15 * 60 * 1000;
     public static final int MIN_LOCK_WAIT_TIMEOUT_MILLIS = 20 * 1000;
     public static final int MAX_LOCK_WAIT_TIMEOUT_MILLIS = 5 * 60 * 1000;
     public static final int DEFAULT_LOCK_WAIT_TIMEOUT_MILLIS = 30 * 1000;
@@ -59,6 +60,9 @@ public class UserProjectPreferences
     public static final int DEFAULT_MAX_CHANGELIST_NAME_LENGTH = 67;
     public static final int MIN_CHANGELIST_NAME_LENGTH = 33;
     public static final int MAX_CHANGELIST_NAME_LENGTH = 200;
+    public static final int DEFAULT_RETRY_ACTION_COUNT = 2;
+    public static final int MIN_RETRY_ACTION_COUNT = 0;
+    public static final int MAX_RETRY_ACTION_COUNT = 5;
 
     @NotNull
     private State state = new State();
@@ -113,6 +117,8 @@ public class UserProjectPreferences
         public int userMessageLevel = DEFAULT_USER_MESSAGE_LEVEL;
 
         public int maxChangelistNameLength = DEFAULT_MAX_CHANGELIST_NAME_LENGTH;
+
+        public int retryActionCount = DEFAULT_RETRY_ACTION_COUNT;
     }
 
     @Nullable
@@ -128,6 +134,7 @@ public class UserProjectPreferences
     }
 
 
+    @SuppressWarnings("NullableProblems")
     @Nullable
     @Override
     public State getState() {
@@ -370,6 +377,22 @@ public class UserProjectPreferences
 
     public void setMaxChangelistNameLength(int len) {
         state.maxChangelistNameLength = Math.max(MIN_CHANGELIST_NAME_LENGTH, len);
+    }
+
+
+    // ====================================
+    // Used by MessageErrorHandler
+    public static int getRetryActionCount(@Nullable final Project project) {
+        return getValue(project, DEFAULT_RETRY_ACTION_COUNT,
+                (prefs) -> prefs.getRetryActionCount());
+    }
+
+    public int getRetryActionCount() {
+        return Math.min(MAX_RETRY_ACTION_COUNT, Math.max(MIN_RETRY_ACTION_COUNT, state.retryActionCount));
+    }
+
+    public void setRetryActionCount(int count) {
+        state.retryActionCount = Math.min(MAX_RETRY_ACTION_COUNT, Math.max(MIN_RETRY_ACTION_COUNT, count));
     }
 
 

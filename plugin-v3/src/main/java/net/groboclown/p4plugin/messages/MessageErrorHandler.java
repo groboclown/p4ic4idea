@@ -17,6 +17,7 @@ package net.groboclown.p4plugin.messages;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.impl.connection.impl.MessageP4RequestErrorHandler;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +25,10 @@ public class MessageErrorHandler
         extends MessageP4RequestErrorHandler {
     public MessageErrorHandler(@NotNull Project project) {
         super(project);
+    }
+
+    protected int getMaxRetryCount() {
+        return UserProjectPreferences.getRetryActionCount(getProject());
     }
 
     @Nls

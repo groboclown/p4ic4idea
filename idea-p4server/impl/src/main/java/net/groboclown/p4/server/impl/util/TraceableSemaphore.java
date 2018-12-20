@@ -36,17 +36,29 @@ public class TraceableSemaphore {
 
     private static final AtomicInteger ID_GEN = new AtomicInteger();
     private final String name;
-    private final long timeout;
-    private final TimeUnit timeoutUnit;
+
+    // Access to these two values must be synchronized on "name".
+    private long timeout;
+    private TimeUnit timeoutUnit;
+
     private final Semaphore sem;
     private final List<Requester> pending = Collections.synchronizedList(new ArrayList<>());
     private final List<Requester> active = Collections.synchronizedList(new ArrayList<>());
 
-    public TraceableSemaphore(String name, int maximumConcurrentCount, long timeout, TimeUnit timeoutUnit) {
+    public TraceableSemaphore(String name, int maximumConcurrentCount, long timeout, @NotNull TimeUnit timeoutUnit) {
         this.name = name;
-        this.timeout = timeout;
-        this.timeoutUnit = timeoutUnit;
+        setTimeout(timeout, timeoutUnit);
         this.sem = new Semaphore(maximumConcurrentCount);
+    }
+
+    public void setTimeout(long timeout, @NotNull TimeUnit timeoutUnit) {
+        if (timeout <= 0) {
+            throw new IllegalArgumentException("bad timeout");
+        }
+        synchronized (name) {
+            this.timeout = timeout;
+            this.timeoutUnit = timeoutUnit;
+        }
     }
 
     public static Requester createRequest() {
@@ -88,8 +100,16 @@ public class TraceableSemaphore {
             pending.add(req);
             LOG.debug(name + ": WAIT - wait queue = " + pending + "; active = " + active);
         }
+
+        final long usableTimeout;
+        final TimeUnit usableTimeoutUnit;
+        synchronized (name) {
+            usableTimeout = this.timeout;
+            usableTimeoutUnit = this.timeoutUnit;
+        }
+
         try {
-            boolean captured = sem.tryAcquire(timeout, timeoutUnit);
+            boolean captured = sem.tryAcquire(usableTimeout, usableTimeoutUnit);
             if (LOG.isDebugEnabled()) {
                 pending.remove(req);
             }
@@ -97,7 +117,8 @@ public class TraceableSemaphore {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(name + ": TIMEOUT - wait queue = " + pending + "; active = " + active);
                 }
-                throw new CancellationException("Waiting for lock timed out: exceeded " + timeout + " " + timeoutUnit.toString().toLowerCase());
+                throw new CancellationException("Waiting for lock timed out: exceeded " + usableTimeout + " " +
+                        usableTimeoutUnit.toString().toLowerCase());
             }
             req.activate();
             active.add(req);

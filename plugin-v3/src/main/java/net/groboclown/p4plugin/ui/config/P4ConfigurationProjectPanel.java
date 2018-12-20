@@ -21,9 +21,6 @@ import net.groboclown.p4plugin.ui.WrapperPanel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
-import java.awt.*;
 
 public class P4ConfigurationProjectPanel implements Disposable {
     private static final Logger LOG = Logger.getInstance(P4ConfigurationProjectPanel.class);

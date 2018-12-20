@@ -13,10 +13,10 @@
  */
 package net.groboclown.p4plugin.ui.config;
 
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import net.groboclown.p4.server.api.messagebus.UserProjectPreferencesUpdatedMessage;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.Nls;
@@ -64,11 +64,12 @@ public class P4ProjectConfigurable implements SearchableConfigurable {
     }
 
     @Override
-    public void apply() throws ConfigurationException {
+    public void apply() {
         UserProjectPreferences prefs = loadPreferences();
         if (prefs != null) {
             myPanel.saveSettings(prefs);
-            // Note: the "save settings" call will call P4ProjectConfigComponent.setUserConfigParts(new config)
+            UserProjectPreferencesUpdatedMessage.send(myProject).userPreferencesUpdated(
+                    new UserProjectPreferencesUpdatedMessage.UserPreferencesUpdatedEvent());
         }
     }
 

@@ -113,6 +113,16 @@ public abstract class P4RequestErrorHandler {
     protected abstract P4CommandRunner.ServerResultException handleError(
             @NotNull ConnectionInfo info, @NotNull Error e);
 
+    /**
+     * Some exceptions may be an issue with latency to the server, and should be retried a certain number of times.
+     *
+     * @param e encountered exception
+     * @return true if the error should be retried, false if not.
+     */
+    protected abstract boolean isRetryableError(@NotNull Exception e);
+
+    protected abstract int getMaxRetryCount();
+
 
     @NotNull
     protected final P4CommandRunner.ServerResultException createServerResultException(@Nullable Exception e,
@@ -131,18 +141,33 @@ public abstract class P4RequestErrorHandler {
     }
 
 
-
     @Nullable
     private <R> R handleConnection(@NotNull ConnectionInfo info, @NotNull Callable<R> c)
             throws P4CommandRunner.ServerResultException {
-        try {
-            return c.call();
-        } catch (Exception e) {
-            throw handleException(info, e);
-        } catch (VirtualMachineError | ThreadDeath e) {
-            throw e;
-        } catch (Error e) {
-            throw handleError(info, e);
+        final int maxRetryCount = getMaxRetryCount();
+
+        // Tricky logic.  The block will only loop if an error is retry-able AND the retry count is below the max.
+        // Every other branch is a return.
+        // See #193 for an explanation for the need for retry.
+        // Note that, the way this is implemented, a max retry count <= 0 will still run, which is as
+        // expected.
+        for (int retryCount = 0; true; retryCount++) {
+            try {
+                return c.call();
+            } catch (Exception e) {
+                if (isRetryableError(e) && retryCount < maxRetryCount) {
+                    continue;
+                }
+                throw handleException(info, e);
+            } catch (VirtualMachineError | ThreadDeath e) {
+                // Don't ever process or swallow these.
+                throw e;
+            } catch (Error e) {
+                throw handleError(info, e);
+            } catch (Throwable t) {
+                LOG.error("Unexpected generic throwable", t);
+                throw handleException(info, new RuntimeException(t));
+            }
         }
     }
 

@@ -21,7 +21,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.p4.server.TopCommandRunner;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4PluginVersion;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -31,6 +30,8 @@ import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.messagebus.UserProjectPreferencesUpdatedMessage;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4.server.impl.connection.ConnectCommandRunner;
@@ -38,7 +39,6 @@ import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.impl.LimitedConnectionManager;
 import net.groboclown.p4.server.impl.connection.impl.SimpleConnectionManager;
-import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4plugin.messages.MessageErrorHandler;
 import net.groboclown.p4plugin.util.TempDirUtil;
 import org.jetbrains.annotations.NotNull;
@@ -207,7 +207,6 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
 
 
-    @SuppressWarnings("WeakerAccess")
     public P4ServerComponent(@NotNull Project project) {
         this.project = project;
     }
@@ -305,17 +304,36 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
     @NotNull
     protected ConnectionManager createConnectionManager() {
-        ConnectionManager ret = new SimpleConnectionManager(
+        final SimpleConnectionManager scm = new SimpleConnectionManager(
                 TempDirUtil.getTempDir(project),
                 UserProjectPreferences.getSocketSoTimeoutMillis(project),
                 P4PluginVersion.getPluginVersion(),
                 createErrorHandler()
         );
-        int connectionRestriction = UserProjectPreferences.getMaxServerConnections(project);
+        ConnectionManager ret = scm;
+        final LimitedConnectionManager lcm;
+        final int connectionRestriction = UserProjectPreferences.getMaxServerConnections(project);
         if (connectionRestriction > 0) {
-            ret = new LimitedConnectionManager(ret, connectionRestriction,
+            lcm = new LimitedConnectionManager(scm, connectionRestriction,
                     UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
+            ret = lcm;
+        } else {
+            lcm = null;
         }
+        // The message bus client handles the listener disposing implicitly.
+        MessageBusClient.ProjectClient mbus = MessageBusClient.forProject(project, this);
+
+        // Due to the protections added to the message bus, we can only add the listener once per message bus.
+        // Thus, all the extra null checks.  This is all in service of bug #193.
+        UserProjectPreferencesUpdatedMessage.addListener(mbus, this,
+                e -> {
+            scm.setSocketSoTimeoutMillis(UserProjectPreferences.getSocketSoTimeoutMillis(project));
+            if (lcm != null) {
+                lcm.setLockTimeout(
+                        UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                        TimeUnit.MILLISECONDS);
+            }
+        });
         return ret;
     }
 

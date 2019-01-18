@@ -63,6 +63,11 @@ public class MockCacheQueryHandler implements CacheQueryHandler {
         return null;
     }
 
+    @Override
+    public int getEstimateSize() {
+        return openChangelists.size() + openChangelists.size();
+    }
+
     public MockCacheQueryHandler withCachedOpenFile(ClientServerRef ref, P4LocalFile... files) {
         openFiles.put(ref, Arrays.asList(files));
         return this;

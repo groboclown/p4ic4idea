@@ -68,6 +68,11 @@ public class IdeChangelistCacheStore {
         public String linkedLocalChangeId;
     }
 
+    public int getEstimateSize() {
+        // Note: not lock protected.
+        return linkedChangelistIds.size() + pendingChangelists.size();
+    }
+
 
     public String getMappedIdeChangeListId(P4ChangelistId p4id)
             throws InterruptedException {

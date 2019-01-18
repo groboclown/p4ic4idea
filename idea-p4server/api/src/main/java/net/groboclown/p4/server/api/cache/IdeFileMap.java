@@ -55,4 +55,7 @@ public interface IdeFileMap {
 
     @NotNull
     Stream<P4LocalFile> getLinkedFiles(@NotNull ClientConfig config);
+
+    // See #193
+    int getEstimateSize();
 }

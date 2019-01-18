@@ -50,4 +50,7 @@ public interface CacheQueryHandler {
 
     @NotNull
     Collection<P4WorkspaceSummary> getCachedClientsForUser(@NotNull P4ServerName serverName, @NotNull String username);
+
+    // See #193
+    int getEstimateSize();
 }

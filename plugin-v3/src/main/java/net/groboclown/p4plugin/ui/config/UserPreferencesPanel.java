@@ -76,6 +76,7 @@ public class UserPreferencesPanel {
     private JComboBox<UserMessageLevel> myUserMessageLevelComboBox;
     private JSpinner myMaxChangelistNameSpinner;
     private JSpinner myRetryActionCountSpinner;
+    private JCheckBox myNotifyOnReverts;
     private ButtonGroup myPreferRevisionGroup;
 
 
@@ -153,6 +154,7 @@ public class UserPreferencesPanel {
         myRemoveP4ChangelistCheckBox.setSelected(userPrefs.getRemoveP4Changelist());
         myUserMessageLevelComboBox.setSelectedItem(messageLevelFromInt(userPrefs.getUserMessageLevel()));
         myRetryActionCountSpinner.setValue(userPrefs.getRetryActionCount());
+        myNotifyOnReverts.setSelected(userPrefs.getNotifyOnRevert());
         // Future settings here
         LOG.debug("Finished loading settings into the UI");
     }
@@ -172,6 +174,7 @@ public class UserPreferencesPanel {
         userPrefs.setRemoveP4Changelist(getRemoveP4Changelist());
         userPrefs.setUserMessageLevel(getUserMessageLevel());
         userPrefs.setRetryActionCount(getRetryActionCount());
+        userPrefs.setNotifyOnRevert(getNotifyOnRevert());
         // Future settings here
     }
 
@@ -190,7 +193,8 @@ public class UserPreferencesPanel {
                         getMaxFileRetrieveCount() != preferences.getMaxFileRetrieveCount() ||
                         getRemoveP4Changelist() != preferences.getRemoveP4Changelist() ||
                         getUserMessageLevel() != preferences.getUserMessageLevel() ||
-                        getRetryActionCount() != preferences.getRetryActionCount();
+                        getRetryActionCount() != preferences.getRetryActionCount() ||
+                        getNotifyOnRevert() != preferences.getNotifyOnRevert();
         // Future settings here
     }
 
@@ -251,6 +255,11 @@ public class UserPreferencesPanel {
     private int getRetryActionCount() {
         return toInt(myRetryActionCountSpinner);
     }
+
+    private boolean getNotifyOnRevert() {
+        return myNotifyOnReverts.isSelected();
+    }
+
 
     private void createUIComponents() {
         // place custom component creation code here
@@ -378,28 +387,21 @@ public class UserPreferencesPanel {
      */
     private void $$$setupUI$$$() {
         myRootPanel = new JPanel();
-        myRootPanel
-                .setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(12, 2, new Insets(0, 0, 0, 0), -1, -1));
+        myRootPanel.setLayout(new GridLayoutManager(12, 2, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_timeout"));
         label1.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_timeout.tooltip"));
-        myRootPanel.add(label1, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        myRootPanel.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
-                false));
+        panel1.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        myRootPanel.add(panel1,
+                new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
         myConcatenateChangelistNameCommentCheckBox = new JCheckBox();
         this.$$$loadButtonText$$$(myConcatenateChangelistNameCommentCheckBox,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
@@ -408,45 +410,44 @@ public class UserPreferencesPanel {
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                         .getString("user.prefs.concatenate-changelist.tooltip"));
         panel1.add(myConcatenateChangelistNameCommentCheckBox,
-                new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
-                        com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                        com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                                | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         myAutoCheckoutCheckBox = new JCheckBox();
         this.$$$loadButtonText$$$(myAutoCheckoutCheckBox,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.auto-checkout"));
         myAutoCheckoutCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.auto-checkout.tooltip"));
-        panel1.add(myAutoCheckoutCheckBox, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        panel1.add(myAutoCheckoutCheckBox,
+                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         myRemoveP4ChangelistCheckBox = new JCheckBox();
         this.$$$loadButtonText$$$(myRemoveP4ChangelistCheckBox,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                         .getString("user.prefs.remove_p4_changelist"));
         myRemoveP4ChangelistCheckBox.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.remove_p4_changelist.tooltip"));
-        panel1.add(myRemoveP4ChangelistCheckBox, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        panel1.add(myRemoveP4ChangelistCheckBox,
+                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
+        myNotifyOnReverts = new JCheckBox();
+        this.$$$loadButtonText$$$(myNotifyOnReverts,
+                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.notify_on_revert"));
+        myNotifyOnReverts.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
+                .getString("user.prefs.notify_on_revert.tooltip"));
+        panel1.add(myNotifyOnReverts,
+                new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        myRootPanel.add(panel2, new com.intellij.uiDesigner.core.GridConstraints(10, 0, 1, 2,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
-                false));
+        panel2.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        myRootPanel.add(panel2,
+                new GridConstraints(10, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.rev_display"),
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
@@ -454,65 +455,49 @@ public class UserPreferencesPanel {
         myPreferRevisionNumber = new JRadioButton();
         this.$$$loadButtonText$$$(myPreferRevisionNumber,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.revision"));
-        panel2.add(myPreferRevisionNumber, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final com.intellij.uiDesigner.core.Spacer spacer1 = new com.intellij.uiDesigner.core.Spacer();
-        panel2.add(spacer1, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel2.add(myPreferRevisionNumber,
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer1 = new Spacer();
+        panel2.add(spacer1,
+                new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         myPreferChangelist = new JRadioButton();
         this.$$$loadButtonText$$$(myPreferChangelist,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.prefer_changelist"));
-        panel2.add(myPreferChangelist, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final com.intellij.uiDesigner.core.Spacer spacer2 = new com.intellij.uiDesigner.core.Spacer();
-        myRootPanel.add(spacer2, new com.intellij.uiDesigner.core.GridConstraints(11, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, 1,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel2.add(myPreferChangelist,
+                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer2 = new Spacer();
+        myRootPanel.add(spacer2,
+                new GridConstraints(11, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.socket-so-timeout"));
         label2.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.socket-so-timeout.tooltip"));
-        myRootPanel.add(label2, new com.intellij.uiDesigner.core.GridConstraints(8, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label2, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3,
                 ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("user.prefs.max_connections"));
-        myRootPanel.add(label3, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxConnectionsSpinner = new JSpinner();
-        myRootPanel.add(myMaxConnectionsSpinner, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myMaxConnectionsSpinner,
+                new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        myRootPanel.add(panel3, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
-                false));
+        myRootPanel.add(panel3,
+                new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
         myMaxTimeoutSecondsSpinner = new JSpinner();
         myMaxTimeoutSecondsSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_timeout.tooltip"));
@@ -523,14 +508,11 @@ public class UserPreferencesPanel {
         panel3.add(label4);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        myRootPanel.add(panel4, new com.intellij.uiDesigner.core.GridConstraints(8, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
-                false));
+        myRootPanel.add(panel4,
+                new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
+                        0, false));
         mySocketSoTimeoutSecondsSpinner = new JSpinner();
         mySocketSoTimeoutSecondsSpinner.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.socket-so-timeout.tooltip"));
@@ -544,97 +526,73 @@ public class UserPreferencesPanel {
                 .getString("user.prefs.max_client_retrieve"));
         label6.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_client_retrieve.tooltip"));
-        myRootPanel.add(label6, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label6, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxClientRetrieveSpinner = new JSpinner();
-        myRootPanel.add(myMaxClientRetrieveSpinner, new com.intellij.uiDesigner.core.GridConstraints(6, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myMaxClientRetrieveSpinner,
+                new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         myMaxChangelistRetrieveSpinner = new JSpinner();
-        myRootPanel.add(myMaxChangelistRetrieveSpinner, new com.intellij.uiDesigner.core.GridConstraints(4, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myMaxChangelistRetrieveSpinner,
+                new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JLabel label7 = new JLabel();
         this.$$$loadLabelText$$$(label7, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_changelist_retrieve"));
         label7.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_changelist_retrieve.tooltip"));
-        myRootPanel.add(label7, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxFileRetrieveSpinner = new JSpinner();
-        myRootPanel.add(myMaxFileRetrieveSpinner, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myMaxFileRetrieveSpinner,
+                new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JLabel label8 = new JLabel();
         this.$$$loadLabelText$$$(label8, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_file_retrieve_count"));
         label8.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_file_retrieve_count.tooltip"));
-        myRootPanel.add(label8, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label8, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myUserMessageLevelComboBox = new JComboBox();
-        myRootPanel.add(myUserMessageLevelComboBox, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myUserMessageLevelComboBox,
+                new GridConstraints(7, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JLabel label9 = new JLabel();
         this.$$$loadLabelText$$$(label9, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.user_message_level"));
         label9.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.user_message_level.tooltip"));
-        myRootPanel.add(label9, new com.intellij.uiDesigner.core.GridConstraints(7, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label9, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myMaxChangelistNameSpinner = new JSpinner();
-        myRootPanel.add(myMaxChangelistNameSpinner, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myMaxChangelistNameSpinner,
+                new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JLabel label10 = new JLabel();
         this.$$$loadLabelText$$$(label10, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_changelist_name"));
         label10.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.max_changelist_name.tooltip"));
-        myRootPanel.add(label10, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label10, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         myRetryActionCountSpinner = new JSpinner();
-        myRootPanel.add(myRetryActionCountSpinner, new com.intellij.uiDesigner.core.GridConstraints(9, 1, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(myRetryActionCountSpinner,
+                new GridConstraints(9, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0,
+                        false));
         final JLabel label11 = new JLabel();
         this.$$$loadLabelText$$$(label11, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.retry-action-count"));
         label11.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
                 .getString("user.prefs.retry-action-count.tooltip"));
-        myRootPanel.add(label11, new com.intellij.uiDesigner.core.GridConstraints(9, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_EAST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        myRootPanel.add(label11, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         label1.setLabelFor(myMaxTimeoutSecondsSpinner);
         label3.setLabelFor(myMaxConnectionsSpinner);
         label6.setLabelFor(myMaxClientRetrieveSpinner);

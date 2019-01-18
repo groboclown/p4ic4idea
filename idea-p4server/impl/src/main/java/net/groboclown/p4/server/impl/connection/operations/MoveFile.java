@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.connection.operations;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -22,6 +23,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.messagebus.SpecialFileEventMessage;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.OpenFileStatus;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
@@ -29,24 +31,26 @@ import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Move File is really complex, so it gets its own class.
+ *
+ * Reverts should not change file contents in this operation.  See bug #181, which was the source for a major blocker.
  */
 public class MoveFile {
     private static final Logger LOG = Logger.getInstance(MoveFile.class);
 
-    public static MoveFile INSTANCE = new MoveFile();
+    private final P4CommandUtil cmd;
 
-    private P4CommandUtil cmd;
+    // Project is only here for messages.
+    private final Project project;
 
-    private MoveFile() {
-        // do nothing
-    }
-
-    public void withCmd(@NotNull P4CommandUtil cmd) {
+    public MoveFile(@NotNull Project project, @NotNull P4CommandUtil cmd) {
+        this.project = project;
         this.cmd = cmd;
     }
 
@@ -56,7 +60,6 @@ public class MoveFile {
 
     public MoveFileResult moveFile(IClient client, ClientConfig config, P4CommandRunner.ClientAction<?> baseType)
             throws Exception {
-        assert cmd != null;
         MoveFileAction action = (MoveFileAction) baseType;
 
         List<IFileSpec> srcFile = FileSpecBuildUtil.escapedForFilePaths(action.getSourceFile());
@@ -73,19 +76,32 @@ public class MoveFile {
                 new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), tgtFile, 1));
         if (srcStatus.hasAdd()) {
             // source is open for add.  Revert it and mark the target as open for edit/add.
-            List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
+            SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                    srcStatus.getAdd().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                    "File marked as open for add, and move requires deleting it, but does not alter the file contents"
+                            + " locally."));
+
+            List<IFileSpec> reverted = cmd.revertFileChangesPreserveFiles(client,
+                    new ArrayList<>(srcStatus.getAdd()));
             LOG.info("Source file is open for add.  Reverting add, and will just open for edit or add the target.  "
                     + "files: " + srcFile + "; results = " +
                     MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
+
             // TODO bundle message for separator
             if (tgtStatus.hasDelete()) {
                 // Currently marked as deleted, so it exists on the server.  Revert the delete then edit it.
-                reverted = cmd.revertFiles(client, tgtFile, false);
+                SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                        tgtStatus.getDelete().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                        "File marked for delete, and file moved to it, but does not alter the file contents locally."));
+
+                reverted = cmd.revertFileChangesPreserveFiles(client,
+                        new ArrayList<>(tgtStatus.getDelete()));
                 LOG.info("Target file open for delete.  Reverting that and just opening it for edit.  Files: " + tgtFile +
                         "; results = " +
                         MessageStatusUtil.getMessages(reverted, "\n"));
                 MessageStatusUtil.throwIfError(reverted);
+
                 List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(edited);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"), edited);
@@ -102,14 +118,21 @@ public class MoveFile {
                 MessageStatusUtil.throwIfError(edited);
                 return new MoveFileResult(config, MessageStatusUtil.getMessages(edited, "\n"), edited);
             } else {
-                // Nothing to do
+                // Open for edit or add.  Nothing to do.
                 LOG.debug("Target file already open for edit or add.  Skipping.");
                 // TODO bundle message
                 return new MoveFileResult(config, "Already open", Collections.emptyList());
             }
         } else if (srcStatus.hasDelete()) {
             // source is already open for delete.  Revert it and continue with normal move.
-            List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
+            // HUGE NOTE: The copy has probably already happened.  If we revert now, it will overwrite the
+            // copy with the See #181.
+            SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                    srcStatus.getDelete().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                    "File marked for delete, but reverting it to allow move operation to work correctly; so "
+                            + "changelist state reverted, but files unchanged locally."));
+            List<IFileSpec> reverted = cmd.revertFileChangesPreserveFiles(client,
+                    new ArrayList<>(srcStatus.getDelete()));
             LOG.info("Source is open for delete.  Reverting delete to allow move operation to do it right.  Files: " + srcFile +
                     "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
@@ -123,7 +146,12 @@ public class MoveFile {
             }
             if (tgtStatus.hasOpen()) {
                 // Should be delete; add and edit is already handled above.
-                List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+                SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                        tgtStatus.getOpen().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                        "File state is " + tgtStatus + " (assumed to be delete), and move requires it to be open for "
+                                + "edit, but files unchanged locally."));
+                List<IFileSpec> reverted = cmd.revertFileChangesPreserveFiles(client,
+                        new ArrayList<>(tgtStatus.getOpen()));
                 LOG.info("Source not on server, and target already open (for " + tgtStatus +
                         ").  Reverting target operation.  Files: " + tgtFile +
                         "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
@@ -149,15 +177,24 @@ public class MoveFile {
         // Check target status, to see what we need to do there.
         if (tgtStatus.hasAdd()) {
             // If the file is open for add, then it should be reverted and a normal move happens.
-            List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+            SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                    tgtStatus.getAdd().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                    "File is marked as open for add, but must be reverted to perform move operation, but file "
+                            + "contents are preserved locally."));
+            List<IFileSpec> reverted = cmd.revertFileChangesPreserveFiles(client,
+                    new ArrayList<>(tgtStatus.getAdd()));
             LOG.info("Target file open for add.  Reverting before performing move.  File: " + tgtFile +
                     "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
         } else if (! tgtStatus.isNotOnServer()) {
-            // See #181
             if (tgtStatus.hasOpen()) {
                 // The file is open for delete or edit, then it should be reverted, and fall through.
-                List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+                SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                        tgtStatus.getOpen().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                        "File is " + tgtStatus + " (assumed to be delete), but must be reverted to perform move "
+                                + "operation, and file contents are not changed locally."));
+                List<IFileSpec> reverted = cmd.revertFileChangesPreserveFiles(client,
+                        new ArrayList<>(tgtStatus.getOpen()));
                 LOG.info("Target file open for edit.  Reverting before performing move.  File: " + tgtFile +
                         "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
                 MessageStatusUtil.throwIfError(reverted);

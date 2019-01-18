@@ -267,7 +267,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
             throw new IllegalStateException("disposed");
         }
         if (connectRunner == null) {
-            connectRunner = new ConnectCommandRunner(createConnectionManager());
+            connectRunner = new ConnectCommandRunner(project, createConnectionManager());
         }
         if (commandRunner == null) {
             commandRunner = new TopCommandRunner(project,

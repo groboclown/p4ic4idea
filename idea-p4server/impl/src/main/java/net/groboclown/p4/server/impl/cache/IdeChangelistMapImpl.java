@@ -140,4 +140,9 @@ public class IdeChangelistMapImpl implements IdeChangelistMap {
             }
         }
     }
+
+    @Override
+    public int getEstimateCount() {
+        return cache.getEstimateSize();
+    }
 }

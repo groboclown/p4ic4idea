@@ -83,6 +83,17 @@ public class OpenFileStatus {
                         }
                         break;
 
+                    // See #194 - move add/delete need special handling.
+                    case MOVE_ADD:
+                        add.add(spec);
+                        if (spec.getMovedFile() != null) {
+                            integrateMap.put(spec.getMovedFile(), spec);
+                        }
+                        break;
+                    case MOVE_DELETE:
+                        delete.add(spec);
+                        break;
+
                     default:
                         skipped.add(spec);
                         break;

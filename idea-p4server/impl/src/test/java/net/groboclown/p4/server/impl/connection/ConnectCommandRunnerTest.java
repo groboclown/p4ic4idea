@@ -128,7 +128,7 @@ class ConnectCommandRunnerTest {
         SimpleConnectionManager mgr = new SimpleConnectionManager(
                 tmpDir.newFile("out"), 1000, "v1",
                 errorHandler);
-        ConnectCommandRunner runner = new ConnectCommandRunner(mgr);
+        ConnectCommandRunner runner = new ConnectCommandRunner(idea.getMockProject(), mgr);
         final CreateJobResult[] result = new CreateJobResult[1];
         runner.getJobSpec(config)
                 .mapActionAsync((jobSpec) ->
@@ -169,7 +169,7 @@ class ConnectCommandRunnerTest {
         SimpleConnectionManager mgr = new SimpleConnectionManager(
                 tmpDir.newFile("out"), 1000, "v1",
                 errorHandler);
-        ConnectCommandRunner runner = new ConnectCommandRunner(mgr);
+        ConnectCommandRunner runner = new ConnectCommandRunner(idea.getMockProject(), mgr);
         // Should run without needing a blockingGet, because of the inline thread handler.
         runner.getJobSpec(config)
                 .mapActionAsync((jobSpec) ->
@@ -207,7 +207,7 @@ class ConnectCommandRunnerTest {
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                     runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                         .whenCompleted(sink::resolve)
@@ -251,7 +251,7 @@ class ConnectCommandRunnerTest {
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .whenCompleted(sink::resolve)
@@ -296,7 +296,7 @@ class ConnectCommandRunnerTest {
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .whenCompleted(sink::resolve)
@@ -332,7 +332,7 @@ class ConnectCommandRunnerTest {
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
@@ -384,7 +384,7 @@ class ConnectCommandRunnerTest {
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
@@ -427,7 +427,7 @@ class ConnectCommandRunnerTest {
         jobDetails.put("User", serverConfig.getUsername());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig.getServerConfig(),
                                 new CreateJobAction(new P4JobImpl("j1", "x", jobDetails)))
@@ -473,7 +473,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
                                 new CreateChangelistAction(clientConfig.getClientServerRef(), "simple",
@@ -510,7 +510,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
                                 new CreateChangelistAction(clientConfig.getClientServerRef(), "new change",
@@ -567,7 +567,7 @@ class ConnectCommandRunnerTest {
                         return runner;
                     })
                 )
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new DeleteFileAction(newFile,
                                     new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
@@ -609,7 +609,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
                                 new CreateChangelistAction(clientConfig.getClientServerRef(),"old comment",
@@ -650,7 +650,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig,
                                     new FetchFilesAction(Collections.singletonList(VcsUtil.getFilePath(clientRoot)),
@@ -693,7 +693,7 @@ class ConnectCommandRunnerTest {
         // server.  This means the command should perform an add action for the target file.
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new MoveFileAction(srcFile, tgtFile,
                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
@@ -735,7 +735,7 @@ class ConnectCommandRunnerTest {
         final P4ChangelistId defaultId = new P4ChangelistIdImpl(0, clientConfig.getClientServerRef());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                                 runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                         .mapActionAsync((res) -> runner.perform(clientConfig,
@@ -783,7 +783,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new RevertFileAction(newFile, false))
                                 .whenCompleted(sink::resolve)
@@ -829,7 +829,7 @@ class ConnectCommandRunnerTest {
         assertNotNull(clientConfig.getClientname());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
                                 .mapActionAsync((res) -> runner.perform(
@@ -880,7 +880,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.describeChangelist(serverConfig, new DescribeChangelistQuery(
                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
@@ -931,7 +931,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.getClientsForUser(serverConfig, new ListClientsForUserQuery("not-a-user", 50))
                                 .whenCompleted(sink::resolve)
@@ -981,7 +981,7 @@ class ConnectCommandRunnerTest {
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         runner.getClientsForUser(serverConfig, new ListClientsForUserQuery(server.getUser(), 1))
                                 .whenCompleted(sink::resolve)
@@ -1018,7 +1018,7 @@ class ConnectCommandRunnerTest {
         final int[] committedChangelistId = { 0 };
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Add the file and submit, so that head == have.
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
@@ -1084,7 +1084,7 @@ class ConnectCommandRunnerTest {
         final int[] committedChangelistId = { 0, 0 };
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Add the file, create a second revision, and fetch the first, so that
                         // have is different than head.
@@ -1166,7 +1166,7 @@ class ConnectCommandRunnerTest {
         final int[] committedChangelistId = { 0, 0 };
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Open for Add
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
@@ -1242,7 +1242,7 @@ class ConnectCommandRunnerTest {
         final int[] committedChangelistId = { 0, 0 };
 
         setupClient(clientConfig, tmpDir, clientRoot)
-                .map(ConnectCommandRunner::new)
+                .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Open for Add
                         runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))

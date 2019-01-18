@@ -46,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @State(
         name = "p4-ProjectCache",
@@ -62,8 +63,13 @@ public class CacheComponent implements
 
     private static final String COMPONENT_NAME = "Perforce Project Cached Data";
 
+    private static final AtomicInteger ACTIVE_COUNT = new AtomicInteger(0);
+    private static final AtomicInteger CREATION_COUNT = new AtomicInteger(0);
+
     @Nullable
     private final Project project;
+    private final int instanceId;
+
 
     private final ProjectCacheStore projectCache = new ProjectCacheStore();
     private IdeChangelistMap changelistMap;
@@ -94,8 +100,23 @@ public class CacheComponent implements
     }
 
     public CacheComponent(@Nullable Project project) {
-        LOG.warn("Creating a cache component for " + project);
+        // See #193 - this is a good contender for tracking memory usage.
+        this.instanceId = CREATION_COUNT.incrementAndGet();
         this.project = project;
+        final int postCreationCount = ACTIVE_COUNT.incrementAndGet();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Created " + this + " for " + project + "; " + postCreationCount
+                    + " total now active in memory");
+        }
+    }
+
+    // See #193
+    @Override
+    protected void finalize() throws Throwable {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finalized " + this);
+        }
+        super.finalize();
     }
 
     @NotNull
@@ -141,6 +162,11 @@ public class CacheComponent implements
                         changesResult.getClientConfig().getClientServerRef(),
                         changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
                 sink.resolve(null);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(this + " opened cache refreshed; " + clientRoot.getClientRootDir()
+                            + " contains " + changelistMap.getEstimateCount() + " pending changes, "
+                            + fileMap.getEstimateSize() + " opened files.");
+                }
             })
             .whenServerError(sink::reject)));
         }
@@ -253,10 +279,21 @@ public class CacheComponent implements
             queryHandler = null;
             pendingHandler = null;
             updateListener = null;
+
+            int postReleaseCount = ACTIVE_COUNT.decrementAndGet();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Disposed " + this + " for " + project + "; " + postReleaseCount
+                        + " total still in memory");
+            }
         }
     }
 
     public boolean isDisposed() {
         return disposed;
+    }
+
+    @Override
+    public String toString() {
+        return "CacheComponent#" + instanceId;
     }
 }

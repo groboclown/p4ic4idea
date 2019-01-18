@@ -119,6 +119,11 @@ public class IdeFileMapImpl implements IdeFileMap {
         return cache.getCachedOpenedFiles(config).stream();
     }
 
+    @Override
+    public int getEstimateSize() {
+        return cache.getEstimateSize();
+    }
+
     private ClientConfigRoot getClientFor(FilePath file) {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
         return reg == null ? null : reg.getClientFor(file);

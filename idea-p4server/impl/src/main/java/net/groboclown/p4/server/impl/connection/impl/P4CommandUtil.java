@@ -252,6 +252,21 @@ public class P4CommandUtil {
      *
      * @param client client
      * @param files escaped file specs
+     * @return result
+     * @throws P4JavaException underlying error
+     */
+    public List<IFileSpec> revertFileChangesPreserveFiles(IClient client, List<IFileSpec> files)
+            throws P4JavaException {
+        LOG.warn("Performing revert on " + files, new Exception("Message for testing #181"));
+        RevertFilesOptions options = new RevertFilesOptions();
+        options.setNoClientRefresh(true);
+        return client.revertFiles(files, options);
+    }
+
+    /**
+     *
+     * @param client client
+     * @param files escaped file specs
      * @param fileType file type
      * @param changelistId changelist to edit the file in
      * @param charset charset
@@ -522,8 +537,11 @@ public class P4CommandUtil {
 
     public List<IFileSpec> moveFile(IClient client, IFileSpec source, IFileSpec target, P4ChangelistId changelistId)
             throws P4JavaException {
+        final int changelistNumber = (changelistId != null && !changelistId.isDefaultChangelist())
+                ? changelistId.getChangelistId()
+                : IChangelist.DEFAULT;
         MoveFileOptions options = new MoveFileOptions()
-                .setChangelistId(changelistId.getChangelistId())
+                .setChangelistId(changelistNumber)
                 .setForce(true);
         // No Client Move flag will not work for servers < 2009.2.
         // However, chances are high that the IDE has already deleted the source file.

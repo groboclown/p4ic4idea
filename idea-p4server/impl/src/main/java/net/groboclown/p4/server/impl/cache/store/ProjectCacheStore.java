@@ -295,4 +295,10 @@ public class ProjectCacheStore {
             throws InterruptedException {
         lockTimeout.withWriteLock(lock, () -> fun.accept(pendingActions));
     }
+
+    // See #193
+    public int getEstimateSize() {
+        // Note: not synchronized
+        return clientQueryCache.size() + serverQueryCache.size();
+    }
 }

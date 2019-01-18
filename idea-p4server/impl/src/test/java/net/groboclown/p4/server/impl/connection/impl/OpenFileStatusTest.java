@@ -34,8 +34,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
 import static net.groboclown.idea.ExtAsserts.assertSize;
@@ -334,6 +336,87 @@ class OpenFileStatusTest {
                     assertEquals(spec.getDepotPathString(), "//depot/abc.txt");
                     assertEquals(spec.getClientPathString(), "//client1/abc.txt");
                     assertEquals(spec.getLocalPathString(), newFile.getPath());
+                })
+                .whenFailed(Assertions::fail);
+    }
+
+    @ExtendWith(TemporaryFolderExtension.class)
+    @Test
+    void statusSort_move(TemporaryFolder tmpDir)
+            throws IOException {
+        idea.useInlineThreading(null);
+        MockConfigPart part = new MockConfigPart()
+                // By using the RSH port, it means that the connection will be kept open
+                // (NTS connection).  By keeping the connection open until explicitly
+                // disconnected, this will indirectly be testing that the
+                // SimpleConnectionManager closes the connection.
+                .withServerName(server.getRshUrl())
+                .withUsername(server.getUser())
+                .withNoPassword()
+                .withClientname("client1");
+        final ServerConfig serverConfig = ServerConfig.createFrom(part);
+        final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
+        final File clientRoot = tmpDir.newFile("clientRoot");
+        final FilePath srcFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
+        final FilePath tgtFile = VcsUtil.getFilePath(touchFile(clientRoot, "def.txt"));
+        final P4CommandUtil cmd = new P4CommandUtil();
+
+        setupClient(clientConfig, tmpDir, clientRoot)
+                .mapAsync((runner) ->
+                        runner.withConnection(clientConfig, (client) -> {
+                            // Add and submit the file to Perforce
+                            List<IFileSpec> addFiles = FileSpecBuildUtil.forFilePaths(srcFile);
+                            List<IFileSpec> msgs = cmd.addFiles(client, addFiles, null, null, null);
+                            MessageStatusUtil.throwIfError(msgs);
+                            IChangelist change = client.getServer().getChangelist(IChangelist.DEFAULT);
+                            change.setDescription("add initial file");
+                            msgs = cmd.submitChangelist(client, null, null, change, Collections.singletonList(srcFile));
+                            MessageStatusUtil.throwIfError(msgs);
+
+                            // Move, which is a two step process.
+                            List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(srcFile);
+                            List<IFileSpec> tgtFiles = FileSpecBuildUtil.forFilePaths(tgtFile);
+                            msgs = cmd.editFiles(client, srcFiles, null, null, null);
+                            MessageStatusUtil.throwIfError(msgs);
+                            msgs = cmd.moveFile(client, srcFiles.get(0), tgtFiles.get(0), null);
+                            MessageStatusUtil.throwIfError(msgs);
+
+                            List<IFileSpec> allFiles = Arrays.asList(srcFiles.get(0), tgtFiles.get(0));
+
+                            // Get the status
+                            return new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(),
+                                    allFiles, 1000));
+                        })
+                )
+                .whenCompleted((r) -> {
+                    assertSize(1, r.getAdd());
+                    assertEmpty(r.getMessages());
+                    assertEmpty(r.getFilesWithMessages());
+                    assertSize(1, r.getMoveMap().keySet());
+                    assertSize(1, r.getDelete());
+                    assertEmpty(r.getEdit());
+                    assertEmpty(r.getSkipped());
+                    assertSize(2, r.getOpen());
+                    assertEquals(2, r.getOpenedCount());
+
+                    IExtendedFileSpec spec = r.getDelete().iterator().next();
+                    assertNotNull(spec);
+                    assertEquals(spec.getDepotPathString(), "//depot/abc.txt");
+                    assertEquals(spec.getClientPathString(), "//client1/abc.txt");
+                    assertEquals(spec.getLocalPathString(), srcFile.getPath());
+
+                    spec = r.getAdd().iterator().next();
+                    assertNotNull(spec);
+                    assertEquals(spec.getDepotPathString(), "//depot/def.txt");
+                    assertEquals(spec.getClientPathString(), "//client1/def.txt");
+                    assertEquals(spec.getLocalPathString(), tgtFile.getPath());
+
+                    Map.Entry<IExtendedFileSpec, IExtendedFileSpec> moveSpec =
+                            r.getMoveMap().entrySet().iterator().next();
+                    assertNotNull(moveSpec.getKey());
+                    assertNotNull(moveSpec.getValue());
+                    assertEquals(moveSpec.getKey().getDepotPathString(), "//depot/abc.txt");
+                    assertEquals(moveSpec.getValue().getDepotPathString(), "//depot/def.txt");
                 })
                 .whenFailed(Assertions::fail);
     }

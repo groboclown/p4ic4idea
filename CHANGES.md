@@ -10,10 +10,14 @@
 ### Details
 
 * Bug fixes
+    * Changed logic behind add, edit, delete, and move operations.  If there was a previous,
+      un-checked-in operation on a file and a new one requires to revert that change, now the
+      file contents won't be altered with the revert (it now runs a `p4 revert -k`). 
     * Work to reduce memory leak (#193).
     * Mildly enhanced charset detection.
     * General code cleanup that may fix some possible lingering NPE and related issues.
-    * Enhanced logging information around inadvertent revert (#181).  Not actually fixed here. 
+    * Enhanced reporting information around inadvertent revert (#181), which includes an
+      option to show when reverts happen, to what files, and why.
 
 
 ## ::v0.10.2::

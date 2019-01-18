@@ -45,6 +45,7 @@ import net.groboclown.p4.server.api.messagebus.P4WarningMessage;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
+import net.groboclown.p4.server.api.messagebus.SpecialFileEventMessage;
 import net.groboclown.p4.server.api.messagebus.SwarmErrorMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4plugin.P4Bundle;
@@ -364,6 +365,26 @@ public class UserErrorComponent implements ProjectComponent, Disposable {
             public void reviewCreateFailed(@NotNull SwarmErrorMessage.SwarmEvent swarmEvent, @NotNull Exception e) {
                 simpleError(e.getMessage(),
                         "Create Review Returned Error");
+            }
+        });
+        SpecialFileEventMessage.addListener(projClient, this, new SpecialFileEventMessage.Listener() {
+            @Override
+            public void fileReverted(@NotNull SpecialFileEventMessage.SpecialFileEvent e) {
+                if (UserProjectPreferences.getNotifyOnRevert(project)) {
+                    simpleWarning(
+                            P4Bundle.message("user-error.file-reverted.message", e.getAffectedFiles(), e.getReason()),
+                            P4Bundle.message("user-error.file-reverted.title", e.getAffectedFiles()));
+                }
+            }
+
+            @Override
+            public void fileRevertSkipped(@NotNull SpecialFileEventMessage.SpecialFileEvent e) {
+                if (UserProjectPreferences.getNotifyOnRevert(project)) {
+                    simpleWarning(
+                            P4Bundle.message("user-error.file-revert-skipped.message",
+                                    e.getAffectedFiles(), e.getReason()),
+                            P4Bundle.message("user-error.file-revert-skipped.title", e.getAffectedFiles()));
+                }
             }
         });
     }

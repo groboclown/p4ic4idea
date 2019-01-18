@@ -63,6 +63,8 @@ public class UserProjectPreferences
     public static final int DEFAULT_RETRY_ACTION_COUNT = 2;
     public static final int MIN_RETRY_ACTION_COUNT = 0;
     public static final int MAX_RETRY_ACTION_COUNT = 5;
+    public static final boolean DEFAULT_NOTIFY_ON_REVERT = false;
+    public static final boolean DEFAULT_ONLY_EXPLICIT_REVERT = false;
 
     @NotNull
     private State state = new State();
@@ -119,6 +121,10 @@ public class UserProjectPreferences
         public int maxChangelistNameLength = DEFAULT_MAX_CHANGELIST_NAME_LENGTH;
 
         public int retryActionCount = DEFAULT_RETRY_ACTION_COUNT;
+
+        public boolean notifyOnRevert = DEFAULT_NOTIFY_ON_REVERT;
+
+        public boolean onlyExplicitRevert = DEFAULT_ONLY_EXPLICIT_REVERT;
     }
 
     @Nullable
@@ -392,6 +398,22 @@ public class UserProjectPreferences
 
     public void setRetryActionCount(int count) {
         state.retryActionCount = Math.min(MAX_RETRY_ACTION_COUNT, Math.max(MIN_RETRY_ACTION_COUNT, count));
+    }
+
+
+    // ====================================
+    // Used by UserErrorComponent
+    public static boolean getNotifyOnRevert(@Nullable final Project project) {
+        return getValue(project, DEFAULT_NOTIFY_ON_REVERT,
+                (prefs) -> prefs.getNotifyOnRevert());
+    }
+
+    public boolean getNotifyOnRevert() {
+        return state.notifyOnRevert;
+    }
+
+    public void setNotifyOnRevert(boolean v) {
+        state.notifyOnRevert = v;
     }
 
 

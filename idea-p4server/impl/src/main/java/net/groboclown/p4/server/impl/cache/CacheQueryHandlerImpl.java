@@ -296,6 +296,11 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         }
     }
 
+    @Override
+    public int getEstimateSize() {
+        return cache.getEstimateSize();
+    }
+
     // TODO look at using the CachePendingActionHandler's read.
     private void pendingClientActions(@NotNull ClientConfig config, @NotNull Consumer<P4CommandRunner.ClientAction<?>> f)
             throws InterruptedException {

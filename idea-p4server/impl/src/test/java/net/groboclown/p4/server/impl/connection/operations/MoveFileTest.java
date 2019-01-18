@@ -94,7 +94,7 @@ class MoveFileTest {
         final FilePath newFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
         final FilePath toFile = VcsUtil.getFilePath(new File(clientRoot, "xyz.txt"));
         final P4CommandUtil cmd = new P4CommandUtil();
-        MoveFile.INSTANCE.withCmd(cmd);
+        final MoveFile moveFile = new MoveFile(idea.getMockProject(), cmd);
 
         setupClient(clientConfig, tmpDir, clientRoot)
                 .mapAsync((runner) ->
@@ -110,7 +110,7 @@ class MoveFileTest {
                             MessageStatusUtil.throwIfError(msgs);
 
                             client.editFiles(srcFiles, new EditFilesOptions());
-                            MoveFileResult res = MoveFile.INSTANCE.moveFile(client, clientConfig,
+                            MoveFileResult res = moveFile.moveFile(client, clientConfig,
                                     new MoveFileAction(newFile, toFile, clId));
                             msgs = res.getServerMessages();
                             MessageStatusUtil.throwIfMessageOrEmpty("move", msgs);
@@ -153,7 +153,7 @@ class MoveFileTest {
         final FilePath fromFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
         final FilePath toFile = VcsUtil.getFilePath(touchFile(clientRoot, "xyz.txt"));
         final P4CommandUtil cmd = new P4CommandUtil();
-        MoveFile.INSTANCE.withCmd(cmd);
+        final MoveFile moveFile = new MoveFile(idea.getMockProject(), cmd);
 
         setContents(fromFile, "initial");
         assertEquals("initial", getContents(fromFile));
@@ -180,7 +180,7 @@ class MoveFileTest {
                             assertEquals("updated", getContents(fromFile));
 
                             MoveFileResult res =
-                                    MoveFile.INSTANCE.moveFile(client, clientConfig,
+                                    moveFile.moveFile(client, clientConfig,
                                             new MoveFileAction(fromFile, toFile, clId));
                             msgs = res.getServerMessages();
                             assertSize(1, msgs);
@@ -217,7 +217,6 @@ class MoveFileTest {
         final FilePath fromFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
         final FilePath toFile = VcsUtil.getFilePath(new File(clientRoot, "xyz.txt"));
         final P4CommandUtil cmd = new P4CommandUtil();
-        MoveFile.INSTANCE.withCmd(cmd);
 
         setupClient(clientConfig, tmpDir, clientRoot)
                 .mapAsync((runner) ->
@@ -280,7 +279,6 @@ class MoveFileTest {
         final FilePath fromFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
         final FilePath toFile = VcsUtil.getFilePath(touchFile(clientRoot, "xyz.txt"));
         final P4CommandUtil cmd = new P4CommandUtil();
-        MoveFile.INSTANCE.withCmd(cmd);
 
         setupClient(clientConfig, tmpDir, clientRoot)
                 .mapAsync((runner) ->
@@ -349,7 +347,6 @@ class MoveFileTest {
         final FilePath fromFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
         final FilePath toFile = VcsUtil.getFilePath(touchFile(clientRoot, "xyz.txt"));
         final P4CommandUtil cmd = new P4CommandUtil();
-        MoveFile.INSTANCE.withCmd(cmd);
 
         setupClient(clientConfig, tmpDir, clientRoot, new MockP4RequestErrorHandler())
                 .mapAsync((runner) ->
@@ -420,7 +417,6 @@ class MoveFileTest {
         final FilePath fromFile = VcsUtil.getFilePath(touchFile(clientRoot, "abc.txt"));
         final FilePath toFile = VcsUtil.getFilePath(touchFile(clientRoot, "xyz.txt"));
         final P4CommandUtil cmd = new P4CommandUtil();
-        MoveFile.INSTANCE.withCmd(cmd);
 
         setupClient(clientConfig, tmpDir, clientRoot)
                 .mapAsync((runner) ->
@@ -450,7 +446,7 @@ class MoveFileTest {
                                     srcFiles.get(0),
                                     tgtFiles.get(0),
                                     // If tgtFiles are not open for edit, then this will fail with
-                                    // tgt file is syched, use -f.
+                                    // tgt file is synced, use -f.
                                     // If -f is used, then the move operation fails because tgt is writable,
                                     // and it won't clobber writable files.
                                     new MoveFileOptions());

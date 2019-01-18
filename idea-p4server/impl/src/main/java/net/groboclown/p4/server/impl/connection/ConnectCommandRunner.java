@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.FilePath;
@@ -101,6 +102,7 @@ import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.messagebus.SpecialFileEventMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.values.P4FileType;
@@ -169,11 +171,19 @@ public class ConnectCommandRunner
     private static final Logger LOG = Logger.getInstance(ConnectCommandRunner.class);
     private final ConnectionManager connectionManager;
     private final P4CommandUtil cmd = new P4CommandUtil();
+    private final MoveFile moveFile;
+
+    // "project" is only used for sending messages to the client.  If that's removed, then this
+    // dependency can be removed.
+    private final Project project;
 
 
-    public ConnectCommandRunner(@NotNull ConnectionManager connectionManager) {
+    public ConnectCommandRunner(
+            @NotNull Project project,
+            @NotNull ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
-        MoveFile.INSTANCE.withCmd(cmd);
+        this.project = project;
+        this.moveFile = new MoveFile(project, cmd);
         SubmitChangelist.INSTANCE.withCmd(cmd);
 
         register(P4CommandRunner.ServerActionCmd.CREATE_JOB,
@@ -234,8 +244,8 @@ public class ConnectCommandRunner
         register(P4CommandRunner.ClientActionCmd.MOVE_FILE,
             (ClientActionRunner<MoveFileResult>) (config, action) ->
                 new ActionAnswerImpl<>(connectionManager.withConnection(config,
-                    MoveFile.INSTANCE.getExecDir(action),
-                    (client) -> MoveFile.INSTANCE.moveFile(client, config, action))));
+                    moveFile.getExecDir(action),
+                    (client) -> moveFile.moveFile(client, config, action))));
 
         register(P4CommandRunner.ClientActionCmd.REVERT_FILE,
             (ClientActionRunner<RevertFileResult>) (config, action) ->
@@ -596,7 +606,16 @@ public class ConnectCommandRunner
             addFile = true;
         } else if (status.hasDelete()) {
             // Revert the file
-            List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
+            // Note that the new file may already exist.  If that's the case, we do not want to alter
+            // the existing file.  See #181
+            SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                    status.getDelete().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                    "File marked for delete in changelist, so request to add the file reverted delete, but not the "
+                            + "file contents on disk."));
+
+            List<IFileSpec> reverted = cmd.revertFileChangesPreserveFiles(client,
+                    new ArrayList<>(status.getDelete()));
+
             LOG.info("File added, but server says it's deleted.  Reverted " + action.getFile() + ": " +
                     MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
@@ -759,8 +778,16 @@ public class ConnectCommandRunner
                     MessageStatusUtil.getExtendedMessages(status.getFilesWithMessages(), "\n"));
         }
         if (status.hasAdd()) {
-            List<IFileSpec> res = cmd.revertFiles(client, files, false);
-            LOG.info("Reverted files open for add rather than deleting them: " + action.getFile() + "; results = " +
+            // See #181
+            SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                    status.getAdd().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                    "File marked as open for add, and delete request reverted the add, but does not alter the on-disk"
+                            + " file contents."));
+
+            List<IFileSpec> res = cmd.revertFileChangesPreserveFiles(client,
+                    new ArrayList<>(status.getAdd()));
+
+            LOG.info("Reverted files open for add rather than deleting them: " + status.getAdd() + "; results = " +
                     MessageStatusUtil.getMessages(res, "\n"));
             MessageStatusUtil.throwIfError(res);
             return new DeleteFileResult(config, P4RemoteFileImpl.createFor(files),
@@ -768,7 +795,14 @@ public class ConnectCommandRunner
                     MessageStatusUtil.getMessages(res, "\n"));
         }
         if (status.hasEdit()) {
-            List<IFileSpec> res = cmd.revertFiles(client, files, false);
+            // See #181
+            SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                    status.getEdit().stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                    "File marked for delete in changelist, so Add request reverted delete but does not alter the "
+                            + "on-disk file contents."));
+
+            List<IFileSpec> res = cmd.revertFileChangesPreserveFiles(client,
+                    new ArrayList<>(status.getEdit()));
             LOG.info("Reverting files open for edit in preparation for delete: " + action.getFile() + "; results = " +
                     MessageStatusUtil.getMessages(res, "\n"));
             MessageStatusUtil.throwIfError(res);
@@ -832,7 +866,12 @@ public class ConnectCommandRunner
 
     private RevertFileResult revertFile(IClient client, ClientConfig config, RevertFileAction action)
             throws P4JavaException {
+        // Explicit request to revert the file.  So the file contents will be changed in the operation.
+
         List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
+        SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
+                srcFiles.stream().map(IFileSpec::toString).collect(Collectors.toList()),
+                "User request to revert files; on-disk contents changed."));
         List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
         LOG.info("Explicit revert " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
         MessageStatusUtil.throwIfError(reverted);

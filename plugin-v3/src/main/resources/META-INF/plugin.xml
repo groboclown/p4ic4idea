@@ -8,10 +8,14 @@
     <change-notes><![CDATA[
     <ul>
       <li><em>0.10.3</em><ul>
+        <li>Fixed a blocker issue with revert file changelist status (e.g. change from delete to edit)
+        where the file contents were also being altered.  Perforce revert operations should now
+        alter the file contents only when explicitly requested to do so.</li>
         <li>Work to reduce memory leak.</li>
         <li>Mildly enhanced charset detection.</li>
         <li>General code cleanup that may fix some possible lingering NPE and related issues.</li>
-        <li>Enhanced logging information around inadvertent revert.  Not actually fixed here.</li>
+        <li>Enhanced reporting information around non-explicit reverts, and added a user preference
+        to show information about reports in the UI when they happen.</li>
       </ul></li>
       <li><em>0.10.2</em><ul>
         <li>Added setting to retry connection on socket timeout.</li>

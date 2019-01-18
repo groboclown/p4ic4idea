@@ -122,4 +122,7 @@ public interface IdeChangelistMap {
      */
     void clearChangesNotIn(@NotNull Collection<ClientServerRef> clients)
             throws InterruptedException;
+
+    // See #193
+    int getEstimateCount();
 }

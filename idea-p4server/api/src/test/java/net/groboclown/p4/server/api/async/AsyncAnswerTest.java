@@ -85,6 +85,7 @@ class AsyncAnswerTest {
         assertEquals(1, tr.getPooledThreadsRunCount());
 
         tr.assertNoExceptions();
+        tr.assertAllActionsCompleted();
 
         // Now that it completed, ensure that immediate requests are
         // handled right.
@@ -99,6 +100,9 @@ class AsyncAnswerTest {
             completedCount.incrementAndGet();
         });
         assertEquals(1, completedCount.get());
+
+        tr.assertNoExceptions();
+        tr.assertAllActionsCompleted();
     }
 
     @Test
@@ -141,6 +145,7 @@ class AsyncAnswerTest {
         assertTrue(tailLatch.await(5, TimeUnit.SECONDS));
 
         tr.assertNoExceptions();
+        tr.assertAllActionsCompleted();
     }
 
     @Test

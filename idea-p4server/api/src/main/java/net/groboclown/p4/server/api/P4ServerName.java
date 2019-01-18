@@ -29,6 +29,9 @@ public class P4ServerName {
     private final String protocolName;
     private final IServerAddress.Protocol protocol;
 
+    // TODO look at keeping a cache of these to reduce total memory, similar to String.intern?
+    // Could just end up being a bigger memory hog in the end.
+
     @Nullable
     public static P4ServerName forPort(@Nullable final String portText) {
         if (portText == null) {

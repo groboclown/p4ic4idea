@@ -17,6 +17,7 @@ package net.groboclown.p4.server;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
@@ -129,10 +130,12 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     /** NOTE: callers must properly register the dispose chain. */
     public TopCommandRunner(@NotNull Project project,
             @NotNull CacheQueryHandler queryCache, @NotNull CachePendingActionHandler pendingActionCache,
-            @NotNull AbstractServerCommandRunner server) {
+            @NotNull AbstractServerCommandRunner server,
+            @NotNull Disposable parentDisposable) {
         this.queryCache = queryCache;
         this.pendingActionCache = pendingActionCache;
         this.server = server;
+        Disposer.register(parentDisposable, this);
 
         final Map<VirtualFile, ClientConfig> clientConfigs = new HashMap<>();
 
@@ -599,7 +602,10 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @Override
     public void dispose() {
-        disposed = true;
+        if (!disposed) {
+            disposed = true;
+            Disposer.dispose(this);
+        }
     }
 
     public boolean isDisposed() {

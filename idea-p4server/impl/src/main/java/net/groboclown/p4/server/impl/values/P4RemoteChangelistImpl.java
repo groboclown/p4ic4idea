@@ -111,7 +111,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
         public Builder withChangelist(ServerConfig config, IChangelist changelist) {
             ClientServerRef ref = new ClientServerRef(config.getServerName(), changelist.getClientId());
             this.changelistId = new P4ChangelistIdImpl(changelist.getId(), ref);
-            this.summary = new P4ChangelistSummaryImpl(config, ref, changelist);
+            this.summary = new P4ChangelistSummaryImpl(ref, changelist);
             this.comment = changelist.getDescription();
             this.deleted = false;
             this.onServer = true;
@@ -148,7 +148,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
     }
 
 
-    public P4RemoteChangelistImpl(P4ChangelistId changelistId,
+    private P4RemoteChangelistImpl(P4ChangelistId changelistId,
             P4ChangelistSummary summary, String comment, boolean deleted, boolean onServer, boolean shelved,
             Date submittedDate, P4ChangelistType changelistType, String clientname, String username,
             List<P4Job> attachedJobs, JobStatus jobStatus,

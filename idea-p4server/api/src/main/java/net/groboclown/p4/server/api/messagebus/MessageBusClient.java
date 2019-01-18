@@ -17,6 +17,7 @@ package net.groboclown.p4.server.api.messagebus;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.messages.Topic;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +33,7 @@ public class MessageBusClient {
             connection.subscribe(topic, listener);
         }
 
-        public void close() {
+        void close() {
             connection.disconnect();
         }
     }
@@ -47,18 +48,25 @@ public class MessageBusClient {
             connection.subscribe(topic, listener);
         }
 
-        public void close() {
+        void close() {
             connection.disconnect();
         }
     }
 
     @NotNull
     public static ProjectClient forProject(@NotNull Project project, @NotNull Disposable owner) {
-        return new ProjectClient(project.getMessageBus().connect(owner));
+        ProjectClient ret = new ProjectClient(project.getMessageBus().connect(owner));
+        // Just to be sure...
+        Disposer.register(owner, ret::close);
+        return ret;
     }
 
     @NotNull
     public static ApplicationClient forApplication(@NotNull Disposable owner) {
-        return new ApplicationClient(ApplicationManager.getApplication().getMessageBus().connect(owner));
+        ApplicationClient ret =
+                new ApplicationClient(ApplicationManager.getApplication().getMessageBus().connect(owner));
+        // Just to be sure...
+        Disposer.register(owner, ret::close);
+        return ret;
     }
 }

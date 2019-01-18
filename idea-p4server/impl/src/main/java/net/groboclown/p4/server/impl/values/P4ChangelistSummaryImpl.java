@@ -30,8 +30,7 @@ public class P4ChangelistSummaryImpl implements P4ChangelistSummary {
     private final boolean submitted;
     private final boolean hasShelved;
 
-    public P4ChangelistSummaryImpl(@NotNull ServerConfig config, @NotNull ClientServerRef ref,
-            @NotNull IChangelistSummary summary) {
+    public P4ChangelistSummaryImpl(@NotNull ClientServerRef ref, @NotNull IChangelistSummary summary) {
         id = new P4ChangelistIdImpl(summary.getId(), ref);
         comment = summary.getDescription();
         submitted = summary.getStatus() == ChangelistStatus.SUBMITTED;

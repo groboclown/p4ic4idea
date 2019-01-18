@@ -17,14 +17,10 @@ package net.groboclown.p4.server.api.cache.messagebus;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
-import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.messagebus.ApplicationMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Optional;
 
 /**
  * Cache update message that is broadcast across the application.  Event topic
@@ -94,32 +90,19 @@ public class AbstractCacheMessage<E extends AbstractCacheUpdateEvent<E>>
                 Topic.BroadcastDirection.TO_CHILDREN);
     }
 
-    static P4CommandRunner.ServerResultException createUnknownError(final Throwable t) {
-        if (t instanceof P4CommandRunner.ServerResultException) {
-            return (P4CommandRunner.ServerResultException) t;
-        }
-        return new P4CommandRunner.ServerResultException(new P4CommandRunner.ResultError() {
-            @NotNull
-            @Override
-            public P4CommandRunner.ErrorCategory getCategory() {
-                return P4CommandRunner.ErrorCategory.INTERNAL;
-            }
-
-            @Nls
-            @NotNull
-            @Override
-            public Optional<String> getMessage() {
-                return Optional.ofNullable(t.getMessage());
-            }
-        }, t);
-    }
-
     public static String createCacheId(@NotNull Project project, @NotNull Class<?> cacheClass) {
         // This helps protect the cache against multiple registration
         return cacheClass.getCanonicalName() + '@' + project.getBasePath();
     }
 
-    private static <E> Class<E> getTopicListenerClass() {
-        return (Class<E>) TopicListener.class;
+    // This weirdness is because we need a TopicListener class reference, and that's a typed
+    // reference, but it doesn't make sense to have a class object of a genericized class...  Just
+    // a weirdness caused by too much explicit typing, I guess.  Either way, the casting won't cause
+    // a type exception.
+    @SuppressWarnings("unchecked")
+    private static <F extends AbstractCacheUpdateEvent<F>, G extends TopicListener<F>> Class<G> getTopicListenerClass() {
+        // Doubled up conversion to avoid a "cannot cast" compile error.
+        Object o = TopicListener.class;
+        return (Class<G>) o;
     }
 }

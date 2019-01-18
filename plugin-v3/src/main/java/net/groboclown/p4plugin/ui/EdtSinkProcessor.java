@@ -21,9 +21,8 @@ import com.intellij.util.ui.AsyncProcessIcon;
 import net.groboclown.p4.server.api.async.Answer;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.openapi.progress.ProgressIndicator;
-import org.jetbrains.concurrency.Promise;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;

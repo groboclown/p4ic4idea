@@ -25,7 +25,7 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
-import net.groboclown.p4.server.impl.values.P4LocalChangelistBuilder;
+import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import net.groboclown.p4.server.impl.values.P4LocalFileImpl;
 import net.groboclown.p4.server.impl.values.P4RemoteFileImpl;
 import org.jetbrains.annotations.NotNull;
@@ -75,7 +75,7 @@ public class OpenedFilesChangesFactory {
         List<P4LocalChangelist> ret = new ArrayList<>(changes.size() + 1);
 
         // Default changelist
-        ret.add(new P4LocalChangelistBuilder()
+        ret.add(new P4LocalChangelistImpl.Builder()
                 .withDefaultChangelist(clientConfig.getClientServerRef())
                 .withClientname(clientConfig.getClientname())
                 .withUsername(clientConfig.getServerConfig().getUsername())
@@ -85,7 +85,7 @@ public class OpenedFilesChangesFactory {
 
         for (IChangelist change : changes) {
             ret.add(
-                    new P4LocalChangelistBuilder()
+                    new P4LocalChangelistImpl.Builder()
                             .withChangelistId(clientConfig.getClientServerRef(), change.getId())
                             .withClientname(clientConfig.getClientname())
                             .withUsername(clientConfig.getServerConfig().getUsername())

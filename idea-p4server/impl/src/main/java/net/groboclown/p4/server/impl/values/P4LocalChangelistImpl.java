@@ -15,8 +15,8 @@
 package net.groboclown.p4.server.impl.values;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.core.IChangelist;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistType;
@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Immutable
@@ -79,6 +80,16 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
             return this;
         }
 
+        public Builder withChangelistId(@NotNull ClientServerRef ref, int id) {
+            this.changelistId = new P4ChangelistIdImpl(id, ref);
+            return this;
+        }
+
+        public Builder withDefaultChangelist(@NotNull ClientServerRef ref) {
+            this.changelistId = new P4ChangelistIdImpl(IChangelist.DEFAULT, ref);
+            return this;
+        }
+
         public Builder withComment(String comment) {
             this.comment = comment;
             return this;
@@ -94,7 +105,7 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
             return this;
         }
 
-        public Builder withDelete(boolean b) {
+        public Builder withDeleted(boolean b) {
             this.deleted = b;
             return this;
         }
@@ -117,15 +128,33 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
             return this;
         }
 
-        public Builder withType(P4ChangelistType type) {
+        public Builder withChangelistType(P4ChangelistType type) {
             this.type = type;
             return this;
         }
 
-        public Builder withVirtualFiles(VirtualFile... files) {
-            for (VirtualFile file : files) {
-                this.containedFiles.add(VcsUtil.getFilePath(file));
-            }
+        public Builder withContainedFiles(Collection<FilePath> files) {
+            this.containedFiles.addAll(files);
+            return this;
+        }
+
+        public Builder withShelvedFiles(Collection<P4RemoteFile> files) {
+            this.shelvedFiles.addAll(files);
+            return this;
+        }
+
+        public Builder withJobs(Collection<P4Job> jobs) {
+            this.jobs.addAll(jobs);
+            return this;
+        }
+
+        public Builder withJobStatus(JobStatus jobStatus) {
+            this.jobStatus = jobStatus;
+            return this;
+        }
+
+        public Builder withJobStatus(String jobStatus) {
+            this.jobStatus = jobStatus == null ? null : new JobStatusImpl(jobStatus);
             return this;
         }
 
@@ -137,7 +166,7 @@ public class P4LocalChangelistImpl implements P4LocalChangelist {
 
 
 
-    P4LocalChangelistImpl(
+    private P4LocalChangelistImpl(
             @NotNull P4ChangelistId changelistId,
             @NotNull String comment, boolean deleted,
             @NotNull List<FilePath> containedFiles,

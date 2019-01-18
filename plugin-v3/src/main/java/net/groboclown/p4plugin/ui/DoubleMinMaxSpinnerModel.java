@@ -45,7 +45,8 @@ public class DoubleMinMaxSpinnerModel
 
     @Override
     public void setValue(final Object value) {
-        if (value == null || !(value instanceof Number)) {
+        if (!(value instanceof Number)) {
+            // This includes a null check.
             return;
         }
         double newValue = Math.min(

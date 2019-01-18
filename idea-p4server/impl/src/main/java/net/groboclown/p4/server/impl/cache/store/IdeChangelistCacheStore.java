@@ -20,7 +20,7 @@ import net.groboclown.p4.server.api.config.LockTimeoutProvider;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.impl.config.LockTimeoutProviderImpl;
-import net.groboclown.p4.server.impl.values.P4LocalChangelistBuilder;
+import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +55,6 @@ public class IdeChangelistCacheStore {
     }
 
 
-    @SuppressWarnings("WeakerAccess")
     public static class LinkedChangelistState {
         public P4ChangelistIdStore.State changelistId;
         public String linkedLocalChangeId;
@@ -116,7 +115,7 @@ public class IdeChangelistCacheStore {
             P4LocalChangelist pending = pendingChangelists.get(actionId);
             if (pending == null && create) {
                 int next = pendingChangelistIdCounter.decrementAndGet();
-                pending = new P4LocalChangelistBuilder()
+                pending = new P4LocalChangelistImpl.Builder()
                         .withChangelistId(action.getClientServerRef(), next)
                         .withClientname(action.getClientServerRef().getClientName())
                         .withComment(action.getComment())

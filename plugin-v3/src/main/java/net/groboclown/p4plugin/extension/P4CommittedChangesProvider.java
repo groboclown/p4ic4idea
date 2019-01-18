@@ -86,7 +86,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 
 // CachingCommittedChangesProvider is required to use the Repository built-in tab, and that built-in tab
-// always appears when the VCS is centralized.
+// always appears when the VCS is marked as centralized (as opposed to distributed).
 public class P4CommittedChangesProvider implements
         CachingCommittedChangesProvider<P4CommittedChangelist, P4ChangeBrowserSettings> {
     private static final Logger LOG = Logger.getInstance(P4CommittedChangesProvider.class);

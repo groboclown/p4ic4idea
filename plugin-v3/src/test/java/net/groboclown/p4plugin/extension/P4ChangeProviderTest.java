@@ -23,12 +23,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.file.FileAction;
-import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.Changelist;
-import com.perforce.p4java.impl.generic.core.ChangelistSummary;
 import com.perforce.p4java.impl.generic.core.file.ExtendedFileSpec;
-import com.perforce.p4java.impl.mapbased.server.Server;
 import net.groboclown.idea.extensions.ErrorCollectorExtension;
 import net.groboclown.idea.extensions.Errors;
 import net.groboclown.idea.extensions.TemporaryFolder;
@@ -45,7 +42,6 @@ import net.groboclown.p4plugin.ui.DummyProgressIndicator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.ArgumentMatcher;
 
 import java.io.File;
 import java.io.IOException;
@@ -115,7 +111,7 @@ class P4ChangeProviderTest {
         assertEquals(ADD_EDIT_FILE, vcs.cacheComponent.getState().pendingActions.get(0).clientActionCmd);
 
         // Run the test.
-        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs);
+        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs, vcs.getMockProject());
         provider.getChanges(dirtyScope, changeBuilder, progressIndicator, addGate);
 
         // Validations
@@ -175,7 +171,7 @@ class P4ChangeProviderTest {
         vcs.addIdeChangelist("Test change", "A test change", false);
 
         // Run the test.
-        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs);
+        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs, vcs.getMockProject());
         provider.getChanges(dirtyScope, changeBuilder, progressIndicator, addGate);
 
         // Validations
@@ -318,7 +314,7 @@ class P4ChangeProviderTest {
                 });
 
         // Update the cache.
-        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs);
+        P4ChangeProvider provider = new P4ChangeProvider(vcs.vcs, vcs.getMockProject());
         provider.getChanges(dirtyScope, changeBuilder, progressIndicator, addGate);
 
         // Initial validations that refresh worked.

@@ -21,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
 
 public class CreateChangelistAction extends AbstractAction
         implements P4CommandRunner.ClientAction<CreateChangelistResult> {
+    private static final int MAX_COMMENT_LENGTH = 25;
+    private static final String COMMENT_CONTINUED = "...";
+    private static final int COMMENT_CONTINUED_LENGTH = MAX_COMMENT_LENGTH - COMMENT_CONTINUED.length();
     private final String actionId;
     private final ClientServerRef ref;
     private final String comment;
@@ -74,8 +77,8 @@ public class CreateChangelistAction extends AbstractAction
     @Override
     public String[] getDisplayParameters() {
         String p = comment;
-        if (comment.length() > 25) {
-            p = comment.substring(0, 22) + "...";
+        if (comment.length() > MAX_COMMENT_LENGTH) {
+            p = comment.substring(0, COMMENT_CONTINUED_LENGTH) + COMMENT_CONTINUED;
         }
         return new String[] { p };
     }

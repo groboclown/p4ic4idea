@@ -142,11 +142,7 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
     }
 
     private void setServerName(@Nullable P4ServerName port) {
-        if (port != null) {
-            setTrimmed(PORT_KEY, port.getFullPort());
-        } else {
-            setTrimmed(PORT_KEY, null);
-        }
+        setTrimmed(PORT_KEY, port == null ? null : port.getFullPort());
     }
 
     // ----------------------------------------------------------------------
@@ -346,11 +342,7 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
     }
 
     public void setLoginSsoFile(@Nullable File file) {
-        if (file != null) {
-            setTrimmed(LOGIN_SSO_KEY, file.getAbsolutePath());
-        } else {
-            setTrimmed(LOGIN_SSO_KEY, null);
-        }
+        setTrimmed(LOGIN_SSO_KEY, file == null ? null : file.getAbsolutePath());
     }
 
     // ----------------------------------------------------------------------

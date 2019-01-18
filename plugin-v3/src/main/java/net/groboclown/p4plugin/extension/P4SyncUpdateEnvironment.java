@@ -14,7 +14,6 @@
 
 package net.groboclown.p4plugin.extension;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -53,11 +52,10 @@ import java.util.concurrent.TimeUnit;
 
 public class P4SyncUpdateEnvironment
         implements UpdateEnvironment {
-    private static final Logger LOG = Logger.getInstance(P4SyncUpdateEnvironment.class);
     private final Project project;
     private SyncOptions options = SyncOptions.createDefaultSyncOptions();
 
-    public P4SyncUpdateEnvironment(Project project) {
+    P4SyncUpdateEnvironment(Project project) {
         this.project = project;
     }
 
@@ -80,22 +78,23 @@ public class P4SyncUpdateEnvironment
             return ret;
         }
 
-        final Map<String, FileGroup> groups = sortByFileGroupId(updatedFiles.getTopLevelGroups(), null);
+        final Map<String, FileGroup> groups = collateByFileGroupId(updatedFiles.getTopLevelGroups(), null);
         final Map<ClientConfigRoot, List<FilePath>> filesByRoot = new HashMap<>();
         for (FilePath filePath : filePaths) {
             filesByRoot.computeIfAbsent(registry.getClientFor(filePath), k -> new ArrayList<>()).add(filePath);
         }
         final double inc = filesByRoot.isEmpty() ? 1.0 : (1.0 / filesByRoot.size());
-        final double pos[] = { 0.0 };
+        final double[] pos = { 0.0 };
 
-        filesByRoot.entrySet().forEach((entry) -> {
+        filesByRoot.forEach((key, value) -> {
             try {
                 FetchFilesResult res =
                         P4ServerComponent
-                                .perform(project, entry.getKey().getClientConfig(),
-                                        new FetchFilesAction(entry.getValue(), options.getSpecAnnotation(),
+                                .perform(project, key.getClientConfig(),
+                                        new FetchFilesAction(value, options.getSpecAnnotation(),
                                                 options.isForce()))
-                                .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
+                                .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
+                                        TimeUnit.MILLISECONDS);
                 updateForResult(res, groups);
                 pos[0] += inc;
                 progressIndicator.setFraction(pos[0]);
@@ -109,7 +108,10 @@ public class P4SyncUpdateEnvironment
         return ret;
     }
 
-    private void updateForResult(FetchFilesResult res, Map<String, FileGroup> groups) {
+    private void updateForResult(@Nullable FetchFilesResult res, Map<String, FileGroup> groups) {
+        if (res == null) {
+            return;
+        }
         for (P4LocalFile file : res.getFiles()) {
 
             // hardRefresh and refresh are deprecated now.  We don't need to do that anymore.
@@ -125,7 +127,6 @@ public class P4SyncUpdateEnvironment
         }
     }
 
-    @Nullable
     private String getGroupIdFor(@NotNull final P4LocalFile file) {
         switch (file.getFileAction()) {
             case ADD:
@@ -201,14 +202,14 @@ public class P4SyncUpdateEnvironment
         return false;
     }
 
-    private Map<String, FileGroup> sortByFileGroupId(final List<FileGroup> groups, Map<String, FileGroup> sorted) {
+    private Map<String, FileGroup> collateByFileGroupId(final List<FileGroup> groups, Map<String, FileGroup> sorted) {
         if (sorted == null) {
             sorted = new HashMap<>();
         }
 
         for (FileGroup group : groups) {
             sorted.put(group.getId(), group);
-            sorted = sortByFileGroupId(group.getChildren(), sorted);
+            sorted = collateByFileGroupId(group.getChildren(), sorted);
         }
 
         return sorted;
@@ -216,7 +217,7 @@ public class P4SyncUpdateEnvironment
 
     static class SyncUpdateSession implements UpdateSession {
         private boolean cancelled = false;
-        private List<VcsException> exceptions = new ArrayList<VcsException>();
+        private List<VcsException> exceptions = new ArrayList<>();
 
         @NotNull
         @Override

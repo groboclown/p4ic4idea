@@ -15,9 +15,11 @@
 package net.groboclown.p4plugin.components;
 
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.exception.ClientError;
@@ -56,11 +58,12 @@ import java.util.concurrent.CancellationException;
 /**
  * Reports errors to the user
  */
-public class UserErrorComponent implements ProjectComponent {
+public class UserErrorComponent implements ProjectComponent, Disposable {
     private static final Logger LOG = Logger.getInstance(UserErrorComponent.class);
     private static final String COMPONENT_NAME = "p4ic4idea:User Error Component";
 
     private final Project project;
+    private boolean disposed = false;
 
     public UserErrorComponent(Project project) {
         this.project = project;
@@ -73,14 +76,13 @@ public class UserErrorComponent implements ProjectComponent {
 
     @Override
     public void projectClosed() {
-
     }
 
     @SuppressWarnings("Convert2Lambda")
     @Override
     public void initComponent() {
-        MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(project);
-        MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, project);
+        MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(this);
+        MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, this);
         CancellationMessage.addListener(projClient, this, new CancellationMessage.Listener() {
             @Override
             public void cancelled(@NotNull ErrorEvent<CancellationException> e) {
@@ -94,7 +96,8 @@ public class UserErrorComponent implements ProjectComponent {
             @Override
             public void unknownServer(@NotNull ServerErrorEvent.ServerNameErrorEvent<Exception> event) {
                 simpleError(
-                        P4Bundle.message("user-error.unknown-server.message", event.getName()),
+                        // #138 - show the display name
+                        P4Bundle.message("user-error.unknown-server.message", event.getName().getDisplayName()),
                         P4Bundle.message("user-error.unknown-server.title"));
                 LOG.warn(event.getError());
             }
@@ -367,7 +370,19 @@ public class UserErrorComponent implements ProjectComponent {
 
     @Override
     public void disposeComponent() {
-        // TODO Perform listener dispose?
+        dispose();
+    }
+
+    @Override
+    public void dispose() {
+        if (!disposed) {
+            disposed = true;
+            Disposer.dispose(this);
+        }
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 
     @NotNull

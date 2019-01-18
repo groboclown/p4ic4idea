@@ -64,7 +64,7 @@ public class PersistentRootConfigComponent
     }
 
     @Nullable
-    public List<ConfigPart> getConfigPartsForRoot(@NotNull VirtualFile root) {
+    List<ConfigPart> getConfigPartsForRoot(@NotNull VirtualFile root) {
         List<ConfigPart> res;
         synchronized (sync) {
             res = rootPartMap.get(root);
@@ -104,11 +104,11 @@ public class PersistentRootConfigComponent
     public void disposeComponent() {
     }
 
-    public boolean hasConfigPartsForRoot(@NotNull VirtualFile root) {
+    boolean hasConfigPartsForRoot(@NotNull VirtualFile root) {
         return getConfigPartsForRoot(root) != null;
     }
 
-    public void setConfigPartsForRoot(@NotNull VirtualFile root, @NotNull List<ConfigPart> parts) {
+    void setConfigPartsForRoot(@NotNull VirtualFile root, @NotNull List<ConfigPart> parts) {
         List<ConfigPart> copy = Collections.unmodifiableList(new ArrayList<>(parts));
         synchronized (sync) {
             rootPartMap.put(root, copy);
@@ -131,9 +131,6 @@ public class PersistentRootConfigComponent
             configElement.addContent(rootElement);
             ret.addContent(configElement);
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Returning serialized state: " + new XMLOutputter().outputString(ret));
-        }
         return ret;
     }
 
@@ -143,15 +140,9 @@ public class PersistentRootConfigComponent
             LOG.warn("Loaded null or empty state");
             return;
         }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Reading serialized state: " + new XMLOutputter().outputString(element));
-        }
         synchronized (sync) {
             rootPartMap.clear();
             for (Element root : element.getChildren("root")) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Parsing " + new XMLOutputter().outputString(root));
-                }
                 if (root.getChildren().isEmpty()) {
                     LOG.warn("Invalid parsing of serialized node " + new XMLOutputter().outputString(root));
                     continue;

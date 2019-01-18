@@ -10,6 +10,10 @@
 ### Details
 
 * Bug fixes
+    * Work to reduce memory leak (#193).
+    * Mildly enhanced charset detection.
+    * General code cleanup that may fix some possible lingering NPE and related issues.
+    * Enhanced logging information around inadvertent revert (#181).  Not actually fixed here. 
 
 
 ## ::v0.10.2::

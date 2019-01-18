@@ -14,21 +14,14 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
-import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.values.P4Job;
-import net.groboclown.p4.server.api.values.P4JobField;
 import net.groboclown.p4.server.impl.values.P4JobImpl;
 import org.jetbrains.annotations.NotNull;
 
-import java.text.ParseException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class P4JobStore {
-    private static final Logger LOG = Logger.getInstance(P4JobStore.class);
-
-
     @SuppressWarnings("WeakerAccess")
     public static class State {
         public String jobId;

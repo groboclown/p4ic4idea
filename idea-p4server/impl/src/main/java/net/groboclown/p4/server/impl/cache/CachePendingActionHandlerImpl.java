@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -191,6 +190,7 @@ public class CachePendingActionHandlerImpl implements CachePendingActionHandler 
                     (a.serverAction != null && a.sourceId.equals(serverSourceId));
         }
 
+        // This is a filtered iterator.  Could reuse other code here.
         private class ActionChoiceIterator
                 implements Iterator<ActionChoice> {
             private final Iterator<ActionStore.PendingAction> proxy;

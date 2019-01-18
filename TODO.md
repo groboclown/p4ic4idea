@@ -38,9 +38,42 @@ Connect with SSO server.
 
 ## Bugs
 
+### Memory Leak
+
+(#193)
+
+Possible contenders:
+    * AbstractCacheUpdateEvent - should be minor in memory size, but if something keeps these objects around,
+        it will explode in memory size.  Debugging added to check for creation / deletion.
+    * P4ServerName, P4ClientRef - simple objects that could be reused.  Might lead to additional memory problems,
+        and they don't take up much memory on their own, anyway.
+    * WriteActionCacheImpl - might be too heavyweight, since it is created with most write cache actions.
+    * CacheComponent - ensure access to internal cache objects is better restricted, to prevent leaking data out where
+        it shouldn't be stored.
+    * ConnectCommandRunner - creates a whole bunch of objects.  Is there room for improvement?
+    * BasicAction - recursively collects files.  Need to ensure nothing keeps hold of this data.
+    * P4ServerComponent - can create new instances, leading to a memory leak.
+    * Project and Application component types - ensure that if they are created outside the standard lifecycle, they
+        are cleaned up right.
+    * P4ChangeProvider - does a whole bunch of memory stuff during each call.  May also need file cache cleanup
+        implemented.
+    * P4AnnotatedFileImpl - seems to use a bunch of memory (by necessity), but the IDE might hold on to it, or it
+      might call some kind of dispose that isn't listened to.
+    * ProjectConfigRegistryImpl, TopCommandRunner
+    * SubmitModel / SubmitPanel - not a normal model for the components.
+    
+
+Alternative ideas:
+    * Hash key for configs in stores aren't correct - this would cause the cache state to explode while showing
+      incorrect cache state across different calls.  Contenders are P4ServerName, ServerConfig, ClientConfig,
+      ClientServerRef.  State might be right if they all have listeners.
+    * The issue may be happening when the server needs to reconnect (people complaining had this issue).  Maybe it's
+      with the code related to creating the new server connection.  Old server connection is kept around somewhere?
+    * Background tasks eat up memory, or hold onto a large object graph.
+
 ### Revert File Logic
 
-**Priority: Critical**
+**Priority: Block**
 
 (#181) Revert file functionality might have an issue in terms of where it's being applied.
 
@@ -199,3 +232,9 @@ but it's not necessary for correct operation.
 ### Annotation Gutter Options
 
 There are many grayed-out options in the context menu for the Annotation gutter.  Explore ways to enable these.
+
+### `P4CommandRunner.FutureResult`
+
+This class isn't used as initially intended.  Need to re-examine the users of this class to ensure that it's still
+needed (think about possible future functionality needs).  If it isn't needed, then rethink how it should be used
+instead.

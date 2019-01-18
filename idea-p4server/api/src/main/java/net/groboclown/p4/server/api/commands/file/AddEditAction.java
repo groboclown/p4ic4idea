@@ -95,7 +95,7 @@ public class AddEditAction extends AbstractAction implements P4CommandRunner.Cli
         if (changelistId != null) {
             return new String[] { changeId(changelistId) };
         }
-        return new String[0];
+        return EMPTY;
     }
 
     @NotNull

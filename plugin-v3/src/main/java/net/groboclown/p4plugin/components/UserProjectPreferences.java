@@ -134,7 +134,6 @@ public class UserProjectPreferences
     }
 
 
-    @SuppressWarnings("NullableProblems")
     @Nullable
     @Override
     public State getState() {

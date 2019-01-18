@@ -65,7 +65,7 @@ public class P4WorkspaceSummaryStore {
 
     @NotNull
     public P4WorkspaceSummary read(@NotNull State state) {
-        return new P4WorkspaceSummaryImpl.Builder()
+        return P4WorkspaceSummaryImpl.builder()
                 .setClientname(state.clientname)
                 .setLastUpdate(new Date(state.lastUpdate))
                 .setLastAccess(new Date(state.lastAccess))

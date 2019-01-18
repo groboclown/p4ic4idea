@@ -1,21 +1,23 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.2</version>
+    <version>0.10.3</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.3</em><ul>
+        <li>Work to reduce memory leak.</li>
+        <li>Mildly enhanced charset detection.</li>
+        <li>General code cleanup that may fix some possible lingering NPE and related issues.</li>
+        <li>Enhanced logging information around inadvertent revert.  Not actually fixed here.</li>
+      </ul></li>
       <li><em>0.10.2</em><ul>
         <li>Added setting to retry connection on socket timeout.</li>
         <li>Fixed user preferences so that updating the socket timeout or lock timeout
         change, the new value takes effect immediately.  Before, the change would not happen
         until a project is opened.</li>
-      </ul></li>
-      <li><em>0.10.1</em><ul>
-        <li>The User Preferences panel now correctly shows the user changeable options.</li>
-        <li>Altered usage of IDE APIs to reflect changes in 18.2 and 18.3.  This should help with compatibility.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

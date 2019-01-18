@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JobStatusNamesImpl implements JobStatusNames {
+    // Default list of status, as per the Perforce docs.
     public static final JobStatusNames DEFAULT_STATUSES = new JobStatusNamesImpl(
             new JobStatusImpl("open"), new JobStatusImpl("suspended"), new JobStatusImpl("closed"));
     private static final String STATUS_FIELD_NAME = "Status";

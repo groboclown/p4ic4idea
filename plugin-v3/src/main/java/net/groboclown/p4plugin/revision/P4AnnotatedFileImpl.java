@@ -41,7 +41,6 @@ import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -54,11 +53,13 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
     private final FilePath file;
     private final ServerConfig config;
     private final String clientname;
-    private final P4FileAnnotation annotatedFile;
     private final P4FileRevision head;
-    private final String content;
     private final HistoryMessageFormatter formatter;
     private final HistoryContentLoader loader;
+
+    // Not final to allow for disposing
+    private P4FileAnnotation annotatedFile;
+    private String content;
 
     private final LineAnnotationAspect[] aspects = new LineAnnotationAspect[]{
             new P4LineAnnotationAspect(LineAnnotationAspect.AUTHOR, true) {
@@ -116,6 +117,10 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
     public void dispose() {
         // The object will be GC'd, so use this opportunity to remove
         // any long-term data that's stored outside this object.
+
+        // Clear out additional stored data early that may be huge..
+        annotatedFile = null;
+        content = null;
     }
 
     /**
@@ -125,7 +130,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
      *
      * @return annotation aspects
      */
-    @Nonnull
+    @NotNull
     @Override
     public LineAnnotationAspect[] getAspects() {
         return aspects;

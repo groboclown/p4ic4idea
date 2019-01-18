@@ -16,7 +16,6 @@ package net.groboclown.p4plugin.components;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
@@ -46,8 +45,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.TimeUnit;
 
 public class P4ServerComponent implements ProjectComponent, Disposable {
-    private static final Logger LOG = Logger.getInstance(P4ServerComponent.class);
-
     public static final String COMPONENT_NAME = "Perforce Server Primary Connection";
     private final Project project;
     private P4CommandRunner commandRunner;
@@ -261,7 +258,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
     @Override
     public void projectClosed() {
-        disposeComponent();
+        // do nothing
     }
 
     @Override
@@ -276,8 +273,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
             commandRunner = new TopCommandRunner(project,
                     CacheComponent.getInstance(project).getCacheQuery(),
                     CacheComponent.getInstance(project).getCachePending(),
-                    connectRunner);
-            Disposer.register(project, (TopCommandRunner) commandRunner);
+                    connectRunner, this);
         }
     }
 
@@ -289,7 +285,6 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     @Override
     public void dispose() {
         if (commandRunner != null) {
-            Disposer.dispose((TopCommandRunner) commandRunner);
             commandRunner = null;
         }
         if (connectRunner != null) {
@@ -299,6 +294,10 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
             disposed = true;
             Disposer.dispose(this);
         }
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 
 

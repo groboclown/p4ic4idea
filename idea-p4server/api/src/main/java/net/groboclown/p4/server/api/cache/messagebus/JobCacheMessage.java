@@ -64,5 +64,17 @@ public class JobCacheMessage extends AbstractCacheMessage<JobCacheMessage.Event>
             this.job = job;
             this.action = action;
         }
+
+        public P4Job getJob() {
+            return job;
+        }
+
+        public String getJobId() {
+            return jobId;
+        }
+
+        public JobUpdateAction getAction() {
+            return action;
+        }
     }
 }

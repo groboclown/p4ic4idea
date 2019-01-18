@@ -196,7 +196,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         super(project, VCS_NAME);
 
         this.changelistListener = new P4ChangelistListener(project);
-        this.changeProvider = new P4ChangeProvider(this);
+        this.changeProvider = new P4ChangeProvider(this, project);
         this.historyProvider = new P4HistoryProvider(project);
         this.diffProvider = new P4DiffProvider(project);
         this.statusUpdateEnvironment = new P4StatusUpdateEnvironment(project);
@@ -327,7 +327,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Nullable
     public VcsRevisionNumber parseRevisionNumber(String revisionNumberString) throws VcsException {
         try {
-            return new VcsRevisionNumber.Long(Long.parseLong(revisionNumberString));
+            return new VcsRevisionNumber.Int(Integer.parseInt(revisionNumberString));
         } catch (NumberFormatException e) {
             throw new VcsException(e);
         }

@@ -79,7 +79,7 @@ public class ActiveConnectionPanel {
     private Tree connectionTree;
 
 
-    public ActiveConnectionPanel(@NotNull Project project, @Nullable Disposable parentDisposable) {
+    ActiveConnectionPanel(@NotNull Project project, @Nullable Disposable parentDisposable) {
         this.project = project;
         if (parentDisposable == null) {
             parentDisposable = project;
@@ -313,7 +313,7 @@ public class ActiveConnectionPanel {
                         final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);
                         final ActionChoice sel = getSelected(ActionChoice.class);
                         final CacheComponent cache = CacheComponent.getInstance(project);
-                        if (selRoot != null && sel != null && cache != null) {
+                        if (selRoot != null && sel != null) {
                             try {
                                 cache.getCachePending()
                                         .writeActions(selRoot.getClientConfig().getClientServerRef(),

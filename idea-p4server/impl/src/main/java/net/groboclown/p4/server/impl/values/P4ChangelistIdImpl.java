@@ -55,7 +55,12 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
     @NotNull
     @Override
     public String getClientname() {
-        return ref.getClientName();
+        String clientName = ref.getClientName();
+        if (clientName == null) {
+            // TODO message bundle
+            clientName = "<unknown>";
+        }
+        return clientName;
     }
 
     @NotNull
@@ -82,7 +87,7 @@ public class P4ChangelistIdImpl implements P4ChangelistId {
 
     @Override
     public String asString() {
-        return "@" + Integer.toString(id);
+        return "@" + id;
     }
 
     @Override

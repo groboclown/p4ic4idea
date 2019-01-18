@@ -242,6 +242,7 @@ public class P4CommandUtil {
      */
     public List<IFileSpec> revertFiles(IClient client, List<IFileSpec> files, boolean onlyUnchanged)
             throws P4JavaException {
+        LOG.warn("Performing revert on " + files, new Exception("Message for testing #181"));
         RevertFilesOptions options = new RevertFilesOptions();
         options.setRevertOnlyUnchanged(onlyUnchanged);
         return client.revertFiles(files, options);

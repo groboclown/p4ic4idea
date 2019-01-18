@@ -42,6 +42,8 @@ import java.util.stream.Stream;
  *
  * Must be public for serializer to work properly.
  */
+// Weaker access - used for serialization, so it needs public.
+@SuppressWarnings("WeakerAccess")
 public final class PrimitiveMap {
     private static final Logger LOG = Logger.getInstance(PrimitiveMap.class);
 

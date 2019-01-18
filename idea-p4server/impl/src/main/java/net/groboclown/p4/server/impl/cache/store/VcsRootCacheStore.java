@@ -31,8 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Central storage for all VCS roots.  Persistence is handled by
- * {@link net.groboclown.p4.server.api.config.PersistentRootConfigComponent}.
+ * Stores client/server connection configuration for a VCS root directory.
  */
 public class VcsRootCacheStore {
     private static final Logger LOG = Logger.getInstance(VcsRootCacheStore.class);

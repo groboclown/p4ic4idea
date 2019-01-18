@@ -57,6 +57,10 @@ public class P4WorkspaceSummaryImpl implements P4WorkspaceSummary {
         private String stream;
         private int streamAtChange;
 
+        private Builder() {
+            // Do nothing
+        }
+
         public Builder setClientname(String clientname) {
             this.clientname = clientname;
             return this;
@@ -132,6 +136,10 @@ public class P4WorkspaceSummaryImpl implements P4WorkspaceSummary {
                     lastUpdate, lastAccess, owner, description, options, submitOption, lineEnding, clientType,
                     roots, host, serverId, stream, streamAtChange);
         }
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public P4WorkspaceSummaryImpl(@NotNull IClientSummary client) {

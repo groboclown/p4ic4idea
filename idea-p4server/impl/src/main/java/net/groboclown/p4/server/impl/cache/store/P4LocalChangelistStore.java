@@ -20,8 +20,7 @@ import net.groboclown.p4.server.api.values.P4ChangelistType;
 import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4RemoteFile;
-import net.groboclown.p4.server.impl.values.JobStatusImpl;
-import net.groboclown.p4.server.impl.values.P4LocalChangelistBuilder;
+import net.groboclown.p4.server.impl.values.P4LocalChangelistImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -85,7 +84,7 @@ public class P4LocalChangelistStore {
         for (P4JobStore.State job : state.jobs) {
             jobs.add(P4JobStore.read(job));
         }
-        return new P4LocalChangelistBuilder()
+        return new P4LocalChangelistImpl.Builder()
                 .withChangelistId(P4ChangelistIdStore.read(state.changelistId))
                 .withComment(state.comment)
                 .withDeleted(state.deleted)

@@ -67,6 +67,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static net.groboclown.p4.server.api.values.P4FileType.getFileType;
+
 public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor {
     private static final Logger LOG = Logger.getInstance(P4CheckinEnvironment.class);
     private static final String HELP_ID = null;
@@ -235,15 +237,6 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     @NotNull
     private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
         return ChangelistUtil.getActiveChangelistFor(root, ids);
-    }
-
-    // TODO this is shared with P4VFSListener.  Look at making shared utility.
-    private P4FileType getFileType(FilePath fp) {
-        FileType ft = fp.getFileType();
-        if (ft.isBinary()) {
-            return P4FileType.convert("binary");
-        }
-        return P4FileType.convert("text");
     }
 
     @Nls

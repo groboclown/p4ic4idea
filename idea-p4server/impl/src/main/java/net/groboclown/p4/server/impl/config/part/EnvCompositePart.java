@@ -332,7 +332,7 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
                         p4configPart = envConf;
                     }
                 } else {
-                    // Scan from the vcs root down for a matching file name.
+                    // Scan from the vcs root up through parents for a matching file name.
                     // TODO eventually allow for proper p4config loading, with multiple
                     // roots generated.
                     VirtualFile f = scanParentsForFile(vcsRoot, p4config);

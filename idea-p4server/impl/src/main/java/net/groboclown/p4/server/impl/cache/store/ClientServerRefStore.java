@@ -22,7 +22,6 @@ import java.util.Map;
 
 public class ClientServerRefStore {
 
-    @SuppressWarnings("WeakerAccess")
     public static class State {
         public String serverPort;
         public String clientName;

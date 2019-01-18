@@ -490,7 +490,7 @@ public abstract class MessageP4RequestErrorHandler
             // InterruptedException: An API requested cancellation of the action.
             // TimeoutException: a limited time window ran out
             // ProcessCanceledException: user cancelled a dialog
-            // Change to a cancel
+            // Change the actual result into a cancel
             CancellationException ce = new CancellationException(e.getMessage());
             ce.initCause(e);
             CancellationMessage.send(project).cancelled(new ErrorEvent<>(ce));

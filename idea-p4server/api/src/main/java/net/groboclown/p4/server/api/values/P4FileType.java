@@ -14,6 +14,8 @@
 
 package net.groboclown.p4.server.api.values;
 
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.vcs.FilePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -165,5 +167,14 @@ public class P4FileType {
             return new P4FileType(BaseType.UTF16, revsStored, modifiers, keywordExpansion);
         }
         return new P4FileType(fileType, revsStored, modifiers, keywordExpansion);
+    }
+
+
+    public static P4FileType getFileType(FilePath fp) {
+        FileType ft = fp.getFileType();
+        if (ft.isBinary()) {
+            return P4FileType.convert("binary");
+        }
+        return P4FileType.convert("text");
     }
 }

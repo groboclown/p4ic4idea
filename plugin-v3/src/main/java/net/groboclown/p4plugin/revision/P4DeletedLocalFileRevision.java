@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class P4DeletedLocalFileRevision implements ContentRevision {
+    // Revision 0 == deleted
+    private static final VcsRevisionNumber DELETED_REVISION = new VcsRevisionNumber.Int(0);
     private final P4LocalFile localFile;
 
     public P4DeletedLocalFileRevision(@NotNull P4LocalFile localFile) {
@@ -43,7 +45,6 @@ public class P4DeletedLocalFileRevision implements ContentRevision {
     @NotNull
     @Override
     public VcsRevisionNumber getRevisionNumber() {
-        // Revision 0 == deleted
-        return new VcsRevisionNumber.Int(0);
+        return DELETED_REVISION;
     }
 }

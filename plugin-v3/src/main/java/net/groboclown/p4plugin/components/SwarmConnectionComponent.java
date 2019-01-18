@@ -23,16 +23,11 @@ import com.intellij.openapi.util.Disposer;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
-import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.simpleswarm.SwarmLogger;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * A component to manage connections to the swarm server.  Eventually, this might cache connection settings.

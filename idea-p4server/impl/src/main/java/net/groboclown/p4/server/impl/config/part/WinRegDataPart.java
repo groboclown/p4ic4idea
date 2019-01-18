@@ -57,7 +57,7 @@ class WinRegDataPart implements ConfigPart {
     private P4ServerName serverName;
     private String clientName;
     private String userName;
-    private String encodedPassword;
+    private String password;
     private String authTicketPath;
     private String trustTicket;
     private String configFile;
@@ -95,19 +95,7 @@ class WinRegDataPart implements ConfigPart {
             clientName = readRegString(PerforceEnvironment.P4CLIENT);
             userName = readRegString(PerforceEnvironment.P4USER);
 
-            // FIXME the encodedPassword is encoded.  Need to decode it to use it.
-            // From the p4 passwd documentation:
-            // "For Perforce applications on Windows and OS X that connect to Perforce
-            // services at security levels 0 and 1, p4 passwd stores the password by using
-            // p4 set to store the MD5 hash of the password in the registry or system
-            // settings. When connecting to Perforce services at security levels 2, 3,
-            // or 4, password hashes are neither stored in, nor read from, these locations."
-            // However, if you look at the P4 C client code, it is encrypted and
-            // encoded using a ticket from the server.  Somehow (need to better find
-            // out) this is passed to the server during authentication.  Until
-            // that's better understood, this password won't be used, because it
-            // leads to a situation where the password is tried and fails.
-            // encodedPassword = readRegString(PerforceEnvironment.P4PASSWD);
+            password = decodePassword(readRegString(PerforceEnvironment.P4PASSWD));
 
             authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);
             trustTicket = readRegString(PerforceEnvironment.P4TRUST);
@@ -216,13 +204,13 @@ class WinRegDataPart implements ConfigPart {
 
     @Override
     public boolean hasPasswordSet() {
-        return encodedPassword != null;
+        return password != null;
     }
 
     @Nullable
     @Override
     public String getPlaintextPassword() {
-        return encodedPassword;
+        return password;
     }
 
     @Override
@@ -308,4 +296,25 @@ class WinRegDataPart implements ConfigPart {
     }
 
 
+    @Nullable
+    private static String decodePassword(String encodedPassword) {
+        if (encodedPassword == null) {
+            return null;
+        }
+
+        // FIXME the encodedPassword is encoded.  Need to decode it to use it.
+        // From the p4 passwd documentation:
+        // "For Perforce applications on Windows and OS X that connect to Perforce
+        // services at security levels 0 and 1, p4 passwd stores the password by using
+        // p4 set to store the MD5 hash of the password in the registry or system
+        // settings. When connecting to Perforce services at security levels 2, 3,
+        // or 4, password hashes are neither stored in, nor read from, these locations."
+        // However, if you look at the P4 C client code, it is encrypted and
+        // encoded using a ticket from the server.  Somehow (need to better find
+        // out) this is passed to the server during authentication.  Until
+        // that's better understood, this password won't be used, because it
+        // leads to a situation where the password is tried and fails.
+
+        return null;
+    }
 }

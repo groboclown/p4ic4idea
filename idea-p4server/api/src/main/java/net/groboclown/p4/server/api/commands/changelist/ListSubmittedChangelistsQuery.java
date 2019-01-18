@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.api.commands.changelist;
 
-import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
 import org.jetbrains.annotations.NotNull;
@@ -22,10 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.function.Function;
 
 public class ListSubmittedChangelistsQuery implements P4CommandRunner.ClientQuery<ListSubmittedChangelistsResult> {
@@ -37,6 +33,7 @@ public class ListSubmittedChangelistsQuery implements P4CommandRunner.ClientQuer
     private final String clientName;
     private final String specFilter;
 
+    @SuppressWarnings("WeakerAccess")
     public static class Filter {
         private boolean onlyChangesWithShelvedFilesFilter;
         private Long changesAfterChangelistFilter;
@@ -129,7 +126,9 @@ public class ListSubmittedChangelistsQuery implements P4CommandRunner.ClientQuer
             first = appendIfNotNull('>', filter.getChangesAfterDateFilter(),
                     (o) -> DATE_FORMAT.format((Date) o),
                     changelistRange, first);
-            appendIfNotNull('<', filter.getChangesBeforeDateFilter(),
+            // assignment to `first` on this list item isn't necessary, but it's here for consistency, and in case
+            // additional filters are added later.
+            first = appendIfNotNull('<', filter.getChangesBeforeDateFilter(),
                     (o) -> DATE_FORMAT.format((Date) o),
                     changelistRange, first);
 

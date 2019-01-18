@@ -27,7 +27,7 @@ import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Invokes the LOGINSSO command to extract the correct information from the
+ * Invokes the LOGINSSO command to extract the correct information from the spawned process.
  */
 public class LoginSsoCallbackHandler
         implements ISSOCallback {

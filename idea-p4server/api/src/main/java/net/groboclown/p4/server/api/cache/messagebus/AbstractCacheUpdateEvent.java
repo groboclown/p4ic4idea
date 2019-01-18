@@ -21,13 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> extends AbstractMessageEvent {
     private final ClientServerRef ref;
     private final P4ServerName serverName;
-    private final Set<String> visitedCacheIds = new HashSet<>();
     private final Date created = new Date();
 
     /**
@@ -51,13 +48,7 @@ public class AbstractCacheUpdateEvent<E extends AbstractCacheUpdateEvent<E>> ext
 
     @SuppressWarnings("unchecked")
     void visit(@NotNull String cacheId, @NotNull Visitor<E> visitor) {
-        boolean run;
-        synchronized (visitedCacheIds) {
-            run = !visitedCacheIds.contains(cacheId);
-            if (run) {
-                visitedCacheIds.add(cacheId);
-            }
-        }
+        boolean run = shouldVisitName(cacheId);
         if (run) {
             visitor.visit((E) this);
         }

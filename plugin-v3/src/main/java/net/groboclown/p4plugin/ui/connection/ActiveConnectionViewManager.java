@@ -26,30 +26,38 @@ import javax.swing.*;
  * Allows for using the VCS extension mechanism to add the active connection panel to the
  * version control docked view.
  */
-public class ActiveConnectionViewManager implements ChangesViewContentProvider {
+public class ActiveConnectionViewManager implements ChangesViewContentProvider, Disposable {
     private final Project project;
-    private final Disposable disposable;
     private ActiveConnectionPanel panel;
+    private boolean disposed = false;
 
     public ActiveConnectionViewManager(@NotNull Project project) {
         this.project = project;
-        this.disposable = () -> {
-            // the connection panel performs its own disposing.
-            panel = null;
-        };
-        Disposer.register(project, disposable);
     }
 
     @Override
     public JComponent initContent() {
         if (panel == null) {
-            panel = new ActiveConnectionPanel(project, disposable);
+            panel = new ActiveConnectionPanel(project, this);
         }
         return panel.getRoot();
     }
 
     @Override
     public void disposeContent() {
-        Disposer.dispose(disposable);
+        dispose();
+    }
+
+    @Override
+    public void dispose() {
+        if (!disposed) {
+            disposed = true;
+            panel = null;
+            Disposer.dispose(this);
+        }
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 }

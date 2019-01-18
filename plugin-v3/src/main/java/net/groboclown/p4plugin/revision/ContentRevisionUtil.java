@@ -14,8 +14,10 @@
 
 package net.groboclown.p4plugin.revision;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
+import com.intellij.openapi.vfs.encoding.EncodingManager;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
@@ -28,8 +30,7 @@ public class ContentRevisionUtil {
     @NotNull
     public static Charset getNonNullCharset(@Nullable Charset charset) {
         return charset == null
-                // TODO better charset
-                ? Charset.defaultCharset()
+                ? EncodingManager.getInstance().getDefaultCharset()
                 : charset;
     }
 
@@ -43,6 +44,8 @@ public class ContentRevisionUtil {
             if (ret == null) {
                 return null;
             }
+            // TODO Look at using CharsetUtil.extractCharsetFromFileContent
+            // Or maybe use EncodingManager.getEncoding(file, true);
             return new String(ret, charset);
         } catch (IOException e) {
             throw new VcsException(e);

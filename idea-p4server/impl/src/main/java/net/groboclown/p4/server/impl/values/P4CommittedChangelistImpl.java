@@ -16,7 +16,6 @@ package net.groboclown.p4.server.impl.values;
 
 import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.versionBrowser.CommittedChangeListImpl;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import org.jetbrains.annotations.NotNull;

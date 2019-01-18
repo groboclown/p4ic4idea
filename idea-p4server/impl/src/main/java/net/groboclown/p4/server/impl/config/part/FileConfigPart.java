@@ -93,7 +93,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         return "FileConfigPart(" + filePath + ")";
     }
 
-    public String getP4Config() {
+    String getP4Config() {
         return p4config;
     }
 
@@ -101,7 +101,7 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         return vcsRoot;
     }
 
-    public void setConfigFile(@Nullable VirtualFile filePath) {
+    private void setConfigFile(@Nullable VirtualFile filePath) {
         this.filePath = filePath;
         reload();
     }
@@ -184,16 +184,18 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         LOG.warn("FIXME SET MESSAGE TEXT CORRECTLY");
         if (filePath == null) {
             // FIXME SET MESSAGE CORRECTLY
+            LOG.warn("FIXME use message catalog");
             //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));
             return Collections.singleton(new ConfigProblem(this, "No file set", true));
         }
         if (! filePath.exists() || filePath.isDirectory()) {
             // FIXME SET MESSAGE CORRECTLY, and use "filePath"
+            LOG.warn("FIXME use message catalog");
             //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", true));
             return Collections.singleton(new ConfigProblem(this, "Invalid file " + filePath, true));
         }
         if (loadError != null) {
-            // FIXME properly handle exception messages
+            // TODO properly handle exception messages
             return Collections.singletonList(new ConfigProblem(this, loadError.getMessage(), true));
         }
         return Collections.emptyList();

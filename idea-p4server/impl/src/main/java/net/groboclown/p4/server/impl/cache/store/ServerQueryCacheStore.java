@@ -16,6 +16,7 @@ package net.groboclown.p4.server.impl.cache.store;
 
 import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.values.P4Job;
 import net.groboclown.p4.server.api.values.P4JobSpec;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import org.jetbrains.annotations.NotNull;
@@ -71,6 +72,11 @@ public class ServerQueryCacheStore {
 
     public Collection<P4WorkspaceSummary> getClientsForUser(String user) {
         return new ArrayList<>(userClients.get(user));
+    }
+
+    public void addJob(@NotNull P4Job job) {
+        // FIXME add job cache storage.
+        LOG.warn("FIXME add job cache storage; added job " + job.getJobId());
     }
 
     @NotNull

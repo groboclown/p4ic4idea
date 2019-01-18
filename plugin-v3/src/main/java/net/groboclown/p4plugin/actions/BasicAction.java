@@ -110,7 +110,7 @@ public abstract class BasicAction extends DumbAwareAction {
      * @return the complete set of files this action should apply to
      */
     @NotNull
-    protected List<VirtualFile> collectAffectedFiles(@NotNull Project project, @NotNull VirtualFile[] files) {
+    private List<VirtualFile> collectAffectedFiles(@NotNull Project project, @NotNull VirtualFile[] files) {
         List<VirtualFile> affectedFiles = new ArrayList<VirtualFile>(files.length);
         ProjectLevelVcsManager projectLevelVcsManager = ProjectLevelVcsManager.getInstance(project);
         for (VirtualFile file : files) {

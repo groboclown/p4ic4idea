@@ -39,6 +39,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -83,12 +84,13 @@ public class MockThreadRunner {
     private final long waitTimeoutSeconds;
     private final Map<String, CyclicBarrier> waitForMap = new HashMap<>();
     private final List<String> queuedKeys = new LinkedList<>();
+    private final AtomicInteger activeCount = new AtomicInteger(0);
 
     public MockThreadRunner(IdeaLightweightExtension extension) {
         this(extension, 2L);
     }
 
-    public MockThreadRunner(IdeaLightweightExtension extension, long waitTimeSeconds) {
+    private MockThreadRunner(IdeaLightweightExtension extension, long waitTimeSeconds) {
         waitTimeoutSeconds = waitTimeSeconds;
         Application application = extension.getMockApplication();
 
@@ -108,6 +110,10 @@ public class MockThreadRunner {
 
     public void assertNoExceptions() {
         assertEmpty(callableThrown);
+    }
+
+    public void assertAllActionsCompleted() {
+        assertEquals(0, activeCount.get(), "Should be no running actions.");
     }
 
     public List<Exception> getCallableThrown() {
@@ -162,40 +168,46 @@ public class MockThreadRunner {
         @Override
         public Object answer(InvocationOnMock invocation)
                 throws Throwable {
-            final Object arg = invocation.getArgument(0);
-            final Runnable runner;
-            if (arg instanceof Runnable) {
-                runner = (Runnable) arg;
-            } else {
-                runner = () -> {
+            activeCount.incrementAndGet();
+            try {
+                final Object arg = invocation.getArgument(0);
+                final Runnable runner;
+                if (arg instanceof Runnable) {
+                    runner = (Runnable) arg;
+                } else {
+                    runner = () -> {
+                        try {
+                            ((Callable<?>) arg).call();
+                        } catch (Exception e) {
+                            callableThrown.add(e);
+                        }
+                    };
+                }
+                final CyclicBarrier barrier;
+                final String lastKey;
+                synchronized (waitForMap) {
+                    lastKey = queuedKeys.remove(0);
+                    barrier = waitForMap.get(lastKey);
+                }
+                assertNotNull(barrier, "No barrier key [" + lastKey + "] set");
+                simulatedRunner.execute(() -> {
                     try {
-                        ((Callable<?>) arg).call();
-                    } catch (Exception e) {
-                        callableThrown.add(e);
+                        barrier.await(waitTimeoutSeconds, TimeUnit.SECONDS);
+                    } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
+                        fail("Test did not join", e);
                     }
-                };
+                    counter.incrementAndGet();
+                    runner.run();
+                    try {
+                        barrier.await(waitTimeoutSeconds, TimeUnit.SECONDS);
+                    } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
+                        callableThrown.add(e);
+                        fail("Test did not join", e);
+                    }
+                });
+            } finally {
+                activeCount.decrementAndGet();
             }
-            final CyclicBarrier barrier;
-            final String lastKey;
-            synchronized (waitForMap) {
-                lastKey = queuedKeys.remove(0);
-                barrier = waitForMap.get(lastKey);
-            }
-            assertNotNull(barrier, "No barrier key [" + lastKey + "] set");
-            simulatedRunner.execute(() -> {
-                try {
-                    barrier.await(waitTimeoutSeconds, TimeUnit.SECONDS);
-                } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
-                    fail("Test did not join", e);
-                }
-                counter.incrementAndGet();
-                runner.run();
-                try {
-                    barrier.await(waitTimeoutSeconds, TimeUnit.SECONDS);
-                } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
-                    fail("Test did not join", e);
-                }
-            });
             return null;
         }
     }
@@ -211,9 +223,14 @@ public class MockThreadRunner {
         @Override
         public Object answer(InvocationOnMock invocation)
                 throws Throwable {
-            Runnable runnable = invocation.getArgument(0);
-            counter.incrementAndGet();
-            runnable.run();
+            activeCount.incrementAndGet();
+            try {
+                Runnable runnable = invocation.getArgument(0);
+                counter.incrementAndGet();
+                runnable.run();
+            } finally {
+                activeCount.decrementAndGet();
+            }
             return null;
         }
     }

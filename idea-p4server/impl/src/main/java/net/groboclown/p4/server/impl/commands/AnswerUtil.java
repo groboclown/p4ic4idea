@@ -14,7 +14,6 @@
 
 package net.groboclown.p4.server.impl.commands;
 
-import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.CancellationException;
 
 public class AnswerUtil {
-    private static final Logger LOG = Logger.getInstance(AnswerUtil.class);
-
     private static final P4CommandRunner.ResultError OFFLINE_RESULT_ERROR = new OfflineResultError();
 
     private static class OfflineResultError implements P4CommandRunner.ResultError {

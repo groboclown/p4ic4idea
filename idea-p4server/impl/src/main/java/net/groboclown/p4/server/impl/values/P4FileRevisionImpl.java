@@ -75,7 +75,7 @@ public class P4FileRevisionImpl
                 date, charset);
     }
 
-    public P4FileRevisionImpl(@NotNull ClientServerRef ref, @NotNull IFileRevisionData data) {
+    P4FileRevisionImpl(@NotNull ClientServerRef ref, @NotNull IFileRevisionData data) {
         this(new P4RemoteFileImpl(data.getDepotFileName()),
                 new P4ChangelistIdImpl(data.getChangelistId(), ref),
                 new P4Revision(data.getRevision()),

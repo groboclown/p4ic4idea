@@ -73,14 +73,18 @@ public class MoveFile {
                 new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), tgtFile, 1));
         if (srcStatus.hasAdd()) {
             // source is open for add.  Revert it and mark the target as open for edit/add.
-            LOG.debug("Source file is open for add.  Reverting add, and will just open for edit or add the target.");
             List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
+            LOG.info("Source file is open for add.  Reverting add, and will just open for edit or add the target.  "
+                    + "files: " + srcFile + "; results = " +
+                    MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
             // TODO bundle message for separator
             if (tgtStatus.hasDelete()) {
                 // Currently marked as deleted, so it exists on the server.  Revert the delete then edit it.
-                LOG.debug("Target file open for delete.  Reverting that and just opening it for edit.");
                 reverted = cmd.revertFiles(client, tgtFile, false);
+                LOG.info("Target file open for delete.  Reverting that and just opening it for edit.  Files: " + tgtFile +
+                        "; results = " +
+                        MessageStatusUtil.getMessages(reverted, "\n"));
                 MessageStatusUtil.throwIfError(reverted);
                 List<IFileSpec> edited = cmd.editFiles(client, tgtFile, null, action.getChangelistId(), null);
                 MessageStatusUtil.throwIfError(edited);
@@ -105,8 +109,9 @@ public class MoveFile {
             }
         } else if (srcStatus.hasDelete()) {
             // source is already open for delete.  Revert it and continue with normal move.
-            LOG.debug("Source is open for delete.  Reverting delete to allow move operation to do it right.");
             List<IFileSpec> reverted = cmd.revertFiles(client, srcFile, false);
+            LOG.info("Source is open for delete.  Reverting delete to allow move operation to do it right.  Files: " + srcFile +
+                    "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
         } else if (srcStatus.isNotOnServer()) {
             // The source is not on the server, so it's an add or edit.
@@ -118,9 +123,10 @@ public class MoveFile {
             }
             if (tgtStatus.hasOpen()) {
                 // Should be delete; add and edit is already handled above.
-                LOG.debug("Source not on server, and target already open (for " + tgtStatus +
-                        ").  Reverting target operation.");
                 List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+                LOG.info("Source not on server, and target already open (for " + tgtStatus +
+                        ").  Reverting target operation.  Files: " + tgtFile +
+                        "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
                 MessageStatusUtil.throwIfError(reverted);
             } else if (tgtStatus.isNotOnServer()) {
                 LOG.debug("Source and target not on server.  Opening target for add.");
@@ -143,15 +149,17 @@ public class MoveFile {
         // Check target status, to see what we need to do there.
         if (tgtStatus.hasAdd()) {
             // If the file is open for add, then it should be reverted and a normal move happens.
-            LOG.debug("Target file open for add.  Reverting before performing move.");
             List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+            LOG.info("Target file open for add.  Reverting before performing move.  File: " + tgtFile +
+                    "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
         } else if (! tgtStatus.isNotOnServer()) {
             // See #181
             if (tgtStatus.hasOpen()) {
                 // The file is open for delete or edit, then it should be reverted, and fall through.
-                LOG.debug("Target file open for edit.  Reverting before performing move.");
                 List<IFileSpec> reverted = cmd.revertFiles(client, tgtFile, false);
+                LOG.info("Target file open for edit.  Reverting before performing move.  File: " + tgtFile +
+                        "; results = " + MessageStatusUtil.getMessages(reverted, "\n"));
                 MessageStatusUtil.throwIfError(reverted);
             }
             //  The file is on the server but not open, then this should be a manual integrate + source delete.

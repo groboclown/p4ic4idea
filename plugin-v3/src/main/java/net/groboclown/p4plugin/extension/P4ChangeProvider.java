@@ -13,6 +13,7 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
@@ -97,12 +98,12 @@ public class P4ChangeProvider
     private volatile boolean active = false;
     private volatile Exception activeThread = null;
 
-    P4ChangeProvider(@NotNull P4Vcs vcs) {
+    P4ChangeProvider(@NotNull P4Vcs vcs, @NotNull Disposable parentDisposable) {
         this.project = vcs.getProject();
         this.vcs = vcs;
         this.loader = new HistoryContentLoaderImpl(project);
 
-        final MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(project);
+        final MessageBusClient.ApplicationClient mbClient = MessageBusClient.forApplication(parentDisposable);
         final String cacheId = AbstractCacheMessage.createCacheId(project, P4ChangeProvider.class);
         ClientActionMessage.addListener(mbClient, cacheId, event -> {
             P4CommandRunner.ClientActionCmd cmd = (P4CommandRunner.ClientActionCmd) event.getAction().getCmd();
@@ -556,7 +557,7 @@ public class P4ChangeProvider
                 builder.processLocallyDeletedFile(dirtyFile);
             } else {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Marking " + dirtyFile + " as unversioned");
+                    LOG.debug("Marking " + dirtyFile + " as not versioned");
                 }
 
                 // TODO include the IgnoreFileSet

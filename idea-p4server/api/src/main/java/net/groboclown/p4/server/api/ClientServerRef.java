@@ -32,6 +32,9 @@ public final class ClientServerRef {
     private final String clientName;
 
 
+    // Like P4ServerName, this class could potentially be cached, like String.intern, but that
+    // might lead to additional memory problems beyond what we already have.
+
     public ClientServerRef(@NotNull final P4ServerName serverName, @Nullable final String clientName) {
         this.serverName = serverName;
         this.clientName = clientName;

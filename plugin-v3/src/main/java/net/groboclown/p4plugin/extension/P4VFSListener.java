@@ -45,6 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static net.groboclown.p4.server.api.values.P4FileType.getFileType;
+
 /**
  * Handles the file change requests: add, edit, delete, move.
  */
@@ -269,15 +271,6 @@ public class P4VFSListener extends VcsVFSListener {
     @NotNull
     private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
         return ChangelistUtil.getActiveChangelistFor(root, ids);
-    }
-
-    // TODO this is shared with P4CheckinEnvironment
-    private P4FileType getFileType(FilePath fp) {
-        FileType ft = fp.getFileType();
-        if (ft.isBinary()) {
-            return P4FileType.convert("binary");
-        }
-        return P4FileType.convert("text");
     }
 
     private ClientConfigRoot getClientFor(FilePath file) {

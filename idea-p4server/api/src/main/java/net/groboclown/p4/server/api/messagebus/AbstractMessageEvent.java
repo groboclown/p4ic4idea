@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.messagebus;
 
+import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * All visitedListeners must use subclasses of this as its first (or only) argument.
  */
 public abstract class AbstractMessageEvent {
+    private static final Logger LOG = Logger.getInstance(AbstractMessageEvent.class);
     private static final AtomicLong EVENT_COUNT = new AtomicLong(0);
 
     // There are problems with the same listener handling the same event multiple times.
@@ -38,6 +40,18 @@ public abstract class AbstractMessageEvent {
 
     protected AbstractMessageEvent() {
         id = EVENT_COUNT.incrementAndGet();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating message " + getClass().getSimpleName() + ':' + id);
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finalizing event object " + getClass().getSimpleName() + ':' + getEventInstanceId() +
+                    "; visited " + visitedListeners.size() + " listeners");
+        }
+        super.finalize();
     }
 
     /**
@@ -46,10 +60,21 @@ public abstract class AbstractMessageEvent {
      * @return true if the listener was already visited
      */
     boolean visit(@NotNull Object listenerOwner) {
-        if (visitedListeners.contains(listenerOwner)) {
-            return true;
+        synchronized (visitedListeners) {
+            if (visitedListeners.contains(listenerOwner)) {
+                return true;
+            }
+            visitedListeners.add(listenerOwner);
         }
-        visitedListeners.add(listenerOwner);
         return false;
+    }
+
+    // Specialized method to allow the AbstractCacheUpdateEvent to reuse the visited set.
+    protected boolean shouldVisitName(@NotNull String name) {
+        return !visit(name);
+    }
+
+    protected long getEventInstanceId() {
+        return id;
     }
 }

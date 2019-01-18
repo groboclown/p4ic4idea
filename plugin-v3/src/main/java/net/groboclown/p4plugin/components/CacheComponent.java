@@ -14,6 +14,7 @@
 
 package net.groboclown.p4plugin.components;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.components.State;
@@ -21,6 +22,7 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
@@ -53,17 +55,23 @@ import java.util.concurrent.TimeUnit;
                 )
         }
 )
-public class CacheComponent implements ProjectComponent, PersistentStateComponent<ProjectCacheStore.State> {
+public class CacheComponent implements
+        ProjectComponent, PersistentStateComponent<ProjectCacheStore.State>,
+        Disposable {
     private static final Logger LOG = Logger.getInstance(CacheComponent.class);
 
     private static final String COMPONENT_NAME = "Perforce Project Cached Data";
+
+    @Nullable
     private final Project project;
+
     private final ProjectCacheStore projectCache = new ProjectCacheStore();
     private IdeChangelistMap changelistMap;
     private IdeFileMap fileMap;
     private CacheQueryHandler queryHandler;
     private CachePendingActionHandler pendingHandler;
     private CacheStoreUpdateListener updateListener;
+    private boolean disposed = false;
 
 
     @NotNull
@@ -79,7 +87,7 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
         } else {
             // Potentially hazardous situation.  It means multiple cache stores
             // floating around.  It also means that, if it's a short-term store, that
-            // the
+            // the data is not going to be thrown away.
             ret = new CacheComponent(null);
         }
         return ret;
@@ -109,6 +117,10 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
      */
     private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfigRoot> clients) {
         initComponent();
+        if (project == null) {
+            // Null project cannot have anything to refresh.
+            throw new IllegalStateException("project not set for call");
+        }
         Answer<?> ret = Answer.resolve(null);
 
         for (ClientConfigRoot clientRoot : clients) {
@@ -181,32 +193,29 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     // Synchronized to help prevent double event listener registration.
     @Override
     public synchronized void initComponent() {
+        if (isDisposed()) {
+            throw new IllegalStateException("already disposed");
+        }
         if (queryHandler == null) {
             queryHandler = new CacheQueryHandlerImpl(projectCache);
         }
         if (pendingHandler == null) {
             pendingHandler = new CachePendingActionHandlerImpl(projectCache);
         }
-        if (changelistMap == null) {
+        if (changelistMap == null && project != null) {
             changelistMap = new IdeChangelistMapImpl(project, projectCache.getChangelistCacheStore());
         }
-        if (fileMap == null) {
+        if (fileMap == null && project != null) {
             fileMap = new IdeFileMapImpl(project, queryHandler);
         }
-        if (updateListener == null) {
-            updateListener = new CacheStoreUpdateListener(project, projectCache);
+        if (updateListener == null && project != null) {
+            updateListener = new CacheStoreUpdateListener(project, projectCache, this);
         }
     }
 
     @Override
     public synchronized void disposeComponent() {
-        if (queryHandler != null) {
-            queryHandler = null;
-        }
-        if (updateListener != null) {
-            updateListener.dispose();
-            updateListener = null;
-        }
+        dispose();
     }
 
     @Nullable
@@ -232,5 +241,22 @@ public class CacheComponent implements ProjectComponent, PersistentStateComponen
     @Override
     public void noStateLoaded() {
         // do nothing
+    }
+
+    @Override
+    public void dispose() {
+        if (!disposed) {
+            this.disposed = true;
+            Disposer.dispose(this);
+            changelistMap = null;
+            fileMap = null;
+            queryHandler = null;
+            pendingHandler = null;
+            updateListener = null;
+        }
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 }

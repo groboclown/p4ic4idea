@@ -21,7 +21,6 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IFix;
@@ -70,7 +69,6 @@ import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelists
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult;
-import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistResult;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery;
 import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
@@ -372,7 +370,7 @@ public class ConnectCommandRunner
                         LOG.warn("FIXME scan for files on changelist, using the \"describe changelist\" action.");
                         return new P4CommittedChangelistImpl(
                                 new P4ChangelistSummaryImpl(
-                                    config.getServerConfig(), config.getClientServerRef(), summary),
+                                    config.getClientServerRef(), summary),
                                 Collections.emptyList(),
                                 summary.getDate());
                     })
@@ -599,8 +597,9 @@ public class ConnectCommandRunner
         } else if (status.hasDelete()) {
             // Revert the file
             List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
+            LOG.info("File added, but server says it's deleted.  Reverted " + action.getFile() + ": " +
+                    MessageStatusUtil.getMessages(reverted, "\n"));
             MessageStatusUtil.throwIfError(reverted);
-            LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
             addFile = true;
         } else if (LOG.isDebugEnabled() && !status.hasOpen()) {
             LOG.debug("Status message " + status + " assumed to mean 'edit'");
@@ -760,16 +759,18 @@ public class ConnectCommandRunner
                     MessageStatusUtil.getExtendedMessages(status.getFilesWithMessages(), "\n"));
         }
         if (status.hasAdd()) {
-            LOG.info("Reverting files open for add rather than deleting them: " + action.getFile());
             List<IFileSpec> res = cmd.revertFiles(client, files, false);
+            LOG.info("Reverted files open for add rather than deleting them: " + action.getFile() + "; results = " +
+                    MessageStatusUtil.getMessages(res, "\n"));
             MessageStatusUtil.throwIfError(res);
             return new DeleteFileResult(config, P4RemoteFileImpl.createFor(files),
                     // TODO use P4Bundle
                     MessageStatusUtil.getMessages(res, "\n"));
         }
         if (status.hasEdit()) {
-            LOG.info("Reverting files open for edit in preparation for delete: " + action.getFile());
             List<IFileSpec> res = cmd.revertFiles(client, files, false);
+            LOG.info("Reverting files open for edit in preparation for delete: " + action.getFile() + "; results = " +
+                    MessageStatusUtil.getMessages(res, "\n"));
             MessageStatusUtil.throwIfError(res);
         }
 
@@ -833,8 +834,8 @@ public class ConnectCommandRunner
             throws P4JavaException {
         List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
         List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
+        LOG.info("Explicit revert " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
         MessageStatusUtil.throwIfError(reverted);
-        LOG.info("Reverted " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
         return new RevertFileResult(config, action.getFile(), reverted);
     }
 

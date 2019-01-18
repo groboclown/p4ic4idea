@@ -37,13 +37,10 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
-import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.api.values.P4LocalFile;
-import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.impl.cache.store.ProjectCacheStore;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,23 +54,27 @@ import java.util.stream.Stream;
 /**
  * Listens to cache update events, and updates the local project cache store.
  */
-public class CacheStoreUpdateListener implements Disposable {
+public class CacheStoreUpdateListener {
     private static final Logger LOG = Logger.getInstance(CacheStoreUpdateListener.class);
 
     private final Project project;
     private final ProjectCacheStore cache;
     private final CachePendingActionHandler pendingCache;
-    private boolean disposed = false;
 
+    // TODO change this so that the creation is one call, and registering the listener
+    // is another call, that takes the appClient and projectClient as arguments.
+    // In this way, the registration / disposable stuff is clear to the caller and
+    // not needed to know by this object.
     public CacheStoreUpdateListener(@NotNull Project project,
-            @NotNull ProjectCacheStore cache) {
+            @NotNull ProjectCacheStore cache, @NotNull Disposable disposableParent) {
         this.project = project;
         this.cache = cache;
 
+        // TODO should be an argument, rather than the cache directly?
         this.pendingCache = new CachePendingActionHandlerImpl(cache);
 
-        MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(this);
-        MessageBusClient.ProjectClient projectClient = MessageBusClient.forProject(project, this);
+        MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(disposableParent);
+        MessageBusClient.ProjectClient projectClient = MessageBusClient.forProject(project, disposableParent);
         CacheListener listener = new CacheListener();
         String cacheId = AbstractCacheMessage.createCacheId(project, CacheStoreUpdateListener.class);
         ClientActionMessage.addListener(appClient, cacheId, listener);
@@ -93,17 +94,6 @@ public class CacheStoreUpdateListener implements Disposable {
         ListClientsForUserCacheMessage.addListener(appClient, cacheId, listener);
         ServerActionCacheMessage.addListener(appClient, cacheId, listener);
         ClientConfigRemovedMessage.addListener(projectClient, cacheId, listener);
-    }
-
-
-    public boolean isDisposed() {
-        return disposed;
-    }
-
-    @Override
-    public void dispose() {
-        this.disposed = true;
-        // TODO dispose the cache data
     }
 
     /**
@@ -175,10 +165,6 @@ public class CacheStoreUpdateListener implements Disposable {
     private Collection<ClientConfigRoot> getClientConfigRoots() {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
         return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
-    }
-
-    private void addChangelistDetails(P4ChangelistId requestedChangelist, P4RemoteChangelist updatedChangelist) {
-        // Note: not caching the committed changelist details, because the IDE handles that for us.
     }
 
     private void handleClientAction(@NotNull ClientActionMessage.Event event)
@@ -258,7 +244,8 @@ public class CacheStoreUpdateListener implements Disposable {
 
         @Override
         public void describeChangelistUpdate(@NotNull DescribeChangelistCacheMessage.Event event) {
-            addChangelistDetails(event.getRequestedChangelist(), event.getUpdatedChangelist());
+            // Note: not caching the committed changelist details, because the IDE handles that for us.
+            // addChangelistDetails(event.getRequestedChangelist(), event.getUpdatedChangelist());
         }
 
         @Override
@@ -273,15 +260,17 @@ public class CacheStoreUpdateListener implements Disposable {
             } catch (InterruptedException e) {
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }
-            //FileCacheUpdatedMessage.send(project).onFilesCacheUpdated(new FileCacheUpdatedMessage
-            // .FileCacheUpdateEvent(
-            //        event.getFile()));
+            // Do not fire a cache update message.
         }
 
         @Override
         public void jobUpdate(@NotNull JobCacheMessage.Event event) {
-            // FIXME store the job state
-            LOG.warn("FIXME store the job state");
+            try {
+                cache.write(event.getServerName(), (store) -> store.addJob(event.getJob()));
+            } catch (InterruptedException e) {
+                // TODO consistent way to handle these.
+                LOG.error("Timed out accessing cache for write", e);
+            }
         }
 
         @Override
@@ -289,6 +278,7 @@ public class CacheStoreUpdateListener implements Disposable {
             try {
                 cache.write(event.getServerName(), (store) -> store.setJobSpec(event.getJobSpec()));
             } catch (InterruptedException e) {
+                // TODO consistent way to handle these.
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }
         }
@@ -298,6 +288,7 @@ public class CacheStoreUpdateListener implements Disposable {
             try {
                 cache.write(event.getServerName(), (store) -> store.setUserClients(event.getUser(), event.getClients()));
             } catch (InterruptedException e) {
+                // TODO consistent way to handle these.
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }
         }
@@ -314,6 +305,7 @@ public class CacheStoreUpdateListener implements Disposable {
                             (store) -> store.removeActionById(event.getServerAction().getActionId()));
                 }
             } catch (InterruptedException e) {
+                // TODO consistent way to handle these.
                 LOG.error("Waited too long for the write lock for accessing the server cache.", e);
             }
         }

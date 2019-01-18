@@ -55,7 +55,7 @@ public class P4EditFileProvider implements EditFileProvider {
     }
 
 
-    // This method is called with nearly every keystroke, so it must be very, very
+    // This method was called with nearly every keystroke, so it must be very, very
     // performant.  That seems to be the case with older IDE verseions; now, it's called
     // only on changes from read-only to writable.
     @Override

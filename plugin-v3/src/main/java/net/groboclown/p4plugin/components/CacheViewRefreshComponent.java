@@ -14,8 +14,10 @@
 
 package net.groboclown.p4plugin.components;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsFileUtil;
 import net.groboclown.p4.server.api.cache.messagebus.FileCacheUpdatedMessage;
@@ -24,10 +26,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-public class CacheViewRefreshComponent implements ProjectComponent {
+public class CacheViewRefreshComponent implements ProjectComponent, Disposable {
     private static final String COMPONENT_NAME = "p4ic4idea:CacheViewRefreshComponent";
 
     private final Project project;
+    private boolean disposed = false;
 
     public CacheViewRefreshComponent(@NotNull Project project) {
         this.project = project;
@@ -58,11 +61,22 @@ public class CacheViewRefreshComponent implements ProjectComponent {
 
     @Override
     public void projectClosed() {
-        // Do nothing; listener automatically disposed.
     }
 
     @Override
     public void disposeComponent() {
-        // Do nothing; listener automatically disposed.
+        dispose();
+    }
+
+    @Override
+    public void dispose() {
+        if (!disposed) {
+            disposed = true;
+            Disposer.dispose(this);
+        }
+    }
+
+    public boolean isDisposed() {
+        return disposed;
     }
 }

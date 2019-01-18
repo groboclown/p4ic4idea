@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.api.values;
 
+import com.intellij.openapi.Disposable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

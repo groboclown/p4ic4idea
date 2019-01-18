@@ -90,7 +90,6 @@ public class InvalidPasswordMonitorComponent
                         NotificationType.ERROR);
 
                 // TODO once the Single Sign On can take an argument, let this prompt for the argument.
-                // TODO look at showing messages for the command executed, and the output from the command.
             }
 
             @Override
@@ -245,10 +244,12 @@ public class InvalidPasswordMonitorComponent
             AbstractVcs vcs =
                     ProjectLevelVcsManager.getInstance(openProject).findVcsByName(P4Vcs.VCS_NAME);
             if (vcs != null) {
+                LOG.warn("Guessing current project context is " + openProject.getBaseDir());
                 return openProject;
             }
         }
         // Weird state - no project open that has an associated P4Vcs.
+        LOG.warn("Unexpected state - no project open has a Perforce project");
         return ProjectManager.getInstance().getDefaultProject();
     }
 }

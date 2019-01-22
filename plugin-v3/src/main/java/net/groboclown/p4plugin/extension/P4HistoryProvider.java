@@ -45,6 +45,9 @@ import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4plugin.P4Bundle;
@@ -139,8 +142,7 @@ public class P4HistoryProvider
                     .getRevisions(formatter, loader);
             return createAppendableSession(filePath, revisions, null);
         } catch (InterruptedException e) {
-            // TODO better exception?
-            throw new VcsException(e);
+            throw new VcsInterruptedException(e);
         }
     }
 
@@ -192,7 +194,7 @@ public class P4HistoryProvider
             }
             return revisions.get(0);
         } catch (InterruptedException e) {
-            LOG.info(e);
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
             return null;
         }
     }
@@ -280,8 +282,13 @@ public class P4HistoryProvider
                         return null;
                     }
                     return result.getFiles().get(0).getRevisionNumber();
-                } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-                    LOG.warn(e);
+                } catch (InterruptedException e) {
+                    InternalErrorMessage.send(project).cacheLockTimeoutError(
+                            new ErrorEvent<>(new VcsInterruptedException(e)));
+                    return null;
+                } catch (P4CommandRunner.ServerResultException e) {
+                    // Already reported elsewhere
+                    LOG.debug(e);
                     return null;
                 }
             }

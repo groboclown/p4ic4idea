@@ -35,6 +35,9 @@ import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -99,8 +102,12 @@ public class P4DiffProvider extends DiffProviderEx
                 LOG.debug("Current revision for " + file + ": " + result.getFiles().get(0).getRevision());
             }
             return result.getFiles().get(0).getRevision();
-        } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-            LOG.info(e);
+        } catch (InterruptedException e) {
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
+            return null;
+        } catch (P4CommandRunner.ServerResultException e) {
+            // Already reported elsewhere.
+            LOG.debug(e);
             return null;
         }
     }
@@ -147,8 +154,12 @@ public class P4DiffProvider extends DiffProviderEx
             return new ItemLatestState(res.getRevisionNumber(),
                     res.getFileAction() != P4FileAction.DELETE && res.getFileAction() != P4FileAction.MOVE_DELETE,
                     true);
-        } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-            LOG.info(e);
+        } catch (InterruptedException e) {
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
+            return null;
+        } catch (P4CommandRunner.ServerResultException e) {
+            // Alreday reported elsewhere.
+            LOG.debug(e);
             return null;
         }
     }
@@ -256,9 +267,12 @@ public class P4DiffProvider extends DiffProviderEx
                 LOG.debug("Current revision description for " + file + ": " + revisions.get(0));
             }
             return revisions.get(0);
-        } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-            // TODO better exception?
-            LOG.info(e);
+        } catch (InterruptedException e) {
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
+            return null;
+        } catch (P4CommandRunner.ServerResultException e) {
+            // Already reported elsewhere.
+            LOG.debug(e);
             return null;
         }
     }

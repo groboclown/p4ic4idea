@@ -16,7 +16,6 @@ package net.groboclown.p4plugin.extension;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
@@ -42,8 +41,8 @@ import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.AddEditResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
-import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
@@ -163,9 +162,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                     try {
                         answer.blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                 TimeUnit.MILLISECONDS);
-                    } catch (P4CommandRunner.ServerResultException | InterruptedException e) {
-                        // TODO better InterruptedException handler?
-                        ret.add(new VcsException(e));
+                    } catch (P4CommandRunner.ServerResultException e) {
+                        ret.add(e);
+                    } catch (InterruptedException e) {
+                        ret.add(new VcsInterruptedException(e));
                     }
                 }
             }
@@ -209,8 +209,11 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                     try {
                         answer.blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                 TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-                        ret.add(new VcsException(e));
+                    } catch (P4CommandRunner.ServerResultException e) {
+                        // TODO better exception wrapper?
+                        ret.add(e);
+                    } catch (InterruptedException e) {
+                        ret.add(new VcsInterruptedException(e));
                     }
                 }
             }

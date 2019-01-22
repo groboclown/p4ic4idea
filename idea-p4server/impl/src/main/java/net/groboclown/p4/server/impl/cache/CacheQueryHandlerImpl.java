@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.cache;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -29,6 +30,9 @@ import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4JobSpec;
@@ -58,10 +62,14 @@ import java.util.stream.Collectors;
  */
 public class CacheQueryHandlerImpl implements CacheQueryHandler {
     private static final Logger LOG = Logger.getInstance(CacheQueryHandler.class);
+    private static final String CACHE_WAIT_ERROR_MESSAGE =
+            "Spent too long waiting for a read cache; Something is spending too much time writing to the cache.";
 
+    private final Project project;
     private final ProjectCacheStore cache;
 
-    public CacheQueryHandlerImpl(@NotNull ProjectCacheStore cache) {
+    public CacheQueryHandlerImpl(@Nullable Project project, @NotNull ProjectCacheStore cache) {
+        this.project = project;
         this.cache = cache;
     }
 
@@ -135,7 +143,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                 }
             });
         } catch (InterruptedException e) {
-            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            reportCacheWaitError(e);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -246,7 +254,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                 LOG.debug("final evaluated cached opened files: " + files.keySet());
             }
         } catch (InterruptedException e) {
-            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            reportCacheWaitError(e);
         }
         return files.values().stream().map(P4LocalFileImpl.Builder::build).collect(Collectors.toList());
     }
@@ -266,7 +274,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                 return null;
             });
         } catch (InterruptedException e) {
-            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            reportCacheWaitError(e);
             return null;
         }
     }
@@ -277,7 +285,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
         try {
             return cache.read(serverName, null, ServerQueryCacheStore::getJobSpec);
         } catch (InterruptedException e) {
-            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            reportCacheWaitError(e);
             return null;
         }
     }
@@ -291,7 +299,7 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                     (serverCache) -> serverCache.getClientsForUser(username));
             return ret == null ? Collections.emptyList() : ret;
         } catch (InterruptedException e) {
-            LOG.error("Spent too long waiting for a read cache; Something is spending too much time writing to the cache.", e);
+            reportCacheWaitError(e);
             return Collections.emptyList();
         }
     }
@@ -309,6 +317,15 @@ public class CacheQueryHandlerImpl implements CacheQueryHandler {
                 .stream()
                 .filter((a) -> a.clientAction != null && sourceId.equals(a.sourceId))
                 .forEach((a) -> f.accept(a.clientAction));
+    }
+
+    private void reportCacheWaitError(InterruptedException e) {
+        if (project == null) {
+            LOG.warn(CACHE_WAIT_ERROR_MESSAGE, e);
+        } else {
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                    CACHE_WAIT_ERROR_MESSAGE, e)));
+        }
     }
 
     private static DeleteChangelistAction toDeleteChangelistAction(P4CommandRunner.ClientAction<?> action) {

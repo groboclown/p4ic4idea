@@ -81,9 +81,12 @@ import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
@@ -119,7 +122,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         implements Disposable {
     private static final Logger LOG = Logger.getInstance(TopCommandRunner.class);
 
-
+    private final Project project;
     private final CacheQueryHandler queryCache;
     private final CachePendingActionHandler pendingActionCache;
     private final AbstractServerCommandRunner server;
@@ -132,6 +135,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             @NotNull CacheQueryHandler queryCache, @NotNull CachePendingActionHandler pendingActionCache,
             @NotNull AbstractServerCommandRunner server,
             @NotNull Disposable parentDisposable) {
+        this.project = project;
         this.queryCache = queryCache;
         this.pendingActionCache = pendingActionCache;
         this.server = server;
@@ -686,7 +690,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                     pendingActionCache.writeActions(clientConfig.getClientServerRef(),
                                             (cache) -> cache.removeActionById(action.getActionId()));
                                 } catch (InterruptedException ex) {
-                                    LOG.warn(ex);
+                                    InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                                            new VcsInterruptedException(ex)));
                                 }
                                 // Note: does not notify the file state of updates.
                             }).whenServerError((ex) -> {
@@ -704,7 +709,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                     LOG.warn("Went offline while sending pending actions");
                 });
         } catch (InterruptedException e) {
-            LOG.warn(e);
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
             return new DoneActionAnswer<>(null);
         }
     }

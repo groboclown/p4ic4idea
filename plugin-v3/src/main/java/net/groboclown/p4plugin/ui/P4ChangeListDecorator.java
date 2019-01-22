@@ -25,6 +25,9 @@ import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
@@ -109,8 +112,7 @@ public class P4ChangeListDecorator implements ChangeListDecorator, ProjectCompon
             }
             decorateInfo(info, cellRenderer);
         } catch (InterruptedException e) {
-            // TODO better error handling?
-            LOG.warn(e);
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
         }
     }
 

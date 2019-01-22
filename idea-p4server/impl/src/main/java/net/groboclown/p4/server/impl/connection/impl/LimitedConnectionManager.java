@@ -84,7 +84,7 @@ public class LimitedConnectionManager implements ConnectionManager {
 
     private <R> Answer<R> get(@NotNull Supplier<Answer<R>> fun) {
         final TraceableSemaphore.Requester requester = TraceableSemaphore.createRequest();
-        Answer<R> ret = Answer.background((sink) -> {
+        return Answer.background((sink) -> {
             try {
                 restriction.acquire(requester);
                 sink.resolve(null);
@@ -108,6 +108,5 @@ public class LimitedConnectionManager implements ConnectionManager {
             LOG.debug("Finalizing failed execution for " + requester);
             restriction.release(requester);
         });
-        return ret;
     }
 }

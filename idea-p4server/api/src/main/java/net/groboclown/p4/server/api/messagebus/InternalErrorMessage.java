@@ -16,6 +16,7 @@ package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import org.jetbrains.annotations.NotNull;
 
 public class InternalErrorMessage extends ProjectMessage<InternalErrorMessage.Listener> {
@@ -47,6 +48,8 @@ public class InternalErrorMessage extends ProjectMessage<InternalErrorMessage.Li
          * @param t error
          */
         void unexpectedError(@NotNull ErrorEvent<Throwable> t);
+
+        void cacheLockTimeoutError(@NotNull ErrorEvent<VcsInterruptedException> t);
     }
 
     public static class ListenerAdapter implements Listener {
@@ -60,6 +63,10 @@ public class InternalErrorMessage extends ProjectMessage<InternalErrorMessage.Li
 
         @Override
         public void unexpectedError(@NotNull ErrorEvent<Throwable> t) {
+        }
+
+        @Override
+        public void cacheLockTimeoutError(@NotNull ErrorEvent<VcsInterruptedException> t) {
         }
     }
 

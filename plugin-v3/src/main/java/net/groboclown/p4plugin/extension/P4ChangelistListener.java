@@ -36,6 +36,9 @@ import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.EditChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.MoveFilesToChangelistResult;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
@@ -117,7 +120,8 @@ public class P4ChangelistListener
                 }
             }
         } catch (InterruptedException e) {
-            LOG.warn("Interrupted while performing changelist removal", e);
+            InternalErrorMessage.send(myProject).cacheLockTimeoutError(new ErrorEvent<>(
+                    new VcsInterruptedException("Interrupted while performing changelist removal", e)));
         }
     }
 
@@ -260,7 +264,8 @@ public class P4ChangelistListener
                 })
                 .blockingWait(UserProjectPreferences.getLockWaitTimeoutMillis(myProject), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                LOG.warn(e);
+                InternalErrorMessage.send(myProject).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException(e)));
             }
         }
     }
@@ -296,7 +301,8 @@ public class P4ChangelistListener
                                     new EditChangelistAction(change, toDescription(local)));
                 }
             } catch (InterruptedException e) {
-                LOG.warn(e);
+                InternalErrorMessage.send(myProject).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException(e)));
             }
         }
     }

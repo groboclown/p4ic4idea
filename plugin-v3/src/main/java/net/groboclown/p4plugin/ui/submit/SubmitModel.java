@@ -29,6 +29,9 @@ import net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.JobStatusNames;
 import net.groboclown.p4.server.api.values.P4Job;
@@ -155,9 +158,12 @@ public class SubmitModel {
                         return job;
                     }
                 }
-            } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
-                // TODO better exception handling?
-                LOG.warn(e);
+            } catch (InterruptedException e) {
+                InternalErrorMessage.send(project).cacheLockTimeoutError(
+                        new ErrorEvent<>(new VcsInterruptedException(e)));
+            } catch (P4CommandRunner.ServerResultException e) {
+                // Already handled elsewhere
+                LOG.debug(e);
             }
         }
         return null;

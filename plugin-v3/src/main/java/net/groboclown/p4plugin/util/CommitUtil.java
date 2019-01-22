@@ -29,6 +29,7 @@ import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.JobStatus;
@@ -112,7 +113,9 @@ public class CommitUtil {
                                             .getServerOpenedCache().first
                                             .changelistDeleted(res.getChangelistId());
                                 } catch (InterruptedException e) {
-                                    LOG.info("Timed out waiting for cache to become available", e);
+                                    InternalErrorMessage.send(project).cacheLockTimeoutError(
+                                            new ErrorEvent<>(new VcsInterruptedException(
+                                                    "Timed out waiting for cache to become available", e)));
                                 }
                             })
                     )
@@ -122,7 +125,8 @@ public class CommitUtil {
                 errors.add(new VcsException("Failed to wait for submit to complete"));
             }
         } catch (InterruptedException e) {
-            errors.add(new VcsException(e));
+            // Note: handled by IDE, not by our custom event model.
+            errors.add(new VcsInterruptedException(e));
         }
 
         return errors;

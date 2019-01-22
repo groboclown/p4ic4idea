@@ -30,6 +30,9 @@ import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
@@ -161,7 +164,8 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
                     // Unknown...
                     LOG.warn("No known client associated with p4 changelist " + first + "; probably a caching issue?");
                 } catch (InterruptedException ex) {
-                    LOG.warn(ex);
+                    InternalErrorMessage.send(project).cacheLockTimeoutError(
+                            new ErrorEvent<>(new VcsInterruptedException(ex)));
                 }
             }
         }

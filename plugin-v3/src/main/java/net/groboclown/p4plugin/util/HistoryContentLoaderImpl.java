@@ -21,6 +21,7 @@ import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
@@ -72,8 +73,7 @@ public class HistoryContentLoaderImpl implements HistoryContentLoader {
                     .query(project, config, query)
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            // TODO better exception?
-            throw new VcsException(e);
+            throw new VcsInterruptedException(e);
         }
     }
 

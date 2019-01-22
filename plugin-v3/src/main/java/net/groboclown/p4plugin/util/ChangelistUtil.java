@@ -21,6 +21,9 @@ import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
@@ -125,7 +128,7 @@ public class ChangelistUtil {
                     .getP4ChangesFor(defaultIdeChangeList)
                     .forEach((id) -> ret.put(id.getClientServerRef(), id));
         } catch (InterruptedException e) {
-            LOG.warn(e);
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
         }
         return ret;
     }

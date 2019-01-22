@@ -33,6 +33,7 @@ import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ISingleServerMessage;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
@@ -210,6 +211,12 @@ public class UserErrorComponent implements ProjectComponent, Disposable {
             @Override
             public void unexpectedError(@NotNull ErrorEvent<Throwable> t) {
                 simpleError("Internal error: " + t.getMessage(), "P4 Plugin Error");
+                LOG.warn(t.getError());
+            }
+
+            @Override
+            public void cacheLockTimeoutError(@NotNull ErrorEvent<VcsInterruptedException> t) {
+                simpleError(t.getMessage(), "P4 Cache Access Timed Out");
                 LOG.warn(t.getError());
             }
         });

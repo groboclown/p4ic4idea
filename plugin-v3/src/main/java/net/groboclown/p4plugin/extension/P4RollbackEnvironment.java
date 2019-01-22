@@ -31,9 +31,8 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.BlockingAnswer;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
-import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
-import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.impl.util.ErrorCollectors;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -41,13 +40,12 @@ import net.groboclown.p4plugin.components.UserProjectPreferences;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class P4RollbackEnvironment implements RollbackEnvironment {
     private static final Logger LOG = Logger.getInstance(P4RollbackEnvironment.class);
@@ -113,8 +111,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
                     .collect(ErrorCollectors.collectActionErrors(vcsExceptions)))
             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            // TODO better exception?
-            vcsExceptions.add(new VcsException(e));
+            vcsExceptions.add(new VcsInterruptedException(e));
         } catch (P4CommandRunner.ServerResultException e) {
             // This should never be reached, because of the collector.
             vcsExceptions.add(e);
@@ -184,20 +181,33 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             return;
         }
 
-        files.stream().collect(Collectors.groupingBy(registry::getClientFor)).entrySet().stream()
-                .map((Function<Map.Entry<ClientConfigRoot, List<FilePath>>, P4CommandRunner.ActionAnswer<FetchFilesResult>>) e -> {
-                    if (e.getKey() == null) {
-                        LOG.info("Skipping revert for " + e.getValue() + ": not in a Perforce root");
-                        return new DoneActionAnswer<>(null);
-                    }
-                    return P4ServerComponent
-                            .perform(project, e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), "", true))
-                            .whenCompleted((c) -> listener.accept(e.getValue()))
-                            .whenServerError((ex) -> listener.accept(e.getValue()))
-                            .whenOffline(() -> listener.accept(e.getValue()));
-                })
-                .collect(ErrorCollectors.collectActionErrors(exceptions))
-                .whenCompleted((c) -> LOG.info("Completed sync of files"))
-                .whenFailed((c) -> LOG.info("Failed to sync files"));
+        groupFilesByClient(registry, files)
+            .stream()
+            .map(e -> P4ServerComponent
+                    .perform(project, e.getKey().getClientConfig(), new FetchFilesAction(e.getValue(), "", true))
+                    .whenCompleted((c) -> listener.accept(e.getValue()))
+                    .whenServerError((ex) -> listener.accept(e.getValue()))
+                    .whenOffline(() -> listener.accept(e.getValue())))
+            .collect(ErrorCollectors.collectActionErrors(exceptions))
+            .whenCompleted((c) -> LOG.info("Completed sync of files"))
+            .whenFailed((c) -> LOG.info("Failed to sync files"));
+    }
+
+    private Set<Map.Entry<ClientConfigRoot, List<FilePath>>> groupFilesByClient(@NotNull final ProjectConfigRegistry registry,
+            @NotNull final List<FilePath> files) {
+        // Note: can't use files.stream().collect(Collectors.groupingBy(registry::getClientFor))
+        // because the root might be null for a file, and the groupingBy doesn't allow for null keys.
+        // See #195.
+        // This fix also moves the null root check into this method, out of the stream processing.
+        Map<ClientConfigRoot, List<FilePath>> ret = new HashMap<>();
+        files.forEach((f) -> {
+            ClientConfigRoot root = registry.getClientFor(f);
+            if (root != null) {
+                ret.computeIfAbsent(root, (x) -> new ArrayList<>()).add(f);
+            } else {
+                LOG.info("Skipping revert for " + f + ": not in a Perforce root");
+            }
+        });
+        return ret.entrySet();
     }
 }

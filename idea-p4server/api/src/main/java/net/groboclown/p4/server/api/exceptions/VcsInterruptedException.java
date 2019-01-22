@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.exceptions;
 
 import com.intellij.openapi.vcs.VcsException;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CancellationException;
@@ -22,6 +23,11 @@ import java.util.concurrent.CancellationException;
 public class VcsInterruptedException extends VcsException {
     public VcsInterruptedException(@NotNull InterruptedException ex) {
         super(ex);
+    }
+    public VcsInterruptedException(
+            @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String operation,
+            @NotNull InterruptedException ex) {
+        super(operation, ex);
     }
     public VcsInterruptedException(@NotNull CancellationException ex) {
         super(ex);

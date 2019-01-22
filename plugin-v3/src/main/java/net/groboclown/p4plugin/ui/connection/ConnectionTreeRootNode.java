@@ -21,6 +21,9 @@ import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.ActionChoice;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4plugin.components.CacheComponent;
 import org.jetbrains.annotations.NotNull;
 
@@ -87,7 +90,7 @@ public class ConnectionTreeRootNode
                 }
             });
         } catch (InterruptedException e) {
-            LOG.warn(e);
+            InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
         }
     }
 

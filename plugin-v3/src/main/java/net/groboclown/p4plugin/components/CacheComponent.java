@@ -34,6 +34,9 @@ import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuery;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.impl.cache.CachePendingActionHandlerImpl;
 import net.groboclown.p4.server.impl.cache.CacheQueryHandlerImpl;
 import net.groboclown.p4.server.impl.cache.CacheStoreUpdateListener;
@@ -65,6 +68,10 @@ public class CacheComponent implements
 
     private static final AtomicInteger ACTIVE_COUNT = new AtomicInteger(0);
     private static final AtomicInteger CREATION_COUNT = new AtomicInteger(0);
+    private static final String SERIALIZE_CACHE_TIMEOUT_MESSAGE =
+            "Timed out while trying to access the cache.  Could not serialize cache state.";
+    private static final String DESERIALIZE_CACHE_TIMEOUT_MESSAGE =
+            "Timed out while writing to the cache.  Could not deserialize the cache state.";
 
     @Nullable
     private final Project project;
@@ -223,7 +230,7 @@ public class CacheComponent implements
             throw new IllegalStateException("already disposed");
         }
         if (queryHandler == null) {
-            queryHandler = new CacheQueryHandlerImpl(projectCache);
+            queryHandler = new CacheQueryHandlerImpl(project, projectCache);
         }
         if (pendingHandler == null) {
             pendingHandler = new CachePendingActionHandlerImpl(projectCache);
@@ -250,7 +257,12 @@ public class CacheComponent implements
         try {
             return projectCache.getState();
         } catch (InterruptedException e) {
-            LOG.warn("Timed out while trying to access the cache.  Could not serialize cache state.", e);
+            if (project != null) {
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException(SERIALIZE_CACHE_TIMEOUT_MESSAGE, e)));
+            } else {
+                LOG.warn(SERIALIZE_CACHE_TIMEOUT_MESSAGE, e);
+            }
             return null;
         }
     }
@@ -260,7 +272,12 @@ public class CacheComponent implements
         try {
             this.projectCache.setState(state);
         } catch (InterruptedException e) {
-            LOG.warn("Timed out while writing to the cache.  Could not deserialize the cache state.", e);
+            if (project != null) {
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException(DESERIALIZE_CACHE_TIMEOUT_MESSAGE, e)));
+            } else {
+                LOG.warn(DESERIALIZE_CACHE_TIMEOUT_MESSAGE, e);
+            }
         }
     }
 

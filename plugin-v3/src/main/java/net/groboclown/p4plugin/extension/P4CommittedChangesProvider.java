@@ -49,6 +49,9 @@ import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.repository.P4RepositoryLocation;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
@@ -153,7 +156,11 @@ public class P4CommittedChangesProvider implements
                                 new ListFilesDetailsQuery(client.getClientConfig().getClientServerRef(),
                                         Collections.singletonList(root),  ListFilesDetailsQuery.RevState.HAVE, 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException | P4CommandRunner.ServerResultException e) {
+            } catch (InterruptedException e) {
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        "Encountered error looking for files under " + root, e)));
+                return null;
+            } catch (P4CommandRunner.ServerResultException e) {
                 LOG.warn("Encountered error looking for files under " + root, e);
                 return null;
             }
@@ -208,8 +215,10 @@ public class P4CommittedChangesProvider implements
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             // MUST return a modifiable list
             return new ArrayList<>(changes);
-        } catch (InterruptedException | CancellationException e) {
-            throw new VcsException(e);
+        } catch (InterruptedException e) {
+            throw new VcsInterruptedException(e);
+        } catch (CancellationException e) {
+            throw new VcsInterruptedException(e);
         }
     }
 

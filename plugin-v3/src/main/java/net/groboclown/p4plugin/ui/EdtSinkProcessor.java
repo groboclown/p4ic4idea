@@ -288,6 +288,7 @@ public class EdtSinkProcessor<E> {
             try {
                 SwingUtilities.invokeAndWait(runner);
             } catch (InterruptedException | InvocationTargetException e) {
+                // Note: this is not cache access.
                 LOG.warn(e);
             }
         }

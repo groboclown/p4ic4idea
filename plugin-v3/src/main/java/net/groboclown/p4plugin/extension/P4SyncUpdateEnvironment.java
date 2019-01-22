@@ -33,6 +33,7 @@ import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
@@ -101,8 +102,7 @@ public class P4SyncUpdateEnvironment
             } catch (P4CommandRunner.ServerResultException e) {
                 ret.exceptions.add(e);
             } catch (InterruptedException e) {
-                // TODO better exception?
-                ret.exceptions.add(new VcsException(e));
+                ret.exceptions.add(new VcsInterruptedException(e));
             }
         });
         return ret;

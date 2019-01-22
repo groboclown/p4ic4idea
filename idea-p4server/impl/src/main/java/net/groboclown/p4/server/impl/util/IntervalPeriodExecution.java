@@ -85,7 +85,8 @@ public class IntervalPeriodExecution {
                     try {
                         Thread.sleep(delayTime);
                     } catch (InterruptedException e) {
-                        // This is an expected state.
+                        // This is an expected state; the thread can be interrupted
+                        // to wake it up.
                         // Continue on with the loop.
                     }
                 }

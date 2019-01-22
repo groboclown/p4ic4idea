@@ -34,7 +34,10 @@ import net.groboclown.p4.server.api.cache.messagebus.JobSpecCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ListClientsForUserCacheMessage;
 import net.groboclown.p4.server.api.cache.messagebus.ServerActionCacheMessage;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
@@ -56,6 +59,7 @@ import java.util.stream.Stream;
  */
 public class CacheStoreUpdateListener {
     private static final Logger LOG = Logger.getInstance(CacheStoreUpdateListener.class);
+    private static final String SERVER_CACHE_TIMEOUT_MESSAGE = "Waited too long for the write lock for accessing the server cache.";
 
     private final Project project;
     private final ProjectCacheStore cache;
@@ -140,7 +144,8 @@ public class CacheStoreUpdateListener {
                         store.setChangelists(pendingChangelists);
                     });
                 } catch (InterruptedException e) {
-                    LOG.info("Could not write to the cache due to lock timeout", e);
+                    InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                            "Could not write to the cache due to lock timeout", e)));
                 }
             } else if (LOG.isDebugEnabled()) {
                 LOG.debug("Root " + root + ", ref " + root.getClientConfig().getClientServerRef() +
@@ -233,7 +238,8 @@ public class CacheStoreUpdateListener {
             try {
                 handleClientAction(event);
             } catch (InterruptedException e) {
-                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
         }
 
@@ -258,7 +264,8 @@ public class CacheStoreUpdateListener {
                             (store) -> store.removeActionById(event.getClientAction().getActionId()));
                 }
             } catch (InterruptedException e) {
-                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
             // Do not fire a cache update message.
         }
@@ -268,8 +275,8 @@ public class CacheStoreUpdateListener {
             try {
                 cache.write(event.getServerName(), (store) -> store.addJob(event.getJob()));
             } catch (InterruptedException e) {
-                // TODO consistent way to handle these.
-                LOG.error("Timed out accessing cache for write", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
         }
 
@@ -278,8 +285,8 @@ public class CacheStoreUpdateListener {
             try {
                 cache.write(event.getServerName(), (store) -> store.setJobSpec(event.getJobSpec()));
             } catch (InterruptedException e) {
-                // TODO consistent way to handle these.
-                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
         }
 
@@ -288,8 +295,8 @@ public class CacheStoreUpdateListener {
             try {
                 cache.write(event.getServerName(), (store) -> store.setUserClients(event.getUser(), event.getClients()));
             } catch (InterruptedException e) {
-                // TODO consistent way to handle these.
-                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
         }
 
@@ -305,8 +312,8 @@ public class CacheStoreUpdateListener {
                             (store) -> store.removeActionById(event.getServerAction().getActionId()));
                 }
             } catch (InterruptedException e) {
-                // TODO consistent way to handle these.
-                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
         }
 
@@ -316,7 +323,8 @@ public class CacheStoreUpdateListener {
             try {
                 cache.cleanClientCache(activeConfigs);
             } catch (InterruptedException e) {
-                LOG.error("Waited too long for the write lock for accessing the server cache.", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(
+                        SERVER_CACHE_TIMEOUT_MESSAGE, e)));
             }
         }
     }

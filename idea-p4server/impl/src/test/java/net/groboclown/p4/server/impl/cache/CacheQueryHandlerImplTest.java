@@ -50,7 +50,7 @@ class CacheQueryHandlerImplTest {
         ServerConfig serverConfig = ServerConfig.createFrom(configPart);
         ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, configPart);
         ProjectCacheStore projectStore = new ProjectCacheStore();
-        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(projectStore);
+        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(idea.getMockProject(), projectStore);
 
         Collection<P4LocalChangelist> changes =
                 query.getCachedOpenedChangelists(clientConfig);
@@ -64,7 +64,7 @@ class CacheQueryHandlerImplTest {
         ServerConfig serverConfig = ServerConfig.createFrom(configPart);
         ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, configPart);
         ProjectCacheStore projectStore = new ProjectCacheStore();
-        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(projectStore);
+        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(idea.getMockProject(), projectStore);
         ClientQueryCacheStore clientStore = new ClientQueryCacheStore(clientConfig.getClientServerRef());
         P4LocalChangelist cl1 = new P4LocalChangelistImpl.Builder()
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
@@ -87,7 +87,7 @@ class CacheQueryHandlerImplTest {
         ServerConfig serverConfig = ServerConfig.createFrom(configPart);
         ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, configPart);
         ProjectCacheStore projectStore = new ProjectCacheStore();
-        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(projectStore);
+        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(idea.getMockProject(), projectStore);
         ClientQueryCacheStore clientStore = new ClientQueryCacheStore(clientConfig.getClientServerRef());
         P4LocalChangelist cl1 = new P4LocalChangelistImpl.Builder()
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))
@@ -113,7 +113,7 @@ class CacheQueryHandlerImplTest {
         ServerConfig serverConfig = ServerConfig.createFrom(configPart);
         ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, configPart);
         ProjectCacheStore projectStore = new ProjectCacheStore();
-        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(projectStore);
+        CacheQueryHandlerImpl query = new CacheQueryHandlerImpl(idea.getMockProject(), projectStore);
         ClientQueryCacheStore clientStore = new ClientQueryCacheStore(clientConfig.getClientServerRef());
         P4LocalChangelist cl1 = new P4LocalChangelistImpl.Builder()
                 .withChangelistId(new P4ChangelistIdImpl(1, clientConfig.getClientServerRef()))

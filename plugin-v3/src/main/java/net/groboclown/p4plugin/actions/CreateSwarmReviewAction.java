@@ -16,7 +16,6 @@ package net.groboclown.p4plugin.actions;
 
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.actions.AbstractVcsAction;
 import com.intellij.openapi.vcs.actions.VcsContext;
@@ -24,6 +23,9 @@ import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.messagebus.SwarmErrorMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4plugin.P4Bundle;
@@ -38,9 +40,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class CreateSwarmReviewAction extends AbstractVcsAction {
-    private static final Logger LOG = Logger.getInstance(CreateSwarmReviewAction.class);
-
-
     public CreateSwarmReviewAction() {
         getTemplatePresentation().setText(P4Bundle.getString("swarm.review.create.title"));
         getTemplatePresentation().setIcon(P4Icons.SWARM);
@@ -129,7 +128,8 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
                         continue;
                     }
                 } catch (InterruptedException e) {
-                    LOG.info("Timeout or interruption while reading list of changes", e);
+                    InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                            new VcsInterruptedException("Timeout or interruption while reading list of changes", e)));
                 }
             }
             SwarmErrorMessage.send(project).notOnServer(new SwarmErrorMessage.SwarmEvent(null), ideChangeList);

@@ -1,6 +1,23 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.4::
+
+### Overview
+
+* Improved messaging when cache access takes too long.
+* Bug fixes
+
+### Details
+
+* Improved messaging when cache access takes too long.
+    * Cache access due to timeouts used to be very inconsistent, anywhere from
+      just messages in the log, to reporting a failure with the plugin.  Now,
+      the messaging is reported to the user in a consistent way.
+* Bug fixes
+    * Fixed a NPE that can happen during revert. (#195)
+
+
 ## ::v0.10.3::
 
 ### Overview
@@ -13,7 +30,8 @@
     * Changed logic behind add, edit, delete, and move operations.  If there was a previous,
       un-checked-in operation on a file and a new one requires to revert that change, now the
       file contents won't be altered with the revert (it now runs a `p4 revert -k`). 
-    * Work to reduce memory leak (#193).
+    * Work to reduce memory leak (#193).  Turn on debugging for
+      `#net.groboclown.p4plugin.components.CacheComponent` to see details of the biggest memory consumer.
     * Mildly enhanced charset detection.
     * General code cleanup that may fix some possible lingering NPE and related issues.
     * Enhanced reporting information around inadvertent revert (#181), which includes an

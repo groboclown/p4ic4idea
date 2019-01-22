@@ -28,6 +28,9 @@ import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.actions.BasicAction;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -89,6 +92,8 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
                         res = r;
                     }
                 } catch (InterruptedException e) {
+                    InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                            new VcsInterruptedException(e)));
                     progressIndicator.finishNonCancelableSection();
                     onCancel();
                 } catch (P4CommandRunner.ServerResultException e) {

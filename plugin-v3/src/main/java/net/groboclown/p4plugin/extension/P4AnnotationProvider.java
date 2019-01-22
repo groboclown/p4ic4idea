@@ -28,6 +28,7 @@ import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
@@ -38,6 +39,7 @@ import net.groboclown.p4plugin.revision.P4AnnotatedFileImpl;
 import net.groboclown.p4plugin.util.HistoryContentLoaderImpl;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -107,7 +109,7 @@ public class P4AnnotationProvider
                         .query(project, client.getServerConfig(), new AnnotateFileQuery(clientname, fp, rev))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS));
         } catch (InterruptedException e) {
-            throw new VcsException(e);
+            throw new VcsInterruptedException(e);
         }
     }
 

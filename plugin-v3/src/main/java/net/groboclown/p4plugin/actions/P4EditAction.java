@@ -27,6 +27,7 @@ import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4plugin.P4Bundle;
@@ -106,7 +107,7 @@ public class P4EditAction
                 p4cl = CacheComponent.getInstance(project).getServerOpenedCache().first.getP4ChangeFor(
                                 entity.first.getClientServerRef(), defaultChangeList);
             } catch (InterruptedException e) {
-                exceptions.add(new VcsException(e));
+                exceptions.add(new VcsInterruptedException(e));
                 return Stream.empty();
             }
             return entity.second.stream()

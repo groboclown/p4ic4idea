@@ -45,6 +45,9 @@ import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistResult;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.messagebus.ErrorEvent;
+import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.util.EqualUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -122,7 +125,8 @@ public class P4ChangeProvider
                         break;
                 }
             } catch (InterruptedException e) {
-                LOG.info(e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException(e)));
             }
         });
     }
@@ -216,7 +220,8 @@ public class P4ChangeProvider
                 updateChangelists(cachedMaps.first, addGate)
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                LOG.info("Update Changelists interrupted", e);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException("Update Changelists interrupted", e)));
                 progress.setFraction(1.0);
                 return;
             }
@@ -512,7 +517,8 @@ public class P4ChangeProvider
                     return change.second;
                 }
             } catch (InterruptedException e) {
-                LOG.warn("Lock timed out for " + file);
+                InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
+                        new VcsInterruptedException("Lock timed out for " + file, e)));
                 builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
                 return false;
             }

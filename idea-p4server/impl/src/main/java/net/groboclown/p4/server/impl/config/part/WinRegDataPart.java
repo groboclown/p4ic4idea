@@ -69,7 +69,7 @@ class WinRegDataPart implements ConfigPart {
 
 
     static boolean isAvailable() {
-        return available && SystemInfo.isWindows;
+        return available && SystemInfo.isWindows && PreferencesWinRegistry.isAvailable();
     }
 
     static void setAvailable(boolean avail) {
@@ -123,10 +123,12 @@ class WinRegDataPart implements ConfigPart {
 
     private String readRegString(String valueName)
             throws InvocationTargetException, IllegalAccessException {
-        for (String key: keys) {
-            String ret = PreferencesWinRegistry.readString(hive, key, valueName);
-            if (ret != null) {
-                return ret;
+        if (isAvailable()) {
+            for (String key : keys) {
+                String ret = PreferencesWinRegistry.readString(hive, key, valueName);
+                if (ret != null) {
+                    return ret;
+                }
             }
         }
         return null;

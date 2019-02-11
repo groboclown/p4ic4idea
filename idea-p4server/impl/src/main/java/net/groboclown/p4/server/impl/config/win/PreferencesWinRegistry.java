@@ -36,6 +36,7 @@ import java.util.prefs.Preferences;
  *
  * It takes advantage of the Preferences class' ability to inspect the Windows registry.
  * Note that this may not be compatible with all Java versions.
+ * Indeed, this doesn't work for JDK 11.
  */
 public class PreferencesWinRegistry {
     public static final int HKEY_CURRENT_USER = 0x80000001;
@@ -97,6 +98,17 @@ public class PreferencesWinRegistry {
             e.printStackTrace();
         }
     }
+
+
+    public static boolean isAvailable() {
+        return regOpenKey != null
+                && regCloseKey != null
+                && regQueryValueEx != null
+                && regEnumValue != null
+                && regQueryInfoKey != null
+                && regEnumKeyEx != null;
+    }
+
 
     /**
      * Read a value from key and value name

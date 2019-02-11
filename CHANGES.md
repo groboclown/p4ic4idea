@@ -1,6 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.5::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes
+    * Fixed a NPE when running the IDE with JDK 11 and Windows.
+
+
 ## ::v0.10.4::
 
 ### Overview

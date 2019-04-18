@@ -89,7 +89,11 @@ dependencies {
                     tasks.getByPath(':idea-p4server:api:jar').archivePath,
                     tasks.getByPath(':idea-p4server:impl:jar').archivePath,
                     tasks.getByPath(':swarm:jar').archivePath
-            )
+            ),
+
+            // Extra libraries from p4server impl
+            'net.java.dev.jna:jna:5.2.0',
+            'net.java.dev.jna:jna-platform:5.2.0',
     )
 }
 

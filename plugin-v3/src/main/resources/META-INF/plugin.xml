@@ -1,18 +1,20 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.5</version>
+    <version>0.10.6</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.6</em><ul>
+        <li>"Environment" configuration on Windows and JDK 11 can now inspect the Registry for information.</li>
+        <li>Fixed an issue where 0 files could be requested in an `fstat` call.</li>
+        <li>Fixed an issue where, in some cases, fstat was not limiting the number of results.</li>
+        <li>Changed reporting on a successful sync; it must happen from within the EDT.</li>
+      </ul></li>
       <li><em>0.10.5</em><ul>
         <li>Fixed a NPE when running the IDE with JDK 11 and Windows.</li>
-      </ul></li>
-      <li><em>0.10.4</em><ul>
-        <li>Improved messaging when cache access takes too long.</li>
-        <li>Fixed a NPE that can happen during revert.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

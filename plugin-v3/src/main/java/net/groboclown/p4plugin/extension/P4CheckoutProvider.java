@@ -14,6 +14,8 @@
 
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -120,8 +122,12 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
                 // it would need to run VcsDirtyScopeManager.getInstance(project).fileDirty(rootPath);
                 rootDir.refresh(true, true, null);
                 if (listener != null) {
-                    listener.directoryCheckedOut(rootPath.getIOFile(), P4Vcs.getKey());
-                    listener.checkoutCompleted();
+                    // "directoryCheckedOut" can run an AWT event, which is not allowed from within
+                    // this write action.  Need to run this on a separate thread.  #196
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        listener.directoryCheckedOut(rootPath.getIOFile(), P4Vcs.getKey());
+                        listener.checkoutCompleted();
+                    }, ModalityState.any());
                 }
             }
         }.queue();

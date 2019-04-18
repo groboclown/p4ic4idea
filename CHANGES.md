@@ -1,6 +1,36 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.6::
+
+### Overview
+
+* "Environment" configuration on Windows and JDK 11 can now inspect the
+  Registry for information.
+* Bug fixes
+* Minor code improvements
+
+### Details
+
+* "Environment" configuration on Windows and JDK 11 can now inspect the
+  Registry for information.
+    * JDK 11 removed the ability to run the "hack" to extract Windows registry
+      values, so that capability wasn't enabled on the JDK 11 release of the
+      IDE.
+    * Replaced that functionality (which required an Oracle JDK anyway)
+      with the "jna" library to perform the operation correctly.
+* Bug fixes
+    * Fixed an issue where 0 files could be requested in an `fstat` call,
+      which generates a superfluous call to the server and shows up as a
+      P4 cmd problem in the logs.
+    * Fixed an issue where, in some cases, fstat was not limiting the number
+      of results (#197).
+    * Changed reporting on a successful sync; it must happen from within the
+      EDT (#196).
+* Minor code improvements
+    * General code cleanup.
+
+
 ## ::v0.10.5::
 
 ### Overview

@@ -17,18 +17,18 @@ package net.groboclown.p4.server.impl.config.part;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.perforce.p4java.env.PerforceEnvironment;
+import com.sun.jna.platform.win32.WinReg;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
-import net.groboclown.p4.server.impl.config.win.PreferencesWinRegistry;
+import net.groboclown.p4.server.impl.config.win.JnaWinRegistry;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -49,7 +49,7 @@ class WinRegDataPart implements ConfigPart {
 
     private static boolean available = true;
 
-    private final int hive;
+    private final WinReg.HKEY hive;
     private final String[] keys;
 
 
@@ -69,7 +69,7 @@ class WinRegDataPart implements ConfigPart {
 
 
     static boolean isAvailable() {
-        return available && SystemInfo.isWindows && PreferencesWinRegistry.isAvailable();
+        return available && SystemInfo.isWindows && JnaWinRegistry.isAvailable();
     }
 
     static void setAvailable(boolean avail) {
@@ -78,10 +78,10 @@ class WinRegDataPart implements ConfigPart {
 
     WinRegDataPart(boolean userReg) {
         if (userReg) {
-            hive = PreferencesWinRegistry.HKEY_CURRENT_USER;
+            hive = JnaWinRegistry.HKEY_CURRENT_USER;
             keys = USER_KEYS;
         } else {
-            hive = PreferencesWinRegistry.HKEY_LOCAL_MACHINE;
+            hive = JnaWinRegistry.HKEY_LOCAL_MACHINE;
             keys = MACHINE_KEYS;
         }
         reload();
@@ -89,43 +89,37 @@ class WinRegDataPart implements ConfigPart {
 
     @Override
     public boolean reload() {
-        try {
-            rawPort = readRegString(PerforceEnvironment.P4PORT);
-            serverName = P4ServerName.forPort(rawPort);
-            clientName = readRegString(PerforceEnvironment.P4CLIENT);
-            userName = readRegString(PerforceEnvironment.P4USER);
+        rawPort = readRegString(PerforceEnvironment.P4PORT);
+        serverName = P4ServerName.forPort(rawPort);
+        clientName = readRegString(PerforceEnvironment.P4CLIENT);
+        userName = readRegString(PerforceEnvironment.P4USER);
 
-            password = decodePassword(readRegString(PerforceEnvironment.P4PASSWD));
+        password = decodePassword(readRegString(PerforceEnvironment.P4PASSWD));
 
-            authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);
-            trustTicket = readRegString(PerforceEnvironment.P4TRUST);
-            configFile = readRegString(PerforceEnvironment.P4CONFIG);
-            enviroFile = readRegString(PerforceEnvironment.P4ENVIRO);
-            clientHostname = readRegString(PerforceEnvironment.P4HOST);
-            ignoreFileName = readRegString(PerforceEnvironment.P4IGNORE);
-            charset = readRegString(PerforceEnvironment.P4CHARSET);
-            loginSso = readRegString("P4LOGINSSO");
+        authTicketPath = readRegString(PerforceEnvironment.P4TICKETS);
+        trustTicket = readRegString(PerforceEnvironment.P4TRUST);
+        configFile = readRegString(PerforceEnvironment.P4CONFIG);
+        enviroFile = readRegString(PerforceEnvironment.P4ENVIRO);
+        clientHostname = readRegString(PerforceEnvironment.P4HOST);
+        ignoreFileName = readRegString(PerforceEnvironment.P4IGNORE);
+        charset = readRegString(PerforceEnvironment.P4CHARSET);
+        loginSso = readRegString("P4LOGINSSO");
 
-            if (LOG.isDebugEnabled()) {
-                Map<String, String> props = ConfigPropertiesUtil.toProperties(
-                        this, "<unset>", "<empty encodedPassword>",
-                        "<encodedPassword>");
-                props.put(PerforceEnvironment.P4CONFIG, configFile);
-                props.put(PerforceEnvironment.P4ENVIRO, enviroFile);
-                LOG.debug("Loaded windows registry " + keys[0] + " " + props);
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            // Do not mark as an actual problem.  This is a JVM incompatible issue.
-            LOG.debug("Could not access Windows registry", e);
+        if (LOG.isDebugEnabled()) {
+            Map<String, String> props = ConfigPropertiesUtil.toProperties(
+                    this, "<unset>", "<empty encodedPassword>",
+                    "<encodedPassword>");
+            props.put(PerforceEnvironment.P4CONFIG, configFile);
+            props.put(PerforceEnvironment.P4ENVIRO, enviroFile);
+            LOG.debug("Loaded windows registry " + keys[0] + " " + props);
         }
         return hasError();
     }
 
-    private String readRegString(String valueName)
-            throws InvocationTargetException, IllegalAccessException {
+    private String readRegString(String valueName) {
         if (isAvailable()) {
             for (String key : keys) {
-                String ret = PreferencesWinRegistry.readString(hive, key, valueName);
+                String ret = JnaWinRegistry.readString(hive, key, valueName);
                 if (ret != null) {
                     return ret;
                 }

@@ -119,6 +119,9 @@ public class P4CommandUtil {
     public List<IExtendedFileSpec> getFileDetailsForOpenedSpecs(IServer server, List<IFileSpec> sources,
             int maxFileResults)
             throws P4JavaException {
+        if (sources.isEmpty()) {
+            return Collections.emptyList();
+        }
         GetExtendedFilesOptions options = new GetExtendedFilesOptions("-Olhp");
         options.setMaxResults(maxFileResults);
         return server.getExtendedFiles(sources, options);
@@ -405,7 +408,8 @@ public class P4CommandUtil {
         return ret.get(0);
     }
 
-    public List<IExtendedFileSpec> getFilesDetails(IServer server, String clientname, List<IFileSpec> sources)
+    public List<IExtendedFileSpec> getFilesDetails(IServer server, String clientname, List<IFileSpec> sources,
+            int maxResults)
             throws P4JavaException {
         if (clientname != null) {
             // For fetching the local File information, we need a client to perform the mapping.
@@ -413,6 +417,8 @@ public class P4CommandUtil {
             server.setCurrentClient(client);
         }
         GetExtendedFilesOptions options = new GetExtendedFilesOptions();
+        // Restrict to the maxmimum results (#197).
+        options.setMaxResults(maxResults);
         List<IExtendedFileSpec> res = server.getExtendedFiles(sources, options);
         if (LOG.isDebugEnabled()) {
             LOG.debug("File details for " + sources + ": " + res);

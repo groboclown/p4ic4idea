@@ -447,7 +447,12 @@ public class ConnectCommandRunner
                 true);
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
             new ListFilesDetailsResult(config,
-                cmd.getFilesDetails(server, query.getClientServerRef().getClientName(), fileSpecs).stream()
+                cmd.getFilesDetails(
+                    server,
+                    query.getClientServerRef().getClientName(),
+                    fileSpecs,
+                    query.getMaxResultCount()
+                ).stream()
                     .map((e) ->
                         query.getRevState() == ListFilesDetailsQuery.RevState.HEAD
                             ? P4FileRevisionImpl.getHead(query.getClientServerRef(), e)

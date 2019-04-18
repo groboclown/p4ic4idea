@@ -29,12 +29,7 @@ class P4RepositoryLocationImpl implements P4RepositoryLocation {
     private final ClientServerRef ref;
     private final P4RemoteFile depotPath;
 
-    public P4RepositoryLocationImpl(@NotNull ClientServerRef ref, @NotNull P4RemoteFile depotPath) {
-        this.ref = ref;
-        this.depotPath = depotPath;
-    }
-
-    public P4RepositoryLocationImpl(@NotNull ClientServerRef ref, @NotNull P4FileRevision p4FileRevision) {
+    P4RepositoryLocationImpl(@NotNull ClientServerRef ref, @NotNull P4FileRevision p4FileRevision) {
         this.ref = ref;
         this.depotPath = p4FileRevision.getFile();
     }

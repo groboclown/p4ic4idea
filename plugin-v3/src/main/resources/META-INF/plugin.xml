@@ -1,20 +1,21 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.6</version>
+    <version>0.10.7</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.7</em><ul>
+        <li>Fixed "revert unchanged" incorrectly and unconditionally reverting files.</li>
+        <li>Increased logging around what initiates the rollback.</li>
+      </ul></li>
       <li><em>0.10.6</em><ul>
         <li>"Environment" configuration on Windows and JDK 11 can now inspect the Registry for information.</li>
         <li>Fixed an issue where 0 files could be requested in an `fstat` call.</li>
         <li>Fixed an issue where, in some cases, fstat was not limiting the number of results.</li>
         <li>Changed reporting on a successful sync; it must happen from within the EDT.</li>
-      </ul></li>
-      <li><em>0.10.5</em><ul>
-        <li>Fixed a NPE when running the IDE with JDK 11 and Windows.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

@@ -874,10 +874,14 @@ public class ConnectCommandRunner
         // Explicit request to revert the file.  So the file contents will be changed in the operation.
 
         List<IFileSpec> srcFiles = FileSpecBuildUtil.escapedForFilePaths(action.getFile());
+        // Let people know about the change.  See #181.
         SpecialFileEventMessage.send(project).fileReverted(new SpecialFileEventMessage.SpecialFileEvent(
                 srcFiles.stream().map(IFileSpec::toString).collect(Collectors.toList()),
-                "User request to revert files; on-disk contents changed."));
-        List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, false);
+                action.isRevertOnlyIfUnchanged() ?
+                        "User request to revert unchanged files; on-disk contents should not change." :
+                        "User request to revert files; on-disk contents changed."
+        ));
+        List<IFileSpec> reverted = cmd.revertFiles(client, srcFiles, action.isRevertOnlyIfUnchanged());
         LOG.info("Explicit revert " + action.getFile() + ": " + MessageStatusUtil.getMessages(reverted, "\n"));
         MessageStatusUtil.throwIfError(reverted);
         return new RevertFileResult(config, action.getFile(), reverted);

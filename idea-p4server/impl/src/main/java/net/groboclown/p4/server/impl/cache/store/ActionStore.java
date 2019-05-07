@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.cache.store;
 
+import com.intellij.openapi.diagnostic.Logger;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -36,6 +37,8 @@ import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
 
 public class ActionStore {
+    private static final Logger LOG = Logger.getInstance(ActionStore.class);
+
 
     /**
      * Contains the cached information about a requested pending change.  These can
@@ -153,6 +156,8 @@ public class ActionStore {
                         state.data.getFilePathNotNull("file"),
                         state.data.getChangelistIdNullable("cl-id"));
             case REVERT_FILE:
+                // Having an issue with revert files happening randomly.  See #181
+                LOG.warn("Read a revert file action for file " + state.data.getFilePathNotNull("file"));
                 return new RevertFileAction(state.actionId,
                         state.data.getFilePathNotNull("file"),
                         state.data.getBooleanNullable("unchanged", false));

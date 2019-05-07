@@ -238,7 +238,7 @@ task assembleUberJar(type: Zip) {
         }
         from configurations.zip.resolvedConfiguration.files.collect { z ->
             logger.info("Adding contents from " + z)
-            zipTree(z).matching { f ->
+            zipTree(z).matching { f -> 
                 f.exclude('META-INF/MANIFEST.MF')
                 f.exclude('META-INF/DEPENDENCIES')
                 f.exclude('META-INF/NOTICE')

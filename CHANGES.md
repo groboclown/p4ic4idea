@@ -1,6 +1,19 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.7::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes:
+    * "Revert unchanged" was unconditionally reverting (#181 again).
+    * Added additional logging to the rollback calls to better catch the source of these issues.
+
+
 ## ::v0.10.6::
 
 ### Overview

@@ -75,6 +75,8 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             return;
         }
 
+        LOG.info("Rollback environment requested revert to " + changes);
+
         Set<FilePath> paths = new HashSet<>();
         for (Change change: changes) {
             if (change != null) {
@@ -87,11 +89,16 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             }
         }
         if (paths.isEmpty()) {
+            LOG.info("No affected files found for rollback.  Not doing anything");
             return;
         }
 
         List<VirtualFile> needsRefresh = new ArrayList<>();
         try {
+            // Having an issue with revert files happening randomly.  See #181
+            LOG.warn("Performing unconditional revert on " + paths);
+            LOG.debug("Unconditional Revert origin stack trace", new Throwable());
+
             BlockingAnswer.createBlockFor(paths.stream()
                     .map((f) -> Pair.create(registry.getClientFor(f), f))
                     .filter((p) -> p.first != null)
@@ -159,6 +166,9 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             LOG.info("SKipping revert for " + file + ": no P4 root found");
             return;
         }
+
+        LOG.info("Reverting if the file is unchanged: " + file, new Throwable());
+        LOG.debug("Unchanged Rollback origin stack trace", new Throwable());
 
         P4ServerComponent
                 .perform(project, root.getClientConfig(), new RevertFileAction(fp, true))

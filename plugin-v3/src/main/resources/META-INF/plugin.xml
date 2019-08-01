@@ -7,15 +7,13 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.8</em><ul>
+        <li>Fixed the thread that some operations run in to better support
+        IDE versions 2019.2 and above.</li>
+      </ul></li>
       <li><em>0.10.7</em><ul>
         <li>Fixed "revert unchanged" incorrectly and unconditionally reverting files.</li>
         <li>Increased logging around what initiates the rollback.</li>
-      </ul></li>
-      <li><em>0.10.6</em><ul>
-        <li>"Environment" configuration on Windows and JDK 11 can now inspect the Registry for information.</li>
-        <li>Fixed an issue where 0 files could be requested in an `fstat` call.</li>
-        <li>Fixed an issue where, in some cases, fstat was not limiting the number of results.</li>
-        <li>Changed reporting on a successful sync; it must happen from within the EDT.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

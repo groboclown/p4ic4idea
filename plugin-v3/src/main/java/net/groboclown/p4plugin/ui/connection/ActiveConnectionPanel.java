@@ -145,8 +145,12 @@ public class ActiveConnectionPanel {
 
     public void refresh() {
         if (root != null) {
-            runner.requestRun();
-            connectionTree.getEmptyText().setText(P4Bundle.getString("connection.tree.empty"));
+            // #199 - As of IntelliJ 19.2, this needs to be done in the EDT.
+            // This isn't the most optimal code, but it works.
+            ApplicationManager.getApplication().invokeLater(() -> {
+                runner.requestRun();
+                connectionTree.getEmptyText().setText(P4Bundle.getString("connection.tree.empty"));
+            });
         }
     }
 

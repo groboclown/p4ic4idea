@@ -124,10 +124,11 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
                 if (listener != null) {
                     // "directoryCheckedOut" can run an AWT event, which is not allowed from within
                     // this write action.  Need to run this on a separate thread.  #196
-                    ApplicationManager.getApplication().invokeLater(() -> {
+                    // And #199
+                    ApplicationManager.getApplication().executeOnPooledThread(() -> {
                         listener.directoryCheckedOut(rootPath.getIOFile(), P4Vcs.getKey());
                         listener.checkoutCompleted();
-                    }, ModalityState.any());
+                    });
                 }
             }
         }.queue();

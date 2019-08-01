@@ -1,6 +1,19 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.8::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes:
+    * Fix for IDE 2019.2 releases, which altered the expectations for which
+      thread different tasks should run in. (#199)
+
+
 ## ::v0.10.7::
 
 ### Overview
@@ -11,7 +24,8 @@
 
 * Bug fixes:
     * "Revert unchanged" was unconditionally reverting (#181 again).
-    * Added additional logging to the rollback calls to better catch the source of these issues.
+    * Added additional logging to the rollback calls to better catch the
+      source of these issues.
 
 
 ## ::v0.10.6::

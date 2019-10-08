@@ -218,7 +218,7 @@ Please note that issues with the "0.9" label only affect the `135-compat` branch
 
 ## Fix It Yourself
 
-See [BULDING.md](BUILDING.md) for information on downloading the source and building the plugin.  Additional
+See [BUILDING.md](BUILDING.md) for information on downloading the source and building the plugin.  Additional
 documentation regarding the inner-workings of the plugin are in the
 [docs/dev](docs/dev/README.md) directory.  
 

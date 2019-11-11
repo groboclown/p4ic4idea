@@ -54,7 +54,7 @@ please follow these steps:
 
 Because the IntelliJ libraries are built from source, new versions
 must be carefully constructed using the general instructions provided
-in the [README.md](lib/173/README.md) file.
+in the [README.md](lib/README.md) file.
 
 
 ## Updates to the Perforce C Client

@@ -8,7 +8,6 @@ plugins {
 ideaApi.uses(
         'openapi',
         'core-api',
-        'annotations-common',
         'annotations',
         'vcs-api-core',
         'vcs-api',
@@ -27,7 +26,7 @@ ideaImplementation.uses(
         'trove4j',
 )
 ideaTest.uses(
-        'kotlin-runtime'
+        'kotlin'
 )
 
 dependencies {

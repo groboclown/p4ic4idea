@@ -16,10 +16,10 @@ Building the dependencies requires pulling the source, running the build, and fi
 To build, you will need to have these tools installed:
 
 * JDK 1.8, with `JAVA_HOME` pointing to it.
+* Optionally, if you have JDK 1.6 installed, point `JDK_16_x64` to it.
 * Ant version 1.9 or better.
 * git
 
-Optionally, if you have JDK 1.6 installed, point `JDK_16_x64` to it.
 
 ### Pull the Source
 
@@ -78,6 +78,59 @@ That might be paranoid, but it works and keeps you from running into odd compile
 $ ant
 ```
 
+This may fail.  See the tagged version notes below for how the source was built to get passed these issues.
+
+### Get the Files
+
+First, get the jars.  This differs from version to version, but for >= 181, the general method is:
+
+```bash
+$ cd out/idea-ce/classes/production
+$ for i in *; do
+  if [ -d "$i"] ; then
+    n=$( basename "$i" )
+    ( cd "$i" && zip -9r ../../../../"$n".jar * )
+  fi
+done 
+```
+
+This creates the jar for each package, allowing for a smaller library footprint.  Don't copy these into the library directory just yet.
+
+Then, get the license files.  Copy the `LICENSE.txt` and `NOTICE.txt` from the root directory into the `lib/(version)` directory.  Once these license files are added, the build will trigger that directory as an IDE version to build against.  Until you complete the next step, your builds won't work. 
+
+
+### Update the Library Matcher
+
+Create a copy of `buildSrc/src/main/groovy/p4ic/ext/ideaVersionExample.groovy` named based on the version number.  Change the matcher regex to match the version.
+
+Next up, is pulling in the libraries and matching those to the library names referenced in the build scripts.  This involves finding the jars created above, pulling them into the `lib/(version)` directory, and mapping the jar name to the bundle name in the version groovy script.  Trial and error is slowest, but best.
+
+Also with this is pulling in the IDE dependencies.  Make sure to grab the license files, too!  Some of these you need to dig deep on.
+
+* annotations: pulled from `build/dependencies/build/kotlin/Kotlin/lib/annotations-13.0.jar`
+* picocontainer: only pulled now from the Kotlin compiler?  That's weird.  Anyway, I grabbed a previously bundled version.
+
+This script helps.  I call it `ziplist.sh`:
+
+```bash
+#!/bin/bash
+
+sep=" "
+for i in "$@"; do
+        unzip -qql "$i" 2>/dev/null | tr -s ' ' | cut -f 5- -d ' ' | awk '{print "'"$i$sep"'" $0}'
+done
+```
+
+Then run it with a chain:
+
+```bash
+find . -name '*.jar' -print0 | xargs -0 ziplist.sh | grep my/file/Name.class
+```
+
+### Update SCM
+
+Add the files to Git, and upload.
+
 
 ### Jar Tagged Versions
 
@@ -89,9 +142,7 @@ $ ant
 * 183 - tag ?, version ?
 * 191 - tag `191.8026.42`, version 2019.1.4
     * 191.8026.42: Fails to build module 'intellij.java.impl'
-    * idea/191.8026.36 ?
-    * idea/191.7479.19 ?
-    * idea/191.7479.1 ?
 * 192 - tag `192.7142.36`, version 2019.2.4
-    * 192.7142.36: Fails to build module 'intellij.java.impl'.
+    * Fails to build module 'intellij.java.impl'.  "Fixed" by emptying the contents of `java/java-impl/src`.
+    * Fails on community plugins.  Because, by this point, the necessary parts had been built, the error was ignored and the rest of the build was skipped.
 

@@ -24,10 +24,11 @@ import javax.annotation.Nonnull
 
 class IdeaVersion {
     private final static IdeaVersionLibMatcher[] VERSION_LIB_MATCHERS = [
-            new IdeaVersion17x(),
+            new IdeaVersion171_172_173(),
             new IdeaVersion181(),
-            new IdeaVersion182_183()
-    ];
+            new IdeaVersion182_183(),
+            new IdeaVersion192(),
+    ]
 
     @Nonnull
     private final String version
@@ -56,45 +57,44 @@ class IdeaVersion {
 
     @Nonnull
     ConfigurableFileCollection jars(@Nonnull List<String> names) {
-        List<File> jarFiles = findJars(names, true)
+        List<File> jarFiles = findJars(names)
         return project.files(jarFiles.toArray(new File[0]))
     }
 
     @Nonnull
     ConfigurableFileCollection jars(@Nonnull String... names) {
-        List<File> jarFiles = findJars(Arrays.asList(names), true)
+        List<File> jarFiles = findJars(Arrays.asList(names))
         return project.files(jarFiles.toArray(new File[0]))
     }
 
     @Nonnull
-    List<File> findJars(@Nonnull Collection<String> names, boolean mustFindAll) {
+    List<File> findJars(@Nonnull Collection<String> names) {
         def libDir = getLibDir()
         if (!libDir.isDirectory()) {
             throw new GradleException("Unsupported IDEA version " + version)
         }
         // This may need to pull multiple files with the same base name.
         def matcher = getLibVersionMatcher()
-        Set<String> notFound = new HashSet<>()
-        for (String name: names) {
-            if (! matcher.ignoredChoice(name)) {
-                notFound.add(name)
+        Set<String> notFound = new HashSet<>(names)
+        Map<String, File> remainingLibs = new HashMap<>()
+        project.fileTree(libDir).forEach {
+            if (it.isFile() && it.name.endsWith(".jar")) {
+                remainingLibs.put(it.getName(), it)
             }
         }
 
         List<File> ret = new ArrayList<>()
-        project.fileTree(libDir).forEach {
-            if (it.isFile() && it.name.endsWith(".jar")) {
-                def matchList = matcher.matches(it.name, names)
-                if (matchList != null) {
-                    for (String m : matchList) {
-                        notFound.remove(m)
-                    }
-                    ret.add(it)
-                }
+        names.forEach {
+            def libSet = matcher.getNamedLib(it)
+            if (libSet == null) {
+                throw new GradleException("Failed to find IDEA version " + version + " jars for " + it)
             }
-        }
-        if (mustFindAll && !notFound.isEmpty()) {
-            throw new GradleException("Failed to find IDEA version " + version + " jars for " + notFound)
+            def matched = libSet.find(remainingLibs)
+            if (!matched.missed.isEmpty()) {
+                throw new GradleException("Failed to find IDEA version " + version + " jars for " + it +
+                        ": could not find jars " + matched.missed)
+            }
+            ret.addAll(matched.matched)
         }
         return ret
     }

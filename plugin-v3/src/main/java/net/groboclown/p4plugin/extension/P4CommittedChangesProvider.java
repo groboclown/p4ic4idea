@@ -38,6 +38,7 @@ import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.impl.generic.core.Repo;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -222,9 +223,12 @@ public class P4CommittedChangesProvider implements
         }
     }
 
+    // v171 - v183 has ... AsynchConsumer<CommittedChangelist>
+    // while v191+ has ... AsynchConsumer<? super CommittedChangelist>
+    // The "fix" is to strip off the typing conflict.
     @Override
     public void loadCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount,
-            AsynchConsumer<CommittedChangeList> consumer) throws VcsException {
+            AsynchConsumer consumer) throws VcsException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Loading committed changes for location " + location);
         }

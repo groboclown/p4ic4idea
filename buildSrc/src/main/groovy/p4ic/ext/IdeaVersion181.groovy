@@ -14,112 +14,126 @@
 
 package p4ic.ext
 
-import org.gradle.api.GradleException
-
-import javax.annotation.Nonnull
-import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 class IdeaVersion181 implements IdeaVersionLibMatcher {
-    private static final String[] VERSION_TYPE_SUFFIXES = [
-        "-SNAPSHOT", "-patched"
-    ]
+    private static final LibGroup libs = new LibGroup().add(
+            new NamedLib("openapi",
+                    "intellij.java.jar"
+            ),
+            new NamedLib("core-api",
+                    "intellij.platform.core.jar"
+            ),
+            new NamedLib("core-impl",
+                    "intellij.platform.core.impl.jar"
+            ),
+            new NamedLib("annotations",
+                    "intellij.platform.annotations.jar",
+                    "intellij.platform.annotations.common.jar"
+            ),
+            new NamedLib("vcs-api-core",
+                    "intellij.platform.vcs.core.jar"
+            ),
+            new NamedLib("vcs-api",
+                    "intellij.platform.vcs.jar"
+            ),
+            new NamedLib("vcs-impl",
+                    "intellij.platform.vcs.impl.jar"
+            ),
+            new NamedLib("platform-api",
+                    "intellij.platform.ide.jar"
+            ),
+            new NamedLib("platform-impl",
+                    "intellij.platform.ide.impl.jar"
+            ),
+            new NamedLib("projectModel-api",
+                    "intellij.platform.projectModel.jar",
+            ),
+            new NamedLib("extensions",
+                    "intellij.platform.extensions.jar"
+            ),
+            new NamedLib("util",
+                    "intellij.platform.util.jar"
+            ),
+            new NamedLib("util-rt",
+                    "intellij.platform.util.rt.jar"
+            ),
+            new NamedLib("editor-ui-api",
+                    "intellij.platform.editor.jar"
+            ),
+            new NamedLib("platform-resources-en",
+                    "intellij.platform.resources.en.jar"
+            ),
+            new NamedLib('testFramework',
+                    'intellij.platform.testFramework.jar'
+            ),
+            new NamedLib("forms_rt",
+                    "intellij.java.guiForms.rt.jar"
+            ),
+            new NamedLib("java-psi-impl",
+                    "intellij.java.psi.impl.jar"
+            ),
+            new NamedLib("java-runtime",
+                    "intellij.java.rt.jar"
+            ),
+            new NamedLib("lang-api",
+                    "intellij.platform.lang.jar"
+            ),
+            new NamedLib("lang-impl",
+                    "intellij.platform.lang.impl.jar"
+            ),
+            new NamedLib("instrumentation-util",
+                    "intellij.java.compiler.instrumentationUtil.jar",
+            ),
+            new NamedLib("javac2",
+                    "intellij.java.compiler.antTasks.jar"
+            ),
+            new NamedLib("forms-compiler",
+                    "intellij.java.guiForms.compiler.jar"
+            ),
 
-    // May want to eventually reverse this mapping, and just have an explicit list of new to old names.
-    // Or maybe just alter the names of the jars in the old versions, and record that in their README.md files.
-    private static final String[] INTELLIJ_181_PREFIXES = [
-        "intellij.platform.", "intellij."
-    ]
-    private static final Map<String, String> INTELLIJ_181_SPECIAL_MAPPINGS = [
-        // Oddball mappings with no direct rename schemes
-        "intellij.platform.vcs.core" : "vcs-api-core",
-        "intellij.platform.ide" : "platform-api",
-        "intellij.platform.ide.impl" : "platform-impl",
-        "intellij.java" : "openapi",
-        "intellij.platform.editor" : "editor-ui-api",
-        "intellij.java.guiForms.rt" : "forms_rt",
-        "intellij.java.rt" : "java-runtime",
-        "intellij.java.compiler.instrumentationUtil" : "instrumentation-util",
-        "intellij.java.compiler.antTasks" : "javac2",
-        "intellij.java.guiForms.compiler" : "forms-compiler",
-    ]
-    private static final Pattern VERSION_NUMBER = Pattern.compile("-\\d+(\\.\\d+)*\$")
-    private static final Pattern IDEA_VERSION = Pattern.compile("^181\$")
+            // deps
+            new NamedLib("jdom",
+                    "jdom.jar"
+            ),
+            new NamedLib("picocontainer",
+                    "picocontainer.jar"
+            ),
+            new NamedLib("trove4j",
+                    "trove4j.jar"
+            ),
+            new NamedLib("kotlin",
+                    "kotlin-runtime.jar"
+            ),
+            new NamedLib("jgoodies-forms",
+                    "jgoodies-forms.jar"
+            ),
+            new NamedLib("forms-rt",
+                    "forms_rt.jar",
+                    "intellij.java.guiForms.rt.jar"
+            ),
+            new NamedLib("asm",
+                    "asm-all.jar"
+            ),
+    )
 
+    private static final Pattern IDE_VERSION = Pattern.compile("^181\$")
+
+    /**
+     * Checks if the filename is in the remaining list.  If it is, the item is
+     * removed from the remaining list.  The filename ends with ".jar"
+     *
+     * @param filename
+     * @param remaining
+     * @return
+     */
     @Override
     Pattern getIdeaVersionMatch() {
-        return IDEA_VERSION
-    }
-
-    String[] matches(final String filename, @Nonnull final Collection<String> choices) {
-        if (filename == null) {
-            return null
-        }
-
-        // Check fully qualified name
-        if (choices.contains(filename)) {
-            return [filename]
-        }
-
-        // Check without .jar
-        def shortName = strip(filename, ".jar")
-        if (shortName == 'kotlin-stdlib') {
-            shortName = 'kotlin-runtime'
-        }
-        if (choices.contains(shortName)) {
-            return [shortName]
-        }
-
-        // Check without some version suffixes
-        for (String vs: VERSION_TYPE_SUFFIXES) {
-            if (shortName.endsWith(vs)) {
-                shortName = strip(shortName, vs)
-                if (choices.contains(shortName)) {
-                    return [shortName]
-                }
-            }
-        }
-
-        // Check for a version number
-        Matcher m = VERSION_NUMBER.matcher(shortName)
-        if (m.find()) {
-            shortName = shortName.substring(0, m.start())
-            if (choices.contains(shortName)) {
-                return [shortName]
-            }
-        }
-
-        // Check for Idea 18x naming convention
-        def idea18Name = INTELLIJ_181_SPECIAL_MAPPINGS[shortName]
-        if (choices.contains(idea18Name)) {
-            return [idea18Name]
-        }
-        for (String ip: INTELLIJ_181_PREFIXES) {
-            if (shortName.startsWith(ip)) {
-                idea18Name = shortName.substring(ip.length()).replace('.', '-')
-                if (choices.contains(idea18Name)) {
-                    return [idea18Name]
-                }
-                // API can be hidden...
-                idea18Name += '-api'
-                if (choices.contains(idea18Name)) {
-                    return [idea18Name]
-                }
-            }
-        }
-
-        return null
+        return IDE_VERSION
     }
 
     @Override
-    boolean ignoredChoice(@Nonnull String libChoiceName) {
-        return false
-    }
-
-    private static String strip(@Nonnull String s, @Nonnull String suffix) {
-        if (s.endsWith(suffix)) {
-            return s.substring(0, s.length() - suffix.length())
-        }
-        throw new GradleException("`" + s + "` does not end with `" + suffix + "`")
+    NamedLib getNamedLib(String name) {
+        return libs.get(name)
     }
 }

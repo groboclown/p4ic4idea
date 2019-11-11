@@ -25,11 +25,15 @@ class ReviewPactSpec extends Specification {
     private PactBuilder provider
 
     def setup() {
+        //def username = System.getenv("username")
+        //def ticket = System.getenv("ticket")
+        def username = 'user1'
+        def ticket = 'ticket1'
         SwarmConfig config = new SwarmConfig()
                 .withLogger(new MockLogger())
                 .withUri("http://localhost:59911")
-                .withUsername(System.getenv("username"))
-                .withTicket(System.getenv("ticket"))
+                .withUsername(username)
+                .withTicket(ticket)
                 .withVersion(6.0)
         client = new ReviewActions(config)
         provider = new PactBuilder()

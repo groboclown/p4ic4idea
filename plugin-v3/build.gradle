@@ -7,7 +7,6 @@ version '1.6'
 ideaImplementation.uses(
         'openapi',
         'core-api',
-        'annotations-common',
         'annotations',
         'vcs-api-core',
         'vcs-api',

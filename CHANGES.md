@@ -1,6 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.9::
+
+### Overview
+
+* Build changes for supporting future IDE versions (v200)
+
+### Details
+
+* Build changes for supporting future IDE versions (v200) (#203)
+    * Added v192 libraries and build support for compiling and testing against v192.
+    * Changed swarm unit tests to fix environmental dependencies.
+    
+
+
 ## ::v0.10.8::
 
 ### Overview

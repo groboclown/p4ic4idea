@@ -77,11 +77,11 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
                 // jars required by the instrumentation
                 "javac2",
                 "jdom",
-                "asm-all",
+                "asm",
                 "jgoodies-forms",
                 "instrumentation-util",
                 "forms-compiler",
-                "forms_rt"
+                "forms-rt"
         )
 
         ant.taskdef(name: 'instrumentIdeaExtensions',
@@ -139,6 +139,7 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
                 // Force the class file version, which is necessary if compiling with any other JDK.
                 target: "1.8", source: "1.8",
 
+                "deprecation": true,
                 includeAntRuntime: false, instrumentNotNull: instrumentNotNull) {
             if (instrumentNotNull) {
                 ant.skip(pattern: 'kotlin/Metadata')

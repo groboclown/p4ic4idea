@@ -53,6 +53,7 @@ import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.api.util.ProjectUtil;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.util.IntervalPeriodExecution;
 import net.groboclown.p4plugin.P4Bundle;
@@ -269,7 +270,7 @@ public class ActiveConnectionPanel {
                             VcsDirectoryMapping mapping = new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME);
                             VirtualFile rootDir = VcsUtil.getVirtualFile(dirName);
                             if (rootDir == null) {
-                                rootDir = project.getBaseDir();
+                                rootDir = ProjectUtil.guessProjectBaseDir(project);
                             }
                             mapping.setRootSettings(new P4VcsRootSettingsImpl(project, rootDir));
                             UnnamedConfigurable configurable = P4Vcs.getInstance(project).getRootConfigurable(mapping);
@@ -314,7 +315,7 @@ public class ActiveConnectionPanel {
                 new ConnectionAction(
                         P4Bundle.getString("active-connection.toolbar.remove-action.name"),
                         P4Bundle.getString("active-connection.toolbar.remove-action.tooltip"),
-                        AllIcons.Actions.Clear) {
+                        AllIcons.Actions.Cancel) {
                     @Override
                     public void actionPerformed(AnActionEvent anActionEvent) {
                         final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);

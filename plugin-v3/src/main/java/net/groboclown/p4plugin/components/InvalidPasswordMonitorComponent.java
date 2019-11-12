@@ -35,6 +35,7 @@ import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
+import net.groboclown.p4.server.api.util.ProjectUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import net.groboclown.p4plugin.messages.UserMessage;
@@ -42,6 +43,20 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+
+/*
+ * FIXME
+ * Use application services or extensions instead of ApplicationComponent, because
+ * if you register a class as an application component it will be loaded, its instance will be created and
+ * {@link #initComponent()} methods will be called each time IDE is started even if user doesn't use any feature of your
+ * plugin. So consider using specific extensions instead to ensure that the plugin will not impact IDE performance until user calls its
+ * actions explicitly.
+ *
+ * Instead of {@link #initComponent()} please use {@link com.intellij.util.messages.MessageBus} and corresponding topics.
+ * Instead of {@link #disposeComponent()} please use {@link com.intellij.openapi.Disposable}.
+ *
+ * If for some reasons replacing {@link #disposeComponent()} / {@link #initComponent()} is not a option, {@link BaseComponent} can be extended.
+ */
 
 public class InvalidPasswordMonitorComponent
         implements ApplicationComponent, Disposable {
@@ -168,7 +183,7 @@ public class InvalidPasswordMonitorComponent
 
         // Add listeners for config added/removed.  Any change to the configuration, even if it
         // doesn't touch the server config, should clear the login state.
-        ProjectManager.getInstance().addProjectManagerListener(new ProjectManagerListener() {
+        mbClient.add(ProjectManager.TOPIC, new ProjectManagerListener() {
             @Override
             public void projectOpened(Project project) {
                 MessageBusClient.ProjectClient projectMbClient =
@@ -179,7 +194,8 @@ public class InvalidPasswordMonitorComponent
                         event -> forgetLoginProblem(event.getClientConfig().getServerConfig()));
             }
 
-            @Override
+            @Deprecated
+            //@Override
             public boolean canCloseProject(Project project) {
                 return true;
             }
@@ -193,7 +209,7 @@ public class InvalidPasswordMonitorComponent
             public void projectClosing(Project project) {
                 // do nothing.
             }
-        }, this);
+        });
     }
 
     @Override
@@ -244,7 +260,8 @@ public class InvalidPasswordMonitorComponent
             AbstractVcs vcs =
                     ProjectLevelVcsManager.getInstance(openProject).findVcsByName(P4Vcs.VCS_NAME);
             if (vcs != null) {
-                LOG.warn("Guessing current project context is " + openProject.getBaseDir());
+                LOG.warn("Guessing current project context is " +
+                        ProjectUtil.findProjectBaseDir(openProject));
                 return openProject;
             }
         }

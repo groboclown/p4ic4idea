@@ -27,6 +27,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializer;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.util.ProjectUtil;
 import net.groboclown.p4.server.impl.cache.store.VcsRootCacheStore;
 import org.jdom.Element;
 import org.jdom.output.XMLOutputter;
@@ -53,7 +54,8 @@ import java.util.Map;
 public class PersistentRootConfigComponent
         implements ProjectComponent, PersistentStateComponent<Element> {
     private static final Logger LOG = Logger.getInstance(PersistentRootConfigComponent.class);
-    public static final String COMPONENT_NAME = PersistentRootConfigComponent.class.getName();
+    public static final Class<PersistentRootConfigComponent> COMPONENT_CLASS =
+            PersistentRootConfigComponent.class;
 
     private final Project project;
     private final Object sync = new Object();
@@ -75,13 +77,13 @@ public class PersistentRootConfigComponent
 
     @Nullable
     public static PersistentRootConfigComponent getInstance(@NotNull Project project) {
-        return (PersistentRootConfigComponent) project.getComponent(COMPONENT_NAME);
+        return project.getComponent(COMPONENT_CLASS);
     }
 
     @NotNull
     @Override
     public String getComponentName() {
-        return COMPONENT_NAME;
+        return COMPONENT_CLASS.getName();
     }
 
 
@@ -150,7 +152,8 @@ public class PersistentRootConfigComponent
                 final VcsRootCacheStore.State state = XmlSerializer.deserialize(
                         root.getChildren().get(0), VcsRootCacheStore.State.class);
                 if (state.rootDirectory == null) {
-                    LOG.warn("Loaded a null root directory configuration; assuming root directory " + project.getBaseDir());
+                    LOG.warn("Loaded a null root directory configuration; assuming root directory " +
+                            ProjectUtil.findProjectBaseDir(project));
                     state.rootDirectory = project.getBasePath();
                 }
                 final VcsRootCacheStore store = new VcsRootCacheStore(state, null);

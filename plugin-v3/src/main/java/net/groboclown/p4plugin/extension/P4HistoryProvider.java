@@ -155,6 +155,8 @@ public class P4HistoryProvider
             LOG.info("File not under VCS: " + path);
             // TODO bundle message
             partner.reportException(new VcsException("File not under VCS: " + path));
+
+            // Deprecated in 191.
             partner.finished();
             return;
         }
@@ -163,11 +165,15 @@ public class P4HistoryProvider
         getHistory(root, path, -1)
                 .whenCompleted((r) -> {
                     r.getRevisions(formatter, loader).forEach(partner::acceptRevision);
+
+                    // Deprecated in 191.
                     partner.finished();
                 })
                 .whenServerError((e) -> {
                     LOG.warn(e);
                     partner.reportException(e);
+
+                    // Deprecated in 191.
                     partner.finished();
                 });
     }

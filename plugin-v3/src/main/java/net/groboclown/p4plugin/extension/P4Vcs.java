@@ -48,6 +48,7 @@ import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.P4VcsKey;
+import net.groboclown.p4.server.api.util.ProjectUtil;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
@@ -231,10 +232,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         if (mapping.getRootSettings() == null) {
             VirtualFile rootDir = VcsUtil.getVirtualFile(mapping.getDirectory());
             if (rootDir == null) {
-                rootDir = getProject().getBaseDir();
-                if (rootDir == null) {
-                    throw new IllegalStateException("null project base directory");
-                }
+                rootDir = ProjectUtil.guessProjectBaseDir(getProject());
             }
             mapping.setRootSettings(new P4VcsRootSettingsImpl(myProject, rootDir));
         }
@@ -243,7 +241,10 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     @Nullable
     public VcsRootSettings createEmptyVcsRootSettings() {
-        return new P4VcsRootSettingsImpl(myProject, myProject.getBaseDir());
+        return new P4VcsRootSettingsImpl(
+                myProject,
+                ProjectUtil.guessProjectBaseDir(myProject)
+        );
     }
 
     // This is only needed if the user's defined VCS roots don't
@@ -455,7 +456,8 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      * @param filePath the path to check.
      * @return true if the path is managed by this VCS, false otherwise.
      */
-    @Override
+    @Deprecated
+    //@Override
     public boolean fileIsUnderVcs(FilePath filePath) {
         // This does not check for ignored files, because
         // it's possible for a file to be in the depot, and thus not ignored,

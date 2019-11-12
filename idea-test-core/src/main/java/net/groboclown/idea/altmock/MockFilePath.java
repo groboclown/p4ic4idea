@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4.server.todo.util.mock;
+package net.groboclown.idea.altmock;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileTypes.FileType;

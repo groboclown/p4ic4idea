@@ -12,7 +12,15 @@
 * Build changes for supporting future IDE versions (v200) (#203)
     * Added v192 libraries and build support for compiling and testing against v192.
     * Changed swarm unit tests to fix environmental dependencies.
-    
+    * Removed usage of deprecated API that will be removed in v2020.1
+        * Removed use of icons that will be removed.
+        * Removed use of `Project.getBaseDir()`
+        * Replaced use of `ApplicationManager.getApplication().getComponent(String)` with the `Class` argument variant.
+        * Replaced `ProjectManager.getInstance().addProjectManagerListener(...)` with message bus `TOPIC` use.
+        * Replaced use of `ChangeListManager.getInstance(project).scheduleUpdate(boolean)` with the no-argument variant.
+        * Moved the "todo.util.mock" classes into the testing tree.
+        * Removed `@Override` for deprecated API overrides.  Methods are still there, they just aren't marked as override anymore.
+        * There's still a lot around, but this cleaned up some of it.  Most of the remaining bits are use of API that has no alternative in earlier supported versions.
 
 
 ## ::v0.10.8::

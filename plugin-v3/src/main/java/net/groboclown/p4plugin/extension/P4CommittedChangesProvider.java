@@ -169,8 +169,9 @@ public class P4CommittedChangesProvider implements
         return RepositoryLocationFactory.getLocationFor(root, client, details);
     }
 
+    @Deprecated
     @Nullable
-    @Override
+    //@Override
     public RepositoryLocation getLocationFor(FilePath root, String repositoryPath) {
         // TODO should this use repository path?
         if (LOG.isDebugEnabled()) {

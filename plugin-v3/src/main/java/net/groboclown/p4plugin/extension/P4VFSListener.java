@@ -14,7 +14,6 @@
 package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsVFSListener;
@@ -29,7 +28,6 @@ import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
-import net.groboclown.p4.server.api.values.P4FileType;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;

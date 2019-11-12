@@ -155,7 +155,12 @@ public final class ServerConfig {
         // This class never stores the password in itself.
         if (!part.requiresUserEnteredPassword() && part.hasPasswordSet() && part.getPlaintextPassword() != null) {
             LOG.info("Storing user password in password store");
-            ApplicationPasswordRegistry.getInstance().store(this, part.getPlaintextPassword().toCharArray(), false);
+            // DEBUG
+            // ApplicationPasswordRegistry.getInstance().store(this, part.getPlaintextPassword().toCharArray(), false);
+            ApplicationPasswordRegistry instance = ApplicationPasswordRegistry.getInstance();
+            String passwd = part.getPlaintextPassword();
+            char[] passwdChars = passwd.toCharArray();
+            instance.store(this, passwdChars, false);
         }
     }
 

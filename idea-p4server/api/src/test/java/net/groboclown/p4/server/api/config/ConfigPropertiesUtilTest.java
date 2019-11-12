@@ -45,21 +45,20 @@ class ConfigPropertiesUtilTest {
     @BeforeEach
     void before() {
         // idea.registerApplicationService(PasswordSafe.class, new MockPasswordSafe());
-        idea.registerApplicationComponent(
-                ApplicationPasswordRegistry.COMPONENT_NAME,
-                new ApplicationPasswordRegistry() {
-                    @NotNull
-                    @Override
-                    public Promise<OneTimeString> getOrAskFor(@Nullable Project project, @NotNull ServerConfig config) {
-                        return get(config);
-                    }
+        ApplicationPasswordRegistry passwdRegistry = new ApplicationPasswordRegistry() {
+            @NotNull
+            @Override
+            public Promise<OneTimeString> getOrAskFor(@Nullable Project project, @NotNull ServerConfig config) {
+                return get(config);
+            }
 
-                    @Override
-                    public void askForNewPassword(@Nullable Project project, @NotNull ServerConfig config) {
-                        // do nothing
-                    }
-                }
-        );
+            @Override
+            public void askForNewPassword(@Nullable Project project, @NotNull ServerConfig config) {
+                // do nothing
+            }
+        };
+        idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_NAME, passwdRegistry);
+        idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_CLASS, passwdRegistry);
     }
 
 

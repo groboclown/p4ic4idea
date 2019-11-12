@@ -113,11 +113,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         return P4Bundle.message("commit.operation.name");
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     @Override
     public List<VcsException> commit(List<Change> changes, String preparedComment) {
-        return commit(changes, preparedComment, NullableFunction.NULL, new HashSet<>());
+        return commit(changes, preparedComment, (p) -> null, new HashSet<>());
     }
 
     @Nullable
@@ -155,7 +154,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                 P4CommandRunner.ActionAnswer<DeleteFileResult> answer =
                         P4ServerComponent
                                 .perform(project, root.getClientConfig(), new DeleteFileAction(file, id))
-                                .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate(true));
+                                .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate());
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running delete file command in EDT; will not wait for server errors.");
                 } else {
@@ -201,7 +200,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                 P4CommandRunner.ActionAnswer<AddEditResult> answer =
                         P4ServerComponent
                                 .perform(project, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null))
-                                .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate(true))
+                                .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate())
                                 ;
                 if (ApplicationManager.getApplication().isDispatchThread()) {
                     LOG.info("Running add/edit command in EDT; will not wait for server errors.");
@@ -221,7 +220,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         return ret;
     }
 
-    @Override
+    @Deprecated
+    //@Override
     public boolean keepChangeListAfterCommit(ChangeList changeList) {
         return false;
     }
@@ -253,9 +253,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     public CommitSession createCommitSession() {
         final SubmitModel model = new SubmitModel(project);
         return new CommitSession() {
+            // Only here for API compatibility
             @Deprecated
             @Nullable
-            @Override
+            //@Override
             public JComponent getAdditionalConfigurationUI() {
                 return getAdditionalConfigurationUI(Collections.emptyList(), "");
             }
@@ -290,7 +291,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                 }
                 List<VcsException> problems = CommitUtil.commit(project,
                         changeList, commitMessage, model.getJobs(), model.getJobStatus());
-                if (problems != null && !problems.isEmpty()) {
+                if (!problems.isEmpty()) {
                     StringBuilder exMessages = new StringBuilder();
                     boolean first = true;
                     for (VcsException problem : problems) {
@@ -371,6 +372,4 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
             model.resetState();
         }
     }
-
-
 }

@@ -6,7 +6,6 @@ plugins {
 ideaApi.uses(
         'openapi',
         'core-api',
-        'annotations-common',
         'annotations',
         'vcs-api-core',
         'vcs-api',

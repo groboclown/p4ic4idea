@@ -26,6 +26,7 @@ dependencies {
 
             'org.codehaus.groovy:groovy:2.5.3',
             'junit:junit:4.12',
+            'org.slf4j:slf4j-nop:1.7.25',
     )
 
     testImplementation('org.spockframework:spock-core:1.2-groovy-2.5') {

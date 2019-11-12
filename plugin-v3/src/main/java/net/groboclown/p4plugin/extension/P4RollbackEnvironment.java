@@ -128,7 +128,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         lfs.refreshFiles(needsRefresh);
 
         // A refresh of the changes is sometimes needed.
-        ChangeListManager.getInstance(project).scheduleUpdate(true);
+        ChangeListManager.getInstance(project).scheduleUpdate();
     }
 
     @Override
@@ -172,7 +172,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
 
         P4ServerComponent
                 .perform(project, root.getClientConfig(), new RevertFileAction(fp, true))
-                .whenCompleted((r) -> ChangeListManager.getInstance(project).scheduleUpdate(true));
+                .whenCompleted((r) -> ChangeListManager.getInstance(project).scheduleUpdate());
     }
 
 

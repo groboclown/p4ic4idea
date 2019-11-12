@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import net.groboclown.p4.server.api.util.ProjectUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class DirectoryMappingUtil {
@@ -26,7 +27,7 @@ public class DirectoryMappingUtil {
     public static VirtualFile getDirectory(@NotNull Project project, @NotNull VcsDirectoryMapping directoryMapping) {
         String dir = directoryMapping.getDirectory();
         if (dir == null || dir.length() <= 0) {
-            return project.getBaseDir();
+            return ProjectUtil.guessProjectBaseDir(project);
         }
         VirtualFile ret = VcsUtil.getVirtualFile(dir);
         if (ret == null) {

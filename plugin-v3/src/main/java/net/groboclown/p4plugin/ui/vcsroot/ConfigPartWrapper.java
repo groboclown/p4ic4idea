@@ -25,11 +25,11 @@ import java.awt.*;
 import java.util.ResourceBundle;
 
 public class ConfigPartWrapper {
-    private static final Icon DELETE_ITEM = AllIcons.Actions.Delete;
+    private static final Icon DELETE_ITEM = AllIcons.General.Remove;
     private static final Icon MOVE_UP = AllIcons.Actions.MoveUp;
     private static final Icon MOVE_DOWN = AllIcons.Actions.MoveDown;
-    private static final Icon EXPAND_DESCRIPTION = AllIcons.Actions.Right;
-    private static final Icon COLLAPSE_DESCRIPTION = AllIcons.Actions.Down;
+    private static final Icon EXPAND_DESCRIPTION = AllIcons.Actions.ShowAsTree;  // need better cross-version icon
+    private static final Icon COLLAPSE_DESCRIPTION = AllIcons.General.ArrowDown;
 
     private final ConfigPartUI ui;
     private int position;

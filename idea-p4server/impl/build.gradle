@@ -8,7 +8,6 @@ plugins {
 ideaImplementation.uses(
         'openapi',
         'core-api',
-        'annotations-common',
         'annotations',
         'vcs-api-core',
         'vcs-api',
@@ -22,7 +21,7 @@ ideaImplementation.uses(
         'editor-ui-api',
 
         'jdom',
-        'kotlin-runtime'
+        'kotlin'
 )
 
 

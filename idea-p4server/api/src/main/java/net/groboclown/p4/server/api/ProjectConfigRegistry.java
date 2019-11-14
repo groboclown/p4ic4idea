@@ -48,7 +48,8 @@ import java.util.Collection;
  */
 public abstract class ProjectConfigRegistry
         implements ProjectComponent, Disposable {
-    public static final String COMPONENT_NAME = ProjectConfigRegistry.class.getName();
+    public static final Class<ProjectConfigRegistry> COMPONENT_CLASS = ProjectConfigRegistry.class;
+    public static final String COMPONENT_NAME = COMPONENT_CLASS.getName();
 
     private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
 
@@ -59,7 +60,7 @@ public abstract class ProjectConfigRegistry
 
     @Nullable
     public static ProjectConfigRegistry getInstance(@NotNull Project project) {
-        return (ProjectConfigRegistry) project.getComponent(COMPONENT_NAME);
+        return (ProjectConfigRegistry) project.getComponent(COMPONENT_CLASS);
     }
 
 

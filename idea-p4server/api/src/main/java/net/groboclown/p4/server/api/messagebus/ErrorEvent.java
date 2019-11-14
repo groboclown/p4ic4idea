@@ -15,12 +15,20 @@
 package net.groboclown.p4.server.api.messagebus;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ErrorEvent<E extends Throwable> extends AbstractMessageEvent {
     private final E error;
+    private final String message;
 
     public ErrorEvent(@NotNull E error) {
         this.error = error;
+        this.message = error.getMessage();
+    }
+
+    public ErrorEvent(@NotNull E error, @Nullable String message) {
+        this.error = error;
+        this.message = message;
     }
 
     @NotNull
@@ -29,6 +37,6 @@ public class ErrorEvent<E extends Throwable> extends AbstractMessageEvent {
     }
 
     public String getMessage() {
-        return error.getMessage();
+        return message;
     }
 }

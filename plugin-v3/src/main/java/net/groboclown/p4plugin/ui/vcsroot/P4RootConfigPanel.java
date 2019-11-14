@@ -318,12 +318,18 @@ public class P4RootConfigPanel {
         @Override
         public Component getListCellRendererComponent(JList<? extends ConfigProblem> list, ConfigProblem problem,
                 int index, boolean isSelected, boolean cellHasFocus) {
-            // TODO allow selection, and show selection differently.
-
             cell.setForeground(problem.isError()
                     ? JBColor.RED
                     : UIUtil.getTextAreaForeground());
-            cell.setBackground(UIUtil.getListBackground(isSelected));
+
+            // > v183 has nice API for this...
+            cell.setBackground(
+                    isSelected
+                        ? cellHasFocus
+                                ? UIUtil.getListUnfocusedSelectionBackground()
+                                : UIUtil.getListSelectionBackground()
+                        : UIUtil.getListBackground()
+            );
             cell.setText(problem.getMessage());
             return cell;
         }

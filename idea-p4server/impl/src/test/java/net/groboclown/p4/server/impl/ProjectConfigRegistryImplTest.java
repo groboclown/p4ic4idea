@@ -39,7 +39,7 @@ class ProjectConfigRegistryImplTest {
     @Test
     void getRegisteredClientConfig() {
         ProjectConfigRegistry registry = new ProjectConfigRegistryImpl(idea.getMockProject());
-        idea.registerProjectComponent(ProjectConfigRegistry.COMPONENT_NAME, registry);
+        idea.registerProjectComponent(ProjectConfigRegistry.COMPONENT_CLASS, registry);
 
         assertSame(ProjectConfigRegistry.getInstance(idea.getMockProject()), registry);
     }

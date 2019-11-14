@@ -1,18 +1,18 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.9</version>
+    <version>0.10.10</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.10</em><ul>
+        <li>Fixed the issue where refreshing the VCS changes after submitting a change causes a
+        critical failure due to IDE changelists vs Perforce cache being out-of-sync.</li>
+      </ul></li>
       <li><em>0.10.9</em><ul>
         <li>Fixed API usage to support future IDE versions.</li>
-      </ul></li>
-      <li><em>0.10.8</em><ul>
-        <li>Fixed the thread that some operations run in to better support
-        IDE versions 2019.2 and above.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

@@ -159,6 +159,7 @@ public class CacheStoreUpdateListener {
         }
 
         // Cache store completed refresh.  Send a notification.
+        // Actually, don't.  This can cause unintended recursion during VCS refresh.
         //FileCacheUpdatedMessage.send(project).onFilesCacheUpdated(new FileCacheUpdatedMessage.FileCacheUpdateEvent(
         //        openedFiles.toArray(new P4LocalFile[0])));
 

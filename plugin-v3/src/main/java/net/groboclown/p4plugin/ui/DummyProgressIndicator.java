@@ -102,12 +102,14 @@ public class DummyProgressIndicator implements ProgressIndicator {
 
     }
 
-    @Override
+    // @Override
+    @Deprecated
     public void startNonCancelableSection() {
 
     }
 
-    @Override
+    // @Override
+    @Deprecated
     public void finishNonCancelableSection() {
 
     }

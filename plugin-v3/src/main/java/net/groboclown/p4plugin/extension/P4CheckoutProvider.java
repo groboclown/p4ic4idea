@@ -81,7 +81,7 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
             @Override
             public void run(@NotNull ProgressIndicator progressIndicator) {
                 progressIndicator.setIndeterminate(true);
-                progressIndicator.startNonCancelableSection();
+                progressIndicator.start();
                 try {
                     LOG.info("Fetching files into " + rootPath);
                     FetchFilesResult r = P4ServerComponent
@@ -96,10 +96,8 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
                 } catch (InterruptedException e) {
                     InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(
                             new VcsInterruptedException(e)));
-                    progressIndicator.finishNonCancelableSection();
                     onCancel();
                 } catch (P4CommandRunner.ServerResultException e) {
-                    progressIndicator.finishNonCancelableSection();
                     VcsNotifier.getInstance(project).notifyError(P4Bundle.getString("checkout.config.error.title"),
                             e.getMessage());
                     synchronized (sync) {

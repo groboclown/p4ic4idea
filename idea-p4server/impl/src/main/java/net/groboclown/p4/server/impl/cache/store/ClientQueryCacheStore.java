@@ -61,7 +61,6 @@ public class ClientQueryCacheStore {
         this.changelists.addAll(Arrays.asList(changelists));
     }
 
-    @TestOnly
     public void setChangelists(Collection<P4LocalChangelist> changelists) {
         this.changelists.clear();
         this.changelists.addAll(changelists);

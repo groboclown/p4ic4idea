@@ -501,7 +501,17 @@ public class P4ChangeProvider
                     }
                     builder.processModifiedWithoutCheckout(file.getFilePath().getVirtualFile());
                     return false;
-                } else if (ChangeListManager.getInstance(project).getChangeList(localChangeList.getId()) == null) {
+                }
+                // See #206
+                // There's a weird situation where the getChangeList(id) succeeds, but
+                // the underlying call is to an equivalent of findChangeList(name), which
+                // fails.  This might even be a race condition.  From what I can tell, the
+                // ChangeListManagerImpl has a ChangeListWorker, which knows about this
+                // changelist, but the UpdatingChangeListBuilder has a worker which does not.
+                //
+                LocalChangeList ideChangelist =
+                        ChangeListManager.getInstance(project).findChangeList(localChangeList.getName());
+                if (ideChangelist == null) {
                     // This can happen after submit, and is a sign that the cache is out of date.
                     LOG.info("Encountered deleted changelist " + localChangeList +
                             "; cache is probably out of date and needs a refresh.");
@@ -574,6 +584,9 @@ public class P4ChangeProvider
 
                 // TODO unversioned files should be susceptible to the P4IGNORE settings.
 
+                // This is deprecated in >v193, which introduced the new method
+                // that takes a FilePath.  Earlier versions don't have that
+                // method.
                 builder.processUnversionedFile(dirtyFile.getVirtualFile());
             }
         }
@@ -619,7 +632,23 @@ public class P4ChangeProvider
             LOG.debug("Adding change " + change + " to IDE change list " + localChangeList);
         }
 
-        builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
+        // #206 can't figure out the reason why the ChangeListManagerImpl would know about the change,
+        // while the builder's worker wouldn't know it.
+        try {
+            builder.processChangeInList(change, localChangeList, P4Vcs.getKey());
+        } catch (Throwable err) {
+            if (err.getClass().equals(Throwable.class)) {
+                // Chances are this is related to #206.
+                InternalErrorMessage.send(project).unexpectedError(new ErrorEvent<>(
+                        err,
+                        P4Bundle.message("error.changelist.bad-cache", localChangeList.getName())
+                ));
+                // fallback...
+                builder.processChange(change, P4Vcs.getKey());
+            } else {
+                throw err;
+            }
+        }
     }
 
 

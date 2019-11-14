@@ -31,7 +31,7 @@ public class DirectoryMappingUtil {
         }
         VirtualFile ret = VcsUtil.getVirtualFile(dir);
         if (ret == null) {
-            return project.getBaseDir();
+            return ProjectUtil.guessProjectBaseDir(project);
         }
         return ret;
     }

@@ -267,12 +267,12 @@ public class ActiveConnectionPanel {
                         if (sel != null && sel.getClientRootDir() != null) {
                             String dirName = sel.getClientRootDir().getPath();
                             // TODO this is not accurate.  It does not supply the correct VcsDirectoryMapping instance.
-                            VcsDirectoryMapping mapping = new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME);
                             VirtualFile rootDir = VcsUtil.getVirtualFile(dirName);
                             if (rootDir == null) {
                                 rootDir = ProjectUtil.guessProjectBaseDir(project);
                             }
-                            mapping.setRootSettings(new P4VcsRootSettingsImpl(project, rootDir));
+                            VcsDirectoryMapping mapping = new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME,
+                                    new P4VcsRootSettingsImpl(project, rootDir));
                             UnnamedConfigurable configurable = P4Vcs.getInstance(project).getRootConfigurable(mapping);
                             if (configurable != null) {
                                 new ConfigDialog(project, dirName, configurable)

@@ -57,6 +57,7 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.ui.ColorUtil;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
 import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
+import net.groboclown.p4plugin.util.RootSettingsUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -229,13 +230,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      */
     @Override
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
-        if (mapping.getRootSettings() == null) {
-            VirtualFile rootDir = VcsUtil.getVirtualFile(mapping.getDirectory());
-            if (rootDir == null) {
-                rootDir = ProjectUtil.guessProjectBaseDir(getProject());
-            }
-            mapping.setRootSettings(new P4VcsRootSettingsImpl(myProject, rootDir));
-        }
+        RootSettingsUtil.getFixedRootSettings(myProject, mapping);
         return new P4VcsRootConfigurable(getProject(), mapping);
     }
 
@@ -446,28 +441,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
     @Nullable
     public DiffProvider getDiffProvider() {
         return diffProvider;
-    }
-
-
-    /**
-     * Returns true if the specified file path is located under a directory which is managed by this VCS.
-     * This method is called only for directories which are mapped to this VCS in the project configuration.
-     *
-     * @param filePath the path to check.
-     * @return true if the path is managed by this VCS, false otherwise.
-     */
-    @Deprecated
-    //@Override
-    public boolean fileIsUnderVcs(FilePath filePath) {
-        // This does not check for ignored files, because
-        // it's possible for a file to be in the depot, and thus not ignored,
-        // but in the ignore list.  The ignore list is only for ignoring
-        // new files.
-        return filePath != null &&
-                ! filePath.isDirectory() &&
-                // Warning: for deleted files, fp.getPath() can be different than the actual file!!!!
-                // use this instead: getIOFile().getAbsolutePath()
-                ! filePath.getIOFile().getAbsolutePath().contains("...");
     }
 
 

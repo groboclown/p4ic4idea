@@ -79,7 +79,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     }
 
     @Nullable
-    @Override
+    //@Override
+    @Deprecated
     public RefreshableOnComponent createAdditionalOptionsPanel(CheckinProjectPanel panel, PairConsumer<Object, Object> additionalDataConsumer) {
         // #52 - we could be able to monitor panel.getCommitMessage(); to ensure
         // that there's a message, and when there isn't, disable the submit
@@ -114,7 +115,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     }
 
     @Nullable
-    @Override
+    //@Override
+    @Deprecated
     public List<VcsException> commit(List<Change> changes, String preparedComment) {
         return commit(changes, preparedComment, (p) -> null, new HashSet<>());
     }
@@ -249,7 +251,8 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     }
 
     @NotNull
-    @Override
+    //@Override
+    @Deprecated
     public CommitSession createCommitSession() {
         final SubmitModel model = new SubmitModel(project);
         return new CommitSession() {

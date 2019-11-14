@@ -29,7 +29,7 @@ import java.util.Map;
 
 /**
  * Keeps a mapping between IDE ChangeList objects and Perforce changelist ID objects.
- * This is maintained per-project, and the underlying state must be peristed between
+ * This is maintained per-project, and the underlying state must be persisted between
  * executions.
  * <p>
  * The mapping is intentionally simple, and based on the server.  The plugin will store

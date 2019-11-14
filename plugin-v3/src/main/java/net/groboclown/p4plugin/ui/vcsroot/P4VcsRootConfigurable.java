@@ -35,6 +35,7 @@ import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.ui.WrapperPanel;
+import net.groboclown.p4plugin.util.RootSettingsUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,8 +83,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
             // ClientConfig oldConfig = loadConfigFromSettings();
             P4VcsRootSettings settings = new P4VcsRootSettingsImpl(project, vcsRoot);
             MultipleConfigPart parentPart = loadParentPartFromUI();
-            settings.setConfigParts(parentPart.getChildren());
-            mapping.setRootSettings(settings);
+            RootSettingsUtil.getFixedRootSettings(project, mapping).setConfigParts(parentPart.getChildren());
 
             if (parentPart.hasError()) {
                 problems = parentPart.getConfigProblems();
@@ -158,17 +158,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
     @NotNull
     private P4VcsRootSettings getRootSettings() {
-        VcsRootSettings rawSettings = mapping.getRootSettings();
-        if (rawSettings == null) {
-            P4VcsRootSettingsImpl ret = new P4VcsRootSettingsImpl(project, vcsRoot);
-            mapping.setRootSettings(ret);
-            return ret;
-        }
-        if (!(rawSettings instanceof P4VcsRootSettings)) {
-            throw new IllegalStateException("Invalid plugin root settings class; expected " +
-                    P4VcsRootSettings.class + ", found " + rawSettings.getClass());
-        }
-        return (P4VcsRootSettings) rawSettings;
+        return RootSettingsUtil.getFixedRootSettings(project, mapping);
     }
 
     @Nls(capitalization = Nls.Capitalization.Sentence)

@@ -149,6 +149,9 @@ public class CacheComponent implements
             // Null project cannot have anything to refresh.
             throw new IllegalStateException("project not set for call");
         }
+        // Keep a chain of promises, headed by `ret`.  The type of the
+        // answer doesn't matter, because it's only being used to tie the
+        // series of promises together.
         Answer<?> ret = Answer.resolve(null);
 
         for (ClientConfigRoot clientRoot : clients) {
@@ -157,12 +160,14 @@ public class CacheComponent implements
                     : null;
 
             ret = ret.mapAsync((x) ->
-            Answer.background((sink) -> P4ServerComponent.syncQuery(project,
+            Answer.background((sink) -> P4ServerComponent.syncQuery(
+                    project,
                     clientRoot.getClientConfig(),
                     new SyncListOpenedFilesChangesQuery(
                             root,
                             UserProjectPreferences.getMaxChangelistRetrieveCount(project),
-                            UserProjectPreferences.getMaxFileRetrieveCount(project))).getPromise()
+                            UserProjectPreferences.getMaxFileRetrieveCount(project))
+            ).getPromise()
             .whenCompleted((changesResult) -> {
                 // TODO is this a duplicate call for the updateListener's CacheListener?
                 updateListener.setOpenedChanges(

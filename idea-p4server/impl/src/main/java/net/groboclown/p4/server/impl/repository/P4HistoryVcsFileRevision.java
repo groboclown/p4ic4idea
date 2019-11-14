@@ -114,18 +114,19 @@ public class P4HistoryVcsFileRevision
     @Override
     public byte[] loadContent()
             throws IOException, VcsException {
-        return getContent();
-    }
-
-    @Nullable
-    @Override
-    public byte[] getContent()
-            throws IOException, VcsException {
         if (!loadedContent && loader != null) {
             loadedContent = true;
             content = loader.loadContentForRev(config, clientname, data.getDepotFileName(), data.getRevision());
         }
         return content;
+    }
+
+    @Nullable
+    //@Override
+    @Deprecated
+    public byte[] getContent()
+            throws IOException, VcsException {
+        return loadContent();
     }
 
     @NotNull

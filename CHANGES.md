@@ -1,5 +1,19 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.10.10::
+
+### Overview
+
+* Deprecated API usage cleanup
+* Bug fixes
+
+### Details
+
+* Deprecated API usage cleanup
+    * Cleaned up some of the deprecated API usage that was introduced in v193 of the IDE (#205).
+* Bug fixes
+    * Added improvements to catch the out-of-sync problem that can happen after submitting a changelist.  It can still get weird, but at least it's recoverable now. (#206)
+
 
 ## ::v0.10.9::
 

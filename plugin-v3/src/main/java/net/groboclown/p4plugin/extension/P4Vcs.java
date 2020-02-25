@@ -46,7 +46,6 @@ import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.util.ProjectUtil;
 import net.groboclown.p4.server.api.values.P4CommittedChangelist;
@@ -159,7 +158,7 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
     private P4EditFileProvider editProvider;
 
-    private P4ProjectConfigurable myConfigurable;
+    private final P4ProjectConfigurable myConfigurable;
 
     private final P4ChangelistListener changelistListener;
 
@@ -230,7 +229,6 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
      */
     @Override
     public UnnamedConfigurable getRootConfigurable(VcsDirectoryMapping mapping) {
-        RootSettingsUtil.getFixedRootSettings(myProject, mapping);
         return new P4VcsRootConfigurable(getProject(), mapping);
     }
 

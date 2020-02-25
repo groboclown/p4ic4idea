@@ -15,13 +15,21 @@
 package net.groboclown.p4.server.api.config;
 
 import com.intellij.openapi.vcs.VcsRootSettings;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 public interface P4VcsRootSettings extends VcsRootSettings {
 
+    @NotNull
     List<ConfigPart> getConfigParts();
 
-    void setConfigParts(List<ConfigPart> parts);
+    void setConfigParts(@NotNull List<ConfigPart> parts);
+
+    boolean usesDefaultConfigParts();
+
+    @NotNull
+    VirtualFile getRootDir();
 }

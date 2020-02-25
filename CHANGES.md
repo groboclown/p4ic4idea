@@ -1,5 +1,17 @@
 # IDEA Community VCS Integration for Perforce
 
+## ::v0.10.11::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes
+    * Fixed how the VCS Root Directory maps to the configuration (#209).  It should now allow for multiple workspace root directories to have their own, independent configurations.
+
+
 ## ::v0.10.10::
 
 ### Overview

@@ -66,18 +66,36 @@ public class PersistentRootConfigComponent
     }
 
     @Nullable
+    public static PersistentRootConfigComponent getInstance(@NotNull Project project) {
+        return project.getComponent(COMPONENT_CLASS);
+    }
+
+    boolean hasConfigPartsForRoot(@NotNull VirtualFile root) {
+        return getConfigPartsForRoot(root) != null;
+    }
+
+    void setConfigPartsForRoot(@NotNull VirtualFile root, @NotNull List<ConfigPart> parts) {
+        List<ConfigPart> copy = Collections.unmodifiableList(new ArrayList<>(parts));
+        synchronized (sync) {
+            rootPartMap.put(root, copy);
+            if (LOG.isDebugEnabled()) {
+                // NOTE: not synchronized access for debug read.
+                LOG.debug("Stored root " + root + "; current roots stored = " + rootPartMap.keySet());
+            }
+        }
+    }
+
+    @Nullable
     List<ConfigPart> getConfigPartsForRoot(@NotNull VirtualFile root) {
         List<ConfigPart> res;
         synchronized (sync) {
             res = rootPartMap.get(root);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Retrieved config parts for root " + root + " = " + res +
+                        "; current roots stored = " + rootPartMap.keySet());
+            }
         }
         return res;
-    }
-
-
-    @Nullable
-    public static PersistentRootConfigComponent getInstance(@NotNull Project project) {
-        return project.getComponent(COMPONENT_CLASS);
     }
 
     @NotNull
@@ -85,7 +103,6 @@ public class PersistentRootConfigComponent
     public String getComponentName() {
         return COMPONENT_CLASS.getName();
     }
-
 
     @Override
     public void projectOpened() {
@@ -104,17 +121,6 @@ public class PersistentRootConfigComponent
 
     @Override
     public void disposeComponent() {
-    }
-
-    boolean hasConfigPartsForRoot(@NotNull VirtualFile root) {
-        return getConfigPartsForRoot(root) != null;
-    }
-
-    void setConfigPartsForRoot(@NotNull VirtualFile root, @NotNull List<ConfigPart> parts) {
-        List<ConfigPart> copy = Collections.unmodifiableList(new ArrayList<>(parts));
-        synchronized (sync) {
-            rootPartMap.put(root, copy);
-        }
     }
 
     @Nullable

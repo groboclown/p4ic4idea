@@ -44,22 +44,40 @@ public class P4VcsRootSettingsImpl implements P4VcsRootSettings {
         this.rootDir = rootDir;
     }
 
+    @NotNull
+    @Override
+    public VirtualFile getRootDir() {
+        return rootDir;
+    }
 
     @Override
+    public boolean usesDefaultConfigParts() {
+        final PersistentRootConfigComponent config = PersistentRootConfigComponent.getInstance(project);
+        if (config == null) {
+            return true;
+        }
+        List<ConfigPart> ret = config.getConfigPartsForRoot(rootDir);
+        return ret == null || ret.isEmpty();
+    }
+
+    @Override
+    @NotNull
     public List<ConfigPart> getConfigParts() {
         final PersistentRootConfigComponent config = PersistentRootConfigComponent.getInstance(project);
         if (config == null) {
+            LOG.debug("No PersistentRootConfigComponent loaded; using default configuration parts.");
             return getDefaultConfigParts();
         }
         List<ConfigPart> ret = config.getConfigPartsForRoot(rootDir);
         if (ret == null || ret.isEmpty()) {
+            LOG.debug("No persisted configuration parts for root directory " + rootDir);
             return getDefaultConfigParts();
         }
         return ret;
     }
 
     @Override
-    public void setConfigParts(List<ConfigPart> parts) {
+    public void setConfigParts(@NotNull List<ConfigPart> parts) {
         for (ConfigPart part : parts) {
             if (part == null) {
                 LOG.warn("Added null part" + parts);

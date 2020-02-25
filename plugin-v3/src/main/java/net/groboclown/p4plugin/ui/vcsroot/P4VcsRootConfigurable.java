@@ -30,7 +30,6 @@ import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
-import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -56,12 +55,25 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     public P4VcsRootConfigurable(Project project, VcsDirectoryMapping mapping) {
         this.project = project;
         this.vcsRoot = DirectoryMappingUtil.getDirectory(project, mapping);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating configurable for vcs root " + vcsRoot);
+        }
+        RootSettingsUtil.getFixedRootSettings(project, mapping, vcsRoot);
         this.mapping = mapping;
     }
 
     @Nullable
     @Override
     public JComponent createComponent() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating component for root " + vcsRoot + "; mapping " + mapping);
+            VcsRootSettings settings = mapping.getRootSettings();
+            LOG.debug("VCS Settings: " + (settings == null ? null : settings.getClass().getName()));
+            if (settings instanceof P4VcsRootSettings) {
+                P4VcsRootSettings p4settings = (P4VcsRootSettings) settings;
+                LOG.debug("P4 Settings for " + mapping.getDirectory() + ": " + p4settings.getConfigParts());
+            }
+        }
         controller = new Controller(project);
         panel = new P4RootConfigPanel(vcsRoot, controller);
         controller.configPartContainer = panel;
@@ -80,10 +92,8 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         Collection<ConfigProblem> problems = null;
         if (isModified()) {
             LOG.info("Updating root configuration for " + vcsRoot);
-            // ClientConfig oldConfig = loadConfigFromSettings();
-            P4VcsRootSettings settings = new P4VcsRootSettingsImpl(project, vcsRoot);
             MultipleConfigPart parentPart = loadParentPartFromUI();
-            RootSettingsUtil.getFixedRootSettings(project, mapping).setConfigParts(parentPart.getChildren());
+            RootSettingsUtil.getFixedRootSettings(project, mapping, vcsRoot).setConfigParts(parentPart.getChildren());
 
             if (parentPart.hasError()) {
                 problems = parentPart.getConfigProblems();
@@ -158,7 +168,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
     @NotNull
     private P4VcsRootSettings getRootSettings() {
-        return RootSettingsUtil.getFixedRootSettings(project, mapping);
+        return RootSettingsUtil.getFixedRootSettings(project, mapping, vcsRoot);
     }
 
     @Nls(capitalization = Nls.Capitalization.Sentence)

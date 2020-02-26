@@ -19,6 +19,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.connection.FailP4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.P4Func;
@@ -59,8 +60,11 @@ public class ClientTestUtil {
             }
         }
         return withConnection(config.getServerConfig(), tmpDir, errorHandler)
-            .mapAsync(mgr -> mgr.withConnection(config.getServerConfig(), server -> {
-                CoreFactory.createClient(server, config.getClientname(), "new client from CoreFactory",
+                // Create the client, so do not give a client config at creation.
+            .mapAsync(mgr -> mgr.withConnection(new OptionalClientServerConfig(config.getServerConfig(), null),
+                    server -> {
+                CoreFactory.createClient(
+                        server, config.getClientname(), "new client from CoreFactory",
                         clientRoot.getAbsolutePath(), new String[]{"//depot/... //" + config.getClientname() + "/..."},
                         true);
                 return mgr;

@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api;
 
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +35,7 @@ public class MockCommandRunner
         implements P4CommandRunner {
 
     public interface ServerQueryAnswer<R extends ServerResult, Q extends ServerQuery<R>> {
-        R answer(ServerConfig config, Q query);
+        R answer(OptionalClientServerConfig config, Q query);
     }
     public interface ClientQueryAnswer<R extends ClientResult, Q extends ClientQuery<R>> {
         R answer(ClientConfig config, Q query);
@@ -58,7 +59,7 @@ public class MockCommandRunner
 
     @NotNull
     @Override
-    public <R extends ServerResult> QueryAnswer<R> query(@NotNull ServerConfig config, @NotNull ServerQuery<R> query) {
+    public <R extends ServerResult> QueryAnswer<R> query(@NotNull OptionalClientServerConfig config, @NotNull ServerQuery<R> query) {
         assertTrue(
                 serverQueryResultMap.containsKey(query.getCmd()),
                 "Unexpected query cmd " + query.getCmd()
@@ -67,7 +68,7 @@ public class MockCommandRunner
     }
 
     @SuppressWarnings("unchecked")
-    private <R extends ServerResult> R answerQuery(ServerConfig config, ServerQuery query, ServerQueryAnswer answer) {
+    private <R extends ServerResult> R answerQuery(OptionalClientServerConfig config, ServerQuery query, ServerQueryAnswer answer) {
         return (R) answer.answer(config, query);
     }
 
@@ -88,7 +89,7 @@ public class MockCommandRunner
 
     @NotNull
     @Override
-    public <R extends ServerResult> ActionAnswer<R> perform(@NotNull ServerConfig config,
+    public <R extends ServerResult> ActionAnswer<R> perform(@NotNull OptionalClientServerConfig config,
             @NotNull ServerAction<R> action) {
         fail("Should not be called");
         throw new IllegalArgumentException("");
@@ -112,7 +113,7 @@ public class MockCommandRunner
 
     @NotNull
     @Override
-    public <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config,
+    public <R extends ServerResult> R syncCachedQuery(@NotNull OptionalClientServerConfig config,
             @NotNull SyncServerQuery<R> query) {
         fail("Should not be called");
         throw new IllegalArgumentException("");
@@ -128,7 +129,7 @@ public class MockCommandRunner
 
     @NotNull
     @Override
-    public <R extends ServerResult> FutureResult<R> syncQuery(@NotNull ServerConfig config,
+    public <R extends ServerResult> FutureResult<R> syncQuery(@NotNull OptionalClientServerConfig config,
             @NotNull SyncServerQuery<R> query) {
         fail("Should not be called");
         throw new IllegalArgumentException("");

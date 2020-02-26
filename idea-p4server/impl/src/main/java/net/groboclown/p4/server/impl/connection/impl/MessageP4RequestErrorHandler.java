@@ -45,6 +45,7 @@ import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
@@ -591,8 +592,10 @@ public abstract class MessageP4RequestErrorHandler
                     // so no login attempt was made (see PASSWORD_UNNECESSARY below).  We'll classify this as a
                     // invalid password error, and it's up to the listener to figure out if a password should be
                     // asked for.
-                    LoginFailureMessage.send().passwordInvalid(new ServerErrorEvent.ServerConfigErrorEvent<>(
-                            info.getClientConfig(), sourceAfe));
+                    LoginFailureMessage.send().passwordInvalid(
+                            new ServerErrorEvent.ServerConfigErrorEvent<>(
+                                    new OptionalClientServerConfig(info.getServerConfig(), info.getClientConfig()),
+                                    sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);

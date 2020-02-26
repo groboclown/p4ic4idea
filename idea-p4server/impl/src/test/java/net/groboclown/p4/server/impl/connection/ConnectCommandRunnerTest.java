@@ -15,6 +15,7 @@ package net.groboclown.p4.server.impl.connection;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcsUtil.VcsUtil;
+import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -59,6 +60,7 @@ import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.commands.file.RevertFileAction;
 import net.groboclown.p4.server.api.commands.file.RevertFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4AnnotatedLine;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
@@ -130,9 +132,10 @@ class ConnectCommandRunnerTest {
                 errorHandler);
         ConnectCommandRunner runner = new ConnectCommandRunner(idea.getMockProject(), mgr);
         final CreateJobResult[] result = new CreateJobResult[1];
-        runner.getJobSpec(config)
+        runner.getJobSpec(new OptionalClientServerConfig(config, null))
                 .mapActionAsync((jobSpec) ->
-                    runner.perform(config, new CreateJobAction(createP4Job(config, jobSpec)))
+                    runner.perform(new OptionalClientServerConfig(config, null),
+                            new CreateJobAction(createP4Job(config, jobSpec)))
                 )
                 .whenCompleted((res) -> result[0] = res)
                 .whenServerError(Assertions::fail)
@@ -171,10 +174,11 @@ class ConnectCommandRunnerTest {
                 errorHandler);
         ConnectCommandRunner runner = new ConnectCommandRunner(idea.getMockProject(), mgr);
         // Should run without needing a blockingGet, because of the inline thread handler.
-        runner.getJobSpec(config)
+        runner.getJobSpec(new OptionalClientServerConfig(config, null))
                 .mapActionAsync((jobSpec) ->
                         // Do not set any expected details.
-                        runner.perform(config, new CreateJobAction(new P4JobImpl("j", "x", null)))
+                        runner.perform(new OptionalClientServerConfig(config, null),
+                                new CreateJobAction(new P4JobImpl("j", "x", null)))
                 )
                 .whenCompleted((x) -> fail("Did not throw an error"))
                 .whenServerError((ex) -> {
@@ -429,7 +433,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig.getServerConfig(),
+                        runner.perform(new OptionalClientServerConfig(clientConfig),
                                 new CreateJobAction(new P4JobImpl("j1", "x", jobDetails)))
                         .mapActionAsync((res) ->
                                 runner.perform(clientConfig,
@@ -839,8 +843,8 @@ class ConnectCommandRunnerTest {
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
                                 .mapQueryAsync((res) ->
-                                        runner.getFileAnnotation(serverConfig,
-                                            new AnnotateFileQuery(clientConfig.getClientname(), newFile, 1)))
+                                        runner.getFileAnnotation(clientConfig,
+                                            new AnnotateFileQuery(newFile, 1)))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -848,7 +852,7 @@ class ConnectCommandRunnerTest {
                     assertThat(r, instanceOf(AnnotateFileResult.class));
                     AnnotateFileResult res = (AnnotateFileResult) r;
 
-                    assertSame(serverConfig, res.getServerConfig());
+                    assertSame(clientConfig, res.getClientConfig());
                     assertEquals("x", res.getContent());
                     assertEquals(1, res.getHeadRevision().getRevision().getValue());
                     assertSize(1, res.getAnnotatedFile().getAnnotatedLines());
@@ -882,7 +886,7 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.describeChangelist(serverConfig, new DescribeChangelistQuery(
+                        runner.describeChangelist(new OptionalClientServerConfig(clientConfig), new DescribeChangelistQuery(
                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
@@ -933,7 +937,8 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.getClientsForUser(serverConfig, new ListClientsForUserQuery("not-a-user", 50))
+                        runner.getClientsForUser(new OptionalClientServerConfig(clientConfig),
+                                new ListClientsForUserQuery("not-a-user", 50))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -959,10 +964,20 @@ class ConnectCommandRunnerTest {
                 .withUsername(server.getUser())
                 .withNoPassword();
         final ServerConfig setupServerConfig = ServerConfig.createFrom(setupPart);
+        final File clientRoot = tmpDir.newFile("clientRoot");
 
-        // Set the password
+        // Create the client manually and set the password
         assertTrue(withConnection(setupServerConfig, tmpDir)
-                .mapAsync((mgr) -> mgr.withConnection(setupServerConfig, server -> {
+                .mapAsync((mgr) -> mgr.withConnection(new OptionalClientServerConfig(setupServerConfig, null),
+                        server -> {
+                    CoreFactory.createClient(
+                            server, "client1", "new client from CoreFactory",
+                            clientRoot.getAbsolutePath(), new String[]{"//depot/... //client1/..."},
+                            true);
+                    return mgr;
+                }))
+                .mapAsync((mgr) -> mgr.withConnection(new OptionalClientServerConfig(setupServerConfig, null),
+                server -> {
                     String res = server.changePassword(null, "x", server.getUserName());
                     System.err.println("Password change: [" + res + "]");
                     return null;
@@ -977,13 +992,14 @@ class ConnectCommandRunnerTest {
                 .withClientname("client1");
         final ServerConfig serverConfig = ServerConfig.createFrom(part);
         final ClientConfig clientConfig = ClientConfig.createFrom(serverConfig, part);
-        final File clientRoot = tmpDir.newFile("clientRoot");
         final TestableP4RequestErrorHandler errorHandler = new TestableP4RequestErrorHandler(idea.getMockProject());
 
-        setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
+
+        withConnection(clientConfig.getServerConfig(), tmpDir, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.getClientsForUser(serverConfig, new ListClientsForUserQuery(server.getUser(), 1))
+                        runner.getClientsForUser(new OptionalClientServerConfig(clientConfig),
+                                new ListClientsForUserQuery(server.getUser(), 1))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -1027,8 +1043,7 @@ class ConnectCommandRunnerTest {
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
-                                .mapQueryAsync((res) -> runner.listFilesDetails(
-                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                .mapQueryAsync((res) -> runner.listFilesDetails(clientConfig, new ListFilesDetailsQuery(
                                                 Collections.singletonList(newFile.getParentPath()),
                                                 ListFilesDetailsQuery.RevState.HAVE, 100)))
                                 .whenCompleted(sink::resolve)
@@ -1038,7 +1053,7 @@ class ConnectCommandRunnerTest {
                     assertNotNull(r);
                     assertThat(r, instanceOf(ListFilesDetailsResult.class));
                     ListFilesDetailsResult res = (ListFilesDetailsResult) r;
-                    assertSame(serverConfig, res.getServerConfig());
+                    assertSame(clientConfig, res.getClientConfig());
                     assertSize(1, res.getFiles());
                     assertEquals(1, res.getFiles().size());
 
@@ -1110,7 +1125,7 @@ class ConnectCommandRunnerTest {
                                                 "@" + committedChangelistId[0], false)))
                                 // Get the have files
                                 .mapQueryAsync((res) -> runner.listFilesDetails(
-                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                        clientConfig, new ListFilesDetailsQuery(
                                                 Collections.singletonList(newFile.getParentPath()),
                                                 ListFilesDetailsQuery.RevState.HAVE, 100)))
                                 .whenCompleted(sink::resolve)
@@ -1120,7 +1135,7 @@ class ConnectCommandRunnerTest {
                     assertNotNull(r);
                     assertThat(r, instanceOf(ListFilesDetailsResult.class));
                     ListFilesDetailsResult res = (ListFilesDetailsResult) r;
-                    assertSame(serverConfig, res.getServerConfig());
+                    assertSame(clientConfig, res.getClientConfig());
                     assertSize(1, res.getFiles());
                     assertEquals(1, res.getFiles().size());
 
@@ -1186,7 +1201,7 @@ class ConnectCommandRunnerTest {
                                                 Collections.singletonList(newFile), null, "add file", null)))
                                 .whenCompleted(res -> committedChangelistId[1] = res.getChangelistId().getChangelistId())
                                 .mapQueryAsync((res) -> runner.listFilesDetails(
-                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                        clientConfig, new ListFilesDetailsQuery(
                                                 Collections.singletonList(newFile.getParentPath()),
                                                 ListFilesDetailsQuery.RevState.HEAD, 100)))
                                 .whenCompleted(sink::resolve)
@@ -1196,7 +1211,7 @@ class ConnectCommandRunnerTest {
                     assertNotNull(r);
                     assertThat(r, instanceOf(ListFilesDetailsResult.class));
                     ListFilesDetailsResult res = (ListFilesDetailsResult) r;
-                    assertSame(serverConfig, res.getServerConfig());
+                    assertSame(clientConfig, res.getClientConfig());
                     assertSize(1, res.getFiles());
                     assertEquals(1, res.getFiles().size());
 
@@ -1266,7 +1281,7 @@ class ConnectCommandRunnerTest {
                                         clientConfig, new FetchFilesAction(Collections.singletonList(newFile),
                                                 "@" + committedChangelistId[0], false)))
                                 .mapQueryAsync((res) -> runner.listFilesDetails(
-                                        serverConfig, new ListFilesDetailsQuery(clientConfig.getClientServerRef(),
+                                        clientConfig, new ListFilesDetailsQuery(
                                                 Collections.singletonList(newFile.getParentPath()),
                                                 ListFilesDetailsQuery.RevState.HEAD, 100)))
                                 .whenCompleted(sink::resolve)
@@ -1276,7 +1291,7 @@ class ConnectCommandRunnerTest {
                     assertNotNull(r);
                     assertThat(r, instanceOf(ListFilesDetailsResult.class));
                     ListFilesDetailsResult res = (ListFilesDetailsResult) r;
-                    assertSame(serverConfig, res.getServerConfig());
+                    assertSame(clientConfig, res.getClientConfig());
                     assertSize(1, res.getFiles());
                     assertEquals(1, res.getFiles().size());
 

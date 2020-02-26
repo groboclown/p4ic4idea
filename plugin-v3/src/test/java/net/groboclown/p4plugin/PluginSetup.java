@@ -37,6 +37,7 @@ import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
@@ -160,7 +161,8 @@ public class PluginSetup
     public void goOnline(ClientConfigRoot root) {
         ClientConfigAddedMessage.sendClientConfigurationAdded(idea.getMockProject(),
                 root.getClientRootDir(), root.getClientConfig());
-        ServerConnectedMessage.send().serverConnected(new ServerConnectedMessage.ServerConnectedEvent(root.getServerConfig(), true));
+        ServerConnectedMessage.send().serverConnected(new ServerConnectedMessage.ServerConnectedEvent(
+                new OptionalClientServerConfig(root.getClientConfig()), true));
     }
 
     public P4ChangelistId addNewChangelist(ClientConfigRoot root, int p4ChangelistId, String description) {

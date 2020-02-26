@@ -19,6 +19,7 @@ import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockVirtualFile;
 import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
@@ -113,7 +114,7 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        protected void onLoginError(@NotNull ServerConfig config) {
+        protected void onLoginError(@NotNull OptionalClientServerConfig config) {
             throw new IllegalStateException();
         }
 

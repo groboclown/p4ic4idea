@@ -18,6 +18,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.Nls;
@@ -35,7 +36,7 @@ public final class SyncOptionConfigurable implements Configurable {
     private final Project project;
     private final SyncOptions baseOptions;
     private final SyncOptions pendingOptions;
-    private final List<ServerConfig> configs;
+    private final List<ClientConfig> configs;
 
     // TODO allow for changelist browsing.
     // For changelist browsing, we can limit the number of changes returned, and have a paging
@@ -43,7 +44,7 @@ public final class SyncOptionConfigurable implements Configurable {
     // This, however, requires access to all the source ServerConfig instances.
 
     public SyncOptionConfigurable(@NotNull Project project, @NotNull SyncOptions baseOptions,
-            @NotNull Collection<ServerConfig> configs) {
+            @NotNull Collection<ClientConfig> configs) {
         this.project = project;
         this.baseOptions = baseOptions;
         this.pendingOptions = new SyncOptions(baseOptions);

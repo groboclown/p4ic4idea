@@ -26,21 +26,18 @@ import javax.annotation.Nullable;
  * still needs a client name if the user passes in a file, because the server needs to be
  * able to map from the client spec's file mapping to the server object.
  */
-public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFileResult> {
-    private final String clientname;
+public class AnnotateFileQuery implements P4CommandRunner.ClientQuery<AnnotateFileResult> {
     private final FilePath localFile;
     private final P4RemoteFile remoteFile;
     private final int rev;
 
-    public AnnotateFileQuery(@NotNull String clientname, @NotNull FilePath localFile, int rev) {
-        this.clientname = clientname;
+    public AnnotateFileQuery(@NotNull FilePath localFile, int rev) {
         this.localFile = localFile;
         this.remoteFile = null;
         this.rev = rev;
     }
 
     public AnnotateFileQuery(@NotNull P4RemoteFile remoteFile, int rev) {
-        this.clientname = null;
         this.localFile = null;
         this.remoteFile = remoteFile;
         this.rev = rev;
@@ -53,8 +50,8 @@ public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFi
     }
 
     @Override
-    public P4CommandRunner.ServerQueryCmd getCmd() {
-        return P4CommandRunner.ServerQueryCmd.ANNOTATE_FILE;
+    public P4CommandRunner.ClientQueryCmd getCmd() {
+        return P4CommandRunner.ClientQueryCmd.ANNOTATE_FILE;
     }
 
     /**
@@ -73,10 +70,5 @@ public class AnnotateFileQuery implements P4CommandRunner.ServerQuery<AnnotateFi
 
     public int getRev() {
         return rev;
-    }
-
-    @Nullable
-    public String getClientname() {
-        return clientname;
     }
 }

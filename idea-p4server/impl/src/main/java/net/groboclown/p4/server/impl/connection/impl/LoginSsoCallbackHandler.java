@@ -22,7 +22,7 @@ import com.intellij.execution.util.ExecUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.SystemInfo;
 import com.perforce.p4java.server.callback.ISSOCallback;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,13 +33,13 @@ public class LoginSsoCallbackHandler
         implements ISSOCallback {
     private static final Logger LOG = Logger.getInstance(LoginSsoCallbackHandler.class);
 
-    private final ServerConfig serverConfig;
+    private final OptionalClientServerConfig config;
     private final String loginSsoCmd;
 
-    private int lockWaitTimeoutMillis;
+    private final int lockWaitTimeoutMillis;
 
-    LoginSsoCallbackHandler(@NotNull ServerConfig serverConfig, int lockWaitTimeoutMillis) {
-        this.serverConfig = serverConfig;
+    LoginSsoCallbackHandler(@NotNull OptionalClientServerConfig serverConfig, int lockWaitTimeoutMillis) {
+        this.config = serverConfig;
         this.loginSsoCmd = serverConfig.getLoginSso();
         if (loginSsoCmd == null) {
             throw new IllegalStateException("Should have login SSO at this point");
@@ -63,7 +63,7 @@ public class LoginSsoCallbackHandler
 
                 LoginFailureMessage.send().singleSignOnExecutionFailed(
                         new LoginFailureMessage.SingleSignOnExecutionFailureEvent(
-                                serverConfig, loginSsoCmd,
+                                config, loginSsoCmd,
                                 output.getExitCode(), output.getStdout(), output.getStderr()
                         ));
 
@@ -75,7 +75,7 @@ public class LoginSsoCallbackHandler
             LOG.warn("Failed to run single sign in command [" + loginSsoCmd + "]", e);
             LoginFailureMessage.send().singleSignOnExecutionFailed(
                     new LoginFailureMessage.SingleSignOnExecutionFailureEvent(
-                            serverConfig, loginSsoCmd,
+                            config, loginSsoCmd,
                             -1, "", e.getLocalizedMessage()
                     ));
             return Status.FAIL;

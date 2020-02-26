@@ -39,6 +39,7 @@ import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.impl.commands.AnswerUtil;
@@ -108,7 +109,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                         passwdStr = null;
                     }
                     final IOptionsServer server = connect(
-                            config.getServerConfig(),
+                            new OptionalClientServerConfig(config),
                             passwdStr,
                             createProperties(config, cwd));
                     try {
@@ -129,9 +130,11 @@ public class SimpleConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Answer<R> withConnection(@NotNull final ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
-        return getPassword(config)
-                .mapAsync((password) -> handleAsync(config, () -> {
+    public <R> Answer<R> withConnection(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull P4Func<IOptionsServer, R> fun) {
+        return getPassword(config.getServerConfig())
+                .mapAsync((password) -> handleAsync(config.getServerConfig(), () -> {
                     String passwdStr = password == null ? null : password.toString(true);
                     if (passwdStr == null || passwdStr.isEmpty()) {
                         passwdStr = null;
@@ -139,10 +142,13 @@ public class SimpleConnectionManager implements ConnectionManager {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Connecting to " + config.getServerName());
                     }
-                    final IOptionsServer server = connect(
-                            config,
-                            passwdStr,
-                            createProperties(config));
+                    final Properties props;
+                    if (config.getClientConfig() != null) {
+                        props = createProperties(config.getClientConfig(), null);
+                    } else {
+                        props = createProperties(config.getServerConfig());
+                    }
+                    final IOptionsServer server = connect(config, passwdStr, props);
                     try {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Running invocation for " + fun);
@@ -180,8 +186,9 @@ public class SimpleConnectionManager implements ConnectionManager {
         // not keep a pool of connections.
     }
 
-    private IOptionsServer connect(ServerConfig serverConfig, String password, Properties props)
+    private IOptionsServer connect(OptionalClientServerConfig config, String password, Properties props)
             throws P4JavaException, URISyntaxException {
+        ServerConfig serverConfig = config.getServerConfig();
         IOptionsServer server = getServer(serverConfig.getServerName(), props);
         if (serverConfig.getServerName().isSecure() && serverConfig.hasServerFingerprint()) {
             if (LOG.isDebugEnabled()) {
@@ -196,7 +203,7 @@ public class SimpleConnectionManager implements ConnectionManager {
             // pass in a error callback to the callback so that the connection manager can handle errors.
             // TODO look into registering the sso key through user options.
             // TODO don't hard-code the timeout; use something else.
-            server.registerSSOCallback(new LoginSsoCallbackHandler(serverConfig, 10_000), null);
+            server.registerSSOCallback(new LoginSsoCallbackHandler(config, 10_000), null);
         }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Sending connect request to server " + serverConfig.getServerName());
@@ -206,7 +213,7 @@ public class SimpleConnectionManager implements ConnectionManager {
         // Seems to be connected.  Tell the world that it can be
         // connected to.  Note that this is independent of login validity.
         ServerConnectedMessage.send().serverConnected(
-                new ServerConnectedMessage.ServerConnectedEvent(serverConfig, false));
+                new ServerConnectedMessage.ServerConnectedEvent(config, false));
 
         // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
         // set, then a simple password login attempt should be made.  The P4LOGINSSO will
@@ -233,7 +240,7 @@ public class SimpleConnectionManager implements ConnectionManager {
         }
         // TODO should this always be sent???
         ServerConnectedMessage.send().serverConnected(
-                new ServerConnectedMessage.ServerConnectedEvent(serverConfig, true));
+                new ServerConnectedMessage.ServerConnectedEvent(config, true));
 
         return server;
     }

@@ -29,7 +29,7 @@ import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
@@ -67,7 +67,7 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
             return;
         }
 
-        Pair<ServerConfig, P4ChangelistId> setup = getReferencedChangelistId(project, registry, e);
+        Pair<OptionalClientServerConfig, P4ChangelistId> setup = getReferencedChangelistId(project, registry, e);
         if (setup == null) {
             LOG.info("Skipping because no changelist associated to context item could be found");
             return;
@@ -83,9 +83,9 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
     }
 
 
-    private Pair<ServerConfig, P4ChangelistId> getReferencedChangelistId(Project project,
+    private Pair<OptionalClientServerConfig, P4ChangelistId> getReferencedChangelistId(Project project,
             ProjectConfigRegistry registry, AnActionEvent e) {
-        Pair<ServerConfig, P4ChangelistId> ret;
+        Pair<OptionalClientServerConfig, P4ChangelistId> ret;
         ret = findAttachedChangelist(project, registry, e);
         if (ret != null) {
             return ret;
@@ -96,7 +96,7 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
     }
 
 
-    private Pair<ServerConfig, P4ChangelistId> findAttachedChangelist(Project project, ProjectConfigRegistry registry,
+    private Pair<OptionalClientServerConfig, P4ChangelistId> findAttachedChangelist(Project project, ProjectConfigRegistry registry,
             AnActionEvent e) {
         ChangeList[] changeLists = VcsDataKeys.CHANGE_LISTS.getData(e.getDataContext());
         if (LOG.isDebugEnabled()) {
@@ -110,10 +110,11 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
         for (ChangeList changeList : changeLists) {
             if (changeList instanceof P4CommittedChangelist) {
                 P4CommittedChangelist p4cl = (P4CommittedChangelist) changeList;
-                ServerConfig serverConfig = getServerConfigForChangelistId(registry,
+                ClientConfig clientConfig = getConfigForChangelistId(registry,
                         p4cl.getSummary().getChangelistId());
-                if (serverConfig != null) {
-                    return Pair.create(serverConfig, p4cl.getSummary().getChangelistId());
+                if (clientConfig != null) {
+                    return Pair.create(new OptionalClientServerConfig(clientConfig),
+                            p4cl.getSummary().getChangelistId());
                 } else {
                     LOG.warn("Skipped " + p4cl + " / " + p4cl.getSummary().getChangelistId() +
                             " because no server registration known to exist for " +
@@ -145,7 +146,7 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
                                     if (LOG.isDebugEnabled()) {
                                         LOG.debug("Using changelist " + p4ChangeList);
                                     }
-                                    return Pair.create(root.getServerConfig(), p4ChangeList);
+                                    return Pair.create(new OptionalClientServerConfig(root.getClientConfig()), p4ChangeList);
                                 }
                             }
                         }
@@ -153,12 +154,12 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
 
                     // Pick one
                     P4ChangelistId first = p4ChangeLists.iterator().next();
-                    ServerConfig serverConfig = getServerConfigForChangelistId(registry, first);
-                    if (serverConfig != null) {
+                    ClientConfig clientConfig = getConfigForChangelistId(registry, first);
+                    if (clientConfig != null) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Using changelist " + first + " out of " + p4ChangeLists);
                         }
-                        return Pair.create(serverConfig, first);
+                        return Pair.create(new OptionalClientServerConfig(clientConfig), first);
                     }
 
                     // Unknown...
@@ -172,17 +173,13 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
         return null;
     }
 
-    private ServerConfig getServerConfigForChangelistId(ProjectConfigRegistry registry, P4ChangelistId p4cl) {
-        ClientConfig clientConfig = registry.getRegisteredClientConfigState(p4cl.getClientServerRef());
-        if (clientConfig != null) {
-            return clientConfig.getServerConfig();
-        }
-        return null;
+    private ClientConfig getConfigForChangelistId(ProjectConfigRegistry registry, P4ChangelistId p4cl) {
+        return registry.getRegisteredClientConfigState(p4cl.getClientServerRef());
     }
 
 
 
-    private Pair<ServerConfig, P4ChangelistId> findAttachedFileRevision(AnActionEvent e) {
+    private Pair<OptionalClientServerConfig, P4ChangelistId> findAttachedFileRevision(AnActionEvent e) {
         final VirtualFile file;
         {
             final Boolean nonLocal = e.getData(VcsDataKeys.VCS_NON_LOCAL_HISTORY_SESSION);
@@ -203,6 +200,6 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
             return null;
         }
         P4HistoryVcsFileRevision history = (P4HistoryVcsFileRevision) revision;
-        return Pair.create(history.getServerConfig(), history.getChangelistId());
+        return Pair.create(new OptionalClientServerConfig(history.getClientConfig()), history.getChangelistId());
     }
 }

@@ -15,26 +15,22 @@
 package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.FilePath;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.server.IServer;
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
-public class GetFileContentsResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+public class GetFileContentsResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
     private final String depotPath;
     private final FilePath localFile;
     private final byte[] data;
     private final String charset;
 
-    public GetFileContentsResult(ServerConfig config, String depotPath, byte[] data, String charset) {
+    public GetFileContentsResult(ClientConfig config, String depotPath, byte[] data, String charset) {
         this.config = config;
         this.depotPath = depotPath;
         this.localFile = null;
@@ -42,7 +38,7 @@ public class GetFileContentsResult implements P4CommandRunner.ServerResult {
         this.charset = charset == null ? Charset.defaultCharset().name() : charset;
     }
 
-    public GetFileContentsResult(ServerConfig config, FilePath localFile, byte[] data, String charset) {
+    public GetFileContentsResult(ClientConfig config, FilePath localFile, byte[] data, String charset) {
         this.config = config;
         this.depotPath = null;
         this.localFile = localFile;
@@ -52,7 +48,7 @@ public class GetFileContentsResult implements P4CommandRunner.ServerResult {
 
     @NotNull
     @Override
-    public ServerConfig getServerConfig() {
+    public ClientConfig getClientConfig() {
         return config;
     }
 

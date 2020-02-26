@@ -15,8 +15,11 @@
 package net.groboclown.p4.server.api.messagebus;
 
 import com.intellij.util.messages.Topic;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 
 /**
  * Indicates that a server was successfully contacted without issue.  The server should be
@@ -35,16 +38,22 @@ public class ServerConnectedMessage
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public static final class ServerConnectedEvent extends AbstractMessageEvent {
-        private final ServerConfig serverConfig;
+        private final OptionalClientServerConfig config;
         private final boolean loggedIn;
 
-        public ServerConnectedEvent(@NotNull ServerConfig serverConfig, boolean loggedIn) {
-            this.serverConfig = serverConfig;
+        public ServerConnectedEvent(@NotNull OptionalClientServerConfig config, boolean loggedIn) {
+            this.config = config;
             this.loggedIn = loggedIn;
         }
 
+        @NotNull
         public ServerConfig getServerConfig() {
-            return serverConfig;
+            return config.getServerConfig();
+        }
+
+        @NotNull
+        public OptionalClientServerConfig getConfig() {
+            return config;
         }
 
         public boolean isLoggedIn() {

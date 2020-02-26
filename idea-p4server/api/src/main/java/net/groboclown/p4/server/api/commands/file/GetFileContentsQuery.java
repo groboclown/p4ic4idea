@@ -17,27 +17,25 @@ package net.groboclown.p4.server.api.commands.file;
 import com.intellij.openapi.vcs.FilePath;
 import com.perforce.p4java.exception.P4JavaException;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFileContentsResult> {
+public class GetFileContentsQuery implements P4CommandRunner.ClientQuery<GetFileContentsResult> {
     private final String depotPath;
     private final FilePath localPath;
-    private final String clientname;
     private final int rev;
 
-    public GetFileContentsQuery(@NotNull String depotPath, @NotNull String clientname) {
+    public GetFileContentsQuery(@NotNull String depotPath) {
         this.depotPath = depotPath;
         this.localPath = null;
-        this.clientname = clientname;
         this.rev = -1;
     }
 
-    public GetFileContentsQuery(@NotNull FilePath localPath, @NotNull String clientname, int rev) {
+    public GetFileContentsQuery(@NotNull FilePath localPath, int rev) {
         this.depotPath = null;
         this.localPath = localPath;
-        this.clientname = clientname;
         this.rev = rev;
     }
 
@@ -48,22 +46,19 @@ public class GetFileContentsQuery implements P4CommandRunner.ServerQuery<GetFile
     }
 
     @Override
-    public P4CommandRunner.ServerQueryCmd getCmd() {
-        return P4CommandRunner.ServerQueryCmd.GET_FILE_CONTENTS;
+    public P4CommandRunner.ClientQueryCmd getCmd() {
+        return P4CommandRunner.ClientQueryCmd.GET_FILE_CONTENTS;
     }
 
     public <R> R when(
+            ClientConfig config,
             DepotFunction<R> depotFile,
             LocalFunction<R> localFile)
             throws P4JavaException, IOException {
         if (depotPath != null) {
             return depotFile.apply(depotPath);
         }
-        return localFile.apply(clientname, localPath, rev);
-    }
-
-    public String getClientname() {
-        return clientname;
+        return localFile.apply(config.getClientname(), localPath, rev);
     }
 
 

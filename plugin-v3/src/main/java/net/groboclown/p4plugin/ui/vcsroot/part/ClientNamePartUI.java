@@ -20,6 +20,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.AsyncProcessIcon;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
@@ -152,7 +153,7 @@ public class ClientNamePartUI extends ConfigPartUI<ClientNameConfigPart> {
             // Specifically, the user isn't given an opportunity to enter the correct password.
 
             P4ServerComponent
-            .getClientsForUser(project, serverConfig)
+            .getClientsForUser(project, new OptionalClientServerConfig(serverConfig, clientConfig))
             .whenCompleted((clients) -> {
                 synchronized (sync) {
                     for (P4WorkspaceSummary client : clients.getClients()) {

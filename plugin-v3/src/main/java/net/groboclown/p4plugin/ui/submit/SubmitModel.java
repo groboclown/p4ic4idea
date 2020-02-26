@@ -24,11 +24,12 @@ import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.ListTableModel;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsResult;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
@@ -47,8 +48,10 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -59,7 +62,7 @@ public class SubmitModel {
     private final Project project;
     private final List<Runnable> listeners = new ArrayList<>();
     private final List<P4Job> jobs = new ArrayList<>();
-    private final List<ServerConfig> activeConfigs = new ArrayList<>();
+    private final List<OptionalClientServerConfig> activeConfigs = new ArrayList<>();
     private ListTableModel<P4Job> jobModel;
 
     private JobStatus status;
@@ -73,7 +76,7 @@ public class SubmitModel {
     }
 
     public void setSelectedCurrentChanges(Collection<Change> changes) {
-        final List<ServerConfig> configs = getConfigsForChanges(changes);
+        final List<OptionalClientServerConfig> configs = getConfigsForChanges(changes);
         synchronized (sync) {
             activeConfigs.clear();
             activeConfigs.addAll(configs);
@@ -144,11 +147,11 @@ public class SubmitModel {
     @Nullable
     P4Job findJob(@NotNull String jobId) {
         jobId = jobId.trim();
-        List<ServerConfig> configs;
+        List<OptionalClientServerConfig> configs;
         synchronized (sync) {
             configs = new ArrayList<>(activeConfigs);
         }
-        for (ServerConfig config : configs) {
+        for (OptionalClientServerConfig config : configs) {
             try {
                 ListJobsResult res = P4ServerComponent
                         .query(project, config, new ListJobsQuery(jobId, null, null, 1))
@@ -171,12 +174,12 @@ public class SubmitModel {
 
     @NotNull
     P4CommandRunner.QueryAnswer<List<P4Job>> searchJobs(@NotNull String queryPart, int maxResultsPerServer) {
-        List<ServerConfig> configs;
+        List<OptionalClientServerConfig> configs;
         synchronized (sync) {
             configs = new ArrayList<>(activeConfigs);
         }
         P4CommandRunner.QueryAnswer<List<P4Job>> ret = new DoneQueryAnswer<>(new ArrayList<>());
-        for (ServerConfig config : configs) {
+        for (OptionalClientServerConfig config : configs) {
             ret = ret.mapQueryAsync((jobs) -> P4ServerComponent
                     .query(project, config, new ListJobsQuery(null, null, queryPart, maxResultsPerServer))
                     .mapQuery((r) -> {
@@ -189,12 +192,12 @@ public class SubmitModel {
 
     @NotNull
     P4CommandRunner.QueryAnswer<JobStatusNames> loadJobStatusNames() {
-        List<ServerConfig> configs;
+        List<OptionalClientServerConfig> configs;
         synchronized (sync) {
             configs = new ArrayList<>(activeConfigs);
         }
         P4CommandRunner.QueryAnswer<Set<JobStatus>> res = new DoneQueryAnswer<>(new HashSet<>());
-        for (ServerConfig config : configs) {
+        for (OptionalClientServerConfig config : configs) {
             res = res.mapQueryAsync((statuses) -> P4ServerComponent
                     .query(project, config, new GetJobSpecQuery())
                     .mapQuery((r) -> {
@@ -263,7 +266,7 @@ public class SubmitModel {
         listeners.forEach(Runnable::run);
     }
 
-    private List<ServerConfig> getConfigsForChanges(Collection<Change> changes) {
+    private List<OptionalClientServerConfig> getConfigsForChanges(Collection<Change> changes) {
         ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
         if (registry == null) {
             return Collections.emptyList();
@@ -279,14 +282,19 @@ public class SubmitModel {
                 files.add(after.getFile());
             }
         }
-        Set<ServerConfig> configs = new HashSet<>();
+        // We only need the unique servers; multiples of the same server will result
+        // in excessive job queries.  Instead, we'll find one of the clients associated
+        // with each server.
+        Map<P4ServerName, OptionalClientServerConfig> configs = new HashMap<>();
         for (FilePath file : files) {
             ClientConfigRoot config = registry.getClientFor(file);
-            if (config != null) {
-                configs.add(config.getServerConfig());
+            if (config != null && !configs.containsKey(config.getServerConfig().getServerName())) {
+                configs.put(
+                        config.getServerConfig().getServerName(),
+                        new OptionalClientServerConfig(config.getClientConfig()));
             }
         }
-        return new ArrayList<>(configs);
+        return new ArrayList<>(configs.values());
     }
 
     public Project getProject() {

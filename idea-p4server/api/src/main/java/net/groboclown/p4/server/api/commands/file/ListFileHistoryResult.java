@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,11 +26,11 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class ListFileHistoryResult
-        implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+        implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
     private final VcsFileRevisionFactory factory;
 
-    public ListFileHistoryResult(@NotNull ServerConfig config,
+    public ListFileHistoryResult(@NotNull ClientConfig config,
             @NotNull VcsFileRevisionFactory factory) {
         this.config = config;
         this.factory = factory;
@@ -37,7 +38,7 @@ public class ListFileHistoryResult
 
     @NotNull
     @Override
-    public ServerConfig getServerConfig() {
+    public ClientConfig getClientConfig() {
         return config;
     }
 

@@ -78,7 +78,7 @@ public class ActiveConnectionPanel {
     private final Project project;
     private final IntervalPeriodExecution runner;
     private JPanel root;
-    private ConnectionTreeRootNode treeNode = new ConnectionTreeRootNode();
+    private final ConnectionTreeRootNode treeNode = new ConnectionTreeRootNode();
     private DefaultTreeModel connectionTreeModel;
     private Tree connectionTree;
 

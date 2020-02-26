@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.commands.changelist;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4Job;
 import org.jetbrains.annotations.NotNull;
@@ -22,10 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class ListJobsResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+    private final OptionalClientServerConfig config;
     private final List<P4Job> jobs;
 
-    public ListJobsResult(@NotNull ServerConfig config, @NotNull List<P4Job> jobs) {
+    public ListJobsResult(@NotNull OptionalClientServerConfig config, @NotNull List<P4Job> jobs) {
         this.config = config;
         this.jobs = jobs;
     }
@@ -33,7 +34,7 @@ public class ListJobsResult implements P4CommandRunner.ServerResult {
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return config;
+        return config.getServerConfig();
     }
 
     @NotNull

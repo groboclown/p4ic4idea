@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryQuery;
 import net.groboclown.p4.server.api.commands.file.ListFileHistoryResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -374,17 +375,39 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsResult
          */
         LIST_SUBMITTED_CHANGELISTS,
+
+        // These are formally server requests (run off IServer, not IClient), but to
+        // access file content,s they require a client in 99% of the time (for client
+        // path mappings).
+
+        /**
+         * @see ListFileHistoryQuery
+         * @see ListFileHistoryResult
+         */
+        LIST_FILE_HISTORY,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.GetFileContentsResult
+         */
+        GET_FILE_CONTENTS,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.AnnotateFileQuery
+         * @see net.groboclown.p4.server.api.commands.file.AnnotateFileResult
+         */
+        ANNOTATE_FILE,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult
+         */
+        LIST_FILES_DETAILS,
     }
 
     enum ServerQueryCmd implements ServerCmd {
         // Perhaps streams support can be added later...
         // LIST_STREAMS,
         // LIST_STREAM_INTEGRATION_STATUS, // istat
-
-        /**
-         * @see net.groboclown.p4.server.api.commands.file.GetFileContentsResult
-         */
-        GET_FILE_CONTENTS,
 
         /**
          * @see net.groboclown.p4.server.api.commands.client.ListClientsForUserQuery
@@ -411,24 +434,12 @@ public interface P4CommandRunner {
         LIST_DIRECTORIES,
 
         /**
-         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery
-         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult
-         */
-        LIST_FILES_DETAILS,
-
-        /**
          * Describe a remote changelist.  Used for history reporting.
          *
          * @see net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery
          * @see net.groboclown.p4.server.api.commands.changelist.DescribeChangelistResult
          */
         DESCRIBE_CHANGELIST,
-
-        /**
-         * @see ListFileHistoryQuery
-         * @see ListFileHistoryResult
-         */
-        LIST_FILE_HISTORY,
 
         /**
          * @see net.groboclown.p4.server.api.commands.user.ListUsersQuery
@@ -441,12 +452,6 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.changelist.ListJobsResult
          */
         LIST_JOBS,
-
-        /**
-         * @see net.groboclown.p4.server.api.commands.file.AnnotateFileQuery
-         * @see net.groboclown.p4.server.api.commands.file.AnnotateFileResult
-         */
-        ANNOTATE_FILE,
 
         /**
          * @see net.groboclown.p4.server.api.commands.changelist.GetJobSpecQuery
@@ -504,12 +509,6 @@ public interface P4CommandRunner {
         SYNC_FILE_CHANGE_HISTORY,
         SYNC_LIST_SUBMITTED_CHANGELISTS,
         */
-
-        /**
-         * @see net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery
-         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult
-         */
-        SYNC_LIST_FILES_DETAILS
     }
 
     enum SyncClientQueryCmd implements ClientCmd {
@@ -518,6 +517,12 @@ public interface P4CommandRunner {
          * @see net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult
          */
         SYNC_LIST_OPENED_FILES_CHANGES,
+
+        /**
+         * @see net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery
+         * @see net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult
+         */
+        SYNC_LIST_FILES_DETAILS
     }
 
     @Immutable
@@ -665,7 +670,7 @@ public interface P4CommandRunner {
      */
     @NotNull
     <R extends ServerResult> ActionAnswer<R> perform(
-            @NotNull ServerConfig config, @NotNull ServerAction<R> action);
+            @NotNull OptionalClientServerConfig config, @NotNull ServerAction<R> action);
 
     @NotNull
     <R extends ClientResult> ActionAnswer<R> perform(
@@ -682,7 +687,7 @@ public interface P4CommandRunner {
      */
     @NotNull
     <R extends ServerResult> QueryAnswer<R> query(
-            @NotNull ServerConfig config, @NotNull ServerQuery<R> query);
+            @NotNull OptionalClientServerConfig config, @NotNull ServerQuery<R> query);
 
     @NotNull
     <R extends ClientResult> QueryAnswer<R> query(
@@ -701,7 +706,8 @@ public interface P4CommandRunner {
      * @return cached results
      */
     @NotNull
-    <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query);
+    <R extends ServerResult> R syncCachedQuery(
+            @NotNull OptionalClientServerConfig config, @NotNull SyncServerQuery<R> query);
 
     @NotNull
     <R extends ClientResult> R syncCachedQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query);
@@ -715,7 +721,8 @@ public interface P4CommandRunner {
      * @return the cached value + promise when the actual request completes.
      */
     @NotNull
-    <R extends ServerResult> FutureResult<R> syncQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query);
+    <R extends ServerResult> FutureResult<R> syncQuery(
+            @NotNull OptionalClientServerConfig config, @NotNull SyncServerQuery<R> query);
 
     @NotNull
     <R extends ClientResult> FutureResult<R> syncQuery(@NotNull ClientConfig config, @NotNull SyncClientQuery<R> query);

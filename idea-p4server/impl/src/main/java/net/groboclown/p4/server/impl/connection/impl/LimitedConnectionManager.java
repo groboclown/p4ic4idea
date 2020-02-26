@@ -17,21 +17,18 @@ package net.groboclown.p4.server.impl.connection.impl;
 import com.intellij.openapi.diagnostic.Logger;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.server.IOptionsServer;
-import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4Func;
 import net.groboclown.p4.server.impl.util.TraceableSemaphore;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -67,7 +64,8 @@ public class LimitedConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Answer<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
+    public <R> Answer<R> withConnection(@NotNull OptionalClientServerConfig config,
+            @NotNull P4Func<IOptionsServer, R> fun) {
         return get(() -> proxy.withConnection(config, fun));
     }
 

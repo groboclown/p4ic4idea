@@ -28,7 +28,7 @@ import net.groboclown.p4.server.api.commands.client.ListClientsForUserResult;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesQuery;
 import net.groboclown.p4.server.api.commands.client.ListOpenedFilesChangesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import net.groboclown.p4.server.api.messagebus.UserProjectPreferencesUpdatedMessage;
 import net.groboclown.p4.server.impl.AbstractServerCommandRunner;
@@ -54,8 +54,10 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     // An attempt to prevent some potential memory leaks.
 
     @NotNull
-    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.ActionAnswer<R> perform(@NotNull Project project,
-            @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R> action) {
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.ActionAnswer<R> perform(
+            @NotNull Project project,
+            @NotNull OptionalClientServerConfig config,
+            @NotNull P4CommandRunner.ServerAction<R> action) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.ActionAnswer<R> ret = instance.first.getCommandRunner().perform(config, action);
         if (instance.second) {
@@ -78,7 +80,8 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
     @NotNull
     public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.QueryAnswer<R> query(@NotNull Project project,
-            @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerQuery<R> query) {
+            @NotNull OptionalClientServerConfig config,
+            @NotNull P4CommandRunner.ServerQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<R> ret = instance.first.getCommandRunner().query(config, query);
         if (instance.second) {
@@ -111,7 +114,8 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
 
     @NotNull
     public static <R extends P4CommandRunner.ServerResult> R syncCachedQuery(@NotNull Project project,
-            @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
+            @NotNull OptionalClientServerConfig config,
+            @NotNull P4CommandRunner.SyncServerQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         R ret = instance.first.getCommandRunner().syncCachedQuery(config, query);
         if (instance.second) {
@@ -132,7 +136,10 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     @NotNull
-    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.FutureResult<R> syncQuery(@NotNull Project project, @NotNull ServerConfig config, @NotNull P4CommandRunner.SyncServerQuery<R> query) {
+    public static <R extends P4CommandRunner.ServerResult> P4CommandRunner.FutureResult<R> syncQuery(
+            @NotNull Project project,
+            @NotNull OptionalClientServerConfig config,
+            @NotNull P4CommandRunner.SyncServerQuery<R> query) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.FutureResult<R> ret = instance.first.getCommandRunner().syncQuery(config, query);
         if (instance.second) {
@@ -152,7 +159,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(@NotNull Project project,
-            @NotNull ServerConfig config) {
+            @NotNull OptionalClientServerConfig config) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.getClientsForUser(config);
         if (instance.second) {
@@ -162,7 +169,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     public static P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(@NotNull Project project,
-            ServerConfig config) {
+            @NotNull OptionalClientServerConfig config) {
         final Pair<P4ServerComponent, Boolean> instance = findInstance(project);
         P4CommandRunner.QueryAnswer<ListClientsForUserResult> ret = instance.first.checkServerConnection(config);
         if (instance.second) {
@@ -216,16 +223,19 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     }
 
     // For Configuration UI.  Avoids cache hits.
-    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(ServerConfig config) {
+    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(
+            @NotNull OptionalClientServerConfig config) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
         // Init is happening earlier now
         // initComponent();
-        return connectRunner.getClientsForUser(config, new ListClientsForUserQuery(config.getUsername(),
-                UserProjectPreferences.getMaxClientRetrieveCount(project)));
+        return connectRunner.getClientsForUser(config,
+                new ListClientsForUserQuery(config.getUsername(),
+                        UserProjectPreferences.getMaxClientRetrieveCount(project)));
     }
 
     // For Configuration UI.  Avoids cache hits.
-    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(ServerConfig config) {
+    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> checkServerConnection(
+            @NotNull OptionalClientServerConfig config) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
         // Init is happening earlier now
         // initComponent();

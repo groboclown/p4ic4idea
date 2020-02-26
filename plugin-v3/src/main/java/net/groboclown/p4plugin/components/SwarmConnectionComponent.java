@@ -26,6 +26,7 @@ import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigQuery;
 import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.simpleswarm.SwarmLogger;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +70,7 @@ public class SwarmConnectionComponent
                 ),
                 SWARM_LOGGER
         );
-        return P4ServerComponent.query(project, clientConfig.getServerConfig(), query);
+        return P4ServerComponent.query(project, new OptionalClientServerConfig(clientConfig), query);
     }
 
     @NotNull

@@ -24,6 +24,7 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.values.P4RemoteChangelist;
 import net.groboclown.p4.server.api.values.P4User;
 import net.groboclown.p4.simpleswarm.model.Review;
@@ -211,7 +212,7 @@ public class SwarmReviewPanel {
         fileSelectionTable = new JBTable(fileTableModel);
 
         this.reviewersPanel = new SearchSelectPanel<>(
-                P4ServerComponent.query(project, clientConfig.getServerConfig(),
+                P4ServerComponent.query(project, new OptionalClientServerConfig(clientConfig),
                         new ListUsersQuery(-1))
                         .mapQuery(r -> r.getUsers().stream()
                                 .map(Reviewer::new)

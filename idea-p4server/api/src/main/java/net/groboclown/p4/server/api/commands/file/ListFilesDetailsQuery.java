@@ -15,14 +15,12 @@
 package net.groboclown.p4.server.api.commands.file;
 
 import com.intellij.openapi.vcs.FilePath;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class ListFilesDetailsQuery implements P4CommandRunner.ServerQuery<ListFilesDetailsResult> {
-    private final ClientServerRef ref;
+public class ListFilesDetailsQuery implements P4CommandRunner.ClientQuery<ListFilesDetailsResult> {
     private final List<FilePath> files;
     private final int maxResultCount;
     private final RevState revState;
@@ -31,9 +29,7 @@ public class ListFilesDetailsQuery implements P4CommandRunner.ServerQuery<ListFi
         HAVE, HEAD
     }
 
-    public ListFilesDetailsQuery(@NotNull ClientServerRef ref,
-            @NotNull List<FilePath> files, @NotNull RevState revState, int maxResultCount) {
-        this.ref = ref;
+    public ListFilesDetailsQuery(@NotNull List<FilePath> files, @NotNull RevState revState, int maxResultCount) {
         this.files = files;
         this.maxResultCount = maxResultCount;
         this.revState = revState;
@@ -46,12 +42,8 @@ public class ListFilesDetailsQuery implements P4CommandRunner.ServerQuery<ListFi
     }
 
     @Override
-    public P4CommandRunner.ServerQueryCmd getCmd() {
-        return P4CommandRunner.ServerQueryCmd.LIST_FILES_DETAILS;
-    }
-
-    public ClientServerRef getClientServerRef() {
-        return ref;
+    public P4CommandRunner.ClientQueryCmd getCmd() {
+        return P4CommandRunner.ClientQueryCmd.LIST_FILES_DETAILS;
     }
 
     public List<FilePath> getFiles() {

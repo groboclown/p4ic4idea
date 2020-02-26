@@ -28,7 +28,8 @@ import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.changelist.ListJobsQuery;
 import net.groboclown.p4.server.api.commands.changelist.SubmitChangelistAction;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
@@ -161,7 +162,7 @@ public class CommitUtil {
 
     private static JobData getJobsIn(Project project, ClientConfigRoot root,
             List<FilePath> files, List<P4Job> jobs) {
-        return new JobData(root, files, getJobsIn(project, root.getServerConfig(), jobs));
+        return new JobData(root, files, getJobsIn(project, root.getClientConfig(), jobs));
     }
 
     @NotNull
@@ -202,11 +203,13 @@ public class CommitUtil {
 
 
     private static P4CommandRunner.QueryAnswer<Set<P4Job>> getJobsIn(@NotNull Project project,
-            @NotNull ServerConfig config, List<P4Job> jobs) {
+            @NotNull ClientConfig config, List<P4Job> jobs) {
         P4CommandRunner.QueryAnswer<Set<P4Job>> ret = new DoneQueryAnswer<>(new HashSet<>());
         for (P4Job job : jobs) {
             ret = ret.mapQueryAsync((associatedJobs) -> P4ServerComponent
-                    .query(project, config, new ListJobsQuery(job.getJobId(), null, null, 1))
+                    .query(
+                            project, new OptionalClientServerConfig(config),
+                            new ListJobsQuery(job.getJobId(), null, null, 1))
                     .mapQuery((result) -> {
                         associatedJobs.addAll(result.getJobs());
                         return associatedJobs;

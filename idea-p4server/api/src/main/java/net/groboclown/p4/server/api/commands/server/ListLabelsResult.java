@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.commands.server;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4Label;
 import org.jetbrains.annotations.NotNull;
@@ -23,10 +24,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class ListLabelsResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+    private final OptionalClientServerConfig config;
     private final List<P4Label> labels;
 
-    public ListLabelsResult(@NotNull ServerConfig config, @NotNull List<P4Label> labels) {
+    public ListLabelsResult(@NotNull OptionalClientServerConfig config, @NotNull List<P4Label> labels) {
         this.config = config;
         this.labels = Collections.unmodifiableList(labels);
     }
@@ -34,7 +35,7 @@ public class ListLabelsResult implements P4CommandRunner.ServerResult {
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return config;
+        return config.getServerConfig();
     }
 
     @NotNull

@@ -43,7 +43,7 @@ import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -56,8 +56,9 @@ import java.util.Map;
 public abstract class AbstractServerCommandRunner {
 
     public interface ServerActionRunner<R extends ServerResult> {
-        P4CommandRunner.ActionAnswer<R> perform(@NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R>
-        action);
+        P4CommandRunner.ActionAnswer<R> perform(
+                @NotNull OptionalClientServerConfig config,
+                @NotNull P4CommandRunner.ServerAction<R> action);
     }
 
     public interface ClientActionRunner<R extends P4CommandRunner.ClientResult> {
@@ -83,7 +84,8 @@ public abstract class AbstractServerCommandRunner {
     @SuppressWarnings("unchecked")
     @NotNull
     public <R extends ServerResult> P4CommandRunner.ActionAnswer<R> perform(
-            @NotNull ServerConfig config, @NotNull P4CommandRunner.ServerAction<R> action) {
+            @NotNull OptionalClientServerConfig config,
+            @NotNull P4CommandRunner.ServerAction<R> action) {
         ServerActionRunner<?> runner = serverActionRunners.get(action.getCmd());
         if (runner == null) {
             throw new IllegalStateException("command not supported: " + action.getCmd());
@@ -111,14 +113,15 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(
-            @NotNull ServerConfig config, @NotNull AnnotateFileQuery query);
+            @NotNull ClientConfig config, @NotNull AnnotateFileQuery query);
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<DescribeChangelistResult> describeChangelist(
-            @NotNull ServerConfig config, @NotNull DescribeChangelistQuery query);
+            @NotNull OptionalClientServerConfig config, @NotNull DescribeChangelistQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<GetJobSpecResult> getJobSpec(@NotNull ServerConfig config);
+    public abstract P4CommandRunner.QueryAnswer<GetJobSpecResult> getJobSpec(
+            @NotNull OptionalClientServerConfig config);
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(
@@ -126,7 +129,8 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(
-            @NotNull ServerConfig config, @NotNull ListClientsForUserQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListClientsForUserQuery query);
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
@@ -134,23 +138,35 @@ public abstract class AbstractServerCommandRunner {
 
     @NotNull
     public abstract P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(
-            @NotNull ServerConfig config, @NotNull GetFileContentsQuery query);
+            @NotNull ClientConfig config,
+            @NotNull GetFileContentsQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config, ListFileHistoryQuery query);
+    public abstract P4CommandRunner.QueryAnswer<ListFileHistoryResult> listFilesHistory(
+            @NotNull ClientConfig config, @NotNull ListFileHistoryQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query);
+    public abstract P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(
+            @NotNull ClientConfig config,
+            @NotNull ListFilesDetailsQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query);
+    public abstract P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListJobsQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query);
+    public abstract P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListLabelsQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query);
+    public abstract P4CommandRunner.QueryAnswer<ListUsersResult> listUsers(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListUsersQuery query);
 
     @NotNull
-    public abstract P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig config, SwarmConfigQuery query);
+    public abstract P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull SwarmConfigQuery query);
 }

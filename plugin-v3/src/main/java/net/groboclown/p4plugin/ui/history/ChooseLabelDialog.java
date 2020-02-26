@@ -1,3 +1,17 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package net.groboclown.p4plugin.ui.history;
 
 import com.intellij.openapi.diagnostic.Logger;
@@ -14,7 +28,8 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.commands.server.ListLabelsQuery;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.values.P4Label;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -48,10 +63,10 @@ public class ChooseLabelDialog
     private JTable mySearchResults;
     private AsyncProcessIcon mySearchSpinner;
     private ListTableModel<P4Label> searchResultsModel;
-    private EdtSinkProcessor<P4Label> searchResultProcessor;
+    private final EdtSinkProcessor<P4Label> searchResultProcessor;
 
     public ChooseLabelDialog(@NotNull Project project,
-            @NotNull List<ServerConfig> configs, @NotNull ChooseListener listener) {
+            @NotNull List<ClientConfig> configs, @NotNull ChooseListener listener) {
         super(WindowManager.getInstance().suggestParentWindow(project),
                 P4Bundle.message("search.label.title"));
         this.listener = listener;
@@ -103,10 +118,10 @@ public class ChooseLabelDialog
             final String filter = filterText == null ? "" : ("*" + filterText + "*");
             LOG.info("Loading labels from " + configs.size() + " configs with filter [" + filter + "]");
             searchResultProcessor.processBatchAnswer(() -> configs.stream()
-                    .map((serverConfig) ->
+                    .map((clientConfig) ->
                             P4ServerComponent
-                                    .query(project, serverConfig, new ListLabelsQuery(filter,
-                                            MAX_LABEL_RESULTS)))
+                                    .query(project, new OptionalClientServerConfig(clientConfig),
+                                            new ListLabelsQuery(filter, MAX_LABEL_RESULTS)))
                     .reduce(Answer.resolve(Collections.emptyList()),
                             (listAnswer, queryResult) -> listAnswer.futureMap((src, sink) -> {
                                 LOG.info("Processing next label query");
@@ -243,9 +258,6 @@ public class ChooseLabelDialog
         }
     }
 
-    /**
-     * @noinspection ALL
-     */
     public JComponent $$$getRootComponent$$$() {
         return contentPane;
     }
@@ -254,7 +266,7 @@ public class ChooseLabelDialog
         void onChoice(@Nullable P4Label labelName);
     }
 
-    public static void show(@NotNull Project project, @NotNull List<ServerConfig> configs,
+    public static void show(@NotNull Project project, @NotNull List<ClientConfig> configs,
             @NotNull ChooseListener listener) {
         ChooseLabelDialog dialog = new ChooseLabelDialog(project, configs, listener);
         dialog.pack();

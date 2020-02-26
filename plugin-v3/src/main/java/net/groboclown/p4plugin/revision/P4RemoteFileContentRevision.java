@@ -121,7 +121,7 @@ public class P4RemoteFileContentRevision extends AbstractP4FileContentRevision {
         if (getLoader() == null || config == null || config.getClientname() == null) {
             return null;
         }
-        return ContentRevisionUtil.getContent(config.getServerConfig(), config.getClientname(), getLoader(),
+        return ContentRevisionUtil.getContent(config, getLoader(),
                 getFile(), getIntRevisionNumber().getValue(), getCharset());
     }
 

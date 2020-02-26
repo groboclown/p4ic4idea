@@ -19,7 +19,7 @@ import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.values.JobStatus;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistSummary;
@@ -108,7 +108,7 @@ public class P4RemoteChangelistImpl implements P4RemoteChangelist {
             return this;
         }
 
-        public Builder withChangelist(ServerConfig config, IChangelist changelist) {
+        public Builder withChangelist(OptionalClientServerConfig config, IChangelist changelist) {
             ClientServerRef ref = new ClientServerRef(config.getServerName(), changelist.getClientId());
             this.changelistId = new P4ChangelistIdImpl(changelist.getId(), ref);
             this.summary = new P4ChangelistSummaryImpl(ref, changelist);

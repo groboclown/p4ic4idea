@@ -15,24 +15,24 @@
 package net.groboclown.p4.server.api.commands.file;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class ListFilesDetailsResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+public class ListFilesDetailsResult implements P4CommandRunner.ClientResult {
+    private final ClientConfig config;
     private final List<P4FileRevision> files;
 
-    public ListFilesDetailsResult(@NotNull ServerConfig config, @NotNull List<P4FileRevision> files) {
+    public ListFilesDetailsResult(@NotNull ClientConfig config, @NotNull List<P4FileRevision> files) {
         this.config = config;
         this.files = files;
     }
 
     @NotNull
     @Override
-    public ServerConfig getServerConfig() {
+    public ClientConfig getClientConfig() {
         return config;
     }
 

@@ -101,7 +101,7 @@ import net.groboclown.p4.server.api.commands.server.SwarmConfigResult;
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.SpecialFileEventMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileRevision;
@@ -142,7 +142,6 @@ import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
 import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -267,9 +266,10 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(@NotNull final ServerConfig config,
+    public P4CommandRunner.QueryAnswer<AnnotateFileResult> getFileAnnotation(
+            @NotNull ClientConfig config,
             @NotNull final AnnotateFileQuery query) {
-        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (client) -> {
             List<IFileSpec> specs;
             if (query.getLocalFile() != null) {
                 specs = FileSpecBuildUtil.escapedForFilePathRev(query.getLocalFile(), query.getRev());
@@ -280,26 +280,27 @@ public class ConnectCommandRunner
             } else {
                 throw new IllegalStateException("both local file and remote file are null");
             }
-            ClientServerRef ref = new ClientServerRef(config.getServerName(), query.getClientname());
-            IExtendedFileSpec headSpec = cmd.getFileDetails(server, query.getClientname(), specs);
+            ClientServerRef ref = config.getClientServerRef();
+            IExtendedFileSpec headSpec = cmd.getFileDetails(client, specs);
             P4FileRevision headRevision = P4FileRevisionImpl.getHead(ref, headSpec);
-            String content = new String(cmd.loadContents(server, headSpec, null),
+            String content = new String(cmd.loadContents(client, headSpec),
                     headSpec.getHeadCharset() == null
                         ? Charset.defaultCharset().name()
                         : headSpec.getHeadCharset());
-            List<IFileAnnotation> annotations = cmd.getAnnotations(server, specs);
+            List<IFileAnnotation> annotations = cmd.getAnnotations(client, specs);
             List<IFileSpec> requiredHistory = FileAnnotationParser.getRequiredHistorySpecs(annotations);
-            List<Pair<IFileSpec, IFileRevisionData>> history = cmd.getExactHistory(server, requiredHistory);
+            List<Pair<IFileSpec, IFileRevisionData>> history = cmd.getExactHistory((IOptionsServer) client.getServer(), requiredHistory);
             return new AnnotateFileResult(config,
                     FileAnnotationParser.getFileAnnotation(
-                            ref, server.getUserName(), headSpec, query.getLocalFile(), annotations, history),
+                            ref, client.getServer().getUserName(), headSpec, query.getLocalFile(), annotations, history),
                     headRevision, content);
         }));
     }
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<DescribeChangelistResult> describeChangelist(@NotNull ServerConfig config,
+    public P4CommandRunner.QueryAnswer<DescribeChangelistResult> describeChangelist(
+            @NotNull OptionalClientServerConfig config,
             @NotNull DescribeChangelistQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
             // TODO is this the right client name, or do we need an explicit client name given?
@@ -318,7 +319,8 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<GetJobSpecResult> getJobSpec(@NotNull ServerConfig config) {
+    public P4CommandRunner.QueryAnswer<GetJobSpecResult> getJobSpec(
+            @NotNull OptionalClientServerConfig config) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config,
                 (server) -> new GetJobSpecResult(
                         config,
@@ -340,7 +342,8 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(@NotNull ServerConfig config,
+    public P4CommandRunner.QueryAnswer<ListClientsForUserResult> getClientsForUser(
+            @NotNull OptionalClientServerConfig config,
             @NotNull ListClientsForUserQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config,
                 (server) -> listClientsForUser(server, config, query.getUsername(), query.getMaxClients())));
@@ -349,7 +352,7 @@ public class ConnectCommandRunner
     @NotNull
     @Override
     public P4CommandRunner.QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
-            @NotNull ClientConfig config, @NotNull ListSubmittedChangelistsQuery query) {
+            @NotNull final ClientConfig config, @NotNull final ListSubmittedChangelistsQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (client) -> {
             // TODO use cmd
             GetChangelistsOptions options = new GetChangelistsOptions();
@@ -390,34 +393,39 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(@NotNull ServerConfig config,
-            @NotNull GetFileContentsQuery query) {
-        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
+    public P4CommandRunner.QueryAnswer<GetFileContentsResult> getFileContents(
+            @NotNull ClientConfig config,
+            @NotNull final GetFileContentsQuery query) {
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (client) -> {
             final byte[] contents = query.when(
+                    config,
                     (depot) -> {
                         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(depot);
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("get file contents for " + depot + ": " + specs);
                         }
-                        return cmd.loadContents(server, specs.get(0), query.getClientname());
+                        return cmd.loadContents(client, specs.get(0));
                     },
                     (clientname, localFile, rev) -> {
                         if (rev <= 0 && localFile.getIOFile().exists()) {
                             return FileUtil.loadFileBytes(localFile.getIOFile());
                         } else {
-                            IClient client = server.getClient(query.getClientname());
                             List<IFileSpec> locations = cmd.getSpecLocations(client, FileSpecBuildUtil.escapedForFilePathRev(localFile, -1));
                             if (locations.isEmpty()) {
                                 locations = FileSpecBuildUtil.escapedForFilePathRev(localFile, rev);
                             } else {
-                                locations = FileSpecBuildUtil.replaceDepotRevisions(locations, "@" + rev);
+                                locations = FileSpecBuildUtil.replaceDepotRevisions(locations, "#" + rev);
                             }
-                            return cmd.loadContents(server, locations.get(0), clientname);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("get file contents for " + locations + " (only care about the first one)");
+                            }
+                            return cmd.loadContents(client, locations.get(0));
                         }
                     }
             );
             return query.when(
                     // TODO find correct charset
+                    config,
                     (depot) -> new GetFileContentsResult(config, depot, contents, null),
                     (clientname, localFile, rev) -> new GetFileContentsResult(config, localFile, contents, null)
             );
@@ -426,44 +434,46 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config,
-            ListFileHistoryQuery query) {
+    public P4CommandRunner.QueryAnswer<ListFileHistoryResult> listFilesHistory(
+            @NotNull ClientConfig config,
+            @NotNull final ListFileHistoryQuery query) {
         final List<IFileSpec> fileSpec = FileSpecBuildUtil.escapedForFilePaths(query.getFile());
-        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (client) ->
                 new ListFileHistoryResult(config, createFileHistoryList(
-                    config, query.getClientServerRef().getClientName(), query.getFile(), cmd.getHistory(server,
-                            query.getClientServerRef().getClientName(), fileSpec,
-                            query.getMaxResults())))));
+                    config, query.getFile(),
+                    cmd.getHistory(client, fileSpec, query.getMaxResults())))));
     }
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config,
-            ListFilesDetailsQuery query) {
+    public P4CommandRunner.QueryAnswer<ListFilesDetailsResult> listFilesDetails(
+            @NotNull ClientConfig config,
+            @NotNull final ListFilesDetailsQuery query) {
         final List<IFileSpec> fileSpecs = FileSpecBuildUtil.escapedForFilePathsAnnotated(
                 query.getFiles(),
                 // TODO replace with more Perforce API way of creating the annotation.
                 query.getRevState() == ListFilesDetailsQuery.RevState.HEAD ? "#head" : "#have",
                 true);
-        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) ->
+        return new QueryAnswerImpl<>(connectionManager.withConnection(config, (client) ->
             new ListFilesDetailsResult(config,
                 cmd.getFilesDetails(
-                    server,
-                    query.getClientServerRef().getClientName(),
+                    client,
                     fileSpecs,
                     query.getMaxResultCount()
                 ).stream()
                     .map((e) ->
                         query.getRevState() == ListFilesDetailsQuery.RevState.HEAD
-                            ? P4FileRevisionImpl.getHead(query.getClientServerRef(), e)
-                            : P4FileRevisionImpl.getHave(query.getClientServerRef(), e)
+                            ? P4FileRevisionImpl.getHead(config.getClientServerRef(), e)
+                            : P4FileRevisionImpl.getHave(config.getClientServerRef(), e)
                     )
                     .collect(Collectors.toList()))));
     }
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
+    public P4CommandRunner.QueryAnswer<ListJobsResult> listJobs(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull final ListJobsQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
             List<P4Job> jobs = new ArrayList<>();
             if (query.getJobId() != null) {
@@ -485,7 +495,9 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query) {
+    public P4CommandRunner.QueryAnswer<ListLabelsResult> listLabels(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull final ListLabelsQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
             List<ILabelSummary> labels = cmd.findLabels(server,
                     query.hasNameFilter() ? query.getNameFilter() : null,
@@ -496,7 +508,9 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query) {
+    public P4CommandRunner.QueryAnswer<ListUsersResult> listUsers(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull final ListUsersQuery query) {
         return new QueryAnswerImpl<>(connectionManager.withConnection(config, (server) -> {
             List<IUserSummary> users = cmd.findUsers(server, query.getMaxResults());
             return new ListUsersResult(config, users.stream()
@@ -507,16 +521,18 @@ public class ConnectCommandRunner
 
     @NotNull
     @Override
-    public P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig serverConfig, SwarmConfigQuery query) {
+    public P4CommandRunner.QueryAnswer<SwarmConfigResult> getSwarmConfig(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull final SwarmConfigQuery query) {
         // TODO this conflates password fetching and the swarm config fetch.
         // May instead want it to be a function on the query object.
         return new QueryAnswerImpl<>(
-                query.getAuthorization(serverConfig)
+                query.getAuthorization(config)
                 .mapAsync((auth) -> auth.on(
                         (password) ->
-                            connectionManager.withConnection(serverConfig, (server) ->
+                            connectionManager.withConnection(config, (server) ->
                                 new SwarmConfig()
-                                        .withUsername(serverConfig.getUsername())
+                                        .withUsername(config.getUsername())
                                         .withServerInfo(server, new String(password.toCharArray(true)))
                                         .withLogger(query.getLogger())
                             )
@@ -531,9 +547,9 @@ public class ConnectCommandRunner
                                 }
                             }),
                         (ticket) ->
-                            connectionManager.withConnection(serverConfig, (server) ->
+                            connectionManager.withConnection(config, (server) ->
                                     new SwarmConfig()
-                                            .withUsername(serverConfig.getUsername())
+                                            .withUsername(config.getUsername())
                                             .withServerInfo(server)
                                             .withTicket(ticket)
                                             .withLogger(query.getLogger())
@@ -546,29 +562,27 @@ public class ConnectCommandRunner
                                 }
                             })
                 ))
-                .map(swarmClient -> new SwarmConfigResult(serverConfig, swarmClient))
+                .map(swarmClient -> new SwarmConfigResult(config, swarmClient))
         );
     }
 
     @NotNull
     private ListFileHistoryResult.VcsFileRevisionFactory createFileHistoryList(
-            @NotNull final ServerConfig config, @Nullable final String clientname, @NotNull final FilePath file,
+            @NotNull final ClientConfig config,
+            @NotNull final FilePath file,
             @NotNull final List<IFileRevisionData> history) {
-        if (clientname == null) {
-            LOG.info("Using null clientname for request of history on " + file);
-        }
         return (formatter, loader) -> {
             List<VcsFileRevision> ret = new ArrayList<>(history.size());
             history.forEach((d) -> {
-                P4HistoryVcsFileRevision rev = new P4HistoryVcsFileRevision(file, config, d, clientname, formatter,
-                        loader);
+                P4HistoryVcsFileRevision rev = new P4HistoryVcsFileRevision(
+                        file, config, d, formatter, loader);
                 ret.add(rev);
             });
             return ret;
         };
     }
 
-    private CreateJobResult createJob(IOptionsServer server, ServerConfig cfg, CreateJobAction action)
+    private CreateJobResult createJob(IOptionsServer server, OptionalClientServerConfig cfg, CreateJobAction action)
             throws ConnectionException, AccessException, RequestException {
         P4JobImpl job = new P4JobImpl(cmd.createJob(server, action.getFields()));
         JobCacheMessage.sendEvent(new JobCacheMessage.Event(cfg.getServerName(), job,
@@ -1045,8 +1059,8 @@ public class ConnectCommandRunner
         }
     }
 
-    private ListClientsForUserResult listClientsForUser(IOptionsServer server, ServerConfig config, String username,
-            int maxClients)
+    private ListClientsForUserResult listClientsForUser(IOptionsServer server, OptionalClientServerConfig config,
+            String username, int maxClients)
             throws P4JavaException {
         // TODO use P4CommandUtil
         GetClientsOptions opts = new GetClientsOptions(maxClients, username, null);

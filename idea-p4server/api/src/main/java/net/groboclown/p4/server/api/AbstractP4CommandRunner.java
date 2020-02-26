@@ -66,7 +66,7 @@ import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuer
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.values.P4FileAction;
 import net.groboclown.p4.server.api.values.P4FileType;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +78,7 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     @NotNull
     @Override
     public <R extends ServerResult> ActionAnswer<R> perform(
-            @NotNull ServerConfig config, @NotNull ServerAction<R> action) {
+            @NotNull OptionalClientServerConfig config, @NotNull ServerAction<R> action) {
         switch (action.getCmd()) {
             case LOGIN:
                 return (ActionAnswer<R>) login(config, (LoginAction) action);
@@ -90,10 +90,12 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     }
 
     @NotNull
-    protected abstract ActionAnswer<CreateJobResult> createJob(ServerConfig config, CreateJobAction action);
+    protected abstract ActionAnswer<CreateJobResult> createJob(@NotNull OptionalClientServerConfig config,
+            @NotNull CreateJobAction action);
 
     @NotNull
-    protected abstract ActionAnswer<LoginResult> login(ServerConfig config, LoginAction action);
+    protected abstract ActionAnswer<LoginResult> login(@NotNull OptionalClientServerConfig config,
+            @NotNull LoginAction action);
 
     @SuppressWarnings("unchecked")
     @NotNull
@@ -139,34 +141,32 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     }
 
     @NotNull
-    protected abstract <R extends ClientResult> ActionAnswer<R> performFileAction(ClientConfig config,
-            ClientAction<R> action, @NotNull FilePath file, @Nullable P4FileType fileType,
+    protected abstract <R extends ClientResult> ActionAnswer<R> performFileAction(@NotNull ClientConfig config,
+            @NotNull ClientAction<R> action, @NotNull FilePath file, @Nullable P4FileType fileType,
             @NotNull P4FileAction fileAction);
 
     @NotNull
     protected abstract <R extends ClientResult> ActionAnswer<R> performNonFileAction(
-            ClientConfig config, ClientAction<R> action);
+            @NotNull ClientConfig config, @NotNull ClientAction<R> action);
 
     @NotNull
-    protected abstract ActionAnswer<MoveFileResult> moveFile(ClientConfig config, MoveFileAction action);
+    protected abstract ActionAnswer<MoveFileResult> moveFile(@NotNull ClientConfig config, @NotNull MoveFileAction action);
 
     @NotNull
-    protected abstract ActionAnswer<FetchFilesResult> fetchFiles(ClientConfig config, FetchFilesAction action);
+    protected abstract ActionAnswer<FetchFilesResult> fetchFiles(@NotNull ClientConfig config,
+            @NotNull FetchFilesAction action);
 
     @NotNull
     protected abstract ActionAnswer<SubmitChangelistResult> submitChangelist(
-            ClientConfig config, SubmitChangelistAction action);
+            @NotNull ClientConfig config, @NotNull SubmitChangelistAction action);
 
     @SuppressWarnings("unchecked")
     @NotNull
     @Override
     public <R extends ServerResult> QueryAnswer<R> query(
-            @NotNull ServerConfig config, @NotNull ServerQuery<R> query) {
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ServerQuery<R> query) {
         switch (query.getCmd()) {
-            case ANNOTATE_FILE:
-                return (QueryAnswer<R>) getAnnotatedFile(config, (AnnotateFileQuery) query);
-            case GET_FILE_CONTENTS:
-                return (QueryAnswer<R>) getFileContents(config, (GetFileContentsQuery) query);
             case DESCRIBE_CHANGELIST:
                 return (QueryAnswer<R>) describeChangelist(config, (DescribeChangelistQuery) query);
             case GET_JOB_SPEC:
@@ -179,10 +179,6 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listDirectories(config, (ListDirectoriesQuery) query);
             case LIST_FILES:
                 return (QueryAnswer<R>) listFiles(config, (ListFilesQuery) query);
-            case LIST_FILES_DETAILS:
-                return (QueryAnswer<R>) listFilesDetails(config, (ListFilesDetailsQuery) query);
-            case LIST_FILE_HISTORY:
-                return (QueryAnswer<R>) listFilesHistory(config, (ListFileHistoryQuery) query);
             case LIST_JOBS:
                 return (QueryAnswer<R>) listJobs(config, (ListJobsQuery) query);
             case LIST_USERS:
@@ -196,63 +192,59 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
         }
     }
 
-
-    @NotNull
-    protected abstract QueryAnswer<GetFileContentsResult> getFileContents(ServerConfig config, GetFileContentsQuery query);
-
-    @NotNull
-    protected abstract QueryAnswer<AnnotateFileResult> getAnnotatedFile(
-            ServerConfig config, AnnotateFileQuery query);
-
     @NotNull
     protected abstract QueryAnswer<DescribeChangelistResult> describeChangelist(
-            ServerConfig config, DescribeChangelistQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull DescribeChangelistQuery query);
 
     @NotNull
     protected abstract QueryAnswer<GetJobSpecResult> getJobSpec(
-            ServerConfig config, GetJobSpecQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull GetJobSpecQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListChangelistsFixedByJobResult> listChangelistsFixedByJob(
-            ServerConfig config, ListChangelistsFixedByJobQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListChangelistsFixedByJobQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListClientsForUserResult> listClientsForUser(
-            ServerConfig config, ListClientsForUserQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListClientsForUserQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListDirectoriesResult> listDirectories(
-            ServerConfig config, ListDirectoriesQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListDirectoriesQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListFilesResult> listFiles(
-            ServerConfig config, ListFilesQuery query);
-
-    @NotNull
-    protected abstract QueryAnswer<ListFilesDetailsResult> listFilesDetails(
-            ServerConfig config, ListFilesDetailsQuery query);
-
-    @NotNull
-    protected abstract QueryAnswer<ListFileHistoryResult> listFilesHistory(
-            ServerConfig config, ListFileHistoryQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListFilesQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListJobsResult> listJobs(
-            ServerConfig config, ListJobsQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListJobsQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(
-            ClientConfig config, ListSubmittedChangelistsQuery query);
+            @NotNull ClientConfig config, @NotNull ListSubmittedChangelistsQuery query);
 
     @NotNull
     protected abstract QueryAnswer<ListUsersResult> listUsers(
-            ServerConfig config, ListUsersQuery query);
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListUsersQuery query);
 
     @NotNull
-    protected abstract QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query);
+    protected abstract QueryAnswer<ListLabelsResult> listLabels(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListLabelsQuery query);
 
     @NotNull
-    protected abstract QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig config, SwarmConfigQuery query);
+    protected abstract QueryAnswer<SwarmConfigResult> getSwarmConfig(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull SwarmConfigQuery query);
 
     @SuppressWarnings("unchecked")
     @NotNull
@@ -266,6 +258,14 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
                 return (QueryAnswer<R>) listOpenedFilesChanges(config, (ListOpenedFilesChangesQuery) query);
             case LIST_SUBMITTED_CHANGELISTS:
                 return (QueryAnswer<R>) listSubmittedChangelists(config, (ListSubmittedChangelistsQuery) query);
+            case ANNOTATE_FILE:
+                return (QueryAnswer<R>) getAnnotatedFile(config, (AnnotateFileQuery) query);
+            case GET_FILE_CONTENTS:
+                return (QueryAnswer<R>) getFileContents(config, (GetFileContentsQuery) query);
+            case LIST_FILES_DETAILS:
+                return (QueryAnswer<R>) listFilesDetails(config, (ListFilesDetailsQuery) query);
+            case LIST_FILE_HISTORY:
+                return (QueryAnswer<R>) listFilesHistory(config, (ListFileHistoryQuery) query);
             default:
                 throw new IllegalStateException("Incompatible class: should match " + ClientQueryCmd.class);
         }
@@ -278,6 +278,26 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     @NotNull
     protected abstract QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(
             ClientConfig config, ListOpenedFilesChangesQuery query);
+
+    @NotNull
+    protected abstract QueryAnswer<ListFileHistoryResult> listFilesHistory(
+            @NotNull ClientConfig config,
+            @NotNull ListFileHistoryQuery query);
+
+    @NotNull
+    protected abstract QueryAnswer<AnnotateFileResult> getAnnotatedFile(
+            @NotNull ClientConfig config,
+            @NotNull AnnotateFileQuery query);
+
+    @NotNull
+    protected abstract QueryAnswer<GetFileContentsResult> getFileContents(
+            @NotNull ClientConfig config,
+            @NotNull GetFileContentsQuery query);
+
+    @NotNull
+    protected abstract QueryAnswer<ListFilesDetailsResult> listFilesDetails(
+            @NotNull ClientConfig config,
+            @NotNull ListFilesDetailsQuery query);
 
     @SuppressWarnings("unchecked")
     @NotNull
@@ -295,10 +315,11 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     @NotNull
     protected abstract QueryAnswer<ServerInfoResult> serverInfo(P4ServerName name, ServerInfo query);
 
-    @SuppressWarnings("unchecked")
     @NotNull
     @Override
-    public <R extends ServerResult> R syncCachedQuery(@NotNull ServerConfig config, @NotNull SyncServerQuery<R> query) {
+    public <R extends ServerResult> R syncCachedQuery(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull SyncServerQuery<R> query) {
         switch (query.getCmd()) {
             default:
                 throw new IllegalStateException("Incompatible class: should match " + SyncServerQueryCmd.class);
@@ -318,12 +339,13 @@ public abstract class AbstractP4CommandRunner implements P4CommandRunner {
     }
 
     @NotNull
-    protected abstract ListOpenedFilesChangesResult cachedListOpenedFilesChanges(ClientConfig config, SyncListOpenedFilesChangesQuery query);
+    protected abstract ListOpenedFilesChangesResult cachedListOpenedFilesChanges(@NotNull ClientConfig config,
+            @Nullable SyncListOpenedFilesChangesQuery query);
 
-    @SuppressWarnings("unchecked")
     @NotNull
     @Override
-    public <R extends ServerResult> FutureResult<R> syncQuery(@NotNull ServerConfig config,
+    public <R extends ServerResult> FutureResult<R> syncQuery(
+            @NotNull OptionalClientServerConfig config,
             @NotNull SyncServerQuery<R> query) {
         switch (query.getCmd()) {
             default:

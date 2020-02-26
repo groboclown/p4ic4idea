@@ -17,6 +17,7 @@ package net.groboclown.p4.server.api.commands.server;
 import com.intellij.credentialStore.OneTimeString;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.simpleswarm.SwarmLogger;
 import org.jetbrains.annotations.NotNull;
@@ -88,6 +89,10 @@ public class SwarmConfigQuery implements P4CommandRunner.ServerQuery<SwarmConfig
 
     public Answer<AuthorizationOption> getAuthorization(ServerConfig config) {
         return authorization.apply(config);
+    }
+
+    public Answer<AuthorizationOption> getAuthorization(OptionalClientServerConfig config) {
+        return authorization.apply(config.getServerConfig());
     }
 
     public SwarmLogger getLogger() {

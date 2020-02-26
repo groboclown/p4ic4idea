@@ -14,15 +14,16 @@
 
 package net.groboclown.p4.server.impl.repository;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsFileRevisionEx;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileRevisionData;
-import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4Revision;
@@ -30,30 +31,30 @@ import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Date;
 
 public class P4HistoryVcsFileRevision
         extends VcsFileRevisionEx {
+    private static final Logger LOG = Logger.getInstance(P4HistoryVcsFileRevision.class);
+
     private final FilePath file;
-    private final ServerConfig config;
+    private final ClientConfig config;
     private final IFileRevisionData data;
     private final HistoryMessageFormatter formatter;
     private final HistoryContentLoader loader;
-    private final String clientname;
     private boolean loadedContent;
     private byte[] content;
 
     public P4HistoryVcsFileRevision(@NotNull FilePath file,
-            @NotNull ServerConfig config,
+            @NotNull ClientConfig config,
             @NotNull IFileRevisionData data,
-            @NotNull String clientname,
             @Nullable HistoryMessageFormatter formatter,
             @Nullable HistoryContentLoader loader) {
         this.loader = loader;
         this.file = file;
         this.data = data;
-        this.clientname = clientname;
         this.formatter = formatter;
         this.config = config;
     }
@@ -63,12 +64,16 @@ public class P4HistoryVcsFileRevision
      * @return a changelist ID with a client name used to submit the changelist.
      */
     public P4ChangelistId getChangelistId() {
-        ClientServerRef ref = new ClientServerRef(config.getServerName(), data.getClientName());
-        return new P4ChangelistIdImpl(data.getChangelistId(), ref);
+        return new P4ChangelistIdImpl(data.getChangelistId(), config.getClientServerRef());
     }
 
     @NotNull
     public ServerConfig getServerConfig() {
+        return config.getServerConfig();
+    }
+
+    @Nonnull
+    public ClientConfig getClientConfig() {
         return config;
     }
 
@@ -115,8 +120,11 @@ public class P4HistoryVcsFileRevision
     public byte[] loadContent()
             throws IOException, VcsException {
         if (!loadedContent && loader != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loading content for depot file '" + data.getDepotFileName() + "' at revision " + data.getRevision());
+            }
             loadedContent = true;
-            content = loader.loadContentForRev(config, clientname, data.getDepotFileName(), data.getRevision());
+            content = loader.loadContentForRev(config, data.getDepotFileName(), data.getRevision());
         }
         return content;
     }

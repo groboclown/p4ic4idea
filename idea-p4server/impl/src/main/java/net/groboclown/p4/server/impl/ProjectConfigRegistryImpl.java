@@ -27,6 +27,7 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
@@ -37,6 +38,7 @@ import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
 import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
 import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
+import net.groboclown.p4.server.impl.util.RootSettingsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,6 +122,8 @@ public class ProjectConfigRegistryImpl
                     LOG.debug(vcsRootDir + ": replacing " + oldRoot.getClientConfig() + " with " + config);
                 }
                 removeClientConfigAt(vcsRootDir);
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug(vcsRootDir + ": adding " + config);
             }
             updated = createClientConfigState(config, vcsRootDir);
             registeredRoots.put(vcsRootDir, updated);
@@ -165,9 +169,11 @@ public class ProjectConfigRegistryImpl
             configs = new ArrayList<>(registeredRoots.values());
             registeredClients.clear();
         }
-        System.err.println("Starting config loop");
+        LOG.info("Starting config loop");
         for (ClientConfigRoot clientConfig : configs) {
-            System.err.println("Call on " + clientConfig);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Dispose: Call on " + clientConfig);
+            }
             sendClientRemoved(clientConfig);
         }
     }
@@ -183,10 +189,10 @@ public class ProjectConfigRegistryImpl
     }
 
     @Override
-    protected void onLoginError(@NotNull ServerConfig config) {
+    protected void onLoginError(@NotNull OptionalClientServerConfig config) {
         // Note: does not check disposed state.
 
-        ServerStatusImpl state = getServerConfigState(config);
+        ServerStatusImpl state = getServerConfigState(config.getServerConfig());
         if (state != null) {
             state.setServerLoginProblem(true);
         }
@@ -269,7 +275,10 @@ public class ProjectConfigRegistryImpl
                 }
                 if (settings instanceof P4VcsRootSettings) {
                     oldRoots.remove(DirectoryMappingUtil.getDirectory(getProject(), directoryMapping));
-                    updateRoot((P4VcsRootSettings) settings, directoryMapping);
+                    updateRoot(
+                            RootSettingsUtil.getFixedRootSettings(getProject(), directoryMapping,
+                                DirectoryMappingUtil.getDirectory(getProject(), directoryMapping)),
+                            directoryMapping);
                 } else {
                     LOG.warn("P4Vcs root mapping has non-vcs settings " + settings.getClass());
                 }
@@ -280,7 +289,7 @@ public class ProjectConfigRegistryImpl
 
     private void updateRoot(@NotNull P4VcsRootSettings settings,
             @NotNull VcsDirectoryMapping directoryMapping) {
-        VirtualFile root = DirectoryMappingUtil.getDirectory(getProject(), directoryMapping);
+        VirtualFile root = settings.getRootDir();
         List<ConfigPart> parts = settings.getConfigParts();
         MultipleConfigPart parentPart = new MultipleConfigPart("Project Registry", parts);
         if (LOG.isDebugEnabled()) {

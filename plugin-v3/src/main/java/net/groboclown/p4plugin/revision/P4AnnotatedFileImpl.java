@@ -26,15 +26,15 @@ import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.text.DateFormatUtil;
+import net.groboclown.p4.server.api.commands.HistoryContentLoader;
+import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileResult;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.values.P4AnnotatedLine;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileAnnotation;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.values.P4Revision;
-import net.groboclown.p4.server.api.commands.HistoryContentLoader;
-import net.groboclown.p4.server.api.commands.HistoryMessageFormatter;
 import net.groboclown.p4.server.impl.repository.P4HistoryVcsFileRevision;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4Vcs;
@@ -51,8 +51,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
     private static final Logger LOG = Logger.getInstance(P4AnnotatedFileImpl.class);
 
     private final FilePath file;
-    private final ServerConfig config;
-    private final String clientname;
+    private final ClientConfig config;
     private final P4FileRevision head;
     private final HistoryMessageFormatter formatter;
     private final HistoryContentLoader loader;
@@ -88,15 +87,13 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
     };
 
     public P4AnnotatedFileImpl(@NotNull Project project,
-            @Nullable String clientname,
             @NotNull FilePath file,
             @Nullable HistoryMessageFormatter formatter,
             @Nullable HistoryContentLoader loader,
             @NotNull AnnotateFileResult annotatedFileResult) {
         super(project);
-        this.clientname = clientname;
         this.file = file;
-        this.config = annotatedFileResult.getServerConfig();
+        this.config = annotatedFileResult.getClientConfig();
         this.annotatedFile = annotatedFileResult.getAnnotatedFile();
         this.head = annotatedFileResult.getHeadRevision();
         this.content = annotatedFileResult.getContent();
@@ -230,7 +227,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
         for (P4AnnotatedLine line : annotatedFile.getAnnotatedLines()) {
             if (line != null) {
                 P4HistoryVcsFileRevision fileRev = new P4HistoryVcsFileRevision(
-                        file, config, line.getRevisionData(), clientname, formatter, loader);
+                        file, config, line.getRevisionData(), formatter, loader);
                 revs.add(fileRev);
             }
         }

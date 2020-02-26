@@ -66,7 +66,7 @@ public class P4LocalFileContentRevision extends AbstractP4FileContentRevision {
         if (getLoader() == null || clientConfig.getClientname() == null) {
             return null;
         }
-        return ContentRevisionUtil.getContent(clientConfig.getServerConfig(), clientConfig.getClientname(),
+        return ContentRevisionUtil.getContent(clientConfig,
                 getLoader(), getFile(), getIntRevisionNumber().getValue(), getCharset());
     }
 }

@@ -90,8 +90,8 @@ public class P4DiffProvider extends DiffProviderEx
         try {
             ListFilesDetailsResult result =
                     P4ServerComponent
-                            .query(project, root.getClientConfig().getServerConfig(),
-                                    new ListFilesDetailsQuery(root.getClientConfig().getClientServerRef(),
+                            .query(project, root.getClientConfig(),
+                                    new ListFilesDetailsQuery(
                                             Collections.singletonList(fp), ListFilesDetailsQuery.RevState.HAVE, 1))
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             if (result.getFiles().isEmpty()) {
@@ -139,8 +139,8 @@ public class P4DiffProvider extends DiffProviderEx
         }
         try {
             ListFilesDetailsResult result = P4ServerComponent
-                    .query(project, root.getClientConfig().getServerConfig(),
-                            new ListFilesDetailsQuery(root.getClientConfig().getClientServerRef(),
+                    .query(project, root.getClientConfig(),
+                            new ListFilesDetailsQuery(
                                     Collections.singletonList(filePath), ListFilesDetailsQuery.RevState.HEAD, 1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             if (result.getFiles().isEmpty()) {
@@ -201,8 +201,7 @@ public class P4DiffProvider extends DiffProviderEx
                         LOG.debug("Loading file content for " + local + " rev " + iRev);
                     }
                     return loader.loadStringContentForLocal(
-                            root.getClientConfig().getServerConfig(),
-                            clientName,
+                            root.getClientConfig(),
                             local,
                             iRev.getValue());
                 } catch (IOException e) {
@@ -255,8 +254,8 @@ public class P4DiffProvider extends DiffProviderEx
         }
         try {
             List<VcsFileRevision> revisions = P4ServerComponent
-                    .query(project, root.getClientConfig().getServerConfig(),
-                            new ListFileHistoryQuery(root.getClientConfig().getClientServerRef(), local, 1))
+                    .query(project, root.getClientConfig(),
+                            new ListFileHistoryQuery(local, 1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
                     .getRevisions(formatter, loader);
             if (revisions.isEmpty()) {

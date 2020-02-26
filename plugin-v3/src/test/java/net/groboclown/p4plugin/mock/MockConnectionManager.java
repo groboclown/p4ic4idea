@@ -24,6 +24,7 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ResultErrorUtil;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
 import net.groboclown.p4.server.impl.connection.P4Func;
@@ -135,12 +136,12 @@ public class MockConnectionManager implements ConnectionManager {
 
     @NotNull
     @Override
-    public <R> Answer<R> withConnection(@NotNull ServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
+    public <R> Answer<R> withConnection(@NotNull OptionalClientServerConfig config, @NotNull P4Func<IOptionsServer, R> fun) {
         if (problem != null) {
             return Answer.reject(problem);
         }
         try {
-            return Answer.resolve(fun.func(setupServer(config)));
+            return Answer.resolve(fun.func(setupServer(config.getServerConfig())));
         } catch (Exception e) {
             errors.add(e);
             return Answer.reject(ResultErrorUtil.createException(

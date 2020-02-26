@@ -17,7 +17,8 @@ package net.groboclown.p4.server.api.messagebus;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IServerMessage;
 import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,15 +30,19 @@ import org.jetbrains.annotations.Nullable;
 public interface ServerErrorEvent<E extends Exception> {
     @NotNull
     P4ServerName getName();
-    ServerConfig getConfig();
+    OptionalClientServerConfig getConfig();
     E getError();
 
     class ServerNameErrorEvent<E extends Exception> extends AbstractMessageEvent implements ServerErrorEvent<E> {
         private final P4ServerName name;
-        private final ServerConfig config;
+        private final OptionalClientServerConfig config;
         private final E error;
 
-        public ServerNameErrorEvent(@NotNull P4ServerName name, @Nullable ServerConfig config, @NotNull E error) {
+        public ServerNameErrorEvent(@NotNull ClientConfig config, @NotNull E error) {
+            this(config.getServerConfig().getServerName(), new OptionalClientServerConfig(config), error);
+        }
+
+        public ServerNameErrorEvent(@NotNull P4ServerName name, @Nullable OptionalClientServerConfig config, @NotNull E error) {
             this.name = name;
             this.config = config;
             this.error = error;
@@ -49,7 +54,7 @@ public interface ServerErrorEvent<E extends Exception> {
         }
 
         @Nullable
-        public ServerConfig getConfig() {
+        public OptionalClientServerConfig getConfig() {
             return config;
         }
 
@@ -60,12 +65,16 @@ public interface ServerErrorEvent<E extends Exception> {
     }
 
     class ServerConfigErrorEvent<E extends Exception> extends AbstractMessageEvent implements ServerErrorEvent<E> {
-        private final ServerConfig config;
+        private final OptionalClientServerConfig config;
         private final E error;
 
-        public ServerConfigErrorEvent(@NotNull ServerConfig config, @NotNull E error) {
+        public ServerConfigErrorEvent(@NotNull OptionalClientServerConfig config, @NotNull E error) {
             this.config = config;
             this.error = error;
+        }
+
+        public ServerConfigErrorEvent(@NotNull ClientConfig config, @NotNull E error) {
+            this(new OptionalClientServerConfig(config), error);
         }
 
         @NotNull
@@ -74,7 +83,7 @@ public interface ServerErrorEvent<E extends Exception> {
         }
 
         @NotNull
-        public ServerConfig getConfig() {
+        public OptionalClientServerConfig getConfig() {
             return config;
         }
 
@@ -85,10 +94,14 @@ public interface ServerErrorEvent<E extends Exception> {
     }
 
     class ServerConfigProblemEvent extends AbstractMessageEvent implements ServerErrorEvent<Exception> {
-        private final ServerConfig config;
+        private final OptionalClientServerConfig config;
 
-        public ServerConfigProblemEvent(@NotNull ServerConfig config) {
+        public ServerConfigProblemEvent(@NotNull OptionalClientServerConfig config) {
             this.config = config;
+        }
+
+        public ServerConfigProblemEvent(@NotNull ClientConfig config) {
+            this(new OptionalClientServerConfig(config));
         }
 
         @NotNull
@@ -97,7 +110,7 @@ public interface ServerErrorEvent<E extends Exception> {
         }
 
         @NotNull
-        public ServerConfig getConfig() {
+        public OptionalClientServerConfig getConfig() {
             return config;
         }
 
@@ -109,11 +122,15 @@ public interface ServerErrorEvent<E extends Exception> {
 
     class ServerNameProblemEvent extends AbstractMessageEvent implements ServerErrorEvent<Exception> {
         private final P4ServerName name;
-        private final ServerConfig config;
+        private final OptionalClientServerConfig config;
 
-        public ServerNameProblemEvent(@NotNull P4ServerName name, @Nullable ServerConfig config) {
+        public ServerNameProblemEvent(@NotNull P4ServerName name, @Nullable OptionalClientServerConfig config) {
             this.name = name;
             this.config = config;
+        }
+
+        public ServerNameProblemEvent(@NotNull ClientConfig config) {
+            this(config.getServerConfig().getServerName(), new OptionalClientServerConfig(config));
         }
 
         @NotNull
@@ -122,7 +139,7 @@ public interface ServerErrorEvent<E extends Exception> {
         }
 
         @Nullable
-        public ServerConfig getConfig() {
+        public OptionalClientServerConfig getConfig() {
             return config;
         }
 
@@ -136,8 +153,15 @@ public interface ServerErrorEvent<E extends Exception> {
         private final IServerMessage msg;
 
         public ServerMessageEvent(@NotNull P4ServerName name,
-                @Nullable ServerConfig config, @NotNull IServerMessage msg, @NotNull RequestException error) {
+                @Nullable OptionalClientServerConfig config,
+                @NotNull IServerMessage msg, @NotNull RequestException error) {
             super(name, config, error);
+            this.msg = msg;
+        }
+
+        public ServerMessageEvent(@NotNull ClientConfig config,
+                @NotNull IServerMessage msg, @NotNull RequestException error) {
+            super(config.getServerConfig().getServerName(), new OptionalClientServerConfig(config), error);
             this.msg = msg;
         }
 

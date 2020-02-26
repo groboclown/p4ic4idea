@@ -28,7 +28,7 @@ import com.perforce.p4java.exception.AuthenticationFailedException;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.commands.server.LoginAction;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
@@ -143,7 +143,7 @@ public class InvalidPasswordMonitorComponent
                             (notification, hyperlinkEvent) -> {
                                 forgetLoginProblem(e.getConfig());
                                 ApplicationPasswordRegistry.getInstance()
-                                        .askForNewPassword(null, e.getConfig());
+                                        .askForNewPassword(null, e.getConfig().getServerConfig());
                             },
                             () -> {
                                 // Timed out waiting for a user action.  Reset the password login
@@ -167,7 +167,7 @@ public class InvalidPasswordMonitorComponent
                             NotificationType.INFORMATION);
 
                     // Update the password to remove the stored password.
-                    ApplicationPasswordRegistry.getInstance().remove(e.getConfig());
+                    ApplicationPasswordRegistry.getInstance().remove(e.getConfig().getServerConfig());
                 } else {
                     LOG.info("Not handling password uncessary issue for " + e.getConfig());
                 }
@@ -177,7 +177,7 @@ public class InvalidPasswordMonitorComponent
         ServerConnectedMessage.addListener(mbClient, this, (e) -> {
             // Force a no-issue connection state.
             if (e.isLoggedIn()) {
-                forgetLoginProblem(e.getServerConfig());
+                forgetLoginProblem(e.getConfig());
             }
         });
 
@@ -189,9 +189,9 @@ public class InvalidPasswordMonitorComponent
                 MessageBusClient.ProjectClient projectMbClient =
                         MessageBusClient.forProject(project, InvalidPasswordMonitorComponent.this);
                 ClientConfigAddedMessage.addListener(projectMbClient, this,
-                        e -> forgetLoginProblem(e.getClientConfig().getServerConfig()));
+                        e -> forgetLoginProblem(new OptionalClientServerConfig(e.getClientConfig())));
                 ClientConfigRemovedMessage.addListener(projectMbClient, this,
-                        event -> forgetLoginProblem(event.getClientConfig().getServerConfig()));
+                        event -> forgetLoginProblem(new OptionalClientServerConfig(event.getClientConfig())));
             }
 
             @Deprecated
@@ -236,7 +236,7 @@ public class InvalidPasswordMonitorComponent
     }
 
 
-    private boolean shouldHandleProblem(ServerConfig config, FailureType type) {
+    private boolean shouldHandleProblem(OptionalClientServerConfig config, FailureType type) {
         // The idea here is to prevent the user from being bombarded with duplicate requests.
         FailureType previous;
         synchronized (lastFailureType) {
@@ -246,7 +246,7 @@ public class InvalidPasswordMonitorComponent
         return (previous != type);
     }
 
-    private void forgetLoginProblem(ServerConfig config) {
+    private void forgetLoginProblem(OptionalClientServerConfig config) {
         synchronized (lastFailureType) {
             lastFailureType.remove(config.getServerName());
         }

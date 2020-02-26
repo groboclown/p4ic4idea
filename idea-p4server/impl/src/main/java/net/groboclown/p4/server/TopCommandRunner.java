@@ -80,6 +80,7 @@ import net.groboclown.p4.server.api.commands.sync.SyncListOpenedFilesChangesQuer
 import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
@@ -104,6 +105,7 @@ import net.groboclown.p4.server.impl.commands.OfflineActionAnswerImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -155,7 +157,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 (e) -> this.getProjectStateFor(e.getServerConfig()));
         ServerConnectedMessage.addListener(appClient, this, (e) -> {
             // This is an application-level event listener for server config state changes.
-            Optional<ServerConnectionState> op = getAppStateFor(e.getServerConfig());
+            Optional<ServerConnectionState> op = getAppStateFor(e.getConfig());
             if (!op.isPresent()) {
                 return;
             }
@@ -280,17 +282,18 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected ActionAnswer<CreateJobResult> createJob(ServerConfig config, CreateJobAction action) {
+    protected ActionAnswer<CreateJobResult> createJob(
+            @NotNull OptionalClientServerConfig config, @NotNull CreateJobAction action) {
         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
                 config.getServerName(), action));
         return onlineExec(config,
                 () -> server.perform(config, action)
                     .whenCompleted((result) ->
                         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
-                            config.getServerName(), action, result)))
+                                config.getServerName(), action, result)))
                     .whenServerError((err) ->
                         ServerActionCacheMessage.sendEvent(new ServerActionCacheMessage.Event(
-                            config.getServerName(), action, err))
+                                config.getServerName(), action, err))
                     ),
                 OfflineActionAnswerImpl::new);
     }
@@ -298,8 +301,10 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected ActionAnswer<LoginResult> login(ServerConfig config, LoginAction action) {
-        ServerConnectionState state = getProjectStateFor(config);
+    protected ActionAnswer<LoginResult> login(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull LoginAction action) {
+        ServerConnectionState state = getProjectStateFor(config.getServerConfig());
 
         // Login has special state checking, because all it cares about is online vs. offline, not login
         // status.
@@ -319,7 +324,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected ActionAnswer<FetchFilesResult> fetchFiles(ClientConfig config, FetchFilesAction action) {
+    protected ActionAnswer<FetchFilesResult> fetchFiles(@NotNull ClientConfig config, @NotNull FetchFilesAction action) {
         // No queryCache updates
         return onlineExec(config,
                 () -> server.perform(config, action),
@@ -329,7 +334,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     protected ActionAnswer<SubmitChangelistResult> submitChangelist(
-            ClientConfig config, SubmitChangelistAction action) {
+            @Nonnull ClientConfig config, @Nonnull SubmitChangelistAction action) {
         // Submits are never cached.  Instead, offline submits generate an error.
         return onlineExec(config,
                 () -> server.perform(config, action),
@@ -339,7 +344,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected ActionAnswer<MoveFileResult> moveFile(ClientConfig config, MoveFileAction action) {
+    protected ActionAnswer<MoveFileResult> moveFile(@Nonnull ClientConfig config, @Nonnull MoveFileAction action) {
         // Move file is turned into 2 messages.
         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
                 action.getSourceFile(), P4FileAction.MOVE_DELETE, null, action));
@@ -367,8 +372,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected <R extends ClientResult> ActionAnswer<R> performFileAction(ClientConfig config,
-            ClientAction<R> action, @NotNull FilePath file, @Nullable P4FileType fileType,
+    protected <R extends ClientResult> ActionAnswer<R> performFileAction(@Nonnull ClientConfig config,
+            @Nonnull ClientAction<R> action, @NotNull FilePath file, @Nullable P4FileType fileType,
             @NotNull P4FileAction fileAction) {
         FileActionMessage.sendEvent(new FileActionMessage.Event(config.getClientServerRef(),
                 file, fileAction, fileType, action));
@@ -387,7 +392,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected <R extends ClientResult> ActionAnswer<R> performNonFileAction(ClientConfig config, ClientAction<R> action) {
+    protected <R extends ClientResult> ActionAnswer<R> performNonFileAction(@Nonnull ClientConfig config, @Nonnull ClientAction<R> action) {
         ClientActionMessage.sendEvent(new ClientActionMessage.Event(
                 config.getClientServerRef(), action));
         return onlineExec(config,
@@ -405,7 +410,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<AnnotateFileResult> getAnnotatedFile(ServerConfig config, AnnotateFileQuery query) {
+    protected QueryAnswer<AnnotateFileResult> getAnnotatedFile(
+            @NotNull ClientConfig config,
+            @NotNull AnnotateFileQuery query) {
         // No queryCache for file annotations.
         return onlineQuery(config,
                 () -> server.getFileAnnotation(config, query),
@@ -416,7 +423,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<DescribeChangelistResult> describeChangelist(ServerConfig config, DescribeChangelistQuery query) {
+    protected QueryAnswer<DescribeChangelistResult> describeChangelist(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull DescribeChangelistQuery query) {
         return onlineQuery(config,
                 () -> server.describeChangelist(config, query)
                         .whenCompleted((result) ->
@@ -432,8 +441,10 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     }
 
     @NotNull
-    protected QueryAnswer<GetFileContentsResult> getFileContents(ServerConfig config,
-            GetFileContentsQuery query) {
+    @Override
+    protected QueryAnswer<GetFileContentsResult> getFileContents(
+            @NotNull ClientConfig config,
+            @NotNull GetFileContentsQuery query) {
         return onlineQuery(config,
                 () -> server.getFileContents(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())
@@ -443,7 +454,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<GetJobSpecResult> getJobSpec(ServerConfig config, GetJobSpecQuery query) {
+    protected QueryAnswer<GetJobSpecResult> getJobSpec(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull GetJobSpecQuery query) {
         return onlineQuery(config,
                 () -> server.getJobSpec(config)
                         .whenCompleted((result) ->
@@ -458,8 +471,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListChangelistsFixedByJobResult> listChangelistsFixedByJob(ServerConfig config,
-            ListChangelistsFixedByJobQuery query) {
+    protected QueryAnswer<ListChangelistsFixedByJobResult> listChangelistsFixedByJob(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListChangelistsFixedByJobQuery query) {
         // FIXME implement
         LOG.warn("FIXME implement listChangelistsFixedByJob");
         return null;
@@ -468,7 +482,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListClientsForUserResult> listClientsForUser(ServerConfig config, ListClientsForUserQuery query) {
+    protected QueryAnswer<ListClientsForUserResult> listClientsForUser(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListClientsForUserQuery query) {
         return onlineQuery(config,
                 () -> server.getClientsForUser(config, query)
                         .whenCompleted((result) ->
@@ -484,7 +500,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListDirectoriesResult> listDirectories(ServerConfig config, ListDirectoriesQuery query) {
+    protected QueryAnswer<ListDirectoriesResult> listDirectories(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListDirectoriesQuery query) {
         // FIXME implement
         LOG.warn("FIXME implement listDirectories");
         return null;
@@ -493,7 +511,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListFilesResult> listFiles(ServerConfig config, ListFilesQuery query) {
+    protected QueryAnswer<ListFilesResult> listFiles(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListFilesQuery query) {
         // FIXME implement
         LOG.warn("FIXME implement listFiles");
         return null;
@@ -502,7 +522,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListFilesDetailsResult> listFilesDetails(ServerConfig config, ListFilesDetailsQuery query) {
+    protected QueryAnswer<ListFilesDetailsResult> listFilesDetails(
+            @NotNull ClientConfig config,
+            @NotNull ListFilesDetailsQuery query) {
         return onlineQuery(config,
                 () -> server.listFilesDetails(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
@@ -511,7 +533,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListFileHistoryResult> listFilesHistory(ServerConfig config, ListFileHistoryQuery query) {
+    protected QueryAnswer<ListFileHistoryResult> listFilesHistory(
+            @NotNull ClientConfig config,
+            @NotNull ListFileHistoryQuery query) {
         return onlineQuery(config,
                 () -> server.listFilesHistory(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
@@ -520,7 +544,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListJobsResult> listJobs(ServerConfig config, ListJobsQuery query) {
+    protected QueryAnswer<ListJobsResult> listJobs(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListJobsQuery query) {
         return onlineQuery(config,
                 () -> server.listJobs(config, query),
                 // TODO cache jobs?
@@ -530,8 +556,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(final ClientConfig config,
-            final ListSubmittedChangelistsQuery query) {
+    protected QueryAnswer<ListSubmittedChangelistsResult> listSubmittedChangelists(@NotNull final ClientConfig config,
+            @NotNull final ListSubmittedChangelistsQuery query) {
         return onlineQuery(config,
                 () -> server.listSubmittedChangelists(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError())
@@ -541,7 +567,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListUsersResult> listUsers(ServerConfig config, ListUsersQuery query) {
+    protected QueryAnswer<ListUsersResult> listUsers(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListUsersQuery query) {
         return onlineQuery(config,
                 () -> server.listUsers(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
@@ -549,7 +577,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListLabelsResult> listLabels(ServerConfig config, ListLabelsQuery query) {
+    protected QueryAnswer<ListLabelsResult> listLabels(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull ListLabelsQuery query) {
         return onlineQuery(config,
                 () -> server.listLabels(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
@@ -557,7 +587,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<SwarmConfigResult> getSwarmConfig(ServerConfig config, SwarmConfigQuery query) {
+    protected QueryAnswer<SwarmConfigResult> getSwarmConfig(
+            @NotNull OptionalClientServerConfig config,
+            @NotNull SwarmConfigQuery query) {
         return onlineQuery(config,
                 () -> server.getSwarmConfig(config, query),
                 () -> new ErrorQueryAnswerImpl<>(AnswerUtil.createOfflineError()));
@@ -566,8 +598,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListClientFetchStatusResult> listClientFetchStatus(ClientConfig config,
-            ListClientFetchStatusQuery query) {
+    protected QueryAnswer<ListClientFetchStatusResult> listClientFetchStatus(@Nonnull ClientConfig config,
+            @Nonnull ListClientFetchStatusQuery query) {
         // FIXME implement
         LOG.warn("FIXME implement listClientFetchStatus");
         return null;
@@ -576,8 +608,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(ClientConfig config,
-            ListOpenedFilesChangesQuery query) {
+    protected QueryAnswer<ListOpenedFilesChangesResult> listOpenedFilesChanges(@Nonnull ClientConfig config,
+            @Nonnull ListOpenedFilesChangesQuery query) {
         return onlineQuery(config,
                 () -> server.listOpenedFilesChanges(config, query),
                 () -> new DoneQueryAnswer<>(cachedListOpenedFilesChanges(config, null))
@@ -587,7 +619,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected QueryAnswer<ServerInfoResult> serverInfo(P4ServerName name, ServerInfo query) {
+    protected QueryAnswer<ServerInfoResult> serverInfo(@Nonnull P4ServerName name, @Nonnull ServerInfo query) {
         // FIXME implement
         LOG.warn("FIXME implement serverInfo");
         return null;
@@ -596,8 +628,8 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     @NotNull
     @Override
-    protected ListOpenedFilesChangesResult cachedListOpenedFilesChanges(ClientConfig config,
-            SyncListOpenedFilesChangesQuery query) {
+    protected ListOpenedFilesChangesResult cachedListOpenedFilesChanges(@Nonnull ClientConfig config,
+            @Nullable SyncListOpenedFilesChangesQuery query) {
         return new ListOpenedFilesChangesResult(config,
                 queryCache.getCachedOpenedFiles(config),
                 queryCache.getCachedOpenedChangelists(config));
@@ -618,7 +650,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     /** Should be called for application-level invocations. */
     @NotNull
-    private Optional<ServerConnectionState> getAppStateFor(@NotNull ServerConfig config) {
+    private Optional<ServerConnectionState> getAppStateFor(@NotNull OptionalClientServerConfig config) {
         ServerConnectionState state;
         synchronized (stateCache) {
             state = stateCache.get(config.getServerId());
@@ -646,7 +678,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         return state;
     }
 
-    private Collection<ServerConnectionState> getStatesFor(P4ServerName name) {
+    private Collection<ServerConnectionState> getStatesFor(@Nonnull P4ServerName name) {
         List<ServerConnectionState> ret = new ArrayList<>();
         synchronized (stateCache) {
             for (ServerConnectionState state : stateCache.values()) {
@@ -669,6 +701,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
      *
      * @param clientConfig configuration
      */
+    @NotNull
     @Override
     @SuppressWarnings("unchecked")
     public ActionAnswer<Void> sendCachedPendingRequests(@NotNull ClientConfig clientConfig) {
@@ -680,11 +713,11 @@ public class TopCommandRunner extends AbstractP4CommandRunner
             // Also note: the error catching is only logged; user reporting is done by
             // event listeners.
             return pendingActionCache.copyActions(clientConfig)
-                .reduce(new DoneActionAnswer(null),
+                .reduce(new DoneActionAnswer<>(null),
                     (BiFunction<ActionAnswer, ActionChoice, ActionAnswer>) (answer, action) -> answer.mapActionAsync((x) ->
                             action.when(
                                     (c) -> perform(clientConfig, c),
-                                    (s) -> perform(clientConfig.getServerConfig(), s)
+                                    (s) -> perform(new OptionalClientServerConfig(clientConfig), s)
                             ).whenCompleted((ev) -> {
                                 try {
                                     pendingActionCache.writeActions(clientConfig.getClientServerRef(),
@@ -716,20 +749,21 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     private <R> ActionAnswer<R> onlineExec(@NotNull ClientConfig clientConfig, Exec<ActionAnswer<R>> serverExec,
             Exec<ActionAnswer<R>> cacheExec) {
-        return onlineExec(clientConfig.getServerConfig(), serverExec, cacheExec);
+        return onlineExec(new OptionalClientServerConfig(clientConfig), serverExec, cacheExec);
     }
 
-    private <R> ActionAnswer<R> onlineExec(@NotNull ServerConfig serverConfig, Exec<ActionAnswer<R>> serverExec,
+    private <R> ActionAnswer<R> onlineExec(
+            @NotNull OptionalClientServerConfig config, Exec<ActionAnswer<R>> serverExec,
             Exec<ActionAnswer<R>> cacheExec) {
-        final ServerConnectionState firstState = getProjectStateFor(serverConfig);
+        final ServerConnectionState firstState = getProjectStateFor(config.getServerConfig());
         final ActionAnswer<R> ret;
         if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
-            ret = login(serverConfig, new LoginAction()).mapAction((x) -> null);
+            ret = login(config, new LoginAction()).mapAction((x) -> null);
         } else {
             ret = new DoneActionAnswer<>(null);
         }
         return ret.mapActionAsync((x) -> {
-            final ServerConnectionState nextState = getProjectStateFor(serverConfig);
+            final ServerConnectionState nextState = getProjectStateFor(config.getServerConfig());
             if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
                 return serverExec.exec();
             }
@@ -739,20 +773,22 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     private <R> QueryAnswer<R> onlineQuery(@NotNull ClientConfig clientConfig, Exec<QueryAnswer<R>> serverExec,
             Exec<QueryAnswer<R>> cacheExec) {
-        return onlineQuery(clientConfig.getServerConfig(), serverExec, cacheExec);
+        return onlineQuery(new OptionalClientServerConfig(clientConfig), serverExec, cacheExec);
     }
 
-    private <R> QueryAnswer<R> onlineQuery(@NotNull ServerConfig serverConfig, Exec<QueryAnswer<R>> serverExec,
+    private <R> QueryAnswer<R> onlineQuery(
+            @NotNull OptionalClientServerConfig config,
+            Exec<QueryAnswer<R>> serverExec,
             Exec<QueryAnswer<R>> cacheExec) {
-        final ServerConnectionState firstState = getProjectStateFor(serverConfig);
+        final ServerConnectionState firstState = getProjectStateFor(config.getServerConfig());
         final QueryAnswer<R> ret;
         if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
-            ret = login(serverConfig, new LoginAction()).mapQuery((x) -> null);
+            ret = login(config, new LoginAction()).mapQuery((x) -> null);
         } else {
             ret = new DoneQueryAnswer<>(null);
         }
         return ret.mapQueryAsync((x) -> {
-            final ServerConnectionState nextState = getProjectStateFor(serverConfig);
+            final ServerConnectionState nextState = getProjectStateFor(config.getServerConfig());
             if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
                 return serverExec.exec();
             }
@@ -760,7 +796,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         });
     }
 
-    private void tryOnlineAfterReconnect(final ClientConfig clientConfig) {
+    private void tryOnlineAfterReconnect(@NotNull final ClientConfig clientConfig) {
         // Ensure the connection is allowed.
         for (ServerConnectionState state : getStatesFor(clientConfig.getClientServerRef().getServerName())) {
             if (state.userOffline || state.badConnection || state.badLogin || state.needsLogin) {
@@ -774,7 +810,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 LOG.debug("Attempting to connect to " + clientConfig.getClientServerRef());
             }
             AtomicInteger debugCompleteState = new AtomicInteger(0);
-            boolean completed = server.getClientsForUser(state.config,
+            boolean completed = server.getClientsForUser(new OptionalClientServerConfig(state.config, clientConfig),
                     new ListClientsForUserQuery(state.config.getUsername(), 1))
             .whenCompleted((x) -> {
                 if (LOG.isDebugEnabled()) {
@@ -817,7 +853,7 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         // in order to avoid pushing the old pending list to the server many, many times
         boolean pendingActionsRequireResend;
 
-        private ServerConnectionState(ServerConfig config) {
+        private ServerConnectionState(@Nonnull ServerConfig config) {
             this.config = config;
         }
     }

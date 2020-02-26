@@ -189,12 +189,15 @@ public class P4CommandUtil {
 
     /**
      *
-     * @param server server
+     * @param client client
      * @param files escaped name of the files
      * @return annotated file information
      */
-    public List<IFileAnnotation> getAnnotations(IServer server, List<IFileSpec> files)
+    public List<IFileAnnotation> getAnnotations(IClient client, List<IFileSpec> files)
             throws P4JavaException {
+        // Because this is looking at files, it could potentially need to use a client.
+        IServer server = client.getServer();
+        server.setCurrentClient(client);
         GetFileAnnotationsOptions options = new GetFileAnnotationsOptions(
                 false, // allResults
                 false, // useChangeNumbers
@@ -390,13 +393,11 @@ public class P4CommandUtil {
         return client.getServer().deletePendingChangelist(changelist.getChangelistId());
     }
 
-    public IExtendedFileSpec getFileDetails(IServer server, String clientname, List<IFileSpec> sources)
+    public IExtendedFileSpec getFileDetails(IClient client, List<IFileSpec> sources)
             throws P4JavaException {
-        if (clientname != null) {
-            // For fetching the local File information, we need a client to perform the mapping.
-            IClient client = server.getClient(clientname);
-            server.setCurrentClient(client);
-        }
+        // For fetching the local File information, we need a client to perform the mapping.
+        IServer server = client.getServer();
+        server.setCurrentClient(client);
         assert sources.size() == 1;
         GetExtendedFilesOptions options = new GetExtendedFilesOptions();
         List<IExtendedFileSpec> ret = server.getExtendedFiles(sources, options);
@@ -408,14 +409,12 @@ public class P4CommandUtil {
         return ret.get(0);
     }
 
-    public List<IExtendedFileSpec> getFilesDetails(IServer server, String clientname, List<IFileSpec> sources,
+    public List<IExtendedFileSpec> getFilesDetails(IClient client, List<IFileSpec> sources,
             int maxResults)
             throws P4JavaException {
-        if (clientname != null) {
-            // For fetching the local File information, we need a client to perform the mapping.
-            IClient client = server.getClient(clientname);
-            server.setCurrentClient(client);
-        }
+        // For fetching the local File information, we need a client to perform the mapping.
+        IServer server = client.getServer();
+        server.setCurrentClient(client);
         GetExtendedFilesOptions options = new GetExtendedFilesOptions();
         // Restrict to the maxmimum results (#197).
         options.setMaxResults(maxResults);
@@ -447,11 +446,11 @@ public class P4CommandUtil {
         return res == null ? Collections.emptyList() : res;
     }
 
-    public byte[] loadContents(IServer server, IFileSpec spec, String clientname)
+    public byte[] loadContents(IClient client, IFileSpec spec)
             throws P4JavaException, IOException {
-        if (clientname != null) {
-            server.setCurrentClient(server.getClient(clientname));
-        }
+        // For fetching the local File information, we need a client to perform the mapping.
+        IServer server = client.getServer();
+        server.setCurrentClient(client);
         int maxFileSize = VcsUtil.getMaxVcsLoadedFileSize();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GetFileContentsOptions fileContentsOptions = new GetFileContentsOptions(false, true);
@@ -503,7 +502,7 @@ public class P4CommandUtil {
     }
 
     @NotNull
-    public List<IFileRevisionData> getHistory(IOptionsServer server, String clientname,
+    public List<IFileRevisionData> getHistory(IClient client,
             List<IFileSpec> singleSpec, int maxRevCount)
             throws P4JavaException {
         // Even though we expect only 1 spec, the List is used by the server.getRevisionHistory, and the builders
@@ -513,7 +512,8 @@ public class P4CommandUtil {
         }
         // Because the spec can be a reference to the local filesystem, it must have a workspace
         // associated with it in order to map from the local filesystem to the depot path.
-        server.setCurrentClient(server.getClient(clientname));
+        IServer server = client.getServer();
+        server.setCurrentClient(client);
 
         GetRevisionHistoryOptions opts = new GetRevisionHistoryOptions()
                 .setMaxRevs(maxRevCount)

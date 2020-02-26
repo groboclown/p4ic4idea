@@ -38,7 +38,6 @@ import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.intellij.vcsUtil.VcsUtil;
-import com.perforce.p4java.impl.generic.core.Repo;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
@@ -145,7 +144,7 @@ public class P4CommittedChangesProvider implements
             // Use the cache
             LOG.debug("Loading file location from the cache due to execution within the dispatch thread");
             details = P4ServerComponent
-                    .syncCachedQuery(project, client.getClientConfig().getServerConfig(),
+                    .syncCachedQuery(project, client.getClientConfig(),
                             new SyncListFilesDetailsQuery(root));
         } else {
             try {
@@ -153,8 +152,8 @@ public class P4CommittedChangesProvider implements
                     LOG.debug("Loading file location from the server for " + root);
                 }
                 details = P4ServerComponent
-                        .query(project, client.getClientConfig().getServerConfig(),
-                                new ListFilesDetailsQuery(client.getClientConfig().getClientServerRef(),
+                        .query(project, client.getClientConfig(),
+                                new ListFilesDetailsQuery(
                                         Collections.singletonList(root),  ListFilesDetailsQuery.RevState.HAVE, 1))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {

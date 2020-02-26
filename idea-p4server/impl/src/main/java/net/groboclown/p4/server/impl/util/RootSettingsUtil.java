@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.util;
+package net.groboclown.p4.server.impl.util;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;

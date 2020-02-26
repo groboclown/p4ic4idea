@@ -32,6 +32,7 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.values.P4LocalFile;
@@ -177,11 +178,11 @@ public class P4SyncUpdateEnvironment
         if (registry == null || registry.isDisposed()) {
             return new SyncOptionConfigurable(project, options, Collections.emptyList());
         }
-        Map<P4ServerName, ServerConfig> configMap = new HashMap<>();
+        Map<P4ServerName, ClientConfig> configMap = new HashMap<>();
         collection.forEach((fp) -> {
             ClientConfigRoot clientRoot = registry.getClientFor(fp);
             if (clientRoot != null) {
-                configMap.put(clientRoot.getServerConfig().getServerName(), clientRoot.getServerConfig());
+                configMap.put(clientRoot.getServerConfig().getServerName(), clientRoot.getClientConfig());
             }
         });
         return new SyncOptionConfigurable(project, options, configMap.values());

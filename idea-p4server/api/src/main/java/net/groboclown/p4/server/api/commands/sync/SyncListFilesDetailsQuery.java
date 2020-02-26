@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 
-public class SyncListFilesDetailsQuery implements P4CommandRunner.SyncServerQuery<ListFilesDetailsResult> {
+public class SyncListFilesDetailsQuery implements P4CommandRunner.SyncClientQuery<ListFilesDetailsResult> {
     private final List<FilePath> files;
 
     public SyncListFilesDetailsQuery(@NotNull FilePath... files) {
@@ -36,8 +36,8 @@ public class SyncListFilesDetailsQuery implements P4CommandRunner.SyncServerQuer
     }
 
     @Override
-    public P4CommandRunner.SyncServerQueryCmd getCmd() {
-        return P4CommandRunner.SyncServerQueryCmd.SYNC_LIST_FILES_DETAILS;
+    public P4CommandRunner.SyncClientQueryCmd getCmd() {
+        return P4CommandRunner.SyncClientQueryCmd.SYNC_LIST_FILES_DETAILS;
     }
 
     @NotNull

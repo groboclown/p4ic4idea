@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.api.commands.client;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.values.P4WorkspaceSummary;
 import org.jetbrains.annotations.NotNull;
@@ -22,12 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 
 public class ListClientsForUserResult implements P4CommandRunner.ServerResult {
-    private final ServerConfig config;
+    private final OptionalClientServerConfig config;
     private final String requestedUser;
     private final Collection<P4WorkspaceSummary> clients;
 
 
-    public ListClientsForUserResult(@NotNull ServerConfig config,
+    public ListClientsForUserResult(@NotNull OptionalClientServerConfig config,
             @NotNull String requestedUser,
             @NotNull Collection<P4WorkspaceSummary> clients) {
         this.config = config;
@@ -38,7 +39,7 @@ public class ListClientsForUserResult implements P4CommandRunner.ServerResult {
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
-        return config;
+        return config.getServerConfig();
     }
 
     public String getRequestedUser() {

@@ -23,6 +23,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import com.perforce.p4java.core.file.IFileSpec;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.ui.TextFieldListener;
@@ -59,11 +60,11 @@ public class SyncPanel {
     private JPanel myRootPane;
     private JCheckBox myForce;
     private JButton myFindLabelButton;
-    private ButtonGroup syncTypeGroup;
+    private final ButtonGroup syncTypeGroup;
 
 
     SyncPanel(@NotNull Project project, @NotNull final SyncOptions parent,
-            @NotNull List<ServerConfig> configs) {
+            @NotNull List<ClientConfig> configs) {
         syncTypeGroup = new ButtonGroup();
         $$$setupUI$$$();
         syncTypeGroup.add(mySyncHead);

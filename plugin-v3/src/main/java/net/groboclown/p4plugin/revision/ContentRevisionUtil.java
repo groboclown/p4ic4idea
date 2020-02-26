@@ -14,12 +14,11 @@
 
 package net.groboclown.p4plugin.revision;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.encoding.EncodingManager;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,11 +35,11 @@ public class ContentRevisionUtil {
 
 
     @Nullable
-    public static String getContent(@NotNull ServerConfig serverConfig, @NotNull String clientname,
+    public static String getContent(@NotNull ClientConfig clientConfig,
             @NotNull HistoryContentLoader loader, @NotNull FilePath file, int rev, @NotNull Charset charset)
             throws VcsException {
         try {
-            byte[] ret = loader.loadContentForLocal(serverConfig, clientname, file, rev);
+            byte[] ret = loader.loadContentForLocal(clientConfig, file, rev);
             if (ret == null) {
                 return null;
             }

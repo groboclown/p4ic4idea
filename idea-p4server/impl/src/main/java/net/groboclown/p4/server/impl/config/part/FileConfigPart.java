@@ -181,16 +181,16 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
     @NotNull
     @Override
     public Collection<ConfigProblem> getConfigProblems() {
-        LOG.warn("FIXME SET MESSAGE TEXT CORRECTLY");
+        LOG.debug("FIXME SET MESSAGE TEXT CORRECTLY");
         if (filePath == null) {
             // FIXME SET MESSAGE CORRECTLY
-            LOG.warn("FIXME use message catalog");
+            LOG.debug("FIXME use message catalog");
             //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.no-file", true));
             return Collections.singleton(new ConfigProblem(this, "No file set", true));
         }
         if (! filePath.exists() || filePath.isDirectory()) {
             // FIXME SET MESSAGE CORRECTLY, and use "filePath"
-            LOG.warn("FIXME use message catalog");
+            LOG.debug("FIXME use message catalog");
             //return Collections.singletonList(new ConfigProblem(this, "configuration.p4config.bad-file", true));
             return Collections.singleton(new ConfigProblem(this, "Invalid file " + filePath, true));
         }

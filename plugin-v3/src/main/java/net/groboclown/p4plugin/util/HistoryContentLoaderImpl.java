@@ -20,7 +20,7 @@ import com.intellij.openapi.vcs.VcsException;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsQuery;
 import net.groboclown.p4.server.api.commands.file.GetFileContentsResult;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
@@ -39,34 +39,31 @@ public class HistoryContentLoaderImpl implements HistoryContentLoader {
 
     @Nullable
     @Override
-    public byte[] loadContentForRev(@NotNull ServerConfig config, @NotNull String clientname,
-            @NotNull String depotPath, int rev)
+    public byte[] loadContentForRev(@NotNull ClientConfig config, @NotNull String depotPath, int rev)
             throws VcsException {
         return loadContent(config,
-                    new GetFileContentsQuery(getDepotPathForRev(depotPath, rev), clientname))
+                    new GetFileContentsQuery(getDepotPathForRev(depotPath, rev)))
                 .getData();
     }
 
     @Nullable
     @Override
-    public byte[] loadContentForLocal(@NotNull ServerConfig config, @NotNull String clientname,
-            @NotNull FilePath localFile, int rev)
+    public byte[] loadContentForLocal(@NotNull ClientConfig config, @NotNull FilePath localFile, int rev)
             throws VcsException {
-        return loadContent(config, new GetFileContentsQuery(localFile, clientname, rev))
+        return loadContent(config, new GetFileContentsQuery(localFile, rev))
                 .getData();
     }
 
     @Nullable
     @Override
-    public String loadStringContentForLocal(@NotNull ServerConfig config, @NotNull String clientname,
-            @NotNull FilePath localFile, int rev)
+    public String loadStringContentForLocal(@NotNull ClientConfig config, @NotNull FilePath localFile, int rev)
             throws IOException, VcsException {
-        return loadContent(config, new GetFileContentsQuery(localFile, clientname, rev))
+        return loadContent(config, new GetFileContentsQuery(localFile, rev))
                 .getStringData();
     }
 
 
-    private GetFileContentsResult loadContent(@NotNull ServerConfig config, @NotNull GetFileContentsQuery query)
+    private GetFileContentsResult loadContent(@NotNull ClientConfig config, @NotNull GetFileContentsQuery query)
             throws VcsException {
         try {
             return P4ServerComponent

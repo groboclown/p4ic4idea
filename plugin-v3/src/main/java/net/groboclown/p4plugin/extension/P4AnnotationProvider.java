@@ -39,7 +39,6 @@ import net.groboclown.p4plugin.revision.P4AnnotatedFileImpl;
 import net.groboclown.p4plugin.util.HistoryContentLoaderImpl;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -103,10 +102,10 @@ public class P4AnnotationProvider
             throw new VcsException("No workspace name set for Perforce connection for " + file);
         }
         try {
-            return new P4AnnotatedFileImpl(project, clientname, fp,
+            return new P4AnnotatedFileImpl(project, fp,
                     messageFormatter, contentLoader,
                     P4ServerComponent
-                        .query(project, client.getServerConfig(), new AnnotateFileQuery(clientname, fp, rev))
+                        .query(project, client.getClientConfig(), new AnnotateFileQuery(fp, rev))
                         .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS));
         } catch (InterruptedException e) {
             throw new VcsInterruptedException(e);

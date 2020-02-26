@@ -26,6 +26,7 @@ import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
@@ -34,7 +35,7 @@ import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.ui.WrapperPanel;
-import net.groboclown.p4plugin.util.RootSettingsUtil;
+import net.groboclown.p4.server.impl.util.RootSettingsUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -239,7 +240,8 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
                     // An error here will cause the client config check to fail, because of
                     // the rejection.
                     LOG.debug("Attempting to get the list of clients");
-                    P4ServerComponent.checkServerConnection(project, serverConfig)
+                    P4ServerComponent.checkServerConnection(project,
+                            new OptionalClientServerConfig(serverConfig, clientConfig))
                             .whenCompleted(sink::resolve)
                             .whenServerError(sink::reject);
                 } else {

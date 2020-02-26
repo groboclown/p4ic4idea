@@ -1,5 +1,24 @@
 # IDEA Community VCS Integration for Perforce
 
+
+## ::v0.10.12::
+
+### Overview
+
+* Bug fixes
+* Low-Level Improvements
+
+### Details
+
+* Bug fixes
+    * Altered the server connection to attempt to use the client configuration, even for calls that don't strictly need it (#208).  This should allow additional properties, such as `P4HOST`, to be passed to server connections.
+    * Fixed an issue where diff display could show a diff against a changelist instead of a revision number.
+    * Fixed an issue where the root paths would not be mapped to the client configuration correctly (more issues carried over from #209).
+* Low-Level Improvements
+    * Updated the underlying Perforce interaction code to require a client when calling out to file retrieval based commands, because they can require a client to perform local file to depot mappings.
+    * Cleaned up some of the logging.
+
+
 ## ::v0.10.11::
 
 ### Overview

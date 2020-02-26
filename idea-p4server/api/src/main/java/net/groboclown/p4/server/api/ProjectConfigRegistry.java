@@ -24,7 +24,7 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
@@ -60,7 +60,7 @@ public abstract class ProjectConfigRegistry
 
     @Nullable
     public static ProjectConfigRegistry getInstance(@NotNull Project project) {
-        return (ProjectConfigRegistry) project.getComponent(COMPONENT_CLASS);
+        return project.getComponent(COMPONENT_CLASS);
     }
 
 
@@ -103,14 +103,24 @@ public abstract class ProjectConfigRegistry
         if (file == null) {
             return null;
         }
+        // updateVcsRoots();
         int closestDepth = Integer.MAX_VALUE;
         ClientConfigRoot closest = null;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Finding best client root match for " + file);
+        }
         for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
             int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Root " + clientConfigRoot.getClientRootDir() + ": " + depth);
+            }
             if (depth >= 0 && depth < closestDepth) {
                 closestDepth = depth;
                 closest = clientConfigRoot;
             }
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Using client root " + closest.getClientRootDir() + " for " + file);
         }
 
         return closest;
@@ -130,6 +140,7 @@ public abstract class ProjectConfigRegistry
 
     @NotNull
     public Collection<ClientConfigRoot> getClientConfigRoots() {
+        // updateVcsRoots();
         return new ArrayList<>(getRegisteredStates());
     }
 
@@ -166,7 +177,8 @@ public abstract class ProjectConfigRegistry
 
     @Override
     public void projectOpened() {
-        // do nothing
+        // Initial startup needs to read in the list of roots.
+        updateVcsRoots();
     }
 
     @Override
@@ -194,6 +206,10 @@ public abstract class ProjectConfigRegistry
                 onClientRemoved(event.getClientConfig(), event.getVcsRootDir());
             }
         });
+        UserSelectedOfflineMessage.addListener(projectBusClient, this, this::onUserSelectedOffline);
+        //ClientActionMessage.addListener(appBus, cacheId, event -> refresh());
+        //ServerActionCacheMessage.addListener(appBus, cacheId, event -> refresh());
+
 
         // New clients should only be registered by this component, which means that the "add client"
         // message should ONLY be sent by this class.  Therefore, this class doesn't need to listen
@@ -284,7 +300,7 @@ public abstract class ProjectConfigRegistry
     @NotNull
     protected abstract Collection<ClientConfigRoot> getRegisteredStates();
 
-    protected abstract void onLoginError(@NotNull ServerConfig config);
+    protected abstract void onLoginError(@NotNull OptionalClientServerConfig config);
 
     protected abstract void onHostConnectionError(@NotNull P4ServerName server);
 

@@ -17,7 +17,7 @@ package net.groboclown.p4.server.api.messagebus;
 import com.intellij.util.messages.Topic;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -31,13 +31,13 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
     private static final Listener DEFAULT_LISTENER = new ListenerAdapter();
 
     public static class SingleSignOnExecutionFailureEvent extends AbstractMessageEvent {
-        private final ServerConfig config;
+        private final OptionalClientServerConfig config;
         private final String cmd;
         private final int exitCode;
         private final String stdout;
         private final String stderr;
 
-        public SingleSignOnExecutionFailureEvent(@NotNull ServerConfig config, String cmd,
+        public SingleSignOnExecutionFailureEvent(@NotNull OptionalClientServerConfig config, String cmd,
                 int exitCode, String stdout, String stderr) {
             this.config = config;
             this.cmd = cmd;
@@ -63,7 +63,7 @@ public class LoginFailureMessage extends ApplicationMessage<LoginFailureMessage.
         }
 
         @NotNull
-        public ServerConfig getConfig() {
+        public OptionalClientServerConfig getConfig() {
             return config;
         }
     }

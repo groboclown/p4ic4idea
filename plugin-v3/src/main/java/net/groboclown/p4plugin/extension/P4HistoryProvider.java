@@ -136,8 +136,8 @@ public class P4HistoryProvider
 
         try {
             List<VcsFileRevision> revisions = P4ServerComponent
-                    .query(project, root.getClientConfig().getServerConfig(),
-                            new ListFileHistoryQuery(root.getClientConfig().getClientServerRef(), filePath, -1))
+                    .query(project, root.getClientConfig(),
+                            new ListFileHistoryQuery(filePath, -1))
                     .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project), TimeUnit.MILLISECONDS)
                     .getRevisions(formatter, loader);
             return createAppendableSession(filePath, revisions, null);
@@ -276,8 +276,8 @@ public class P4HistoryProvider
                 }
                 try {
                     ListFilesDetailsResult result = P4ServerComponent
-                            .query(project, root.getClientConfig().getServerConfig(), new ListFilesDetailsQuery(
-                                    root.getClientConfig().getClientServerRef(), Collections.singletonList(path),
+                            .query(project, root.getClientConfig(), new ListFilesDetailsQuery(
+                                    Collections.singletonList(path),
                                     ListFilesDetailsQuery.RevState.HEAD,  1))
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                     TimeUnit.MILLISECONDS);
@@ -314,8 +314,7 @@ public class P4HistoryProvider
     private P4CommandRunner.QueryAnswer<ListFileHistoryResult> getHistory(
             @NotNull ClientConfigRoot root, FilePath file, int revisionCount) {
         return P4ServerComponent
-                .query(project, root.getClientConfig().getServerConfig(), new ListFileHistoryQuery(
-                        root.getClientConfig().getClientServerRef(), file, revisionCount));
+                .query(project, root.getClientConfig(), new ListFileHistoryQuery(file, revisionCount));
     }
 
     private static class P4DiffFromHistoryHandler implements DiffFromHistoryHandler {
@@ -341,7 +340,7 @@ public class P4HistoryProvider
         private final ColoredTableCellRenderer myRenderer = new ColoredTableCellRenderer() {
             protected void customizeCellRenderer(JTable table, Object value, boolean selected, boolean hasFocus, int row, int column) {
                 this.setOpaque(selected);
-                this.append(value.toString());
+                this.append(value == null ? "?" : value.toString());
                 SpeedSearchUtil.applySpeedSearchHighlighting(table, this, false, selected);
             }
         };
@@ -387,6 +386,6 @@ public class P4HistoryProvider
         }
     }
 
-    private static ChangelistColumnInfo CHANGELIST_COLUMN_INFO = new ChangelistColumnInfo();
-    private static ColumnInfo[] ADDITIONAL_HISTORY_COLUMNS = new ColumnInfo[] { CHANGELIST_COLUMN_INFO };
+    private static final ChangelistColumnInfo CHANGELIST_COLUMN_INFO = new ChangelistColumnInfo();
+    private static final ColumnInfo[] ADDITIONAL_HISTORY_COLUMNS = new ColumnInfo[] { CHANGELIST_COLUMN_INFO };
 }

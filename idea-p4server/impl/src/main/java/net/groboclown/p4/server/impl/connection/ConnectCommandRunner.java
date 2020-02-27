@@ -911,7 +911,8 @@ public class ConnectCommandRunner
             // This is a complex call, because we perform all the open requests in a single method.
 
             // First, find all the pending changelists for the client.
-            List<IChangelistSummary> summaries = cmd.getPendingChangelists(client, maxChangelistResults);
+            List<IChangelistSummary> summaries = new ArrayList<>(cmd.getPendingChangelists(client,
+                    maxChangelistResults));
 
             // Then get details about the changelists.
             List<IChangelist> changes = new ArrayList<>(summaries.size());
@@ -942,8 +943,9 @@ public class ConnectCommandRunner
                         pendingChangelistFileSummaries.size() + " files, maximum file count " +
                         maxFileResults + ")");
             }
-            List<IExtendedFileSpec> pendingChangelistFiles = cmd.getFileDetailsForOpenedSpecs(
-                    client.getServer(), pendingChangelistFileSummaries, maxFileResults);
+            // #210 and #207 - don't write to a potentially read-only list.
+            List<IExtendedFileSpec> pendingChangelistFiles = new ArrayList<>(cmd.getFileDetailsForOpenedSpecs(
+                    client.getServer(), pendingChangelistFileSummaries, maxFileResults));
             Iterator<IExtendedFileSpec> pendingIter = pendingChangelistFiles.iterator();
             // TODO DEBUG variable; remove when that code path stablizes.
             boolean foundNonOpened = false;
@@ -982,12 +984,15 @@ public class ConnectCommandRunner
                 }
             }
 
+            // #210 and #207 - don't write to a potentially read-only list.
+
             // Then get opened files in the default changelist.
             LOG.debug("listOpenedFilesChanges@" + startDate + ": getting file details for default changelist");
             List<IExtendedFileSpec> openedDefaultChangelistFiles =
-                    cmd.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(), maxFileResults);
+                    new ArrayList<>(cmd.getFilesOpenInDefaultChangelist(client.getServer(), client.getName(),
+                            maxFileResults));
             List<IExtendedFileSpec> defaultAddedFiles =
-                    splitAddedFilesFromChangelistFileList(openedDefaultChangelistFiles);
+                    new ArrayList<>(splitAddedFilesFromChangelistFileList(openedDefaultChangelistFiles));
             Iterator<IExtendedFileSpec> defaultIter = openedDefaultChangelistFiles.iterator();
             while (defaultIter.hasNext()) {
                 IExtendedFileSpec next = defaultIter.next();

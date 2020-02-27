@@ -17,7 +17,6 @@ package net.groboclown.p4.server.impl.connection.operations;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
@@ -70,8 +69,7 @@ public class MoveFile {
         LOG.info("Running move command for `" + srcFile + "` to `" + tgtFile + "`");
         // Note the two separate fstat calls.  These are limited, and are okay, but it might
         // be better to join them together into a single call.
-        List<IExtendedFileSpec> srcStatusResponse = cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFile, 1);
-        OpenFileStatus srcStatus = new OpenFileStatus(srcStatusResponse);
+        OpenFileStatus srcStatus = new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), srcFile, 1));
         OpenFileStatus tgtStatus =
                 new OpenFileStatus(cmd.getFileDetailsForOpenedSpecs(client.getServer(), tgtFile, 1));
         if (srcStatus.hasAdd()) {

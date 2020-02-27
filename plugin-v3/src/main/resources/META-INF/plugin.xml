@@ -1,20 +1,20 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.12</version>
+    <version>0.10.13</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.13</em><ul>
+        <li>Quick patch to incorrect "add" to a read-only list.</li>
+      </ul></li>
       <li><em>0.10.12</em><ul>
         <li>Altered the server connection to attempt to use the client configuration, even for calls that don't strictly need it.</li>
         <li>Fixed an issue where diff display could show a diff against a changelist instead of a revision number.</li>
         <li>Fixed an issue where the root paths would not be mapped to the client configuration correctly.</li>
         <li>Cleaned up some of the logging.</li>
-      </ul></li>
-      <li><em>0.10.11</em><ul>
-        <li>Fixes to associating configuration with the VCS Root Directory.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

@@ -1,13 +1,13 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.13</version>
+    <version>0.10.14</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
-      <li><em>0.10.13</em><ul>
+      <li><em>0.10.13 and 0.10.14</em><ul>
         <li>Quick patch to incorrect "add" to a read-only list.</li>
       </ul></li>
       <li><em>0.10.12</em><ul>

@@ -669,7 +669,7 @@ public class ConnectCommandRunner
         MessageStatusUtil.throwIfMessageOrEmpty(addFile ? "add" : "edit", ret);
 
         P4ChangelistId retChange;
-        if (action.getChangelistId() == null ||
+        if (action.getChangelistId() == null || ret.isEmpty() ||
                 action.getChangelistId().getChangelistId() != ret.get(0).getChangelistId()) {
             int retChangeId = ret.get(0).getChangelistId();
             if (retChangeId == IChangelist.UNKNOWN) {
@@ -923,7 +923,7 @@ public class ConnectCommandRunner
             for (IChangelistSummary summary : summaries) {
                 IChangelist cl = cmd.getChangelistDetails(client.getServer(), summary.getId());
                 changes.add(cl);
-                List<IFileSpec> clFiles = cl.getFiles(false);
+                List<IFileSpec> clFiles = new ArrayList<>(cl.getFiles(false));
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("listOpenedFilesChanges: Fetched @" + cl.getId() + " files " + clFiles);
                 }

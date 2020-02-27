@@ -1,7 +1,7 @@
 # IDEA Community VCS Integration for Perforce
 
 
-## ::v0.10.13::
+## ::v0.10.13:: and ::v0.10.14::
 
 ### Overview
 
@@ -10,7 +10,7 @@
 ### Details
 
 * Bug fixes
-    * Fixed a problem where a write is performed to a read-only list (#210 and )
+    * Fixed a problem where a write is performed to a read-only list (#210 and #207).
 
 
 ## ::v0.10.12::

@@ -103,6 +103,7 @@ import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.messagebus.SpecialFileEventMessage;
+import net.groboclown.p4.server.api.util.CollectionUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileRevision;
 import net.groboclown.p4.server.api.values.P4FileType;
@@ -410,7 +411,9 @@ public class ConnectCommandRunner
                         if (rev <= 0 && localFile.getIOFile().exists()) {
                             return FileUtil.loadFileBytes(localFile.getIOFile());
                         } else {
-                            List<IFileSpec> locations = cmd.getSpecLocations(client, FileSpecBuildUtil.escapedForFilePathRev(localFile, -1));
+                            // Note: filter out the specs that don't map to anything in the client.
+                            List<IFileSpec> locations = CollectionUtil.filterNulls(cmd.getSpecLocations(client,
+                                    FileSpecBuildUtil.escapedForFilePathRev(localFile, -1)));
                             if (locations.isEmpty()) {
                                 locations = FileSpecBuildUtil.escapedForFilePathRev(localFile, rev);
                             } else {

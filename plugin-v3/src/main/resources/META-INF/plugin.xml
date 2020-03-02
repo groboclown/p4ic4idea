@@ -11,6 +11,7 @@
         <li>The VCS root directory options now better sets values independently between roots.</li>
         <li>Fixed some NPEs caused by certain error and logging conditions.</li>
         <li>Normalized the path view in the connections panel for Windows.</li>
+        <li>Fixed a problem when file locations don't map to a client workspace file.</li>
       </ul></li>
       <li><em>0.10.13 and 0.10.14</em><ul>
         <li>Quick patch to incorrect "add" to a read-only list.</li>

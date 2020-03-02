@@ -558,6 +558,16 @@ public class P4CommandUtil {
         return client.getServer().moveFile(source, target, options);
     }
 
+    /**
+     * Returns 1 spec location for each spec input, with a possible null returned entry if there
+     * is no corresponding location on the server.
+     *
+     * @param client
+     * @param specs
+     * @return
+     * @throws ConnectionException
+     * @throws AccessException
+     */
     public List<IFileSpec> getSpecLocations(IClient client, List<IFileSpec> specs)
             throws ConnectionException, AccessException {
         return client.where(specs);

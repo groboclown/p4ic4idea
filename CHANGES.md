@@ -1,6 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.16::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes
+    * Removed a duplicate event registration, which on Android Studio causes the plugin not to load (#212).
+
+
 ## ::v0.10.15::
 
 ### Overview

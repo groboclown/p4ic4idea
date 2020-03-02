@@ -1,20 +1,20 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.15</version>
+    <version>0.10.16</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.16</em><ul
+        <li>Removed a duplicate event registration, which on Android Studio causes the plugin not to load.</li>
+      </ul></li>
       <li><em>0.10.15</em><ul>
         <li>The VCS root directory options now better sets values independently between roots.</li>
         <li>Fixed some NPEs caused by certain error and logging conditions.</li>
         <li>Normalized the path view in the connections panel for Windows.</li>
         <li>Fixed a problem when file locations don't map to a client workspace file.</li>
-      </ul></li>
-      <li><em>0.10.13 and 0.10.14</em><ul>
-        <li>Quick patch to incorrect "add" to a read-only list.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

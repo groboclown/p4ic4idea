@@ -224,7 +224,6 @@ public abstract class ProjectConfigRegistry
         //    }
         //});
 
-        UserSelectedOfflineMessage.addListener(projectBusClient, this, this::onUserSelectedOffline);
         ReconnectRequestMessage.addListener(projectBusClient, this, new ReconnectRequestMessage.Listener() {
             @Override
             public void reconnectToAllClients(@NotNull ReconnectRequestMessage.ReconnectAllEvent e) {

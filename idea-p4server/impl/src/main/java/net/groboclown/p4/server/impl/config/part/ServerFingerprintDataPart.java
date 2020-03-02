@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.config.part;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +36,7 @@ public class ServerFingerprintDataPart extends ConfigPartAdapter implements Conf
     }
 
     // for ConfigStateProvider
+    @SuppressWarnings("unused")
     public ServerFingerprintDataPart(@NotNull String sourceName, VirtualFile root,
             @NotNull Map<String, String> values) {
         super(sourceName);
@@ -95,5 +97,11 @@ public class ServerFingerprintDataPart extends ConfigPartAdapter implements Conf
         Map<String, String> ret = new HashMap<>();
         ret.put("f", fingerprint);
         return ret;
+    }
+
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new ServerFingerprintDataPart(fingerprint);
     }
 }

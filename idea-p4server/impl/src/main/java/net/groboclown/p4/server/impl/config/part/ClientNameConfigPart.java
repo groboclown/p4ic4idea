@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.config.part;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,10 +44,17 @@ public class ClientNameConfigPart
         super(sourceName);
     }
 
+    // require this constructor
+    @SuppressWarnings("unused")
     public ClientNameConfigPart(@NotNull String sourceName, @NotNull VirtualFile root,
             @NotNull Map<String, String> stateValues) {
         super(sourceName);
         this.clientName = stateValues.get("c");
+    }
+
+    private ClientNameConfigPart(@NotNull String sourceName, @Nullable String clientName) {
+        super(sourceName);
+        this.clientName = clientName;
     }
 
     @Override
@@ -69,6 +77,14 @@ public class ClientNameConfigPart
         return null;
     }
 
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        ClientNameConfigPart ret = new ClientNameConfigPart(getSourceName(), clientName);
+        ret.additionalProblems.addAll(additionalProblems);
+        return ret;
+    }
+
 
     @Override
     public boolean hasClientnameSet() {
@@ -87,15 +103,6 @@ public class ClientNameConfigPart
         } else {
             this.clientName = clientName.trim();
         }
-    }
-
-
-    public void addAdditionalProblem(@NotNull ConfigProblem problem) {
-        additionalProblems.add(problem);
-    }
-
-    public void clearAdditionalProblems() {
-        additionalProblems.clear();
     }
 
     @Override

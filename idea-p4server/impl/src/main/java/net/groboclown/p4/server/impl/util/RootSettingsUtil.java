@@ -20,8 +20,10 @@ import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.util.ProjectUtil;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,6 +31,28 @@ import java.util.List;
 
 public class RootSettingsUtil {
     private static final Logger LOG = Logger.getInstance(RootSettingsUtil.class);
+
+    @NotNull
+    public static VirtualFile getDirectory(@NotNull Project project, @NotNull VcsDirectoryMapping directoryMapping) {
+        String dir = directoryMapping.getDirectory();
+        if (dir == null || dir.length() <= 0) {
+            return ProjectUtil.guessProjectBaseDir(project);
+        }
+        VirtualFile ret = VcsUtil.getVirtualFile(dir);
+        if (ret == null) {
+            ret = ProjectUtil.guessProjectBaseDir(project);
+            LOG.info("VcsDirectoryMapping has directory " + dir +
+                    " which could not be turned into a virtual file; using " + ret);
+        }
+        return ret;
+    }
+
+
+    @NotNull
+    public static P4VcsRootSettings getFixedRootSettings(@NotNull Project project, @NotNull VcsDirectoryMapping mapping) {
+        return getFixedRootSettings(project, mapping, getDirectory(project, mapping));
+    }
+
 
     @NotNull
     public static P4VcsRootSettings getFixedRootSettings(
@@ -62,7 +86,7 @@ public class RootSettingsUtil {
             // This shouldn't happen, but it does.  Instead, the mapping is supposed
             // to be created through the createEmptyVcsRootSettings() method.
             // That's reflected in the deprecation of setRootSettings.
-            LOG.warn("Encountered empty root settings in directory mapping.");
+            LOG.info("Encountered empty root settings in directory mapping.");
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Using root path " + rootDir);
             }

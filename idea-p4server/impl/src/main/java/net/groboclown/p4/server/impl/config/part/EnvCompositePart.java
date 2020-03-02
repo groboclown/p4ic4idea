@@ -85,6 +85,12 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         return configParts.getRawPort();
     }
 
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new EnvCompositePart(vcsRoot);
+    }
+
     @Override
     public boolean hasServerNameSet() {
         return configParts.hasServerNameSet();
@@ -423,6 +429,12 @@ public class EnvCompositePart implements ConfigPart, ConfigStateProvider {
         @Override
         public Collection<ConfigProblem> getConfigProblems() {
             return Collections.emptyList();
+        }
+
+        @NotNull
+        @Override
+        public ConfigPart copy() {
+            return new EnvPassword();
         }
     }
 

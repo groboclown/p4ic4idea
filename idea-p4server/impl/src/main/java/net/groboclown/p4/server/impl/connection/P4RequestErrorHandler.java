@@ -21,6 +21,7 @@ import com.perforce.p4java.server.IOptionsServer;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ClientConfig;
+import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -221,6 +222,17 @@ public abstract class P4RequestErrorHandler {
 
         public P4ServerName getServerName() {
             return serverName;
+        }
+
+        @Nullable
+        public OptionalClientServerConfig getOptionalClientServerConfig() {
+            if (clientConfig != null) {
+                return new OptionalClientServerConfig(clientConfig);
+            }
+            if (serverConfig != null) {
+                return new OptionalClientServerConfig(serverConfig, null);
+            }
+            return null;
         }
 
         @Override

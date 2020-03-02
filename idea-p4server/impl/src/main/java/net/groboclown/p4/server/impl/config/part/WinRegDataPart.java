@@ -67,6 +67,8 @@ class WinRegDataPart implements ConfigPart {
     private String charset;
     private String loginSso;
 
+    private final boolean isUserReg;
+
 
     static boolean isAvailable() {
         return available && SystemInfo.isWindows && JnaWinRegistry.isAvailable();
@@ -77,6 +79,7 @@ class WinRegDataPart implements ConfigPart {
     }
 
     WinRegDataPart(boolean userReg) {
+        this.isUserReg = userReg;
         if (userReg) {
             hive = JnaWinRegistry.HKEY_CURRENT_USER;
             keys = USER_KEYS;
@@ -156,6 +159,12 @@ class WinRegDataPart implements ConfigPart {
     @Override
     public String getRawPort() {
         return rawPort;
+    }
+
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new WinRegDataPart(isUserReg);
     }
 
     @Nls

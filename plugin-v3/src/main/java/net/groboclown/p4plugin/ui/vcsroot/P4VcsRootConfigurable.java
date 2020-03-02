@@ -31,7 +31,6 @@ import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
-import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.ui.WrapperPanel;
@@ -43,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class P4VcsRootConfigurable implements UnnamedConfigurable {
     private static final Logger LOG = Logger.getInstance(P4VcsRootConfigurable.class);
@@ -50,16 +50,17 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     private final Project project;
     private final VirtualFile vcsRoot;
     private final VcsDirectoryMapping mapping;
+    private final P4VcsRootSettings settings;
     private P4RootConfigPanel panel;
     private Controller controller;
 
     public P4VcsRootConfigurable(Project project, VcsDirectoryMapping mapping) {
         this.project = project;
-        this.vcsRoot = DirectoryMappingUtil.getDirectory(project, mapping);
+        this.settings = RootSettingsUtil.getFixedRootSettings(project, mapping);
+        this.vcsRoot = settings.getRootDir();
         if (LOG.isDebugEnabled()) {
             LOG.debug("Creating configurable for vcs root " + vcsRoot);
         }
-        RootSettingsUtil.getFixedRootSettings(project, mapping, vcsRoot);
         this.mapping = mapping;
     }
 
@@ -94,7 +95,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         if (isModified()) {
             LOG.info("Updating root configuration for " + vcsRoot);
             MultipleConfigPart parentPart = loadParentPartFromUI();
-            RootSettingsUtil.getFixedRootSettings(project, mapping, vcsRoot).setConfigParts(parentPart.getChildren());
+            settings.setConfigParts(parentPart.getChildren());
 
             if (parentPart.hasError()) {
                 problems = parentPart.getConfigProblems();
@@ -126,13 +127,16 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
     @Override
     public void disposeUIResources() {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Disposing VCS root configuration GUI for root " + vcsRoot);
+        }
         panel = null;
         controller = null;
     }
 
     private List<ConfigPart> loadPartsFromSettings() {
         P4VcsRootSettings settings = getRootSettings();
-        return settings.getConfigParts();
+        return settings.getConfigParts().stream().map(ConfigPart::copy).collect(Collectors.toList());
     }
 
     private ConfigPart loadParentPartFromSettings() {

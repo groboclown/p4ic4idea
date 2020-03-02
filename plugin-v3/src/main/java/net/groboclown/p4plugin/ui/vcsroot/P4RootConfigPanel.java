@@ -164,7 +164,7 @@ public class P4RootConfigPanel {
                 P4Bundle.getString("configuration.resolve.password.set"));
         List<String> keys = new ArrayList<>(props.keySet());
         Collections.sort(keys);
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(P4Bundle.message("configuration.resolve.header", vcsRoot));
         for (String key : keys) {
             sb.append(key).append('=').append(props.get(key)).append('\n');
         }

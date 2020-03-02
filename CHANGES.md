@@ -1,6 +1,20 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.15::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes
+    * Fixed part of a bug where the VCS root configuration shared options between root directories (#211).  This is only a partial fix, as there's an underlying bug in the IDE that causes this problem.  The resolved properties panel shows the path that's being set, so if the UI seems to show the wrong path, it's because of this underlying bug.
+    * Fixed some NPEs caused by certain error and logging conditions.
+    * Normalized the path view in the connections panel for Windows.
+
+
 ## ::v0.10.13:: and ::v0.10.14::
 
 ### Overview

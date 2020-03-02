@@ -216,6 +216,12 @@ public class FileConfigPart implements ConfigPart, ConfigStateProvider {
         return rawPort;
     }
 
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new FileConfigPart(vcsRoot, filePath);
+    }
+
     @Nls
     @NotNull
     @Override

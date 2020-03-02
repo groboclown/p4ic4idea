@@ -14,9 +14,11 @@
 package net.groboclown.p4.server.api.config.part;
 
 import net.groboclown.p4.server.api.config.ConfigProblem;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -224,10 +226,21 @@ class ConfigPartAdapterTest {
             this.problems = Arrays.asList(problems);
         }
 
+        public ProblemConfigPartAdapter(List<ConfigProblem> problems) {
+            super("Blah");
+            this.problems = new ArrayList<>(problems);
+        }
+
         @Nonnull
         @Override
         public Collection<ConfigProblem> getConfigProblems() {
             return problems;
+        }
+
+        @NotNull
+        @Override
+        public ConfigPart copy() {
+            return new ProblemConfigPartAdapter(problems);
         }
     }
 }

@@ -322,7 +322,9 @@ public abstract class MessageP4RequestErrorHandler
                 // and fall through.
             } else if (cause instanceof UnknownHostException) {
                 ConnectionErrorMessage.send().unknownServer(new ServerErrorEvent.ServerNameErrorEvent<>(
-                        info.getClientConfig(), e));
+                        info.getServerName(),
+                        info.getOptionalClientServerConfig(),
+                        e));
                 return createServerResultException(e,
                         getMessage("error.UnknownServerException", e),
                         P4CommandRunner.ErrorCategory.CONNECTION);
@@ -553,13 +555,14 @@ public abstract class MessageP4RequestErrorHandler
             @NotNull Exception sourceException,
             @NotNull AuthenticationFailedException sourceAfe) {
         AuthenticationFailedException.ErrorType errorType = sourceAfe.getErrorType();
+        OptionalClientServerConfig clientServerConfig = info.getOptionalClientServerConfig();
         LOG.debug("Handling login failure " + errorType + " for " + info, new Exception());
         switch (errorType) {
             case SESSION_EXPIRED:
-                if (info.hasServerConfig()) {
+                if (clientServerConfig != null) {
                     // TODO could be handled before reaching here.
                     LoginFailureMessage.send().sessionExpired(new ServerErrorEvent.ServerConfigErrorEvent<>(
-                            info.getClientConfig(), sourceAfe));
+                            clientServerConfig, sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.SESSION_EXPIRED", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -572,9 +575,9 @@ public abstract class MessageP4RequestErrorHandler
                             P4CommandRunner.ErrorCategory.INTERNAL);
                 }
             case PASSWORD_INVALID:
-                if (info.hasServerConfig()) {
+                if (clientServerConfig != null) {
                     LoginFailureMessage.send().passwordInvalid(new ServerErrorEvent.ServerConfigErrorEvent<>(
-                            info.getClientConfig(), sourceAfe));
+                            clientServerConfig, sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -587,15 +590,13 @@ public abstract class MessageP4RequestErrorHandler
                             P4CommandRunner.ErrorCategory.INTERNAL);
                 }
             case NOT_LOGGED_IN:
-                if (info.hasServerConfig()) {
+                if (clientServerConfig != null) {
                     // Server required a login, but it wasn't done, most probably because the password isn't known,
                     // so no login attempt was made (see PASSWORD_UNNECESSARY below).  We'll classify this as a
                     // invalid password error, and it's up to the listener to figure out if a password should be
                     // asked for.
                     LoginFailureMessage.send().passwordInvalid(
-                            new ServerErrorEvent.ServerConfigErrorEvent<>(
-                                    new OptionalClientServerConfig(info.getServerConfig(), info.getClientConfig()),
-                                    sourceAfe));
+                            new ServerErrorEvent.ServerConfigErrorEvent<>(clientServerConfig, sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_INVALID", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -609,9 +610,9 @@ public abstract class MessageP4RequestErrorHandler
                             P4CommandRunner.ErrorCategory.INTERNAL);
                 }
             case SSO_LOGIN:
-                if (info.hasServerConfig()) {
+                if (clientServerConfig != null) {
                     LoginFailureMessage.send().singleSignOnFailed(new ServerErrorEvent.ServerConfigErrorEvent<>(
-                            info.getClientConfig(), sourceAfe));
+                            clientServerConfig, sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.SSO_LOGIN", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);
@@ -625,12 +626,12 @@ public abstract class MessageP4RequestErrorHandler
                             P4CommandRunner.ErrorCategory.INTERNAL);
                 }
             case PASSWORD_UNNECESSARY:
-                if (info.hasServerConfig()) {
+                if (clientServerConfig != null) {
                     // By having an explicit message for an unnecessary password, the
                     // rest of the code could perform corrective action.
                     // TODO could be handled before reaching here.
                     LoginFailureMessage.send().passwordUnnecessary(new ServerErrorEvent.ServerConfigErrorEvent<>(
-                            info.getClientConfig(), sourceAfe));
+                            clientServerConfig, sourceAfe));
                     return createServerResultException(sourceException,
                             getMessage("error.AuthenticationFailedException.PASSWORD_UNNECESSARY", sourceException),
                             P4CommandRunner.ErrorCategory.ACCESS_DENIED);

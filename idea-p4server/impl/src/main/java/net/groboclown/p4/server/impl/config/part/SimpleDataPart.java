@@ -79,6 +79,12 @@ public class SimpleDataPart implements ConfigPart, ConfigStateProvider {
         return trimmedProperty(PORT_KEY);
     }
 
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new SimpleDataPart(vcsRoot, sourceName, properties);
+    }
+
     // Password must be carefully stored.
 
     @Override

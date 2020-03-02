@@ -196,6 +196,12 @@ public class ConfigPartAdapter
         return null;
     }
 
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new ConfigPartAdapter(sourceName);
+    }
+
     @Override
     public boolean requiresUserEnteredPassword() {
         return false;

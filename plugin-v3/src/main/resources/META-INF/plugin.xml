@@ -1,20 +1,19 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.14</version>
+    <version>0.10.15</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.10.15</em><ul>
+        <li>The VCS root directory options now better sets values independently between roots.</li>
+        <li>Fixed some NPEs caused by certain error and logging conditions.</li>
+        <li>Normalized the path view in the connections panel for Windows.</li>
+      </ul></li>
       <li><em>0.10.13 and 0.10.14</em><ul>
         <li>Quick patch to incorrect "add" to a read-only list.</li>
-      </ul></li>
-      <li><em>0.10.12</em><ul>
-        <li>Altered the server connection to attempt to use the client configuration, even for calls that don't strictly need it.</li>
-        <li>Fixed an issue where diff display could show a diff against a changelist instead of a revision number.</li>
-        <li>Fixed an issue where the root paths would not be mapped to the client configuration correctly.</li>
-        <li>Cleaned up some of the logging.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

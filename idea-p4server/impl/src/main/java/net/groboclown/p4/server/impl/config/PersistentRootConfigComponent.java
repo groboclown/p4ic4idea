@@ -129,8 +129,9 @@ public class PersistentRootConfigComponent
         Element ret = new Element("all-root-configs");
         for (Map.Entry<VirtualFile, List<ConfigPart>> entry : rootPartMap.entrySet()) {
             if (!isValidRoot(entry.getKey())) {
-                LOG.info("Skipped writing root " + entry.getKey() +
-                        " because it does not appear to be a valid Perforce VCS root");
+                LOG.info("Skipped persisting VCS root " + entry.getKey() +
+                        " because it does not appear to be a valid Perforce root");
+                continue;
             }
             VcsRootCacheStore store = new VcsRootCacheStore(entry.getKey());
             store.setConfigParts(entry.getValue());
@@ -199,6 +200,8 @@ public class PersistentRootConfigComponent
                 return true;
             }
         }
+        // This can happen if the passed-in file is not yet registered in
+        // the VCS root path.
         return false;
     }
 }

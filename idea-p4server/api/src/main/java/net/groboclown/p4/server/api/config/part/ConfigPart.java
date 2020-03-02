@@ -202,4 +202,12 @@ public interface ConfigPart {
      * @return the raw port string value, before parsing as a name.
      */
     String getRawPort();
+
+    /**
+     * Make a copy of this configuration part.
+     *
+     * @return a copy
+     */
+    @NotNull
+    ConfigPart copy();
 }

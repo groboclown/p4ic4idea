@@ -44,7 +44,8 @@ public class MockConfigPart
     private boolean requiresUserEnteredPassword;
     private Collection<ConfigProblem> configProblems = new ArrayList<>();
 
-    public MockConfigPart copy() {
+    @NotNull
+    public MockConfigPart copyMock() {
         MockConfigPart ret = new MockConfigPart()
                 .withSourceName(sourceName)
                 .withP4ServerName(serverName)
@@ -306,6 +307,12 @@ public class MockConfigPart
     @Override
     public String getRawPort() {
         return serverName.getFullPort();
+    }
+
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return copyMock();
     }
 
     public MockConfigPart withConfigProblems(ConfigProblem... problems) {

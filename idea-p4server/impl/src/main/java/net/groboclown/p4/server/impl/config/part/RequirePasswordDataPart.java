@@ -15,6 +15,7 @@
 package net.groboclown.p4.server.impl.config.part;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.ConfigPartAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +31,7 @@ public class RequirePasswordDataPart extends ConfigPartAdapter
     }
 
     // for ConfigStateProvider
+    @SuppressWarnings("unused")
     public RequirePasswordDataPart(String sourceName, VirtualFile vcsRoot, Map<String, String> values) {
         super(sourceName);
     }
@@ -81,5 +83,11 @@ public class RequirePasswordDataPart extends ConfigPartAdapter
     @Override
     public Map<String, String> getState() {
         return Collections.emptyMap();
+    }
+
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        return new RequirePasswordDataPart();
     }
 }

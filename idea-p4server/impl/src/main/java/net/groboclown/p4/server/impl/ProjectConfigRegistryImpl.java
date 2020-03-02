@@ -37,7 +37,6 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
 import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
-import net.groboclown.p4.server.impl.util.DirectoryMappingUtil;
 import net.groboclown.p4.server.impl.util.RootSettingsUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -274,10 +273,9 @@ public class ProjectConfigRegistryImpl
                     continue;
                 }
                 if (settings instanceof P4VcsRootSettings) {
-                    oldRoots.remove(DirectoryMappingUtil.getDirectory(getProject(), directoryMapping));
+                    oldRoots.remove(RootSettingsUtil.getDirectory(getProject(), directoryMapping));
                     updateRoot(
-                            RootSettingsUtil.getFixedRootSettings(getProject(), directoryMapping,
-                                DirectoryMappingUtil.getDirectory(getProject(), directoryMapping)),
+                            RootSettingsUtil.getFixedRootSettings(getProject(), directoryMapping),
                             directoryMapping);
                 } else {
                     LOG.warn("P4Vcs root mapping has non-vcs settings " + settings.getClass());
@@ -303,10 +301,8 @@ public class ProjectConfigRegistryImpl
                     addClientConfig(clientConfig, root);
                     return;
                 }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(root + ": skipping invalid config " + parentPart);
-                }
-            } else if (LOG.isDebugEnabled()) {
+            }
+            if (LOG.isDebugEnabled()) {
                 LOG.debug(root + ": skipping invalid config " + parentPart);
             }
         } catch (IllegalArgumentException e) {

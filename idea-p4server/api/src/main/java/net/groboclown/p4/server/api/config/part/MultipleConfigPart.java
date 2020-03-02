@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class MultipleConfigPart
         implements ConfigPart {
@@ -132,6 +133,15 @@ public class MultipleConfigPart
             }
         }
         return null;
+    }
+
+    @NotNull
+    @Override
+    public ConfigPart copy() {
+        MultipleConfigPart ret = new MultipleConfigPart(sourceName,
+                parts.stream().map(ConfigPart::copy).collect(Collectors.toList()));
+        ret.extraProblems.addAll(extraProblems);
+        return ret;
     }
 
     @Override
@@ -412,6 +422,12 @@ public class MultipleConfigPart
     @NotNull
     public List<ConfigPart> getChildren() {
         return new ArrayList<>(parts);
+    }
+
+
+    @NotNull
+    public List<ConfigPart> cloneChildren() {
+        return parts.stream().map(ConfigPart::copy).collect(Collectors.toList());
     }
 
     public void addAdditionalProblem(@NotNull ConfigProblem problem) {

@@ -120,7 +120,7 @@ public abstract class ProjectConfigRegistry
             }
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Using client root " + closest.getClientRootDir() + " for " + file);
+            LOG.debug("Using client root " + (closest == null ? null : closest.getClientRootDir()) + " for " + file);
         }
 
         return closest;

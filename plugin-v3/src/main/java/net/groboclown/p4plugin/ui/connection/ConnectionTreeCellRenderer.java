@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.io.File;
 
 public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
 
@@ -97,8 +98,9 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
         String rootPath = value.getProjectVcsRootDir().getPath();
         if (rootPath.startsWith("file://")) {
             rootPath = rootPath.substring(7);
-            // TODO normalize the path for Windows?
         }
+        // Normalize path for Windows
+        rootPath = new File(rootPath).getAbsolutePath();
         append(P4Bundle.message("connection.tree.root.path", rootPath), ROOT_PATH_STYLE);
 
         if (value.isOnline()) {

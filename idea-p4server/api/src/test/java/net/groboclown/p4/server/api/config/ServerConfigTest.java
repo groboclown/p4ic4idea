@@ -144,17 +144,17 @@ class ServerConfigTest {
         assertTrue(sc.isSameServerConnection(part1));
 
         // Change the user
-        MockConfigPart part2 = part1.copy()
+        MockConfigPart part2 = part1.copyMock()
                 .withUsername("u2");
         assertFalse(sc.isSameServerConnection(part2));
 
         // change the server name
-        MockConfigPart part3 = part1.copy()
+        MockConfigPart part3 = part1.copyMock()
                 .withServerName("n2:1");
         assertFalse(sc.isSameServerConnection(part3));
 
         // change the password
-        MockConfigPart part4 = part1.copy()
+        MockConfigPart part4 = part1.copyMock()
                 .withPassword("a");
         assertFalse(sc.isSameServerConnection(part4));
         part4.withNoPassword().withRequiresUserEnteredPassword(true);

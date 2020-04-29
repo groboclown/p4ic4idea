@@ -417,7 +417,8 @@ public class ConnectCommandRunner
                             if (locations.isEmpty()) {
                                 locations = FileSpecBuildUtil.escapedForFilePathRev(localFile, rev);
                             } else {
-                                locations = FileSpecBuildUtil.replaceDepotRevisions(locations, "#" + rev);
+                                // #213 - replaceDepotRevisions can discover a null if the depot path is null.
+                                locations = FileSpecBuildUtil.replaceBestPathRevisions(locations, "#" + rev);
                             }
                             if (LOG.isDebugEnabled()) {
                                 LOG.debug("get file contents for " + locations + " (only care about the first one)");

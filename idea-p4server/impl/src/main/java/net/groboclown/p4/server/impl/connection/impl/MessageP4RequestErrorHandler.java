@@ -251,7 +251,7 @@ public abstract class MessageP4RequestErrorHandler
         }
         if (e instanceof UnknownServerException) {
             ConnectionErrorMessage.send().unknownServer(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), e));
             return createServerResultException(e,
                     getMessage("error.UnknownServerException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -271,7 +271,7 @@ public abstract class MessageP4RequestErrorHandler
         }
         if (e instanceof ZeroconfException) {
             ConnectionErrorMessage.send().zeroconfProblem(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), (ZeroconfException) e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), (ZeroconfException) e));
             return createServerResultException(e,
                     getMessage("error.ZeroconfException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -301,14 +301,14 @@ public abstract class MessageP4RequestErrorHandler
             // no peer authentication established during SSL handshake, user time
             // isn't close enough to the server time.
             ConnectionErrorMessage.send().sslPeerUnverified(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), (SslHandshakeException) e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), (SslHandshakeException) e));
             return createServerResultException(e,
                     getMessage("error.SslHandshakeException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
         }
         if (e instanceof SslException) {
             ConnectionErrorMessage.send().sslCertificateIssue(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), (SslException) e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), (SslException) e));
             return createServerResultException(e,
                     getMessage("error.SslException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -333,7 +333,7 @@ public abstract class MessageP4RequestErrorHandler
                 // the server version is incompatible with the plugin, the server sends
                 // garbled information, and so on.
                 ConnectionErrorMessage.send().connectionError(new ServerErrorEvent.ServerNameErrorEvent<>(
-                        info.getClientConfig(), (ConnectionException) e));
+                        info.getServerName(), info.getOptionalClientServerConfig(), (ConnectionException) e));
                 return createServerResultException(e,
                         getMessage("error.ConnectionException", e),
                         P4CommandRunner.ErrorCategory.CONNECTION);
@@ -343,7 +343,7 @@ public abstract class MessageP4RequestErrorHandler
             // The client had a problem with a file's character encoding.
             // client <- server encode problem
             FileErrorMessage.send(project).fileSendError(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), e));
             return createServerResultException(e,
                     getMessage("error.FileDecoderException", e),
                     P4CommandRunner.ErrorCategory.OS);
@@ -351,7 +351,7 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof FileEncoderException) {
             // Client -> server encoding problem
             FileErrorMessage.send(project).fileReceiveError(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), e));
             return createServerResultException(e,
                     getMessage("error.FileEncoderException", e),
                     P4CommandRunner.ErrorCategory.OS);
@@ -402,11 +402,11 @@ public abstract class MessageP4RequestErrorHandler
                 if (cause instanceof P4JavaException) {
                     // API wrapped a low-level error.
                     P4ServerErrorMessage.send(project).requestException(new ServerErrorEvent.ServerNameErrorEvent<>(
-                            info.getClientConfig(), (P4JavaException) cause));
+                            info.getServerName(), info.getOptionalClientServerConfig(), (P4JavaException) cause));
                 } else {
                     // API generated a pseudo-request error.
                     P4ServerErrorMessage.send(project).requestException(new ServerErrorEvent.ServerNameErrorEvent<>(
-                            info.getClientConfig(), re));
+                            info.getServerName(), info.getOptionalClientServerConfig(), re));
                 }
             }
             return createServerResultException(e,
@@ -417,7 +417,7 @@ public abstract class MessageP4RequestErrorHandler
             // The ServerFactory doesn't have the resources available to create a
             // new connection to the server.
             ConnectionErrorMessage.send().resourcesUnavailable(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), (ResourceException) e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), (ResourceException) e));
             return createServerResultException(e,
                     getMessage("error.ResourceException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);
@@ -452,7 +452,7 @@ public abstract class MessageP4RequestErrorHandler
 
             // It's some other server error.
             P4ServerErrorMessage.send(project).requestException(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), (P4JavaException) e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), (P4JavaException) e));
             return createServerResultException(e,
                     getMessage("error.P4JavaException", e),
                     P4CommandRunner.ErrorCategory.SERVER_ERROR);
@@ -460,20 +460,20 @@ public abstract class MessageP4RequestErrorHandler
         if (e instanceof SocketTimeoutException) {
             // see #193
             ConnectionErrorMessage.send().connectionError(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), new ConnectionException(e)));
+                    info.getServerName(), info.getOptionalClientServerConfig(), new ConnectionException(e)));
         }
         if (e instanceof IOException) {
             // This shouldn't be a server connection issue, because those are wrapped in ConnectionException classes.
             // That just leaves local file I/O problems.
             FileErrorMessage.send(project).localFileError(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), (IOException) e));
+                    info.getServerName(), info.getOptionalClientServerConfig(), (IOException) e));
             return createServerResultException(e,
                     getMessage("error.IOException", e),
                     P4CommandRunner.ErrorCategory.SERVER_ERROR);
         }
         if (e instanceof URISyntaxException) {
             ConnectionErrorMessage.send().connectionError(new ServerErrorEvent.ServerNameErrorEvent<>(
-                    info.getClientConfig(), new ConnectionException(e)));
+                    info.getServerName(), info.getOptionalClientServerConfig(), new ConnectionException(e)));
             return createServerResultException(e,
                     getMessage("error.URISyntaxException", e),
                     P4CommandRunner.ErrorCategory.CONNECTION);

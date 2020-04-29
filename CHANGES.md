@@ -1,6 +1,18 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.10.17::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Bug fixes
+    * Fix for Local Changed Diff View for Edited File Generates "null file spec in arguments" (#213).
+
+
 ## ::v0.10.16::
 
 ### Overview

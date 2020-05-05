@@ -36,3 +36,5 @@ local.properties.*
 
 # Don't check-in generated pact files.
 /*/target/pacts/
+
+/p4java/.p4tickets

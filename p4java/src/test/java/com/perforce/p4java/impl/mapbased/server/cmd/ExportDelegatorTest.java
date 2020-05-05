@@ -89,7 +89,8 @@ public class ExportDelegatorTest {
      */
     @Test
     public void testGetExportRecordsByUseJournalMaxRecsSourceNumOffsetFormatJournalPrefixAndFilterExpectedThrownRAccessExceptionThatWasThrownFromInnerMethodCall() throws Exception {
-        getExportRecordsByUseJournalMaxRecsSourceNumOffsetFormatJournalPrefixAndFilterExpectedThrownExceptions(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        getExportRecordsByUseJournalMaxRecsSourceNumOffsetFormatJournalPrefixAndFilterExpectedThrownExceptions(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**

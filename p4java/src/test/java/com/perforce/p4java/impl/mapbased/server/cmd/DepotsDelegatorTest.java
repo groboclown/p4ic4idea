@@ -104,10 +104,11 @@ public class DepotsDelegatorTest {
      * @throws P4JavaException
      *             the p4 java exception
      */
+    // p4ic4idea: use a public, non-abstract class with default constructor
     @Test(expected = AccessException.class)
     public void testGetAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(DEPOTS.toString()), argThat(EMPTY_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         depotsDelegator.getDepots();
     }
 

@@ -77,7 +77,8 @@ public class PrintDelegatorTest {
     @Test
     public void testGetFileContentsShouldThrownRAccessExceptionThatWasThrownFromInnerMethodCall()
             throws Exception {
-        executeAndExpectedThrowsTheExceptions(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        executeAndExpectedThrowsTheExceptions(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**

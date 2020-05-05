@@ -107,7 +107,8 @@ public class FstatDelegatorTest {
     @Test(expected = AccessException.class)
     public void testFstatJobsOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(FSTAT.toString()), argThat(FIX_FS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(CLIENT_FILE);
         fstatDelegator.getExtendedFiles(specs, new GetExtendedFilesOptions());
     }
@@ -121,7 +122,8 @@ public class FstatDelegatorTest {
     @Test(expected = AccessException.class)
     public void testFstatJobsAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(FSTAT.toString()), argThat(FIX_FS_PARAM_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(CLIENT_FILE);
         fstatDelegator.getExtendedFiles(specs, 1, 1, 0, null, null);
     }

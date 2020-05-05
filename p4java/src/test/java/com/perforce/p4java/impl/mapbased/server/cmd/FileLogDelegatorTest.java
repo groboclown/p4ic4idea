@@ -107,8 +107,9 @@ public class FileLogDelegatorTest {
      */
     @Test
     public void testGetRevisionHistoryByFileSpecsMaxRevsContentHistoryIncludeInheritedLongOutputAndTruncatedLongOutputExpectedAccessException() throws Exception {
+        // p4ic4idea: use a public, non-abstract class with default constructor
         testGetRevisionHistoryByFileSpecsMaxRevsContentHistoryIncludeInheritedLongOutputAndTruncatedLongOutputExpectExceptions(
-                AccessException.class,
+                AccessException.AccessExceptionForTests.class,
                 AccessException.class);
     }
 

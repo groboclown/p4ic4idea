@@ -99,7 +99,8 @@ public class GrepDelegatorTest {
     @Test(expected = AccessException.class)
     public void testGrepOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(GREP.toString()), argThat(GREP_FS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(CLIENT_FILE);
         grepDelegator.getMatchingLines(specs, PATTERN, new MatchingLinesOptions());
     }
@@ -113,7 +114,8 @@ public class GrepDelegatorTest {
     @Test(expected = AccessException.class)
     public void testGrepOptInfoAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(GREP.toString()), argThat(GREP_FS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(CLIENT_FILE);
         grepDelegator.getMatchingLines(specs, PATTERN, null, new MatchingLinesOptions());
     }

@@ -41,6 +41,7 @@ import com.perforce.p4java.impl.mapbased.rpc.OneShotServerImpl;
 import com.perforce.p4java.option.server.SetFileAttributesOptions;
 import com.perforce.p4java.tests.UnitTestGiven;
 
+
 /**
  * @author Sean Shou
  * @since 22/09/2016
@@ -225,12 +226,14 @@ public class AttributeDelegatorTest {
      */
     @Test
     public void testP4ExceptionPropagation() throws P4JavaException {
+        // p4ic4idea: use a public, non-abstract class with default constructor
+
         // then
-        thrown.expect(AccessException.class);
+        thrown.expect(AccessException.AccessExceptionForTests.class);
 
         // given
         when(server.execMapCmdList(eq(ATTRIBUTE.toString()), any(String[].class), eq(null)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         // when
         attributeDelegator.setFileAttributes(fileSpecs, createTestAttributes(), mockOpts);
     }
@@ -281,17 +284,19 @@ public class AttributeDelegatorTest {
 
     /**
      * Test that when a server call, invoked via the input stream variant of the api, throws an
-     * AccessException, then it is propagated through the delegate.
+     * FileDecoderException, then it is propagated through the delegate.
      *
      * @throws P4JavaException
      */
     @Test
     public void testStreamP4JavaPropagation() throws P4JavaException {
+        // p4ic4idea: use a public, non-abstract class with default constructor
+
         // then
         thrown.expect(AccessException.class);
         // given
         when(server.execMapCmdList(eq(ATTRIBUTE.toString()), any(String[].class), any(Map.class)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         // when
         attributeDelegator.setFileAttributes(fileSpecs, "owner", mockInputStream, mockOpts);
     }

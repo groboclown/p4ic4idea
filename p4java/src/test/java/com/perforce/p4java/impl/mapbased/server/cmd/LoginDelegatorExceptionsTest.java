@@ -150,7 +150,8 @@ public class LoginDelegatorExceptionsTest {
      */
     @Test(expected = AccessException.class)
     public void testLoginPwdAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         loginDelegator.login(PASSWORD);
     }
 
@@ -162,7 +163,8 @@ public class LoginDelegatorExceptionsTest {
      */
     @Test(expected = AccessException.class)
     public void testLoginPwdOptAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         loginDelegator.login(PASSWORD, new LoginOptions());
     }
 
@@ -174,7 +176,8 @@ public class LoginDelegatorExceptionsTest {
      */
     @Test(expected = AccessException.class)
     public void testLoginPwdTickOptAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         loginDelegator.login(PASSWORD, new StringBuffer(), new LoginOptions());
     }
 
@@ -186,7 +189,8 @@ public class LoginDelegatorExceptionsTest {
      */
     @Test(expected = AccessException.class)
     public void testLoginUserTickOptAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         loginDelegator.login(user, new StringBuffer(), new LoginOptions());
     }
 
@@ -198,7 +202,8 @@ public class LoginDelegatorExceptionsTest {
      */
     @Test(expected = AccessException.class)
     public void testLoginPwdHostsAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         loginDelegator.login(PASSWORD, false);
     }
 
@@ -210,7 +215,8 @@ public class LoginDelegatorExceptionsTest {
      */
     @Test(expected = AccessException.class)
     public void testLoginStatusAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         loginDelegator.getLoginStatus();
     }
 

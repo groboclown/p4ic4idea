@@ -115,9 +115,10 @@ public class BranchesDelegatorTest {
      * @throws P4JavaException thrown by the delegate
      */
     @Test
-    public void testAccessExceptiong()
+    public void testAccessException()
             throws P4JavaException {
-        checkExceptionFilter(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        checkExceptionFilter(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**

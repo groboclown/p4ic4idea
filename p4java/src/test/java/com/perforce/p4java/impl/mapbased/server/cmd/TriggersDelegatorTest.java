@@ -255,7 +255,8 @@ public class TriggersDelegatorTest {
         public void shouldThrowsExceptionWhenInnerMethodCallThrowsIt() throws Exception {
             thrown.expect(AccessException.class);
             //given
-            doThrow(AccessException.class).when(server).execMapCmdList(
+            // p4ic4idea: use a public, non-abstract class with default constructor
+            doThrow(AccessException.AccessExceptionForTests.class).when(server).execMapCmdList(
                     eq(TRIGGERS.toString()),
                     eq(getCmdArguments),
                     eq(null));

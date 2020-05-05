@@ -11,6 +11,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -57,6 +58,8 @@ public class FileTypeDetectionTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -66,6 +69,8 @@ public class FileTypeDetectionTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -74,11 +79,9 @@ public class FileTypeDetectionTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-		fail("FIXME uses remote p4d server");
 		try {
 			// Requires super user
-			server = ServerFactory.getOptionsServer("p4java://eng-p4java-vm.perforce.com:30111",
-					null);
+			server = getServer();
 			assertNotNull(server);
 			// Connect to the server.
 			server.connect();

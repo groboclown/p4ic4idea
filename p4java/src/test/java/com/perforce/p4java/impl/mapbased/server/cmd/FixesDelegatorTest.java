@@ -111,7 +111,8 @@ public class FixesDelegatorTest {
     @Test(expected = AccessException.class)
     public void testFixesJobsOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(FIXES.toString()), argThat(FIX_FS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(DEPOT_DEV_PATH);
         fixesDelegator.getFixes(specs, new GetFixesOptions());
     }
@@ -125,7 +126,8 @@ public class FixesDelegatorTest {
     @Test(expected = AccessException.class)
     public void testFixesJobsAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(FIXES.toString()), argThat(FIX_FS_PARAMS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(DEPOT_DEV_PATH);
         fixesDelegator.getFixList(specs, Integer.valueOf(TEST_CHANGELIST), TEST_JOB_123, true, 0);
     }

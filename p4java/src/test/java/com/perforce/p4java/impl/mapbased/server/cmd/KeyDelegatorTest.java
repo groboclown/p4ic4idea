@@ -113,7 +113,8 @@ public class KeyDelegatorTest {
         @Test(expected = AccessException.class)
         public void shouldThrowExceptionWhenInnerCallThrownIt() throws Exception {
             //given
-            doThrow(AccessException.class).when(server)
+            // p4ic4idea: use a public, non-abstract class with default constructor
+            doThrow(AccessException.AccessExceptionForTests.class).when(server)
                     .execMapCmdList(eq(KEY.toString()), eq(setCmdArguments), eq(null));
             //then
             keyDelegator.setKey(KEY_NAME, KEY_VALUE, options);

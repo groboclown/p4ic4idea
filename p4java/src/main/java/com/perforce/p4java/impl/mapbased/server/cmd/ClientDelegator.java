@@ -339,7 +339,7 @@ public class ClientDelegator extends BaseDelegator implements IClientDelegator {
 		return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
 	}
 
-	// // p4ic4idea: made package-protected for unit tests
+	// p4ic4idea: made package-protected for unit tests
 	static void replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(IClient newClient) {
 		final String TABS = "\t";
 		String name = newClient.getName();

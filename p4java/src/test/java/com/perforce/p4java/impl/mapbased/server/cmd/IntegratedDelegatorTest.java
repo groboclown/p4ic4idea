@@ -112,7 +112,8 @@ public class IntegratedDelegatorTest {
     @Test(expected = AccessException.class)
     public void testIntegratedOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(INTEGRATED.toString()), argThat(SIMPLE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(FILE_SPEC);
         integratedDelegator.getSubmittedIntegrations(specs, new GetSubmittedIntegrationsOptions());
     }
@@ -126,7 +127,8 @@ public class IntegratedDelegatorTest {
     @Test(expected = AccessException.class)
     public void testIntegratedAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(INTEGRATED.toString()), argThat(SIMPLE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(FILE_SPEC);
         integratedDelegator.getSubmittedIntegrations(specs, null, false);
     }

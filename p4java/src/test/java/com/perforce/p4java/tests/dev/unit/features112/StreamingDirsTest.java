@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -47,6 +48,8 @@ public class StreamingDirsTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -56,6 +59,8 @@ public class StreamingDirsTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**

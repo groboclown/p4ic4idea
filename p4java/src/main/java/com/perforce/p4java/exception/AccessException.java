@@ -30,6 +30,14 @@ public abstract class AccessException extends P4JavaException {
 		this.err = err.getServerMessage();
 	}
 
+	// p4ic4idea: for testing purposes
+	@Deprecated
+	AccessException() {
+		super("", new Exception());
+	}
+	// p4ic4idea: for testing purposes
+	public static class AccessExceptionForTests extends AccessException {}
+
 	public IServerMessage getServerMessage() {
 		return err;
 	}

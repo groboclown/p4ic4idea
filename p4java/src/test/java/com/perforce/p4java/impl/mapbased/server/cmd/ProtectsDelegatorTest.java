@@ -107,8 +107,9 @@ public class ProtectsDelegatorTest {
     public void testGetProtectionEntriesShouldThrownRAccessExceptionWhenInnerMethodCallThrowsIt()
             throws Exception {
 
+        // p4ic4idea: use a public, non-abstract class with default constructor
         getProtectionEntriesThrowsExceptions(
-                AccessException.class,
+                AccessException.AccessExceptionForTests.class,
                 AccessException.class);
     }
 

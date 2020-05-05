@@ -144,8 +144,9 @@ public class FilesDelegatorTest {
     @Test(expected = AccessException.class)
     public void testGetFilesOptAccessException() throws P4JavaException {
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(DEPOT_DEV_PATH);
+        // p4ic4idea: use a public, non-abstract class with default constructor
         when(server.execMapCmdList(eq(FILES.toString()), argThat(DEV_FS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         filesDelegator.getDepotFiles(specs, new GetDepotFilesOptions());
     }
 
@@ -158,8 +159,9 @@ public class FilesDelegatorTest {
     @Test(expected = AccessException.class)
     public void testGetFilesAccessException() throws P4JavaException {
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(DEPOT_DEV_PATH);
+        // p4ic4idea: use a public, non-abstract class with default constructor
         when(server.execMapCmdList(eq(FILES.toString()), argThat(DEV_ALL_FS_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         filesDelegator.getDepotFiles(specs, true);
     }
 

@@ -160,11 +160,12 @@ public class DepotDelegatorTest {
      * @throws P4JavaException
      *             the p4 java exception
      */
+    // p4ic4idea: use a public, non-abstract class with default constructor
     @Test(expected = AccessException.class)
     public void testCreateAccessException() throws P4JavaException {
         IDepot depot = buildDepot();
         when(server.execMapCmdList(eq(DEPOT.toString()), argThat(CREATE_MATCHER),
-                eq(InputMapper.map(depot)))).thenThrow(AccessException.class);
+                eq(InputMapper.map(depot)))).thenThrow(AccessException.AccessExceptionForTests.class);
         depotDelegator.createDepot(depot);
     }
 
@@ -202,10 +203,11 @@ public class DepotDelegatorTest {
      * @throws P4JavaException
      *             the p4 java exception
      */
+    // p4ic4idea: use a public, non-abstract class with default constructor
     @Test(expected = AccessException.class)
     public void testDeleteAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(DEPOT.toString()), argThat(DELETE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         depotDelegator.deleteDepot(TEST_DEPOT);
     }
 
@@ -241,10 +243,11 @@ public class DepotDelegatorTest {
      * @throws P4JavaException
      *             the p4 java exception
      */
+    // p4ic4idea: use a public, non-abstract class with default constructor
     @Test(expected = AccessException.class)
     public void testGetAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(DEPOT.toString()), argThat(GET_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         depotDelegator.getDepot(TEST_DEPOT);
     }
 

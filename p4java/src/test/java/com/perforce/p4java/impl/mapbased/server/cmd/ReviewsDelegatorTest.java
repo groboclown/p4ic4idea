@@ -222,7 +222,8 @@ public class ReviewsDelegatorTest {
             @Test
             public void shouldThrownAccessExceptionWhenInnerMethodCallThrowsIt()
                     throws Exception {
-                expectedThrowsExceptions(AccessException.class, AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                expectedThrowsExceptions(AccessException.AccessExceptionForTests.class, AccessException.class);
             }
 
             /**

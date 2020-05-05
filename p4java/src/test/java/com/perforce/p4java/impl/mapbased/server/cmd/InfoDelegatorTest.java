@@ -98,7 +98,8 @@ public class InfoDelegatorTest {
     @Test(expected = AccessException.class)
     public void testInfoAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(INFO.toString()), argThat(INFO_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         infoDelegator.getServerInfo();
     }
 

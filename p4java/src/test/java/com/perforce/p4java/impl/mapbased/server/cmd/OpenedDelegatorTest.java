@@ -104,7 +104,8 @@ public class OpenedDelegatorTest {
      */
     @Test(expected = AccessException.class)
     public void testOpenedOptAccessException() throws P4JavaException {
-        setUpException(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUpException(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(DEPOT_FILE);
         openedDelegator.getOpenedFiles(specs, new OpenedFilesOptions());
     }
@@ -152,7 +153,8 @@ public class OpenedDelegatorTest {
      */
     @Test(expected = AccessException.class)
     public void testOpenedAccessException() throws P4JavaException {
-        setUpException(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUpException(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(DEPOT_FILE);
         openedDelegator.getOpenedFiles(specs, false, "client", 1, 1);
     }

@@ -84,7 +84,8 @@ public class ClientDelegatorTest {
 
     @Test
     public void getClient_shouldThrowAccessExceptionThatWasThrownFromGetClientOrNullFromHelixResultMap() throws Exception {
-        getClient_Exceptions(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        getClient_Exceptions(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     private void getClient_Exceptions(Class<? extends P4JavaException> thrownException, Class<? extends P4JavaException> expectedThrows) throws P4JavaException {
@@ -196,7 +197,8 @@ public class ClientDelegatorTest {
                 mock(GetClientTemplateOptions.class),
                 server,
                 mock(BiPredicate.class),
-                mock(Function.class));
+                // p4ic4idea: The mock returns a null, which unboxes into a NPE
+                (o) -> true);
     }
 
     @Test
@@ -275,7 +277,8 @@ public class ClientDelegatorTest {
 
     @Test
     public void getClientTemplate_ByNameAndAllowExistent_shouldThrowAccessExceptionThatWasThrownFromInnerMethodCall() throws Exception {
-        getClientTemplate_ByNameAndAllowExistent_Exceptions(AccessException.class,
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        getClientTemplate_ByNameAndAllowExistent_Exceptions(AccessException.AccessExceptionForTests.class,
                 AccessException.class);
     }
 
@@ -425,7 +428,9 @@ public class ClientDelegatorTest {
 
     @Test
     public void updateClient_byClientAndForce_shouldThrowAccessExceptionThatWasThrownFromInnerUpdateClientCall() throws Exception {
-        updateClient_byClientAndBoolean_Exceptions(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        updateClient_byClientAndBoolean_Exceptions(AccessException.AccessExceptionForTests.class,
+                AccessException.class);
     }
 
     @Test
@@ -494,7 +499,9 @@ public class ClientDelegatorTest {
 
     @Test
     public void deleteClient_byClientNameAndForce_shouldThrownAccessExceptionThatWasThrownInnerDeleteClient() throws Exception {
-        deleteClient_byClientNameAndForce_Exceptions(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        deleteClient_byClientNameAndForce_Exceptions(AccessException.AccessExceptionForTests.class,
+                AccessException.class);
     }
 
     @Test

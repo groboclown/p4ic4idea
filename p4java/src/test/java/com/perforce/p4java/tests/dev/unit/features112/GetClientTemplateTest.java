@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -46,6 +47,8 @@ public class GetClientTemplateTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -55,6 +58,8 @@ public class GetClientTemplateTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -65,7 +70,7 @@ public class GetClientTemplateTest extends P4JavaTestCase {
 		// initialization code (before each test).
 
 		try {
-			server = getServer(getServerUrlString(), props, getUserName(),
+			server = getServer(props, getUserName(),
 					getPassword());
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS20112");

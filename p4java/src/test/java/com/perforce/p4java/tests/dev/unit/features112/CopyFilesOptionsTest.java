@@ -9,9 +9,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -38,7 +40,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Jobs({ "job046063" })
 @TestId("Dev112_CopyFilesOptionsTest")
 public class CopyFilesOptionsTest extends P4JavaTestCase {
-
 	IOptionsServer server = null;
 	IClient client = null;
 
@@ -49,6 +50,8 @@ public class CopyFilesOptionsTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -58,25 +61,28 @@ public class CopyFilesOptionsTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		// initialization code (before each test).
-		try {
+        // p4ic4idea: just throw the exception.
+		//try {
 			server = getServer();
-			assertNotNull(server);
+			assertNotNull(serverUrlString, server);
             client = getDefaultClient(server);
-			assertNotNull(client);
+			assertNotNull(defaultTestClientName, client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		//} catch (P4JavaException e) {
+		//	fail("Unexpected exception: " + e.getLocalizedMessage());
+		//} catch (URISyntaxException e) {
+		//	fail("Unexpected exception: " + e.getLocalizedMessage());
+		//}
 	}
 
 	/**

@@ -97,7 +97,7 @@ public class LoginTest extends P4JavaTestCase {
 		String password = "p4jtestuser";
 
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
+			server = getServer(serverProps, null, null);
 			assertNotNull(server);
 
 			// Register callback

@@ -135,8 +135,9 @@ public class UsersDelegatorTest {
             public void shouldThrowsAccessExceptionWhenInnerMethodCallThrowsIt()
                     throws Exception {
 
+                // p4ic4idea: use a public, non-abstract class with default constructor
                 executeAndExpectedThrowsException(
-                        AccessException.class,
+                        AccessException.AccessExceptionForTests.class,
                         AccessException.class);
             }
 

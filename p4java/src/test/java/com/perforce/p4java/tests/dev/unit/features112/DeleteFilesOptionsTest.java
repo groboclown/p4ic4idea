@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,8 @@ public class DeleteFilesOptionsTest extends P4JavaTestCase {
         client = getDefaultClient(server);
         assertNotNull(client);
         server.setCurrentClient(client);
+        // p4ic4idea: special setup
+        UnitTestDevServerManager.INSTANCE.endTestClass();
     }
 
     /**

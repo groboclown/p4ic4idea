@@ -228,7 +228,8 @@ public class GroupDelegatorTest extends P4JavaTestCase {
     public void testAccessException() throws P4JavaException {
         when(group.getName()).thenReturn(groupName);
         when(server.execMapCmdList(eq(CmdSpec.GROUP.toString()), any(String[].class), any()))
-                .thenThrow(new TestableAccessException(dummyServerErrorMessage("Not allowed!")));
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         assertThrows(AccessException.class, () -> groupDelegator.getUserGroup(groupName));
         assertThrows(AccessException.class,
                 () -> groupDelegator.createUserGroup(group, new UpdateUserGroupOptions()));
@@ -334,11 +335,5 @@ public class GroupDelegatorTest extends P4JavaTestCase {
 
         String userGroup = groupDelegator.deleteUserGroup(group, new UpdateUserGroupOptions());
         assertEquals(groupName, userGroup);
-    }
-
-    private static class TestableAccessException extends AccessException {
-        TestableAccessException(IServerMessage iServerMessage) {
-            super(iServerMessage);
-        }
     }
 }

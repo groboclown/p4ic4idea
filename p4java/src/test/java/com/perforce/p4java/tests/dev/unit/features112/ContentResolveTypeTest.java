@@ -11,6 +11,7 @@ import static org.junit.Assert.fail;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -66,6 +67,8 @@ public class ContentResolveTypeTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -75,6 +78,8 @@ public class ContentResolveTypeTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -111,7 +116,7 @@ public class ContentResolveTypeTest extends P4JavaTestCase {
      * Test content resolve type field
      */
     @Test
-    public void testResolveFileContentChanges() {
+    public void testResolveFileContentChanges() throws Exception {
 		int randNum = getRandomInt();
         String lineSep = System.getProperty("line.separator", "\n");
         String testdir = "testdir" + randNum;
@@ -226,8 +231,9 @@ public class ContentResolveTypeTest extends P4JavaTestCase {
             assertTrue(fileSpecs.get(0).getOpStatus() == FileSpecOpStatus.VALID);
             assertEquals(fileSpecs.get(0).getContentResolveType(), "3waytext");
 
-        } catch (Exception exc) {
-            fail("Unexpected exception: " + exc.getLocalizedMessage());
+        // p4ic4idea: just throw the exception
+        //} catch (Exception exc) {
+        //    fail("Unexpected exception: " + exc.getLocalizedMessage());
         } finally {
             if (client != null) {
                 if (changelist != null) {

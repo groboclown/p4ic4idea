@@ -172,10 +172,11 @@ public class DirsDelegatorTest {
      * @throws P4JavaException
      *             the p4 java exception
      */
+    // p4ic4idea: use a public, non-abstract class with default constructor
     @Test(expected = AccessException.class)
     public void testGetDirectoriesAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(DIRS.toString()), argThat(DEV_FS_MATCHER), eq(IN_MAP)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         dirsDelegator.getDirectories(FileSpecBuilder.makeFileSpecList(DEPOT_DEV_PATH), false, false,
                 false);
     }
@@ -186,10 +187,11 @@ public class DirsDelegatorTest {
      * @throws P4JavaException
      *             the p4 java exception
      */
+    // p4ic4idea: use a public, non-abstract class with default constructor
     @Test(expected = AccessException.class)
     public void testGetDirectoriesOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(DIRS.toString()), argThat(DEV_FS_MATCHER), eq(IN_MAP)))
-                .thenThrow(AccessException.class);
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         dirsDelegator.getDirectories(FileSpecBuilder.makeFileSpecList(DEPOT_DEV_PATH),
                 new GetDirectoriesOptions());
     }
@@ -253,7 +255,8 @@ public class DirsDelegatorTest {
         assertEquals(1, specs.size());
         IFileSpec fs = specs.get(0);
         assertNotNull(specs.get(0));
-        assertEquals("//depot/dev/... - must refer to client 'testclient'.", fs.getStatusMessage());
+        // p4ic4idea: IServerMessage
+        assertEquals("//depot/dev/... - must refer to client 'testclient'.", fs.getStatusMessage().getErrorOrInfoStr());
         assertEquals(FileSpecOpStatus.ERROR, fs.getOpStatus());
     }
 

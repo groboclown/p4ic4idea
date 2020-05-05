@@ -277,7 +277,8 @@ public class ChangesDelegatorTest {
     @Test
     public void testGetChangesAccessException() throws Exception {
         when(server.execMapCmdList(eq(CHANGES.toString()), any(String[].class), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         try {
             changesDelegator.getChangelists(1, mockFileSpecs, CLIENT, "", true, false, false, true);
             fail("AccessException was expected.");

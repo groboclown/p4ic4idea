@@ -115,7 +115,7 @@ public class GroupsDelegatorTest extends P4JavaTestCase {
     public void testAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(CmdSpec.GROUPS.toString()),
                 argThat(new CommandLineArgumentMatcher(new String[] { "-i", "-v", groupName })),
-                eq(null))).thenThrow(new TestableAccessException(dummyServerErrorMessage("Denied.")));
+                eq(null))).thenThrow(AccessException.AccessExceptionForTests.class);
         assertThrows(AccessException.class,
                 () -> groupsDelegator.getUserGroups(groupName, true, true, -1));
     }
@@ -294,12 +294,5 @@ public class GroupsDelegatorTest extends P4JavaTestCase {
         when(resultMap.get(MapKeys.ISSUBGROUP_LC_KEY)).thenReturn(isSubGroup);
 
         return resultMap;
-    }
-
-    private static class TestableAccessException extends AccessException {
-
-        public TestableAccessException(IServerMessage iServerMessage) {
-            super(iServerMessage);
-        }
     }
 }

@@ -230,8 +230,9 @@ public class UserDelegatorTest {
             public void shouldThrowsAccessExceptionWhenInnerMethodCallThrowsIt()
                     throws Exception {
 
+                // p4ic4idea: use a public, non-abstract class with default constructor
                 updateUserExpectedThrowsException(
-                        AccessException.class,
+                        AccessException.AccessExceptionForTests.class,
                         AccessException.class);
             }
 
@@ -405,8 +406,9 @@ public class UserDelegatorTest {
             public void shouldThrownAccessExceptionWhenInnerMethodCallThrowsIt()
                     throws Exception {
 
+                // p4ic4idea: use a public, non-abstract class with default constructor
                 deleteUserExpectedThrowsException(
-                        AccessException.class,
+                        AccessException.AccessExceptionForTests.class,
                         AccessException.class);
             }
 

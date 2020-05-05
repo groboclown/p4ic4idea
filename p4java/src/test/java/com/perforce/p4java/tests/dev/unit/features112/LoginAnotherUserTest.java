@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -59,6 +60,9 @@ public class LoginAnotherUserTest extends P4JavaTestCase {
 				File.separator, ".p4tickets").toString();
 		serverProps = new Properties();
 		serverProps.put(PropertyDefs.TICKET_PATH_KEY_SHORT_FORM, defaultTicketFile);
+
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -68,6 +72,8 @@ public class LoginAnotherUserTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -94,12 +100,11 @@ public class LoginAnotherUserTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testLoginAnotherUser() {
-
 		String user = "p4jtestsuper";
 		String password = "p4jtestsuper";
 
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
+			server = getServer(serverProps, null, null);
 			assertNotNull(server);
 
 			// Register callback

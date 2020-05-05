@@ -90,7 +90,8 @@ public class InterchangesDelegatorTest {
      */
     @Test
     public void testAccessException() throws P4JavaException {
-        propagateExceptionsWithoutABranch(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        propagateExceptionsWithoutABranch(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**
@@ -165,7 +166,8 @@ public class InterchangesDelegatorTest {
      */
     @Test
     public void testBranchAccessException() throws P4JavaException {
-        propagateExceptionsWithBranch(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        propagateExceptionsWithBranch(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**

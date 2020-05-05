@@ -150,7 +150,8 @@ public class LogTailDelegatorTest {
      */
     @Test(expected = AccessException.class)
     public void testLogTailAccessException() throws P4JavaException {
-        setUpException(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUpException(AccessException.AccessExceptionForTests.class);
         logTailDelegator.getLogTail(new LogTailOptions());
     }
 

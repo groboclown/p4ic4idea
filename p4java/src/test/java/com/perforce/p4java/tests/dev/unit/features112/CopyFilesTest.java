@@ -11,6 +11,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -54,6 +55,8 @@ public class CopyFilesTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -63,25 +66,28 @@ public class CopyFilesTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		// initialization code (before each test).
-		try {
+		// p4ic4idea: just throw the exception
+		//try {
 			server = getServer();
 			assertNotNull(server);
 			client = getDefaultClient(server);
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		//} catch (P4JavaException e) {
+		//	fail("Unexpected exception: " + e.getLocalizedMessage());
+		//} catch (URISyntaxException e) {
+		//	fail("Unexpected exception: " + e.getLocalizedMessage());
+		//}
 	}
 
 	/**

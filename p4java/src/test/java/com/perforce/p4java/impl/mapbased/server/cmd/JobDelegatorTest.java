@@ -131,7 +131,7 @@ public class JobDelegatorTest {
      *
      * @throws P4JavaException the p4 java exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJobGetEmpty() throws P4JavaException {
         when(server.execMapCmdList(eq(JOB.toString()), argThat(EMPTY_MATCHER), eq(null)))
                 .thenReturn(buildEmptyGetResultMap());
@@ -184,7 +184,8 @@ public class JobDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobCreateAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOB.toString()), argThat(CREATE_MATCHER),
-                eq(CREATE_FIELD_MAP))).thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                eq(CREATE_FIELD_MAP))).thenThrow(AccessException.AccessExceptionForTests.class);
         jobDelegator.createJob(CREATE_FIELD_MAP);
     }
 
@@ -236,7 +237,8 @@ public class JobDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobDeleteAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOB.toString()), argThat(DELETE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         jobDelegator.deleteJob(TEST_JOB);
     }
 
@@ -288,7 +290,8 @@ public class JobDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobGetAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOB.toString()), argThat(GET_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         jobDelegator.getJob(TEST_JOB);
     }
 
@@ -340,7 +343,8 @@ public class JobDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobUpdateAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOB.toString()), argThat(UPDATE_MATCHER),
-                eq(UPDATE_FIELD_MAP))).thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                eq(UPDATE_FIELD_MAP))).thenThrow(AccessException.AccessExceptionForTests.class);
         jobDelegator.updateJob(updateJob);
     }
 

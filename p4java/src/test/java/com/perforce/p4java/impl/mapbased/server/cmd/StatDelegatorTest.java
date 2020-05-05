@@ -79,7 +79,8 @@ public class StatDelegatorTest {
     @Test(expected = AccessException.class)
     public void testStatAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(ISTAT.toString()), argThat(STAT_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         iStatDelegator.getStreamIntegrationStatus(STREAM, new StreamIntegrationStatusOptions());
     }
 

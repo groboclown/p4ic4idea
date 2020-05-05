@@ -165,7 +165,8 @@ public class FixDelegatorTest {
     @Test(expected = AccessException.class)
     public void testFixJobsOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(FIX.toString()), argThat(FIX_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         fixDelegator.fixJobs(JOB_LIST, Integer.valueOf(TEST_CHANGELIST), new FixJobsOptions());
     }
 
@@ -177,7 +178,8 @@ public class FixDelegatorTest {
     @Test(expected = AccessException.class)
     public void testFixJobsAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(FIX.toString()), argThat(FIX_DELETE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         fixDelegator.fixJobs(JOB_LIST, Integer.valueOf(TEST_CHANGELIST), null, true);
     }
 

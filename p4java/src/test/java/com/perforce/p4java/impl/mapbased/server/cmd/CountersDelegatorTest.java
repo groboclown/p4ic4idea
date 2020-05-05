@@ -90,8 +90,9 @@ public class CountersDelegatorTest {
      */
     @Test
     public void testAccessException() throws P4JavaException {
-        propagateGetCountersException(AccessException.class, AccessException.class);
-        propagateGetCountersExceptionWithOptions(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        propagateGetCountersException(AccessException.AccessExceptionForTests.class, AccessException.class);
+        propagateGetCountersExceptionWithOptions(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**

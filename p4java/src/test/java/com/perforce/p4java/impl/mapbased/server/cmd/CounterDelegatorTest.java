@@ -87,7 +87,8 @@ public class CounterDelegatorTest {
     public void getCounterCheckAccessException() throws Exception {
         when(server.execMapCmdList(eq(CmdSpec.COUNTER.toString()), 
                 eq(new String[] { mockCounterName }), any(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
 
         try {
             counterDelegator.getCounter(mockCounterName);
@@ -229,7 +230,8 @@ public class CounterDelegatorTest {
     public void setCounterThrowAccessException() throws Exception {
         when(server.execMapCmdList(eq(CmdSpec.COUNTER.toString()), 
                 eq(new String[] { mockCounterName, mockCounterValue }), any(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
 
         try {
             counterDelegator.setCounter(mockCounterName, mockCounterValue, new CounterOptions());
@@ -302,7 +304,8 @@ public class CounterDelegatorTest {
     public void deleteCounterCheckAccessException() throws Exception {
         when(server.execMapCmdList(eq(CmdSpec.COUNTER.toString()), 
                 eq(new String[] { "-f", "-d", mockCounterName }), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
 
         try {
             counterDelegator.deleteCounter(mockCounterName, true);

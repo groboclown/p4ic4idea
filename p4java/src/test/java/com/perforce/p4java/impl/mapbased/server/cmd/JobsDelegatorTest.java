@@ -87,7 +87,8 @@ public class JobsDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobsOptAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOBS.toString()), argThat(SIMPLE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(FILE_SPEC);
         jobsDelegator.getJobs(specs, new GetJobsOptions());
     }
@@ -139,7 +140,8 @@ public class JobsDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobsAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOBS.toString()), argThat(PARAM_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         List<IFileSpec> specs = FileSpecBuilder.makeFileSpecList(FILE_SPEC);
         jobsDelegator.getJobs(specs, 1, true, true, true, null);
     }

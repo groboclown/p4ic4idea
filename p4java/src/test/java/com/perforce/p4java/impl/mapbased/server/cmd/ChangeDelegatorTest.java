@@ -117,7 +117,8 @@ public class ChangeDelegatorTest {
     @Test
     public void testGetChangelistAccessException() throws Exception {
         when(server.execMapCmdList(eq(CHANGE.toString()), any(String[].class), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         try {
             changeDelegator.getChangelist(MOCK_LIST_ID);
             fail("AccessException was expected.");
@@ -265,7 +266,8 @@ public class ChangeDelegatorTest {
     @Test
     public void testDeletePendingChangelistAccessException() throws Exception {
         when(server.execMapCmdList(eq(CHANGE.toString()), any(String[].class), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         try {
             changeDelegator.deletePendingChangelist(MOCK_LIST_ID);
             fail("AccessException was expected.");

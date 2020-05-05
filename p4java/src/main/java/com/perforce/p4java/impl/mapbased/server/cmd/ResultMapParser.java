@@ -529,20 +529,25 @@ public abstract class ResultMapParser {
 				// p4ic4idea: use IServerMessage
 				IServerMessage message = toServerMessage(map);
 				if (nonNull(message)) {
-                    handleErrors(message);
-                    String info = message.getAllInfoStrings();
-                    if (isNotBlank(info)) {
-                        if (retVal.length() > 0) {
-									retVal.append("\n");
-                        }
-                        retVal.append(info);
-                    }
-                }
+					handleErrors(message);
+					String info = message.getAllInfoStrings();
+					if (isNotBlank(info)) {
+						if (retVal.length() > 0) {
+							retVal.append("\n");
+						}
+						retVal.append(info);
+					}
+				}
 			}
 		} else {
 			Log.warn("Null map array is returned when execute Helix command");
 		}
 
+		// p4ic4idea: the above changed logic causes this to return an empty string;
+		// however, this should return null on an empty string.
+		if (retVal.length() <= 0) {
+			return null;
+		}
 		return retVal.toString();
 	}
 

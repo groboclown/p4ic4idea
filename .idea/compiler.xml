@@ -2,7 +2,7 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <addNotNullAssertions enabled="false" />
-    <bytecodeTargetLevel target="8">
+    <bytecodeTargetLevel target="1.8">
       <module name="compat-api_main" target="1.8" />
       <module name="compat-api_mainIdea172" target="1.8" />
       <module name="compat-api_mainIdea173" target="1.8" />

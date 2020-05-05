@@ -84,7 +84,8 @@ public class JobSpecDelegatorTest {
     @Test(expected = AccessException.class)
     public void testJobSpecAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOBSPEC.toString()), argThat(SIMPLE_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         jobSpecDelegator.getJobSpec();
     }
 

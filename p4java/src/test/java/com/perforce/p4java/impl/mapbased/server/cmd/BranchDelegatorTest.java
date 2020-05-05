@@ -119,7 +119,8 @@ public class BranchDelegatorTest {
      */
     @Test
     public void testAccessExceptionPropagationFromGetBranchSpec() throws P4JavaException {
-        checkGetExceptionPropagation(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        checkGetExceptionPropagation(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**
@@ -285,7 +286,8 @@ public class BranchDelegatorTest {
     @Test
     public void deleteBranchSpec_byBranchNameAndForce_shouldThrownRAccessExceptionThatWasThrownFromInnerMethodCall()
             throws P4JavaException {
-        checkDeleteExceptionPropagation(AccessException.class, AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        checkDeleteExceptionPropagation(AccessException.AccessExceptionForTests.class, AccessException.class);
     }
 
     /**

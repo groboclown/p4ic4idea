@@ -55,7 +55,7 @@ public class TestServer {
     private final ProcessDestroyer processDestroyer = new ShutdownHookProcessDestroyer();
     private String version = "r17.1";
     private String user = "luser";
-    private String port = DEFAULT_P4_PORT;
+    private final String port;
     private int monitor = 3;
     private boolean proxy;
     private boolean unicode = false;
@@ -65,10 +65,19 @@ public class TestServer {
     private ExecuteStatus status = ExecuteStatus.createDummy();
 
     public TestServer() {
-        this(new File("p4d.d-" + serverCount.incrementAndGet()));
+        this(DEFAULT_P4_PORT);
+    }
+
+    public TestServer(@Nonnull String port) {
+        this(new File("p4d.d-" + serverCount.incrementAndGet()), port);
     }
 
     public TestServer(@Nonnull File outDir) {
+        this(outDir, DEFAULT_P4_PORT);
+    }
+
+    public TestServer(@Nonnull File outDir, @Nonnull String port) {
+        this.port = port;
         this.outDir = outDir;
         System.out.println("Using test server directory " + outDir);
     }
@@ -78,7 +87,6 @@ public class TestServer {
         super.finalize();
     }
 
-    @SuppressWarnings("WeakerAccess")
     public File getRootDir() {
         return outDir;
     }
@@ -224,6 +232,7 @@ public class TestServer {
                 PumpStreamHandler streamHandler = new PumpStreamHandler(status.out, status.log);
                 executor.setStreamHandler(streamHandler);
                 executor.execute(cmdLine, newStatus);
+                System.err.println("Starting new p4d process: " + cmdLine);
                 status = newStatus;
                 return null;
             });
@@ -238,7 +247,6 @@ public class TestServer {
     private void waitForStartup()
             throws InterruptedException {
         // TODO need to correctly wait for the server to start.  This is a terrible way.
-        // The
         // But then, we should really be using the rsh connection method, not the
         // async method.
         Thread.sleep(1000L);

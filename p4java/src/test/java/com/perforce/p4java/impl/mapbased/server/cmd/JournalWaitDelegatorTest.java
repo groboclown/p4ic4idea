@@ -74,7 +74,8 @@ public class JournalWaitDelegatorTest {
     @Test(expected = AccessException.class)
     public void testWaitAccessException() throws P4JavaException {
         when(server.execMapCmdList(eq(JOURNALWAIT.toString()), argThat(WAIT_MATCHER), eq(null)))
-                .thenThrow(AccessException.class);
+                // p4ic4idea: use a public, non-abstract class with default constructor
+                .thenThrow(AccessException.AccessExceptionForTests.class);
         journalWaitDelegator.journalWait(new JournalWaitOptions());
     }
 

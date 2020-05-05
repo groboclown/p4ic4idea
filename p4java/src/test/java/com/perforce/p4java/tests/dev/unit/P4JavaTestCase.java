@@ -102,6 +102,9 @@ import com.perforce.p4java.server.IServerMessage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.perforce.p4java.tests.MockCommandCallback;
+
+import javax.annotation.Nonnull;
+
 import static java.util.Objects.nonNull;
 
 /**
@@ -822,6 +825,11 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 		return clientName;
 	}
 
+	protected static IOptionsServer getServer(Properties props, String userName,
+			String password) throws URISyntaxException, P4JavaException {
+		return getServer(serverUrlString, props, userName, password);
+	}
+
 	/**
 	 * Get a new IServer object for test usage and attempt to login before
 	 * returning the server interface. Equivalent to a getServer(String
@@ -1043,8 +1051,9 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	 * <p>
 	 * Equivalent to getServer(null, null, null, null).
 	 */
-	@Deprecated
 	protected static IOptionsServer getServer() throws P4JavaException, URISyntaxException {
+		// p4ic4idea: ensure this is done in a non-Perforce server...
+		assertFalse("Invalid server: " + serverUrlString, serverUrlString.contains(".perforce.com"));
 		IOptionsServer server = getServer(serverUrlString, null, null, null);
 		assertNotNull("Null server returned by server factory in P4JavaTestCase.getServer", server);
 		return server;
@@ -1133,6 +1142,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	 * client named by the defaultTestClientName field.
 	 */
 
+	@Nonnull
 	protected static IClient getDefaultClient(IServer server)
 			throws ConnectionException, RequestException, AccessException {
 		assertNotNull("null server in getDefaultClient()", server);
@@ -1141,7 +1151,13 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 			defaultTestClientName = "p4jtest-" + getLocalHostName();
 		}
 
-		return server.getClient(getPlatformClientName(defaultTestClientName));
+		// p4ic4idea: report the real client used.
+		String clientName = getPlatformClientName(defaultTestClientName);
+		IClient ret = server.getClient(clientName);
+		assertNotNull(
+				"could not find client named " + clientName + " (default client " + defaultTestClientName + ")",
+				ret);
+		return ret;
 	}
 
 	/**

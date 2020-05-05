@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -60,6 +61,8 @@ public class UnshelveTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -69,6 +72,8 @@ public class UnshelveTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: special setup
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -78,7 +83,7 @@ public class UnshelveTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer(getServerUrlString(), null, "p4jtestuser",
+			server = getServer(null, "p4jtestuser",
 					"p4jtestuser");
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS");

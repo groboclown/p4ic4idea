@@ -91,7 +91,8 @@ public class ReviewDelegatorTest {
     public void shouldThrowsExceptionWhenInnerMethodCallThrowsIt() throws Exception {
         thrown.expect(AccessException.class);
         //given
-        doThrow(AccessException.class).when(server)
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        doThrow(AccessException.AccessExceptionForTests.class).when(server)
                 .execMapCmdList(eq(REVIEW.toString()), eq(CMD_ARGUMENTS), eq(null));
         //when
         reviewDelegator.getReviewChangelists(opts);

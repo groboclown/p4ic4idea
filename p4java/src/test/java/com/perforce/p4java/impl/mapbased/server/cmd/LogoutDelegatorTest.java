@@ -83,7 +83,8 @@ public class LogoutDelegatorTest {
      */
     @Test(expected = AccessException.class)
     public void testLogoutAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         logoutDelegator.logout();
     }
 
@@ -131,7 +132,8 @@ public class LogoutDelegatorTest {
      */
     @Test(expected = AccessException.class)
     public void testLogoutOptAccessException() throws P4JavaException {
-        setUp(AccessException.class);
+        // p4ic4idea: use a public, non-abstract class with default constructor
+        setUp(AccessException.AccessExceptionForTests.class);
         logoutDelegator.logout(null);
     }
 

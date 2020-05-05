@@ -3,11 +3,13 @@ package com.perforce.p4java.server.delegator;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.Login2Options;
-import com.perforce.p4java.server.IServerMessage;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import javax.annotation.Nullable;
 
 public interface ILogin2Delegator {
 
@@ -39,7 +41,7 @@ public interface ILogin2Delegator {
 	 * @throws P4JavaException
 	 *             if any errors occur during the processing of this command.
 	 */
-	// p4ic4idea: use iServerMessage
+	// p4ic4idea: use IServerMessage, and so can return null
 	@Nullable
 	IServerMessage getLogin2Status() throws P4JavaException;
 
@@ -58,7 +60,7 @@ public interface ILogin2Delegator {
 	 * @throws P4JavaException
 	 *             if any errors occur during the processing of this command.
 	 */
-	// p4ic4idea: use iServerMessage
+	// p4ic4idea: use IServerMessage, and so can return null
 	@Nullable
 	IServerMessage getLogin2Status(IUser user) throws P4JavaException;
 

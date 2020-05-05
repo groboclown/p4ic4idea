@@ -11,7 +11,6 @@ import com.perforce.p4java.impl.mapbased.server.Parameters;
 import com.perforce.p4java.option.server.GraphCommitLogOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.ICommitDelegator;
 
 import java.io.InputStream;
@@ -27,9 +26,12 @@ import static com.perforce.p4java.common.base.P4ResultMapUtils.parseDataList;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseLong;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseString;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.*;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 import static com.perforce.p4java.server.CmdSpec.GRAPH;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser;
 
 public class CommitDelegator extends BaseDelegator implements ICommitDelegator {
 
@@ -110,7 +112,7 @@ public class CommitDelegator extends BaseDelegator implements ICommitDelegator {
 
 		for (Map<String, Object> map : resultMaps) {
 			// p4ic4idea: use IServerMessage
-			IServerMessage message = toServerMessage(map);
+			IServerMessage message = ResultMapParser.toServerMessage(map);
 			if (nonNull(message)) {
 
 				// Check for errors

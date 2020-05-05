@@ -2,8 +2,6 @@ package com.perforce.p4java.impl.mapbased.server.cmd;
 
 import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
-import static com.perforce.p4java.common.base.P4JavaExceptions.asRequestException;
-import static com.perforce.p4java.common.base.P4JavaExceptions.assertInvocation;
 import static com.perforce.p4java.common.base.P4JavaExceptions.throwRequestExceptionIfConditionFails;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorString;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseInt;
@@ -32,8 +30,11 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.file.FileAnnotation;
 import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IFileAnnotateDelegator;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.common.base.P4JavaExceptions;
 
 /**
  * Implementation to handle the Annotate command.
@@ -64,7 +65,7 @@ public class FileAnnotateDelegator extends BaseDelegator implements IFileAnnotat
         }
 
         // p4ic4idea: better exception handling
-        return asRequestException(() -> {
+        return P4JavaExceptions.asRequestException(() -> {
             GetFileAnnotationsOptions getFileAnnotationsOptions = new GetFileAnnotationsOptions()
                     .setAllResults(allResults)
                     .setUseChangeNumbers(useChangeNumbers)

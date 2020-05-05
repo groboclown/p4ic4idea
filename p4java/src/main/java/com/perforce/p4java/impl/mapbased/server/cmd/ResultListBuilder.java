@@ -3,7 +3,6 @@
  */
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.isContainsValidRevisionSpecificInformation;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorString;
@@ -27,6 +26,9 @@ import com.perforce.p4java.impl.generic.core.file.ExtendedFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
+
+// p4ic4idea: use IServerMessage
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import com.perforce.p4java.server.IServerMessage;
 
 public class ResultListBuilder {
@@ -89,7 +91,7 @@ public class ResultListBuilder {
         if (isNull(resultMaps)) {
             return specList;
         }
-        for (Map<String, Object> map: resultMaps) {
+        for (Map<String, Object> map : resultMaps) {
             // We do this by hand for the statFiles case; this may be
             // included in the generic handler later -- HR.
             // Note: as of 10.1 or so, fstats on shelved files may return
@@ -163,9 +165,9 @@ public class ResultListBuilder {
                 return new FileSpec(FileSpecOpStatus.INFO, message);
             }
         }
-        if (isNull(map)) {
-            return null;
+        if (nonNull(map)) {
+            return new FileSpec(map, server, -1);
         }
-        return new FileSpec(map, server, -1);
+        return null;
     }
 }

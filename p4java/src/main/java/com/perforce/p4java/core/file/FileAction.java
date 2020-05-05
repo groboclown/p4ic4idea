@@ -127,7 +127,7 @@ public enum FileAction {
 	 * 
 	 * @see java.lang.Enum#toString()
 	 */
-        // p4ic4idea: add @Override
+	// p4ic4idea: add @Override
 	@Override
 	public String toString() {
 		int ord = this.ordinal();

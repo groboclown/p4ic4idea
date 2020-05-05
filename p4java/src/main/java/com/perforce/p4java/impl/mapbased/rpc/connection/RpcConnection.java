@@ -11,14 +11,24 @@ import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.P4JavaError;
 import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
+import com.perforce.p4java.impl.mapbased.rpc.func.helper.MD5Digester;
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacket;
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher;
 import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
+import com.perforce.p4java.impl.mapbased.rpc.sys.RpcPerforceDigestType;
+import com.perforce.p4java.impl.mapbased.rpc.sys.RpcPerforceFileType;
+import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SymbolicLinkHelper;
+import com.perforce.p4java.server.P4Charset;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.util.PropertiesHelper;
+
+// p4ic4idea: rather than pull in yet another jar, reuse the existing digest stuff.
+// import org.apache.commons.codec.digest.DigestUtils;
+
 import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -34,7 +44,7 @@ import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
  * RpcStreamConnection, which implements the connection using java.io streams on
  * top of sockets.
  * <p>
- * 
+ *
  * Note that charset conversion should never be necessary on connections to
  * non-Unicode servers, as any bytes in the incoming stream that are marked as
  * "text" should be interpreted as ASCII (seven or eight bits). Unfortunately,
@@ -47,13 +57,13 @@ import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
  * -- all conversions must be with an explicit charset in case the JVM's charset
  * isn't the one we actually need.
  * <p>
- * 
+ *
  * Note that, in general, we "know" that the Perforce server on the other end of
  * this connection is -- or should be -- a Unicode server by the fact that the
  * incoming clientCharset is not null. This probably isn't infallible, but it's
  * supposed to be true, so we use it as a proxy for IServer.supportsUnicode().
  * <p>
- * 
+ *
  * See
  * http://computer.perforce.com/newwiki/index.php?title=P4Java_and_Charset_Support
  * for a detailed discussion of P4Java and server charset issues...
@@ -68,7 +78,7 @@ public abstract class RpcConnection {
      * server is Unicode-enabled, then <i>every</i> non-binary RPC packet field
      * is sent to and received from the Perforce server in this charset.
      * <p>
-     * 
+     *
      * Do not change this unless you want all hell to break loose.
      */
     public static final Charset UNICODE_SERVER_CHARSET = CharsetDefs.UTF8;
@@ -99,7 +109,7 @@ public abstract class RpcConnection {
 
     protected ServerStats stats = null;
 
-    protected Charset clientCharset = null;
+    protected P4Charset p4Charset = null;
 
     protected String hostIp = UNKNOWN_SERVER_HOST;
     protected String ourIp = UNKNOWN_SERVER_HOST;
@@ -109,7 +119,6 @@ public abstract class RpcConnection {
     protected boolean usingCompression = false;
 
     protected boolean unicodeServer = false;
-    protected int filesysUtf8bom = 1;
 
     protected boolean secure = false;
     protected String fingerprint = null;
@@ -118,12 +127,12 @@ public abstract class RpcConnection {
     /**
      * Create a Perforce RPC connection to a given host and port number pair.
      * <p>
-     * 
+     *
      * This method will also implicitly connect to the server. Note that new
      * connections are never using connection compression -- this has to come as
      * an explicit command from the server after the connection has been
      * established.
-     * 
+     *
      * @param serverHost
      *            non-null Perforce server host name or IP address.
      * @param serverPort
@@ -134,27 +143,27 @@ public abstract class RpcConnection {
      * @param stats
      *            if not null, attempt to fill in these connection stats
      *            appropriately.
-     * @param clientCharset
+     * @param p4Charset
      *            if non-null, sets the connection's idea of what the current
      *            client charset is. If null, CharsetDefs.DEFAULT is used.
      * @throws ConnectionException
      *             if any user-reportable error occurred under the covers.
      */
     public RpcConnection(String serverHost, int serverPort, Properties props, ServerStats stats,
-            Charset clientCharset) throws ConnectionException {
+            P4Charset p4Charset) throws ConnectionException {
 
-        this(serverHost, serverPort, props, stats, clientCharset, false);
+        this(serverHost, serverPort, props, stats, p4Charset, false);
     }
 
     /**
      * Create a Perforce RPC connection to a given host and port number pair.
      * <p>
-     * 
+     *
      * This method will also implicitly connect to the server. Note that new
      * connections are never using connection compression -- this has to come as
      * an explicit command from the server after the connection has been
      * established.
-     * 
+     *
      * @param serverHost
      *            non-null Perforce server host name or IP address.
      * @param serverPort
@@ -165,7 +174,7 @@ public abstract class RpcConnection {
      * @param stats
      *            if not null, attempt to fill in these connection stats
      *            appropriately.
-     * @param clientCharset
+     * @param p4Charset
      *            if non-null, sets the connection's idea of what the current
      *            client charset is. If null, CharsetDefs.DEFAULT is used.
      * @param secure
@@ -174,17 +183,16 @@ public abstract class RpcConnection {
      *             if any user-reportable error occurred under the covers.
      */
     public RpcConnection(@Nonnull String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset clientCharset, boolean secure) throws ConnectionException {
+                         ServerStats stats, P4Charset p4Charset, boolean secure) throws ConnectionException {
 
         this.hostName = Validate.notNull(serverHost);
         this.hostPort = serverPort;
         this.secure = secure;
-        this.clientCharset = firstNonNull(clientCharset, CharsetDefs.DEFAULT);
+        this.p4Charset = firstNonNull(p4Charset, P4Charset.getDefault());
         this.stats = firstNonNull(stats, new ServerStats());
         this.props = firstNonNull(props, new Properties());
         this.stats.serverConnections.incrementAndGet();
-        this.unicodeServer = (clientCharset != null); // Note: NOT
-                                                      // this.clientCharset....
+        this.unicodeServer = P4Charset.isUnicodeServer(p4Charset); // Note: NOT this.p4Charset.getCharset()....
     }
 
     /**
@@ -214,7 +222,7 @@ public abstract class RpcConnection {
      * must make the appropriate charset translations and any other client- or
      * server- (or whatever-) specific processing on the passed-in packet.
      * <p>
-     * 
+     *
      * Returns the number of bytes actually sent to the Perforce server, which
      * may not bear any relationship at all to the size of the passed-in packet.
      */
@@ -233,7 +241,7 @@ public abstract class RpcConnection {
      * server- (or whatever-) specific processing on the packet returned from
      * this method by the time it's returned.
      * <p>
-     * 
+     *
      * Will wait until either a timeout occurs (if the stream's been set up
      * appropriately), the underlying stream returns EOF or error, or we get a
      * complete packet.
@@ -319,14 +327,14 @@ public abstract class RpcConnection {
     /**
      * Marshal a packet field value onto a byte array and return that array.
      * <p>
-     * 
+     *
      * For strings and similar types (e.g. StringBuilder, StringBuffer), we may
      * need to do a translation to the server charset (normally UTF-8) before
      * enbyteifying the underlying value. Other field types are sent as-is, and
      * are assumed to have been encoded properly upstream (and are almost always
      * just file contents).
      * <p>
-     * 
+     *
      * Note: if the value object passed in is a ByteBuffer, it must have been
      * flipped ready for use; this method will (of course) have predictable side
      * effects on that ByteBuffer.
@@ -384,7 +392,7 @@ public abstract class RpcConnection {
      * Unicode-enabled, this usually means converting to UTF-8 encoding for the
      * stream. This can be a very CPU-intensive process...
      * <p>
-     * 
+     *
      * FIXME: use proper encoding / decoding with error handling -- HR.
      *
      * @return - normalized string
@@ -397,7 +405,7 @@ public abstract class RpcConnection {
             if (this.unicodeServer) {
                 return str.getBytes(UNICODE_SERVER_CHARSET_NAME);
             } else {
-                return str.getBytes(this.clientCharset.name());
+                return str.getBytes(this.p4Charset.getCharset().name());
             }
         } catch (UnsupportedEncodingException e) {
             // This should never be reached since we already have the Charset
@@ -412,7 +420,7 @@ public abstract class RpcConnection {
      * general, bytes from the server will be in ASCII (non-Unicode servers) or
      * UTF-8 (Unicode servers), but there are exceptions.
      * <p>
-     * 
+     *
      * FIXME: use proper encoding / decoding with error handling -- HR.
      *
      * @return - normalized string
@@ -425,7 +433,7 @@ public abstract class RpcConnection {
             if (this.unicodeServer) {
                 return new String(bytes, UNICODE_SERVER_CHARSET_NAME);
             } else {
-                return new String(bytes, this.clientCharset.name());
+                return new String(bytes, this.p4Charset.getCharset().name());
             }
         } catch (UnsupportedEncodingException e) {
             // This should never be reached since we already have the Charset
@@ -456,12 +464,16 @@ public abstract class RpcConnection {
     }
 
     public Charset getClientCharset() {
-        return this.clientCharset;
+        return this.p4Charset.getCharset();
     }
 
-    public void setClientCharset(Charset charset) {
-        this.clientCharset = charset;
-        this.unicodeServer = (clientCharset != null);
+    public P4Charset getP4Charset() {
+        return p4Charset;
+    }
+
+    public void setClientCharset(P4Charset p4Charset) {
+        this.p4Charset = p4Charset;
+        this.unicodeServer = P4Charset.isUnicodeServer(p4Charset);
     }
 
     public ServerStats getStats() {
@@ -517,6 +529,15 @@ public abstract class RpcConnection {
         }
     }
 
+    public int getFilesysRestrictedSymlinks() {
+        String val = PropertiesHelper.getPropertyByKeys(props, PropertyDefs.FILESYS_RESTRICTSYMLINKS_SHORT_FORM, PropertyDefs.FILESYS_RESTRICTSYMLINKS, "0");
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     public boolean isSecure() {
         return this.secure;
     }
@@ -541,12 +562,13 @@ public abstract class RpcConnection {
         this.trusted = trusted;
     }
 
-	public void clientConfirm(String confirm, Map<String, Object> resultsMap) throws ConnectionException {
+	public RpcPacketDispatcher.RpcPacketDispatcherResult clientConfirm(String confirm, Map<String, Object> resultsMap)
+            throws ConnectionException {
 
 		if(confirm == null) {
-			return;
+            return RpcPacketDispatcher.RpcPacketDispatcherResult.CONTINUE_LOOP;
 		}
-		
+
 		// Copy all incoming vars to outgoing vars
 
 		Map<String, Object> respMap = new HashMap<String, Object>();
@@ -560,5 +582,68 @@ public abstract class RpcConnection {
 		RpcPacket respPacket = RpcPacket.constructRpcPacket(confirm, respMap, null);
 
 		putRpcPacket(respPacket);
+
+        return RpcPacketDispatcher.RpcPacketDispatcherResult.CONTINUE_LOOP;
+    }
+
+
+    public String getDigest(RpcPerforceFileType fileType, File file) {
+        return getDigest(fileType, file, null);
+    }
+
+    public String getDigest(RpcPerforceFileType fileType, File file,
+                            RpcPerforceDigestType digest) {
+
+        MD5Digester digester = new MD5Digester();
+
+        if(digest == null) {
+            digest = RpcPerforceDigestType.MD5;
+        }
+
+        Charset digestCharset = null;
+        boolean convertLineEndings = false;
+        switch (fileType) {
+            case FST_SYMLINK:
+                return getSymlinkMD5Digest(file);
+
+            case FST_UTF16:
+                digestCharset = CharsetDefs.UTF16;
+                break;
+            case FST_UTF8:
+                digestCharset = CharsetDefs.UTF8;
+                convertLineEndings = true;
+                break;
+            case FST_UNICODE:
+                digestCharset = getClientCharset();
+                break;
+            case FST_XTEXT:
+            case FST_TEXT:
+                // Convert line endings
+                convertLineEndings = true;
+                break;
+            default:
+                break;
+        }
+
+        // Digest the file using the configured local file content
+        // charset. A null digestCharset specified will cause the
+        // file to be read as raw byte stream directly off disk.
+        //TODO: Digester might be SHA* variant
+        String digestStr = digester.digestFileAs32ByteHex(file, digestCharset, convertLineEndings);
+
+        return digestStr;
+    }
+
+    private String getSymlinkMD5Digest(File file) {
+        String targetPath = SymbolicLinkHelper.readSymbolicLink(file.getAbsolutePath());
+
+        // p4ic4idea: use existing md5 stuff.
+        // String md5 = DigestUtils.md5Hex(targetPath + "\n").toUpperCase();
+        String source = targetPath + "\n";
+        MD5Digester digester = new MD5Digester();
+        digester.update(source);
+        String md5 = digester.digestAs32ByteHex().toUpperCase();
+
+        return md5;
     }
 }

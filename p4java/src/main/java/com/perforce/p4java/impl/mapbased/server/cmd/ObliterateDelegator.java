@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseInt;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseString;
@@ -31,13 +30,18 @@ import com.perforce.p4java.common.function.Function;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.core.file.IObliterateResult;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.impl.generic.core.file.ObliterateResult;
 import com.perforce.p4java.option.server.ObliterateFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IObliterateDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: use IServerMessage
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
+import com.perforce.p4java.server.IServerMessage;
+
 
 /**
  * Implementation to handle the Obliterate command.
@@ -140,7 +144,9 @@ public class ObliterateDelegator extends BaseDelegator implements IObliterateDel
             final Map<String, Object> map,
             // p4ic4idea: Use an IServerMessage instead
             final IServerMessage errStr,
-            final Function<Map<String, Object>, Boolean> infoMessageDetector) {
+            final Function<Map<String, Object>, Boolean> infoMessageDetector)
+            // p4ic4idea: forced to throw RequestException due to apply call.
+            throws RequestException {
 
         FileSpec fs = new FileSpec(ERROR, errStr);
         if (infoMessageDetector.apply(map)) {

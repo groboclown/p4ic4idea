@@ -3,10 +3,11 @@ package com.perforce.p4java;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.common.base.StringHelper.format;
 
-import javax.annotation.Nullable;
-
 // p4ic4idea: add IServerMessage logging
 import com.perforce.p4java.server.IServerMessage;
+
+// p4ic4idea: add Nullable annotations to arguments
+import javax.annotation.Nullable;
 
 import com.perforce.p4java.server.callback.ILogCallback;
 import com.perforce.p4java.server.callback.ILogCallback.LogTraceLevel;
@@ -65,6 +66,7 @@ public class Log {
    *
    * @param errorString non-null error string.
    */
+  // p4ic4idea: add Nullable
   public static void error(String errorString, @Nullable Object... args) {
     if (nonNull(logCallback)) {
       String errorMessage = errorString;
@@ -80,6 +82,7 @@ public class Log {
    *
    * @param warnString non-null warning message.
    */
+  // p4ic4idea: add Nullable
   public static void warn(String warnString, @Nullable Object... args) {
     if (nonNull(logCallback)) {
       String warningMessage = warnString;
@@ -95,6 +98,7 @@ public class Log {
    *
    * @param infoString non-null info message.
    */
+  // p4ic4idea: add Nullable
   public static void info(String infoString, @Nullable Object... args) {
     if (nonNull(logCallback)) {
       String infoMessage = infoString;
@@ -105,12 +109,12 @@ public class Log {
     }
   }
 
+  // p4ic4idea: add in info logging for an IServerMessage
   /**
    * Report a P4Java-internal informational event to the log callback (if it exists).
    *
    * @param info non-null info message.
    */
-  // p4ic4idea: add in info logging for an IServerMessage
   public static void info(IServerMessage info) {
     if (logCallback != null) {
       logCallback.internalInfo(info.toString());
@@ -122,6 +126,7 @@ public class Log {
    *
    * @param statsString non-null stats message.
    */
+  // p4ic4idea: add Nullable
   public static void stats(String statsString, @Nullable Object... args) {
     if (nonNull(logCallback)) {
       String statsMessage = statsString;
@@ -162,7 +167,7 @@ public class Log {
    */
   public static boolean isTracingAtLevel(LogTraceLevel traceLevel) {
     return nonNull(logCallback)
-            && nonNull(logCallback.getTraceLevel())
-            && (traceLevel.compareTo(logCallback.getTraceLevel()) <= 0);
+        && nonNull(logCallback.getTraceLevel())
+        && (traceLevel.compareTo(logCallback.getTraceLevel()) <= 0);
   }
 }

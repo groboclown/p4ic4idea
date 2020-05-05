@@ -83,8 +83,8 @@ public class CharsetDefs {
 				defaultCharset = Charset.forName(defaultCharsetName);
 			} catch (Exception exc) {
 				Log.warn("Unable to set P4Java default character set to " + defaultCharsetName
-						+ "; using JVM default charset " + Charset.defaultCharset().name()
-						+ " instead");
+								+ "; using JVM default charset " + Charset.defaultCharset().name()
+								+ " instead");
 				Log.exception(exc);
 				defaultCharset = Charset.defaultCharset();
 			}

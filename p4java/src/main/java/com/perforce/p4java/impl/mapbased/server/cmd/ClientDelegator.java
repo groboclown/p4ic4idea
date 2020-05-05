@@ -1,27 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
-import static com.perforce.p4java.common.base.P4JavaExceptions.rethrowFunction;
-import static com.perforce.p4java.impl.mapbased.server.Parameters.processParameters;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrorStr;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.isExistClientOrLabelOrUser;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.isInfoMessage;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.isNonExistClientOrLabelOrUser;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.parseCommandResultMapAsString;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.parseCommandResultMapIfIsInfoMessageAsString;
-import static com.perforce.p4java.server.CmdSpec.CLIENT;
-import static org.apache.commons.lang3.StringUtils.SPACE;
-import static org.apache.commons.lang3.StringUtils.containsAny;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.replacePattern;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.common.function.BiPredicate;
@@ -42,315 +20,357 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.delegator.IClientDelegator;
 import org.apache.commons.lang3.Validate;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
+import static com.perforce.p4java.common.base.P4JavaExceptions.rethrowFunction;
+import static com.perforce.p4java.impl.mapbased.server.Parameters.processParameters;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrorStr;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.isExistClientOrLabelOrUser;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.isInfoMessage;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.isNonExistClientOrLabelOrUser;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.parseCommandResultMapAsString;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.parseCommandResultMapIfIsInfoMessageAsString;
+import static com.perforce.p4java.server.CmdSpec.CLIENT;
+import static org.apache.commons.lang3.StringUtils.SPACE;
+import static org.apache.commons.lang3.StringUtils.containsAny;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.replacePattern;
+
 /**
  * @author Sean Shou
  * @since 15/09/2016
  */
 public class ClientDelegator extends BaseDelegator implements IClientDelegator {
-    public ClientDelegator(IOptionsServer server) {
-        super(server);
-    }
+	public ClientDelegator(IOptionsServer server) {
+		super(server);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IClient getClient(final String clientName)
-            throws ConnectionException, RequestException, AccessException {
-        Validate.notBlank(clientName, "Null or empty client name passed in updateClient()");
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IClient getClient(final String clientName)
+			throws ConnectionException, RequestException, AccessException {
+		Validate.notBlank(clientName, "Null or empty client name passed in updateClient()");
 
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                new String[]{"-o", clientName},
-                null);
-        return getClientOrNullFromHelixResultMap(
-                resultMaps,
-                null,
-                server,
-                new BiPredicate<Map<String, Object>, GetClientTemplateOptions>() {
-                    @Override
-                    public boolean test(Map<String, Object> map, GetClientTemplateOptions opts) {
-                        return isExistClientOrLabelOrUser(map);
-                    }
-                },
-                rethrowFunction(
-                        new FunctionWithException<Map<String, Object>, Boolean>() {
-                            @Override
-                            public Boolean apply(Map<String, Object> map) throws P4JavaException {
-                                return !handleErrorStr(map) && !isInfoMessage(map);
-                            }
-                        }
-                )
-        );
-    }
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				new String[]{"-o", clientName},
+				null);
+		return getClientOrNullFromHelixResultMap(
+				resultMaps,
+				null,
+				server,
+				new BiPredicate<Map<String, Object>, GetClientTemplateOptions>() {
+					@Override
+					public boolean test(Map<String, Object> map, GetClientTemplateOptions opts) {
+						return isExistClientOrLabelOrUser(map);
+					}
+				},
+				rethrowFunction(
+						new FunctionWithException<Map<String, Object>, Boolean>() {
+							@Override
+							public Boolean apply(Map<String, Object> map) throws P4JavaException {
+								return !handleErrorStr(map) && !isInfoMessage(map);
+							}
+						}
+				)
+		);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IClient getClient(@Nonnull IClientSummary clientSummary)
-            throws ConnectionException, RequestException, AccessException {
-        Validate.notNull(clientSummary);
-        return getClient(clientSummary.getName());
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IClient getClient(@Nonnull IClientSummary clientSummary)
+			throws ConnectionException, RequestException, AccessException {
+		Validate.notNull(clientSummary);
+		return getClient(clientSummary.getName());
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IClient getClientTemplate(String clientName)
-            throws ConnectionException, RequestException, AccessException {
-        return getClientTemplate(clientName, false);
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IClient getClientTemplate(String clientName)
+			throws ConnectionException, RequestException, AccessException {
+		return getClientTemplate(clientName, false);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IClient getClientTemplate(final String clientName, final boolean allowExistent)
-            throws ConnectionException, RequestException, AccessException {
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IClient getClientTemplate(final String clientName, final boolean allowExistent)
+			throws ConnectionException, RequestException, AccessException {
 
-        try {
-            return getClientTemplate(clientName, new GetClientTemplateOptions(allowExistent));
-        } catch (final ConnectionException | AccessException | RequestException exc) {
-            throw exc;
-        } catch (P4JavaException exc) {
-            throw new RequestException(exc.getMessage(), exc);
-        }
-    }
+		try {
+			return getClientTemplate(clientName, new GetClientTemplateOptions(allowExistent));
+		} catch (final ConnectionException | AccessException | RequestException exc) {
+			throw exc;
+		} catch (P4JavaException exc) {
+			throw new RequestException(exc.getMessage(), exc);
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public IClient getClientTemplate(
-            @Nonnull String clientName,
-            GetClientTemplateOptions getClientTemplateOptions) throws P4JavaException {
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public IClient getClientTemplate(
+			@Nonnull String clientName,
+			GetClientTemplateOptions getClientTemplateOptions) throws P4JavaException {
 
-        Validate.notBlank(clientName, "Null or empty client name passed in updateClient()");
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                Parameters.processParameters(
-                        getClientTemplateOptions,
-                        null,
-                        new String[]{"-o", clientName},
-                        server),
-                null);
+		Validate.notBlank(clientName, "Null or empty client name passed in updateClient()");
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				Parameters.processParameters(
+						getClientTemplateOptions,
+						null,
+						new String[]{"-o", clientName},
+						server),
+				null);
 
-        return getClientOrNullFromHelixResultMap(
-                resultMaps,
-                getClientTemplateOptions,
-                server,
-                new BiPredicate<Map<String, Object>, GetClientTemplateOptions>() {
-                    @Override
-                    public boolean test(Map<String, Object> map, GetClientTemplateOptions opts) {
-                        return isNonExistClientOrLabelOrUser(map)
-                                || (nonNull(opts) && opts.isAllowExistent());
-                    }
-                },
-                rethrowFunction(new FunctionWithException<Map<String, Object>, Boolean>() {
-                    @Override
-                    public Boolean apply(Map<String, Object> map) throws P4JavaException {
-                        return !handleErrorStr(map) && !isInfoMessage(map);
-                    }
-                })
-        );
-    }
+		return getClientOrNullFromHelixResultMap(
+				resultMaps,
+				getClientTemplateOptions,
+				server,
+				new BiPredicate<Map<String, Object>, GetClientTemplateOptions>() {
+					@Override
+					public boolean test(Map<String, Object> map, GetClientTemplateOptions opts) {
+						return isNonExistClientOrLabelOrUser(map)
+								|| (nonNull(opts) && opts.isAllowExistent());
+					}
+				},
+				rethrowFunction(new FunctionWithException<Map<String, Object>, Boolean>() {
+					@Override
+					public Boolean apply(Map<String, Object> map) throws P4JavaException {
+						return !handleErrorStr(map) && !isInfoMessage(map);
+					}
+				})
+		);
+	}
 
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String createClient(@Nonnull final IClient newClient)
-            throws ConnectionException, RequestException, AccessException {
-        Validate.notNull(newClient);
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String createClient(@Nonnull final IClient newClient)
+			throws ConnectionException, RequestException, AccessException {
+		Validate.notNull(newClient);
 
-        replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(newClient);
+		replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(newClient);
 
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                new String[]{"-i"},
-                InputMapper.map(newClient));
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				new String[]{"-i"},
+				InputMapper.map(newClient));
 
-        return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
-    }
+		return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String updateClient(@Nonnull final IClient client)
-            throws ConnectionException, RequestException, AccessException {
-        Validate.notNull(client);
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void createTempClient(@Nonnull final IClient newClient) throws ConnectionException, AccessException, RequestException {
+		Validate.notNull(newClient);
 
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                new String[]{"-i"},
-                InputMapper.map(client));
+		replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(newClient);
+		server.setCurrentClient(newClient);
 
-        return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
-    }
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				new String[]{"-x","-i"},
+				InputMapper.map(newClient));
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String updateClient(@Nonnull final IClient client, final boolean force)
-            throws ConnectionException, RequestException, AccessException {
+		for (Map<String, Object> resultMap : resultMaps) {
+			ResultMapParser.handleErrorStr(resultMap);
+		}
+	}
 
-        try {
-            return updateClient(client, new UpdateClientOptions(force));
-        } catch (final ConnectionException | AccessException | RequestException exc) {
-            throw exc;
-        } catch (P4JavaException exc) {
-            throw new RequestException(exc.getMessage(), exc);
-        }
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String updateClient(@Nonnull final IClient client)
+			throws ConnectionException, RequestException, AccessException {
+		Validate.notNull(client);
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String updateClient(@Nonnull final IClient client, final UpdateClientOptions opts)
-            throws P4JavaException {
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				new String[]{"-i"},
+				InputMapper.map(client));
 
-        Validate.notNull(client);
-        Validate.notBlank(client.getName(), "Null or empty client name passed in updateClient()");
+		return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
+	}
 
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                Parameters.processParameters(
-                        opts,
-                        null,
-                        "-i",
-                        server),
-                InputMapper.map(client));
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String updateClient(@Nonnull final IClient client, final boolean force)
+			throws ConnectionException, RequestException, AccessException {
 
-        return parseCommandResultMapAsString(resultMaps);
-    }
+		try {
+			return updateClient(client, new UpdateClientOptions(force));
+		} catch (final ConnectionException | AccessException | RequestException exc) {
+			throw exc;
+		} catch (P4JavaException exc) {
+			throw new RequestException(exc.getMessage(), exc);
+		}
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String deleteClient(final String clientName, final boolean force)
-            throws ConnectionException, RequestException, AccessException {
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String updateClient(@Nonnull final IClient client, final UpdateClientOptions opts)
+			throws P4JavaException {
 
-        try {
-            return deleteClient(clientName, new DeleteClientOptions(force));
-        } catch (final ConnectionException | AccessException | RequestException exc) {
-            throw exc;
-        } catch (P4JavaException exc) {
-            throw new RequestException(exc.getMessage(), exc);
-        }
-    }
+		Validate.notNull(client);
+		Validate.notBlank(client.getName(), "Null or empty client name passed in updateClient()");
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String deleteClient(final String clientName, final DeleteClientOptions opts)
-            throws P4JavaException {
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				Parameters.processParameters(
+						opts,
+						null,
+						"-i",
+						server),
+				InputMapper.map(client));
 
-        Validate.notBlank(clientName, "Null or empty client name passed in updateClient()");
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                Parameters.processParameters(
-                        opts,
-                        null,
-                        new String[]{"-d", clientName},
-                        server),
-                null);
+		return parseCommandResultMapAsString(resultMaps);
+	}
 
-        return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String deleteClient(final String clientName, final boolean force)
+			throws ConnectionException, RequestException, AccessException {
 
-    /**
-     * {@inheritDoc}
-     */
-    public String switchClientView(final String templateClientName,
-                                   final String targetClientName,
-                                   final SwitchClientViewOptions opts) throws P4JavaException {
+		try {
+			return deleteClient(clientName, new DeleteClientOptions(force));
+		} catch (final ConnectionException | AccessException | RequestException exc) {
+			throw exc;
+		} catch (P4JavaException exc) {
+			throw new RequestException(exc.getMessage(), exc);
+		}
+	}
 
-        Validate.notBlank(templateClientName, "Template client name shouldn't blank");
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String deleteClient(final String clientName, final DeleteClientOptions opts)
+			throws P4JavaException {
 
-        List<String> args = new ArrayList<>(Arrays.asList("-s", "-t", templateClientName));
-        if (isNotBlank(targetClientName)) {
-            args.add(targetClientName);
-        }
+		Validate.notBlank(clientName, "Null or empty client name passed in updateClient()");
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				Parameters.processParameters(
+						opts,
+						null,
+						new String[]{"-d", clientName},
+						server),
+				null);
 
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                processParameters(
-                        opts,
-                        null,
-                        args.toArray(new String[args.size()]),
-                        server),
-                null);
+		return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
+	}
 
-        return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public String switchClientView(final String templateClientName,
+								   final String targetClientName,
+								   final SwitchClientViewOptions opts) throws P4JavaException {
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String switchStreamView(final String streamPath,
-                                   final String targetClientName,
-                                   final SwitchClientViewOptions opts) throws P4JavaException {
+		Validate.notBlank(templateClientName, "Template client name shouldn't blank");
 
-        Validate.notBlank(streamPath, "Stream path shouldn't blank");
+		List<String> args = new ArrayList<>(Arrays.asList("-s", "-t", templateClientName));
+		if (isNotBlank(targetClientName)) {
+			args.add(targetClientName);
+		}
 
-        List<String> args = new ArrayList<>(Arrays.asList("-s", "-S", streamPath));
-        if (isNotBlank(targetClientName)) {
-            args.add(targetClientName);
-        }
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				processParameters(
+						opts,
+						null,
+						args.toArray(new String[args.size()]),
+						server),
+				null);
 
-        List<Map<String, Object>> resultMaps = execMapCmdList(
-                CLIENT,
-                processParameters(
-                        opts,
-                        null,
-                        args.toArray(new String[args.size()]),
-                        server),
-                null);
+		return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
+	}
 
-        return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String switchStreamView(final String streamPath,
+								   final String targetClientName,
+								   final SwitchClientViewOptions opts) throws P4JavaException {
 
-    // p4ic4idea: made package-protected for unit tests
-    static void replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(IClient newClient) {
-        final String TABS = "\t";
-        String name = newClient.getName();
-        if (containsAny(name, SPACE, TABS)) {
-            String newClientName = replacePattern(name, "\\s", "_");
-            newClient.setName(newClientName);
-        }
-    }
+		Validate.notBlank(streamPath, "Stream path shouldn't blank");
+
+		List<String> args = new ArrayList<>(Arrays.asList("-s", "-S", streamPath));
+		if (isNotBlank(targetClientName)) {
+			args.add(targetClientName);
+		}
+
+		List<Map<String, Object>> resultMaps = execMapCmdList(
+				CLIENT,
+				processParameters(
+						opts,
+						null,
+						args.toArray(new String[args.size()]),
+						server),
+				null);
+
+		return parseCommandResultMapIfIsInfoMessageAsString(resultMaps);
+	}
+
+	// // p4ic4idea: made package-protected for unit tests
+	static void replaceWithUnderscoreIfClientNameContainsWhitespacesOrTabs(IClient newClient) {
+		final String TABS = "\t";
+		String name = newClient.getName();
+		if (containsAny(name, SPACE, TABS)) {
+			String newClientName = replacePattern(name, "\\s", "_");
+			newClient.setName(newClientName);
+		}
+	}
 
     // p4ic4idea: made package-protected for unit tests
     static IClient getClientOrNullFromHelixResultMap(
-            @Nullable final List<Map<String, Object>> resultMaps,
-            @Nullable final GetClientTemplateOptions opts,
-            @Nonnull final IOptionsServer server,
-            @Nonnull final BiPredicate<Map<String, Object>, GetClientTemplateOptions> conditions,
-            @Nonnull final Function<Map<String, Object>, Boolean> handle)
-            throws AccessException, RequestException {
+			@Nullable final List<Map<String, Object>> resultMaps,
+			@Nullable final GetClientTemplateOptions opts,
+			@Nonnull final IOptionsServer server,
+			@Nonnull final BiPredicate<Map<String, Object>, GetClientTemplateOptions> conditions,
+			@Nonnull final Function<Map<String, Object>, Boolean> handle)
+			throws AccessException, RequestException {
 
-        IClient client = null;
-        if (nonNull(resultMaps)) {
-            for (Map<String, Object> map : resultMaps) {
-                if (nonNull(map)) {
-                    if (handle.apply(map)) {
-                        if (conditions.test(map, opts)) {
-                            client = new Client(server, map);
-                        }
-                    }
-                }
-            }
-        }
+		IClient client = null;
+		if (nonNull(resultMaps)) {
+			for (Map<String, Object> map : resultMaps) {
+				if (nonNull(map)) {
+					if (handle.apply(map)) {
+						if (conditions.test(map, opts)) {
+							client = new Client(server, map);
+						}
+					}
+				}
+			}
+		}
 
-        return client;
-    }
+		return client;
+	}
 }

@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Rule;
@@ -130,7 +131,7 @@ public class AttributeDelegatorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldReturnNonEmptyListWhenStatusIsNotValid()
-            throws ConnectionException, AccessException {
+            throws ConnectionException, AccessException, RequestException {
         when(mockHandle.apply(resultMap)).thenReturn(mockFileSpec);
         when(mockFileSpec.getOpStatus()).thenReturn(ERROR);
 
@@ -142,7 +143,7 @@ public class AttributeDelegatorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldReturnNonEmptyListWhenStatusIsValid()
-            throws ConnectionException, AccessException {
+            throws ConnectionException, AccessException, RequestException {
         when(mockHandle.apply(resultMap)).thenReturn(mockFileSpec);
         when(mockFileSpec.getOpStatus()).thenReturn(VALID);
         when(mockFileSpec.getAnnotatedPathString(DEPOT)).thenReturn("not blank");
@@ -154,7 +155,7 @@ public class AttributeDelegatorTest {
 
     @Test
     public void buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldThrownExceptionWhenInnerCallThrown()
-            throws ConnectionException, AccessException {
+            throws ConnectionException, AccessException, RequestException {
         //then
         thrown.expect(ConnectionException.class);
         // given

@@ -20,9 +20,6 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.exception.UnimplementedError;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
-// p4ic4idea: use server messages
-import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
-import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage.SingleServerMessage;
 import com.perforce.p4java.impl.mapbased.server.Parameters;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.impl.mapbased.server.cmd.ResultListBuilder;
@@ -33,17 +30,22 @@ import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
-// p4ic4idea: use server messages
-import com.perforce.p4java.server.ISingleServerMessage;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+// p4ic4idea: use server messages
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage.SingleServerMessage;
+import com.perforce.p4java.server.ISingleServerMessage;
+
+// p4ic4idea: add Collections for extra fun.
+import java.util.Collections;
 
 /**
  * Simple default generic implementation class for the IChangelist interface.
@@ -512,7 +514,6 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 
 					// p4ic4idea: use ServerMessage for more robust error reporting.
 					SingleServerMessage msg = new SingleServerMessage("Submitted as change " + this.id);
-
 					fileList.add(new FileSpec(FileSpecOpStatus.INFO,
 							new ServerMessage(
 									Collections.<ISingleServerMessage>singletonList(msg))));

@@ -13,7 +13,6 @@ import com.perforce.p4java.admin.IProperty;
 import com.perforce.p4java.admin.IProtectionEntry;
 import com.perforce.p4java.admin.ITriggerEntry;
 import com.perforce.p4java.admin.ServerConfigurationValue;
-import com.perforce.p4java.charset.PerforceCharsetProvider;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.IBranchSpec;
@@ -68,9 +67,11 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerAddress;
 import com.perforce.p4java.server.IServerAddress.Protocol;
 import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.server.P4Charset;
 import com.perforce.p4java.server.PerforceCharsets;
 import com.perforce.p4java.server.ServerStatus;
+import com.perforce.p4java.server.callback.DefaultBrowserCallback;
+import com.perforce.p4java.server.callback.IBrowserCallback;
 import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.server.callback.IProgressCallback;
 import com.perforce.p4java.server.callback.ISSOCallback;
@@ -81,8 +82,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 import java.util.List;
@@ -100,13 +99,14 @@ import static com.perforce.p4java.core.file.FileSpecOpStatus.VALID;
 import static com.perforce.p4java.env.PerforceEnvironment.getP4Charset;
 import static com.perforce.p4java.env.PerforceEnvironment.getP4Client;
 import static com.perforce.p4java.env.PerforceEnvironment.getP4User;
-import static com.perforce.p4java.server.PerforceCharsets.getJavaCharsetName;
 import static com.perforce.p4java.server.PerforceCharsets.getP4CharsetName;
-import static com.perforce.p4java.server.PerforceCharsets.isSupported;
 import static com.perforce.p4java.util.PropertiesHelper.getPropertyByKeys;
 import static com.perforce.p4java.util.PropertiesHelper.isExistProperty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+// p4ic4idea: add IServerMessage support
+import com.perforce.p4java.server.IServerMessage;
 
 /**
  * Generic abstract superclass for implementation-specific server
@@ -190,6 +190,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 
 	protected IClient client = null;
 	protected String clientName = null;
+	protected String clientPath = null;
 
 	/**
 	 * Used when we have no client set.
@@ -202,10 +203,11 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	protected ICommandCallback commandCallback = null;
 	protected IProgressCallback progressCallback = null;
 	protected ISSOCallback ssoCallback = null;
+	protected IBrowserCallback browserCallback = new DefaultBrowserCallback();
 	protected String ssoKey = null;
 
 	protected String charsetName = null;
-	protected Charset charset = null;
+	protected P4Charset p4Charset = null;
 
 	protected boolean connected = false;
 
@@ -237,6 +239,8 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	protected String ignoreFileName = null;
 
 	protected String rsh = null;
+
+	protected Object browserVersion = null;
 
 	// The delegators for running perforce commands
 	private IAttributeDelegator attributeDelegator = null;
@@ -409,6 +413,14 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 		this.clientName = clientName;
 	}
 
+	public String getClientPath() {
+		return clientPath;
+	}
+
+	public void setClientPath(String clientPath) {
+		this.clientPath = clientPath;
+	}
+
 	public String getIgnoreFileName() {
 		return ignoreFileName;
 	}
@@ -434,9 +446,9 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Returns a list of revisions given the options
 	 *
-	 * @param options
-	 * @return
-	 * @throws P4JavaException
+	 * @param options graph Revision List Options
+	 * @return list of graph commits
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public List<IRevListCommit> getGraphRevList(GraphRevListOptions options) throws P4JavaException {
@@ -459,7 +471,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	 * @param fileSpecs List of file specs
 	 * @param options   Command options
 	 * @return ListData
-	 * @throws P4JavaException
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public ListData getListData(List<IFileSpec> fileSpecs, ListOptions options) throws P4JavaException {
@@ -474,7 +486,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	 * @param fileSpecs List of file specs
 	 * @param options   Command options
 	 * @return ListData
-	 * @throws P4JavaException
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public ListData getListData(List<IFileSpec> fileSpecs, ListOptions options, String clientName) throws P4JavaException {
@@ -634,23 +646,23 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 		// The following are special cases.
 		// "auto" (Guess a P4CHARSET based on client OS params)
 		// "none" (same as unsetting P4CHARSET)
-		if (serverInfo.isUnicodeEnabled() && isNull(charset)) {
-			String p4Charset = getP4Charset();
-			if (isBlank(p4Charset) || "none".equalsIgnoreCase(p4Charset)
-					|| "auto".equalsIgnoreCase(p4Charset)) {
+		if (serverInfo.isUnicodeEnabled() && (p4Charset == null || p4Charset.getCharset() == null)) {
+			String p4CharsetStr = getP4Charset();
+			if (isBlank(p4CharsetStr) || "none".equalsIgnoreCase(p4CharsetStr)
+					|| "auto".equalsIgnoreCase(p4CharsetStr)) {
 				// Get the first matching Perforce charset for the Java default
 				// charset
 				String p4CharsetName = getP4CharsetName(CharsetDefs.DEFAULT_NAME);
 				if (isNotBlank(p4CharsetName)) {
 					charsetName = p4CharsetName;
-					charset = CharsetDefs.DEFAULT;
+					p4Charset = P4Charset.getDefault();
 				} else { // Default to Perforce "utf8" equivalent to Java
 					// "UTF-8"
 					charsetName = "utf8";
-					charset = CharsetDefs.UTF8;
+					this.p4Charset = P4Charset.getUTF8();
 				}
 			} else {
-				setCharsetName(p4Charset);
+				setCharsetName(p4CharsetStr);
 			}
 		}
 	}
@@ -734,55 +746,26 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	}
 
 	@Override
-	public ISSOCallback registerSSOCallback(ISSOCallback callback, String ssoKey) {
-		ISSOCallback oldCallback = ssoCallback;
+	public void registerSSOCallback(ISSOCallback callback, String ssoKey) {
 		ssoCallback = callback;
 		this.ssoKey = ssoKey;
-		return oldCallback;
+	}
+
+	@Override
+	public void registerBrowserCallback(IBrowserCallback browserCallback) {
+		this.browserCallback = browserCallback;
 	}
 
 	@Override
 	public boolean setCharsetName(final String charsetName) throws UnsupportedCharsetException {
-		// "auto" (Guess a P4CHARSET based on client OS params)
-		// "none" (same as unsetting P4CHARSET)
-		if (isNotBlank(charsetName)
-				&& !("none".equals(charsetName) || "auto".equals(charsetName))) {
-			// Check if it is a supported Perforce charset
-			if (!isSupported(charsetName)) {
-				throw new UnsupportedCharsetException(charsetName);
-			}
-			// Get the Java equivalent charset for this Perforce charset
-			String javaCharsetName = getJavaCharsetName(charsetName);
-			if (isNotBlank(javaCharsetName)) {
-				try {
-					charset = Charset.forName(javaCharsetName);
-				} catch (UnsupportedCharsetException uce) {
-					// In case P4Java's Perforce extended charsets are not
-					// loaded in the VM's bootstrap classpath (i.e. P4Java JAR
-					// file is inside a WAR deployed in a web app container like
-					// Jetty, Tomcat, etc.), we'll instantiate it and lookup the
-					// Perforce extended charsets.
-					PerforceCharsetProvider p4CharsetProvider = new PerforceCharsetProvider();
-					charset = p4CharsetProvider.charsetForName(javaCharsetName);
-
-					// Throw the unsupported charset exception that was catched.
-					if (isNull(charset)) {
-						throw uce;
-					}
-				} catch (IllegalCharsetNameException icne) {
-					// Throw a unsupported charset exception wrapped around
-					// the illegal charset name exception.
-					throw new UnsupportedCharsetException(icne.getLocalizedMessage());
-				}
-				// Set the new charset name
-				this.charsetName = charsetName;
-			}
-		} else { // Reset the charset to "no charset"
+		if (charsetName == null) {
+			this.p4Charset = null;
 			this.charsetName = null;
-			charset = null;
+			return true;
 		}
-
-		return nonNull(charset);
+		this.p4Charset = new P4Charset(charsetName);
+		this.charsetName = p4Charset.getCharsetName();
+		return nonNull(p4Charset.getCharset());
 	}
 
 	@Override
@@ -829,8 +812,8 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 
 		setUserName(getPropertyByKeys(props, USER_NAME_KEY_SHORTFORM, USER_NAME_KEY, getP4User()));
 		password = getPropertyByKeys(props, PASSWORD_KEY_SHORTFORM, PASSWORD_KEY, null);
-		clientName = getPropertyByKeys(props, CLIENT_NAME_KEY_SHORTFORM, CLIENT_NAME_KEY,
-				getP4Client());
+		clientName = getPropertyByKeys(props, CLIENT_NAME_KEY_SHORTFORM, CLIENT_NAME_KEY, getP4Client());
+		clientPath = getPropertyByKeys(props, CLIENT_PATH_KEY_SHORTFORM, CLIENT_PATH_KEY, null);
 
 		setupOnConnect = isExistProperty(props, AUTO_CONNECT_KEY_SHORTFORM, AUTO_CONNECT_KEY, setupOnConnect);
 		loginOnConnect = isExistProperty(props, AUTO_LOGIN_KEY_SHORTFORM, AUTO_LOGIN_KEY, loginOnConnect);
@@ -1047,6 +1030,10 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 
 	public String getSSOKey() {
 		return ssoKey;
+	}
+
+	public IBrowserCallback getBrowserCallback() {
+		return browserCallback;
 	}
 
 	protected boolean isUnicode() {
@@ -1315,7 +1302,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	 */
 	@Override
 	public List<IFileSpec> getShelvedFiles(int changelistId) throws P4JavaException {
-		return describeDelegator.getChangelistFiles(changelistId);
+		return describeDelegator.getShelvedFiles(changelistId);
 	}
 
 	/*
@@ -1327,7 +1314,7 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	 */
 	@Override
 	public List<IFileSpec> getShelvedFiles(int changelistId, int max) throws P4JavaException {
-		return describeDelegator.getChangelistFiles(changelistId, max);
+		return describeDelegator.getShelvedFiles(changelistId, max);
 	}
 
 	/*
@@ -1504,6 +1491,12 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	public String createClient(@Nonnull IClient newClient)
 			throws ConnectionException, RequestException, AccessException {
 		return clientDelegator.createClient(newClient);
+	}
+
+	@Override
+	public void createTempClient(@Nonnull IClient newClient)
+			throws ConnectionException, RequestException, AccessException {
+		clientDelegator.createTempClient(newClient);
 	}
 
 	@Override
@@ -2602,8 +2595,9 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Usage: ls-tree {tree-sha}
 	 *
-	 * @param sha
-	 * @return
+	 * @param sha graph SHA
+	 * @return List of graph tree objects
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public List<IGraphListTree> getGraphListTree(String sha) throws P4JavaException {
@@ -2614,8 +2608,9 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Usage: show-ref [ -a -n {repo} -u {user} -t {type} -m {max} ]
 	 *
-	 * @param opts
-	 * @return
+	 * @param opts graph Show Ref Options
+	 * @return list of graph refs
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public List<IGraphRef> getGraphShowRefs(GraphShowRefOptions opts) throws P4JavaException {
@@ -2626,8 +2621,9 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Usage: cat-file commit {object-sha}
 	 *
-	 * @param sha
-	 * @return
+	 * @param sha graph SHA
+	 * @return Commit
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public ICommit getCommitObject(String sha) throws P4JavaException {
@@ -2637,8 +2633,9 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Usage: cat-file -n {repo} commit {object-sha}
 	 *
-	 * @param sha
-	 * @return
+	 * @param sha graph SHA
+	 * @return Commit
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public ICommit getCommitObject(String sha, String repo) throws P4JavaException {
@@ -2648,9 +2645,10 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Usage: cat-file -n {repo} blob {object-sha}
 	 *
-	 * @param repo
-	 * @param sha
-	 * @return
+	 * @param repo graph repo
+	 * @param sha graph SHA
+	 * @return InputStream for graph blob
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public InputStream getBlobObject(String repo, String sha) throws P4JavaException {
@@ -2660,8 +2658,9 @@ public abstract class Server extends HelixCommandExecutor implements IServerCont
 	/**
 	 * Usage: cat-file -t {object-sha}
 	 *
-	 * @param sha
-	 * @return
+	 * @param sha graph SHA
+	 * @return graph object
+	 * @throws P4JavaException API errors
 	 */
 	@Override
 	public IGraphObject getGraphObject(String sha) throws P4JavaException {

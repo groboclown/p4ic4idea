@@ -8,7 +8,7 @@ import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.client.IClientViewMapping;
-import com.perforce.p4java.common.base.P4JavaExceptions;
+import com.perforce.p4java.client.delegator.IWhereDelegator;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IRepo;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -23,6 +23,7 @@ import com.perforce.p4java.impl.generic.client.ClientView;
 import com.perforce.p4java.impl.generic.core.InputMapper;
 import com.perforce.p4java.impl.generic.core.ListData;
 import com.perforce.p4java.impl.generic.core.MapEntry;
+import com.perforce.p4java.impl.mapbased.client.cmd.WhereDelegator;
 import com.perforce.p4java.impl.mapbased.rpc.func.client.ClientHelper;
 import com.perforce.p4java.impl.mapbased.server.Parameters;
 import com.perforce.p4java.impl.mapbased.server.Server;
@@ -97,6 +98,9 @@ public class Client extends ClientSummary implements IClient {
 	private ArrayList<String> changeView = null;
 	private ViewDepotType viewDepotType;
 
+	// The delegators for running perforce commands
+	private IWhereDelegator whereDelegator = null;
+
 	/**
 	 * Convenience method to return a new Client object with certain default values
 	 * filled in.<p>
@@ -133,7 +137,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 
 	public static Client newClient(IOptionsServer server, String name, String description,
-	                               String root, String[] paths) {
+								   String root, String[] paths) {
 		String rootDir = root;
 		Server serverImpl = null;
 		String userName = null;
@@ -170,9 +174,8 @@ public class Client extends ClientSummary implements IClient {
 			};
 		}
 
-		Client client = new Client();
+		Client client = new Client(server);
 		client.setName(name);
-		client.setServer(server);
 		client.setDescription(description == null ? DEFAULT_DESCRIPTION : description);
 		client.setOwnerName(userName);
 		client.setRoot(rootDir);
@@ -205,6 +208,7 @@ public class Client extends ClientSummary implements IClient {
 	 * ClientSummary fields are set as noted in the ClientSummary default constructor
 	 * comments.
 	 */
+	@Deprecated
 	public Client() {
 		super();
 		super.refreshable = true;
@@ -225,7 +229,7 @@ public class Client extends ClientSummary implements IClient {
 		super();
 		super.refreshable = true;
 		super.updateable = true;
-		this.serverImpl = (Server) server;
+		setServer(server);
 	}
 
 	/**
@@ -236,13 +240,13 @@ public class Client extends ClientSummary implements IClient {
 	 */
 
 	public Client(String name, Date accessed, Date updated, String description,
-	              String hostName, String ownerName, String root,
-	              ClientLineEnd lineEnd, IClientOptions options,
-	              IClientSubmitOptions submitOptions, List<String> alternateRoots,
-	              IServer serverImpl, ClientView clientView) {
+				  String hostName, String ownerName, String root,
+				  ClientLineEnd lineEnd, IClientOptions options,
+				  IClientSubmitOptions submitOptions, List<String> alternateRoots,
+				  IServer serverImpl, ClientView clientView) {
 		super(name, accessed, updated, description, hostName, ownerName, root,
 				lineEnd, options, submitOptions, alternateRoots);
-		this.serverImpl = (Server) serverImpl;
+		setServer(serverImpl);
 		this.clientView = clientView;
 	}
 
@@ -254,13 +258,13 @@ public class Client extends ClientSummary implements IClient {
 	 */
 
 	public Client(String name, Date accessed, Date updated, String description,
-	              String hostName, String ownerName, String root,
-	              ClientLineEnd lineEnd, IClientOptions options,
-	              IClientSubmitOptions submitOptions, List<String> alternateRoots,
-	              IServer serverImpl, ClientView clientView, String stream, String type) {
+				  String hostName, String ownerName, String root,
+				  ClientLineEnd lineEnd, IClientOptions options,
+				  IClientSubmitOptions submitOptions, List<String> alternateRoots,
+				  IServer serverImpl, ClientView clientView, String stream, String type) {
 		super(name, accessed, updated, description, hostName, ownerName, root,
 				lineEnd, options, submitOptions, alternateRoots, stream, type);
-		this.serverImpl = (Server) serverImpl;
+		setServer(serverImpl);
 		this.clientView = clientView;
 	}
 
@@ -277,7 +281,7 @@ public class Client extends ClientSummary implements IClient {
 		super(map, false);
 		super.refreshable = true;
 		super.updateable = true;
-		this.serverImpl = (Server) serverImpl;
+		setServer(serverImpl);
 		this.viewDepotType = ViewDepotType.LOCAL;
 
 		// Extract fields from the map that aren't in the client spec set;
@@ -423,7 +427,7 @@ public class Client extends ClientSummary implements IClient {
 	public Client(IClientSummary clientSummary, IServer serverImpl, boolean refresh)
 			throws ConnectionException, RequestException, AccessException {
 		super(false);
-		this.serverImpl = (Server) serverImpl;
+		setServer(serverImpl);
 		if (clientSummary != null) {
 			if (refresh) {
 				if (clientSummary.getName() == null) {
@@ -449,6 +453,10 @@ public class Client extends ClientSummary implements IClient {
 				this.serverId = clientSummary.getServerId();
 			}
 		}
+	}
+
+	private void init(IServer serverImpl) {
+		whereDelegator = new WhereDelegator(serverImpl, this);
 	}
 
 	/**
@@ -567,6 +575,7 @@ public class Client extends ClientSummary implements IClient {
 	@Override
 	public void setServer(IServer server) {
 		this.serverImpl = (Server) server;
+		init(server);
 	}
 
 	/**
@@ -574,7 +583,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> sync(List<IFileSpec> fileSpecs, boolean forceUpdate, boolean noUpdate,
-	                            boolean clientBypass, boolean serverBypass)
+								boolean clientBypass, boolean serverBypass)
 			throws ConnectionException, RequestException, AccessException {
 
 		try {
@@ -624,7 +633,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> syncParallel(List<IFileSpec> fileSpecs, SyncOptions syncOpts,
-	                                    ParallelSyncOptions pSyncOpts) throws P4JavaException {
+										ParallelSyncOptions pSyncOpts) throws P4JavaException {
 		List<IFileSpec> specList = new ArrayList<IFileSpec>();
 
 		if ((this.serverImpl.getCurrentClient() == null)
@@ -673,7 +682,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public void syncParallel(List<IFileSpec> fileSpecs, SyncOptions syncOpts, IStreamingCallback callback,
-	                         int key, ParallelSyncOptions pSyncOpts)
+							 int key, ParallelSyncOptions pSyncOpts)
 			throws P4JavaException {
 
 		if ((this.serverImpl.getCurrentClient() == null)
@@ -693,7 +702,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> labelSync(List<IFileSpec> fileSpecs, String labelName,
-	                                 boolean noUpdate, boolean addFiles, boolean deleteFiles)
+									 boolean noUpdate, boolean addFiles, boolean deleteFiles)
 			throws ConnectionException, RequestException, AccessException {
 		try {
 			return labelSync(fileSpecs, labelName, new LabelSyncOptions(noUpdate, addFiles, deleteFiles));
@@ -806,7 +815,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> addFiles(List<IFileSpec> fileSpecs,
-	                                boolean noUpdate, int changeListId, String fileType, boolean useWildcards)
+									boolean noUpdate, int changeListId, String fileType, boolean useWildcards)
 			throws ConnectionException, AccessException {
 		try {
 			return addFiles(fileSpecs, new AddFilesOptions(
@@ -848,7 +857,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> deleteFiles(List<IFileSpec> fileSpecs,
-	                                   int changeListId, boolean noUpdate)
+									   int changeListId, boolean noUpdate)
 			throws ConnectionException, AccessException {
 		try {
 			return deleteFiles(fileSpecs,
@@ -890,7 +899,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> editFiles(List<IFileSpec> fileSpecs,
-	                                 boolean noUpdate, boolean bypassClientUpdate, int changeListId, String fileType)
+									 boolean noUpdate, boolean bypassClientUpdate, int changeListId, String fileType)
 			throws RequestException, ConnectionException, AccessException {
 		final int MINIMUM_OPTION_K_SERVER_VERSION = 20092;    // minimum version number supporting bypassClientUpdate
 
@@ -941,7 +950,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> revertFiles(List<IFileSpec> fileSpecs, boolean noUpdate,
-	                                   int changeListId, boolean revertOnlyUnchanged, boolean noRefresh)
+									   int changeListId, boolean revertOnlyUnchanged, boolean noRefresh)
 			throws ConnectionException, AccessException {
 		try {
 			return revertFiles(fileSpecs, new RevertFilesOptions(
@@ -1025,12 +1034,14 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> reopenFiles(List<IFileSpec> fileSpecs, int changeListId,
-	                                   String fileType) throws ConnectionException, AccessException {
+									   String fileType) throws ConnectionException, AccessException {
 
 		try {
 			return reopenFiles(fileSpecs,
 					new ReopenFilesOptions().setChangelistId(changeListId).setFileType(fileType));
-		} catch (ConnectionException | AccessException exc) {
+		} catch (ConnectionException exc) {
+			throw exc;
+		} catch (AccessException exc) {
 			throw exc;
 		} catch (P4JavaException exc) {
 			Log.warn("Unexpected exception in IClient.reopenFiles: " + exc);
@@ -1064,26 +1075,16 @@ public class Client extends ClientSummary implements IClient {
 	 * @see com.perforce.p4java.client.IClient#where(java.util.List)
 	 */
 	@Override
-	public List<IFileSpec> where(List<IFileSpec> fileSpecs)
-			throws ConnectionException, AccessException {
-		List<IFileSpec> resultList = new ArrayList<IFileSpec>();
+	public List<IFileSpec> where(List<IFileSpec> fileSpecs) throws ConnectionException, AccessException {
+		return whereDelegator.where(fileSpecs);
+	}
 
-		if ((this.serverImpl.getCurrentClient() == null)
-				|| !this.serverImpl.getCurrentClient().getName().equalsIgnoreCase(this.getName())) {
-			return resultList;
-		}
-
-		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
-				CmdSpec.WHERE, Server.getPreferredPathArray(null, fileSpecs), null);
-
-		if (resultMaps != null) {
-			for (Map<String, Object> result : resultMaps) {
-			    // p4ic4idea: enhanced exception handling
-                resultList.add(handleFileReturn(result, serverImpl));
-			}
-		}
-
-		return resultList;
+	/**
+	 * @see com.perforce.p4java.client.IClient#localWhere(java.util.List)
+	 */
+	@Override
+	public List<IFileSpec> localWhere(List<IFileSpec> fileSpecs) {
+		return whereDelegator.localWhere(fileSpecs);
 	}
 
 	/**
@@ -1134,8 +1135,8 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> integrateFiles(int changeListId, boolean showActionsOnly,
-	                                      IntegrationOptions integOpts, String branchSpec,
-	                                      IFileSpec fromFile, IFileSpec toFile)
+										  IntegrationOptions integOpts, String branchSpec,
+										  IFileSpec fromFile, IFileSpec toFile)
 			throws ConnectionException, AccessException {
 		try {
 			if (integOpts == null) {
@@ -1191,7 +1192,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> integrateFiles(IFileSpec fromFile, IFileSpec toFile, String branchSpec,
-	                                      IntegrateFilesOptions opts) throws P4JavaException {
+										  IntegrateFilesOptions opts) throws P4JavaException {
 
 		// Set the server's current client to this client
 		IClient currentClient = this.serverImpl.getCurrentClient();
@@ -1212,7 +1213,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> integrateFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
-	                                      IntegrateFilesOptions opts) throws P4JavaException {
+										  IntegrateFilesOptions opts) throws P4JavaException {
 
 		// Set the server's current client to this client
 		IClient currentClient = this.serverImpl.getCurrentClient();
@@ -1234,8 +1235,8 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> resolveFilesAuto(List<IFileSpec> fileSpecs, boolean safeMerge,
-	                                        boolean acceptTheirs, boolean acceptYours, boolean showActionsOnly,
-	                                        boolean forceResolve)
+											boolean acceptTheirs, boolean acceptYours, boolean showActionsOnly,
+											boolean forceResolve)
 			throws ConnectionException, AccessException {
 		try {
 			return resolveFilesAuto(fileSpecs, new ResolveFilesAutoOptions()
@@ -1292,12 +1293,14 @@ public class Client extends ClientSummary implements IClient {
 	 * @see com.perforce.p4java.client.IClient#resolveFile(com.perforce.p4java.core.file.IFileSpec, java.io.InputStream)
 	 */
 	@Override
-	public IFileSpec resolveFile(IFileSpec targetFile, InputStream sourceStream, boolean useTextualMerge,
-	                             int startFromRev, int endFromRev)
+	public IFileSpec resolveFile(IFileSpec targetFileSpec, InputStream sourceStream, boolean useTextualMerge,
+								 int startFromRev, int endFromRev)
 			throws ConnectionException, RequestException, AccessException {
-		if (targetFile == null) {
+
+		if (targetFileSpec == null) {
 			throw new NullPointerError("Null target file spec passed to IClient.resolveFile");
 		}
+
 		if (sourceStream == null) {
 			throw new NullPointerError("Null source stream passed to IClient.resolveFile");
 		}
@@ -1310,19 +1313,18 @@ public class Client extends ClientSummary implements IClient {
 
 		Map<String, Object> resolveMap = new HashMap<String, Object>();
 		IFileSpec fileSpec = null;
+		File tmpFile = null;
 
 		if (serverImpl != null) {
-			// Copy the source stream to a tmp file:
-			File tmpFile = null;
 			try {
-				File tmpDir = new File(serverImpl.getProperties().getProperty(
-						PropertyDefs.P4JAVA_TMP_DIR_KEY,
-						System.getProperty("java.io.tmpdir")));
-				tmpFile = File.createTempFile("p4java", ".tmp", tmpDir);
+				String defaultTmpDir = System.getProperty("java.io.tmpdir");
+				String tmpDirProp = serverImpl.getProperties().getProperty(PropertyDefs.P4JAVA_TMP_DIR_KEY, defaultTmpDir);
+				tmpFile = File.createTempFile("p4java", ".tmp", new File(tmpDirProp));
+
 				if (tmpFile != null) {
 					FileOutputStream outStream = new FileOutputStream(tmpFile);
 					byte[] bytes = new byte[1024];
-					int bytesRead = 0;
+					int bytesRead;
 					while ((bytesRead = sourceStream.read(bytes)) > 0) {
 						outStream.write(bytes, 0, bytesRead);
 					}
@@ -1336,6 +1338,7 @@ public class Client extends ClientSummary implements IClient {
 				if (useTextualMerge) {
 					args.add("-t");
 				}
+
 				// make sure we don't get a client-ActionResolve call
 				final int MINIMUM_ACTION_RESOLVE_SERVER_VERSION = 20111;    // minimum version number supporting bypassClientUpdate
 				if (this.serverImpl.getServerVersionNumber() >= MINIMUM_ACTION_RESOLVE_SERVER_VERSION) {
@@ -1343,20 +1346,17 @@ public class Client extends ClientSummary implements IClient {
 						args.add("-Ac");
 					}
 				}
-				args.add(targetFile.getAnnotatedPreferredPathString());
-				List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(CmdSpec.RESOLVE, args.toArray(new String[0]),
-						resolveMap);
+				args.add(targetFileSpec.getAnnotatedPreferredPathString());
+
+				List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(CmdSpec.RESOLVE, args.toArray(new String[0]), resolveMap);
 
 				if (resultMaps != null) {
 					// This returns *two* entries in normal cases...
-					// p4ic4idea: condense error catching logic
-					P4JavaExceptions.asRequestException(() -> {
-						if (resultMaps.size() > 1) {
-							return handleIntegrationFileReturn(resultMaps.get(1), true, serverImpl);
-						} else {
-							return handleIntegrationFileReturn(resultMaps.get(0), false, serverImpl);
-						}
-					});
+					if (resultMaps.size() > 1) {
+						return handleIntegrationFileReturn(resultMaps.get(1), true, serverImpl);
+					} else {
+						return handleIntegrationFileReturn(resultMaps.get(0), false, serverImpl);
+					}
 				}
 			} catch (IOException exc) {
 				Log.error("local file I/O error on resolve: " + exc.getMessage());
@@ -1377,7 +1377,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> resolvedFiles(List<IFileSpec> fileSpecs,
-	                                     boolean showBaseRevision) throws ConnectionException, AccessException {
+										 boolean showBaseRevision) throws ConnectionException, AccessException {
 		try {
 			return resolvedFiles(fileSpecs,
 					new ResolvedFilesOptions().setShowBaseRevision(showBaseRevision));
@@ -1490,9 +1490,9 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> getDiffFiles(List<IFileSpec> fileSpecs,
-	                                    int maxFiles, boolean diffNonTextFiles, boolean openedDifferentMissing,
-	                                    boolean openedForIntegrate, boolean unopenedMissing,
-	                                    boolean unopenedDifferent, boolean unopenedWithStatus, boolean openedSame)
+										int maxFiles, boolean diffNonTextFiles, boolean openedDifferentMissing,
+										boolean openedForIntegrate, boolean unopenedMissing,
+										boolean unopenedDifferent, boolean unopenedWithStatus, boolean openedSame)
 			throws ConnectionException, RequestException, AccessException {
 		try {
 			return getDiffFiles(fileSpecs, new GetDiffFilesOptions()
@@ -1541,7 +1541,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> shelveFiles(List<IFileSpec> fileSpecs, int changelistId,
-	                                   ShelveFilesOptions opts) throws P4JavaException {
+									   ShelveFilesOptions opts) throws P4JavaException {
 		List<IFileSpec> resultList = new ArrayList<IFileSpec>();
 
 		String changelistString = null;
@@ -1574,7 +1574,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> unshelveFiles(List<IFileSpec> fileSpecs, int sourceChangelistId,
-	                                     int targetChangelistId, UnshelveFilesOptions opts) throws P4JavaException {
+										 int targetChangelistId, UnshelveFilesOptions opts) throws P4JavaException {
 		List<IFileSpec> resultList = new ArrayList<IFileSpec>();
 
 		if (sourceChangelistId <= 0) {
@@ -1615,8 +1615,8 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> shelveChangelist(int changelistId,
-	                                        List<IFileSpec> fileSpecs, boolean forceUpdate, boolean replace,
-	                                        boolean discard) throws ConnectionException, RequestException,
+											List<IFileSpec> fileSpecs, boolean forceUpdate, boolean replace,
+											boolean discard) throws ConnectionException, RequestException,
 			AccessException {
 		try {
 			return shelveFiles(fileSpecs, changelistId, new ShelveFilesOptions()
@@ -1654,7 +1654,6 @@ public class Client extends ClientSummary implements IClient {
 		List<IFileSpec> resultList = new ArrayList<IFileSpec>();
 		if (resultMaps != null) {
 			for (Map<String, Object> result : resultMaps) {
-				// p4ic4idea: condense error handling logic
 				resultList.add(handleFileReturn(result, serverImpl));
 			}
 		}
@@ -1670,8 +1669,8 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> unshelveChangelist(int shelveChangelistId,
-	                                          List<IFileSpec> fileSpecs, int clientChangelistId,
-	                                          boolean forceOverwrite, boolean previewOnly)
+											  List<IFileSpec> fileSpecs, int clientChangelistId,
+											  boolean forceOverwrite, boolean previewOnly)
 			throws ConnectionException, RequestException, AccessException {
 		if (shelveChangelistId <= 0) {
 			throw new RequestException(
@@ -1722,7 +1721,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> copyFiles(IFileSpec fromFile, IFileSpec toFile, String branchSpec,
-	                                 CopyFilesOptions opts) throws P4JavaException {
+									 CopyFilesOptions opts) throws P4JavaException {
 
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
 				CmdSpec.COPY,
@@ -1738,7 +1737,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> copyFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
-	                                 CopyFilesOptions opts) throws P4JavaException {
+									 CopyFilesOptions opts) throws P4JavaException {
 
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
 				CmdSpec.COPY,
@@ -1754,7 +1753,7 @@ public class Client extends ClientSummary implements IClient {
 	 */
 	@Override
 	public List<IFileSpec> mergeFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
-	                                  MergeFilesOptions opts) throws P4JavaException {
+									  MergeFilesOptions opts) throws P4JavaException {
 
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
 				CmdSpec.MERGE,
@@ -1801,11 +1800,33 @@ public class Client extends ClientSummary implements IClient {
 	}
 
 	/**
+	 * @see com.perforce.p4java.client.IClient#reconcileFiles(List, ReconcileFilesOptions, IStreamingCallback, int)
+	 */
+	@Override
+	public void reconcileFiles(List<IFileSpec> fileSpecs, ReconcileFilesOptions opts, IStreamingCallback callback, int key)
+			throws P4JavaException {
+
+		if ((this.serverImpl.getCurrentClient() == null)
+				|| !this.serverImpl.getCurrentClient().getName().equalsIgnoreCase(this.getName())) {
+			throw new RequestException(
+					"Attempted to reconcile a client that is not the server's current client");
+		}
+
+		this.serverImpl.execStreamingMapCommand(
+				CmdSpec.RECONCILE.toString(),
+				Parameters.processParameters(
+						opts, fileSpecs, this.serverImpl),
+				null,
+				callback,
+				key);
+	}
+
+	/**
 	 * @see com.perforce.p4java.client.IClient#populateFiles(com.perforce.p4java.core.file.IFileSpec, java.util.List, com.perforce.p4java.option.client.PopulateFilesOptions)
 	 */
 	@Override
 	public List<IFileSpec> populateFiles(IFileSpec fromFile, List<IFileSpec> toFiles,
-	                                     PopulateFilesOptions opts) throws P4JavaException {
+										 PopulateFilesOptions opts) throws P4JavaException {
 
 		List<Map<String, Object>> resultMaps = this.serverImpl.execMapCmdList(
 				CmdSpec.POPULATE,
@@ -1836,8 +1857,8 @@ public class Client extends ClientSummary implements IClient {
 	/**
 	 * @param fileSpecs List of File specs
 	 * @param options   List options
-	 * @return
-	 * @throws P4JavaException
+	 * @return data fetched from p4 list command
+	 * @throws P4JavaException API error
 	 */
 	@Override
 	public ListData getListData(List<IFileSpec> fileSpecs, ListOptions options) throws P4JavaException {

@@ -22,6 +22,7 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.server.SetFileAttributesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.delegator.IAttributeDelegator;
@@ -152,7 +153,7 @@ public class AttributeDelegator extends BaseDelegator implements IAttributeDeleg
     List<IFileSpec> buildSetFileAttributesFileSpecsFromCommandResultMaps(
             @Nullable final List<Map<String, Object>> resultMaps,
             @Nonnull final Function<Map<String, Object>, IFileSpec> handle)
-            throws AccessException, ConnectionException {
+            throws RequestException {
 
         List<IFileSpec> resultList = new ArrayList<>();
         if (nonNull(resultMaps)) {

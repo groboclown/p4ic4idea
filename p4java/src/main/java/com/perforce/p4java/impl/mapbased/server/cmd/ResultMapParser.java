@@ -1,28 +1,20 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-// p4ic4idea: Massive changes to return IServerMessage instances instead of Strings.
 import com.perforce.p4java.Log;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
-import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.impl.mapbased.MapKeys;
-import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.server.IServer;
-import com.perforce.p4java.server.IServerMessage;
-import com.perforce.p4java.server.ISingleServerMessage;
 import org.apache.commons.lang3.Validate;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorString;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseString;
@@ -31,13 +23,28 @@ import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_WARN;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.COMMIT;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.DEPOT_FILE;
+import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FMT0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.REV;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.TREE;
 import static com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage.CODE;
+import static com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage.FMT;
 import static com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage.getSeverity;
+import static com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage.interpolateArgs;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.contains;
+import static org.apache.commons.lang3.StringUtils.indexOf;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+// p4ic4idea: Massive changes to return IServerMessage instances instead of Strings.
+import com.perforce.p4java.exception.AuthenticationFailedException;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.server.ISingleServerMessage;
+import javax.annotation.Nullable;
+import java.util.Collections;
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
+
 
 /**
  * Utility to parse a result map and test for info/error messages etc.
@@ -117,10 +124,10 @@ public abstract class ResultMapParser {
 	 * @throws AccessException  the access exception
 	 * @throws RequestException the request exception
 	 */
-	// p4ic4idea: return IServerMessage instead
 	public static String parseCommandResultMapIfIsInfoMessageAsString(
 			@Nonnull final List<Map<String, Object>> resultMaps)
 			throws AccessException, RequestException {
+		// p4ic4idea: use IServerMessage instead
 		IServerMessage msg = toServerMessage(resultMaps);
 		handleErrors(msg);
 		if (nonNull(msg)) {
@@ -136,7 +143,6 @@ public abstract class ResultMapParser {
 	 * @return true, if info message
      * @deprecated p4ic4idea {@link IServerMessage#isInfo()}
 	 */
-	// p4ic4idea: deprecated
 	public static boolean isInfoMessage(final Map<String, Object> map) {
 		return nonNull(map) && (getSeverity(parseCode0ErrorString(map)) == E_INFO);
 	}
@@ -151,7 +157,24 @@ public abstract class ResultMapParser {
 		return nonNull(map) && (getSeverity(parseCode0ErrorString(map)) == E_WARN);
 	}
 
-    /**
+
+	/**
+	 * Tests the map for errors and throws an exception if found.
+	 *
+	 * @param map the map
+	 * @return true, if successful
+	 * @throws RequestException the request exception
+	 * @throws AccessException  the access exception
+	 * @deprecated p4ic4idea: use IServerMessage form instead.
+	 */
+	public static boolean handleErrorStr(final Map<String, Object> map)
+			throws RequestException, AccessException {
+		// p4ic4idea: calls out to the IServerMessage version
+		handleErrors(toServerMessage(map));
+		return false;
+	}
+
+	/**
      *
      * @param message IServerMessage
      * @throws RequestException for non-access errors
@@ -170,6 +193,28 @@ public abstract class ResultMapParser {
         }
     }
 
+
+	/* p4ic4idea: replace with a IServerMessage version
+	/
+	 * Tests the map for warnings and throws an exception if found.
+	 *
+	 * @param map the map
+	 * @return true, if successful
+	 * @throws RequestException the request exception
+	 * @throws AccessException  the access exception
+	 /
+	public static boolean handleWarningStr(final Map<String, Object> map)
+			throws RequestException, AccessException {
+		String warnStr = getWarningStr(map);
+
+		if (isNotBlank(warnStr)) {
+			throw new RequestException(warnStr, parseCode0ErrorString(map));
+		}
+		return false;
+	}
+	*/
+
+
 	/**
 	 * Tests the map for warnings and throws an exception if found.
 	 *
@@ -183,21 +228,6 @@ public abstract class ResultMapParser {
 		if (nonNull(message) && message.isWarning()) {
 			throw new RequestException(message);
 		}
-	}
-
-	/**
-	 * Tests the map for errors and throws an exception if found.
-	 *
-	 * @param map the map
-	 * @return true, if successful
-	 * @throws RequestException the request exception
-	 * @throws AccessException  the access exception
-     * @deprecated p4ic4idea: use IServerMessage form instead.
-	 */
-	public static boolean handleErrorStr(final Map<String, Object> map)
-			throws RequestException, AccessException {
-	    handleErrors(toServerMessage(map));
-	    return false;
 	}
 
 	/**
@@ -248,6 +278,7 @@ public abstract class ResultMapParser {
 		return false;
 	}
 
+	// p4ic4idea: IServerMessage support
     public static AuthenticationFailedException.ErrorType getAuthFailType(IServerMessage err) {
         if (nonNull(err)) {
             // p4ic4idea: TODO this needs to check the error code instead of the message,
@@ -262,6 +293,7 @@ public abstract class ResultMapParser {
         return null;
     }
 
+	// p4ic4idea: IServerMessage support
 	/**
 	 *
 	 * @param err error string
@@ -313,8 +345,9 @@ public abstract class ResultMapParser {
 	 * @param map Perforce command results map
 	 * @return possibly-null info string
 	 * @since 2011.2
-     * @deprecated {@link #toServerMessage(Map)} ; {@link IServerMessage#getAllInfoStrings()}
+     * @deprecated p4ic4idea: {@link #toServerMessage(Map)} ; {@link IServerMessage#getAllInfoStrings()}
 	 */
+	// p4ic4idea: mark as nullable
 	@Nullable
 	public static String getInfoStr(@Nullable final Map<String, Object> map) {
 		if (nonNull(map)) {
@@ -329,6 +362,55 @@ public abstract class ResultMapParser {
 
 		return null;
 	}
+
+	/* p4ic4idea: removed because this approach isn't supported anymore.
+	/
+	 * Gets the string.
+	 *
+	 * @param map         the map
+	 * @param minimumCode the minimum code
+	 * @return the string
+	 *
+	private static String getString(final Map<String, Object> map, final int minimumCode) {
+
+		if (nonNull(map)) {
+			int index = 0;
+			String code = (String) map.get(CODE + index);
+			// Return if no code0 key found
+			if (isBlank(code)) {
+				return null;
+			}
+
+			boolean foundCode = false;
+			StringBuilder codeString = new StringBuilder(INITIAL_STRING_BUILDER);
+			while (isNotBlank(code)) {
+				int severity = getSeverity(code);
+				if (severity >= minimumCode) {
+					foundCode = true;
+					String fmtStr = parseString(map, FMT + index);
+					if (isNotBlank(fmtStr)) {
+						if (indexOf(fmtStr, '%') != -1) {
+							fmtStr = interpolateArgs(fmtStr, map);
+						}
+						// insert latest message at beginning of error string
+						// since server structures them this way
+						codeString.insert(0, fmtStr);
+						codeString.insert(fmtStr.length(), '\n');
+					}
+				}
+				index++;
+				code = parseString(map, CODE + index);
+			}
+
+			// Only return a string if at least one severity code was found
+			if (foundCode) {
+				return codeString.toString();
+			}
+		}
+		return null;
+	}
+	*/
+
 
     /**
      * Returns all Info messages.  Any error messages are handled as exceptions.
@@ -385,9 +467,10 @@ public abstract class ResultMapParser {
 	 * @param map Perforce command results map
 	 * @return possibly-null info/warning/error/fatal string
 	 * @since 2011.2
-     */
+	 */
+	// p4ic4idea: return IServerMessage
 	public static IServerMessage getErrorOrInfoStr(final Map<String, Object> map) {
-	    return getServerMessage(map, E_INFO);
+		return getServerMessage(map, E_INFO);
 	}
 
 	/**
@@ -398,6 +481,7 @@ public abstract class ResultMapParser {
 	 */
 	public static void throwRequestExceptionIfErrorMessageFound(final Map<String, Object> map)
 			throws RequestException {
+		// p4ic4idea: use IServerMessage
         IServerMessage message = getErrorStr(map);
 		if (nonNull(message)) {
 			throw new RequestException(message);
@@ -414,6 +498,7 @@ public abstract class ResultMapParser {
 	 */
 	public static boolean handleErrorOrInfoStr(final Map<String, Object> map)
 			throws RequestException, AccessException {
+		// p4ic4idea: use IServerMessage
         IServerMessage err = getErrorOrInfoStr(map);
 
 		if (nonNull(err)) {
@@ -441,13 +526,14 @@ public abstract class ResultMapParser {
 		StringBuilder retVal = new StringBuilder();
 		if (nonNull(resultMaps)) {
 			for (Map<String, Object> map : resultMaps) {
-                IServerMessage message = toServerMessage(map);
-                if (nonNull(message)) {
+				// p4ic4idea: use IServerMessage
+				IServerMessage message = toServerMessage(map);
+				if (nonNull(message)) {
                     handleErrors(message);
                     String info = message.getAllInfoStrings();
                     if (isNotBlank(info)) {
                         if (retVal.length() > 0) {
-                            retVal.append("\n");
+									retVal.append("\n");
                         }
                         retVal.append(info);
                     }
@@ -463,7 +549,7 @@ public abstract class ResultMapParser {
 	/**
 	 * Parses the command result map as file specs.
 	 *
-     * p4ic4idea: change id description
+     * p4ic4idea: change id description for clarification
 	 * @param id         the changelist id
 	 * @param server     the server
 	 * @param resultMaps the result maps
@@ -522,7 +608,7 @@ public abstract class ResultMapParser {
 	 * @return the string
 	 * @throws ConnectionException the connection exception
 	 * @throws AccessException     the access exception
-     * @deprecated {@link #handleFileErrors(IServerMessage)}
+     * @deprecated p4ic4idea: {@link #handleFileErrors(IServerMessage)}
 	 */
 	// p4ic4idea: return an IServerMessage
 	public static IServerMessage handleFileErrorStr(final Map<String, Object> map)
@@ -551,6 +637,7 @@ public abstract class ResultMapParser {
         return null;
 	}
 
+	// p4ic4idea: new method.
 	public static void handleFileErrors(final @Nullable IServerMessage message)
             throws ConnectionException, AccessException {
 	    if (nonNull(message)) {
@@ -588,6 +675,7 @@ public abstract class ResultMapParser {
 	 * @param map the map
 	 * @return true, if is non exist client or label or user
 	 */
+	// p4ic4idea: add @Nonnul
 	public static boolean isNonExistClientOrLabelOrUser(final @Nonnull Map<String, Object> map) {
 		Validate.notNull(map);
 		return !isExistClientOrLabelOrUser(map);

@@ -1,8 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-// p4ic4idea: centralize RequestException wrapping
-import static com.perforce.p4java.common.base.P4JavaExceptions.asRequestException;
-
 import static com.perforce.p4java.impl.mapbased.server.Parameters.processParameters;
 import static com.perforce.p4java.server.CmdSpec.BRANCH;
 
@@ -23,6 +20,9 @@ import com.perforce.p4java.option.server.GetBranchSpecOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.delegator.IBranchDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: centralize RequestException wrapping
+import static com.perforce.p4java.common.base.P4JavaExceptions.asRequestException;
 
 /**
  * @author Sean Shou
@@ -57,7 +57,10 @@ public class BranchDelegator extends BaseDelegator implements IBranchDelegator {
     @Override
     public IBranchSpec getBranchSpec(final String name)
             throws ConnectionException, RequestException, AccessException {
-        return asRequestException(() -> getBranchSpec(name, new GetBranchSpecOptions()));
+        // p4ic4idea: exception wrapping
+        return asRequestException(() ->
+                getBranchSpec(name, new GetBranchSpecOptions())
+        );
     }
 
     @Override
@@ -71,7 +74,8 @@ public class BranchDelegator extends BaseDelegator implements IBranchDelegator {
         return ResultListBuilder.buildNullableObjectFromNonInfoMessageCommandResultMaps(
                 resultMaps,
                 // p4ic4idea: define map generics and use a lambda.
-                (Function<Map<String, Object>, IBranchSpec>) map -> new BranchSpec(map, server)
+                (Function<Map<String, Object>, IBranchSpec>) map ->
+                        new BranchSpec(map, server)
         );
     }
 
@@ -96,7 +100,9 @@ public class BranchDelegator extends BaseDelegator implements IBranchDelegator {
             throws ConnectionException, RequestException, AccessException {
 
         // p4ic4idea: centralize RequestException wrapping
-        return asRequestException(() -> deleteBranchSpec(branchSpecName, new DeleteBranchSpecOptions(force)));
+        return asRequestException(() ->
+                deleteBranchSpec(branchSpecName, new DeleteBranchSpecOptions(force))
+        );
     }
 
     @Override

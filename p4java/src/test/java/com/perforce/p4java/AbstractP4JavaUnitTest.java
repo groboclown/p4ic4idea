@@ -172,7 +172,7 @@ public abstract class AbstractP4JavaUnitTest {
 		String errors = "";
 		for (IFileSpec file : out) {
 			if (file.getOpStatus() == FileSpecOpStatus.ERROR) {
-				errors += file.getStatusString() + "\n";
+				errors += file.getStatusMessage() + "\n";
 			}
 		}
 		if (errors.length() > 0) {
@@ -190,7 +190,7 @@ public abstract class AbstractP4JavaUnitTest {
 		String errors = "";
 		for (IFileSpec file : out) {
 			if (file.getOpStatus() == FileSpecOpStatus.ERROR) {
-				errors += file.getStatusString() + "\n";
+				errors += file.getStatusMessage() + "\n";
 			}
 		}
 		if (errors.length() > 0) {

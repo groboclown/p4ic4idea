@@ -3,9 +3,11 @@
  */
 package com.perforce.p4java.exception;
 
-import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.Log;
 
 // p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+
 
 /**
  * An exception to be used to signal that the Perforce server has detected
@@ -33,9 +35,7 @@ import com.perforce.p4java.server.IServerMessage;
  * only calculated once. The setCodes method is provided to make this easy.<p>
  * 
  * See the MessageSeverityCode and MessageGenericCode definitions for suitable help
- * with those types of code.<p>
- *
- * Updated for p4ic4idea to keep an IServerMessage.
+ * with those types of code.
  */
 
 public class RequestException extends P4JavaException {
@@ -49,9 +49,38 @@ public class RequestException extends P4JavaException {
 	private int subCode = 0;
 	private int subSystem = 0;
 
+	// p4ic4idea: removed
+	/*
+	public RequestException() {
+		super();
+	}
+	*/
+
+	// p4ic4idea: deprecated
+	@Deprecated
+	public RequestException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	// p4ic4idea: deprecated
+	@Deprecated
+	public RequestException(String message) {
+		super(message);
+	}
+
+	// p4ic4idea: deprecated
+	@Deprecated
 	public RequestException(Throwable cause) {
 		super(cause);
 	}
+
+	// p4ic4idea: removed
+	/*
+	public RequestException(String message, int rawCode) {
+		super(message);
+		setCodes(rawCode);
+	}
+	*/
 
 	/** @deprecated should be a very specific exception */
 	public RequestException(String message, int genericCode, int severityCode) {
@@ -60,29 +89,8 @@ public class RequestException extends P4JavaException {
 		this.severityCode = severityCode;
 	}
 
-	/** @deprecated should be a different exception */
-	public RequestException(String message) {
-		super(message);
-	}
+	/* p4ic4idea: removed
 
-	/**
-	 * @deprecated should be a different exception
-	 */
-	public RequestException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	/*
-
-	public RequestException() {
-		super();
-	}
-
-	public RequestException(String message, int rawCode) {
-		super(message);
-		setCodes(rawCode);
-	}
-	
 	public RequestException(String message, String codeString) {
 		super(message);
 		if (codeString != null) {
@@ -112,7 +120,8 @@ public class RequestException extends P4JavaException {
 		this.severityCode = severityCode;
 	}
 	*/
-	
+
+	// p4ic4idea: new IServerMessage constructors
 	public RequestException(IServerMessage message) {
 		super(message.getLocalizedMessage());
 		this.message = message;
@@ -154,13 +163,13 @@ public class RequestException extends P4JavaException {
 		return this;
 	}
 
-        /** @deprecated p4ic4idea: error should be immutable */
+	/** @deprecated p4ic4idea: error should be immutable */
 	public void setSeverityCode(int severityCode) {
 		this.severityCode = severityCode;
 	}
 
 
-        /** @deprecated p4ic4idea: error should be immutable */
+    /** @deprecated p4ic4idea: error should be immutable */
 	public void setGenericCode(int genericCode) {
 		this.genericCode = genericCode;
 	}
@@ -168,6 +177,7 @@ public class RequestException extends P4JavaException {
 	public String getDisplayString() {
 		return "" + (this.genericCode != 0 ? "Generic: " + this.genericCode : "")
 				+ (this.severityCode != 0 ? " Severity: " + this.severityCode + "; " : "")
+				// p4ic4idea: report sub-code
 				+ (this.subCode != 0 ? "SubCode: " + this.subCode + "; " : "")
 				+ this.getMessage()
 				+ (this.getCause() != null ? this.getCause() : "");
@@ -201,6 +211,7 @@ public class RequestException extends P4JavaException {
 		this.subSystem = subSystem;
 	}
 
+	// p4ic4idea: access IServerMessage
 	public IServerMessage getServerMessage() {
 		return message;
 	}
@@ -226,12 +237,5 @@ public class RequestException extends P4JavaException {
 	 */
 	public int getGenericCode() {
 		return this.genericCode;
-	}
-
-	private static String localizeMessage(IServerMessage message) {
-		return message.getLocalizedMessage() +
-				" (severity: " + message.getSeverity() +
-				", subsystem: " + message.getSubSystem() +
-				", message: " + message.getSubCode() + ")";
 	}
 }

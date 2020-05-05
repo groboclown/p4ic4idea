@@ -63,27 +63,21 @@ public interface ICommandCallback {
 	 * flag files being opened for edit, etc., but they may also include
 	 * trigger output on forms submission, etc.
 	 *
-	 * <p/>
-	 *
-	 * p4ic4idea changed the {@code infoLine} to IServerMessage from String.
-	 * 
 	 * @param key -- opaque integer key as returned from the associated 
 	 * 				issuingServerCommand call.
 	 * @param infoLine non-null info message. May contain newlines.
 	 */
+	// p4ic4idea: use IServerMessage
 	void receivedServerInfoLine(int key, IServerMessage infoLine);
 	
 	/**
 	 * Report receiving an error message result from the Perforce server.
 	 *
-	 * <p>
-	 *
-	 * p4ic4idea changed the {@code errorLine} to IServerMessage from String.
-	 *
-	 *  @param key -- opaque integer key as returned from the associated
+	 * @param key -- opaque integer key as returned from the associated
 	 * 				issuingServerCommand call.
 	 * @param errorLine non-null error message. May contain newlines.
 	 */
+	// p4ic4idea: use IServerMessage
 	void receivedServerErrorLine(int key, IServerMessage errorLine);
 	
 	/**
@@ -92,13 +86,12 @@ public interface ICommandCallback {
 	 * This method can be used in place of the separate receivedServerInfoLine
 	 * and receivedServerErrorLine for more general usage.
 	 *
-	 * <p/>
-	 *
-	 * p4ic4idea changed the message to an IServerMessage from a string + error codes.
-	 *
 	 * @param key opaque integer key as returned from the associated 
 	 * 				issuingServerCommand call.
+	 * @param genericCode Perforce generic code, as documented in MessageGenericCode.
+	 * @param severityCode Perforce severity code, as documented in MessageSeverityCode.
 	 * @param message non-null message. May contain newlines.
 	 */
+	// p4ic4idea: use IServerMessage
 	void receivedServerMessage(int key, IServerMessage message);
 }

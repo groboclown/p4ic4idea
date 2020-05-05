@@ -6,6 +6,7 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -71,7 +72,9 @@ public class FileSpecBuilderTest {
   public void makeFileSpecList_valid_list() throws Exception {
     String depotFileSpec = "//depot/p4java/test/test.txt";
     String revision = "#2";
-    List<String> filePaths = ImmutableList.of(depotFileSpec + revision, depotFileSpec + "#3,#4");
+    List<String> filePaths = new ArrayList<String>();
+    filePaths.add(depotFileSpec + revision);
+    filePaths.add(depotFileSpec + "#3,#4");
     List<IFileSpec> fileSpecs = FileSpecBuilder.makeFileSpecList(filePaths);
     assertThat(fileSpecs.size(), is(2));
     IFileSpec fileSpec1 = fileSpecs.get(0);
@@ -97,7 +100,10 @@ public class FileSpecBuilderTest {
     IFileSpec invalidFileSpec = mock(IFileSpec.class);
     when(invalidFileSpec.getOpStatus()).thenReturn(FileSpecOpStatus.ERROR);
 
-    List<IFileSpec> fileSpecs = ImmutableList.of(validFileSpec1, validFileSpec2, invalidFileSpec);
+    List<IFileSpec> fileSpecs = new ArrayList<IFileSpec>();
+    fileSpecs.add(validFileSpec1);
+    fileSpecs.add(validFileSpec2);
+    fileSpecs.add(invalidFileSpec);
     List<IFileSpec> validFileSpecs = FileSpecBuilder.getValidFileSpecs(fileSpecs);
     assertThat(validFileSpecs.size(), is(2));
 

@@ -4,7 +4,6 @@
 package com.perforce.p4java.impl.mapbased.rpc;
 
 import com.perforce.p4java.Log;
-import com.perforce.p4java.common.base.P4JavaExceptions;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -24,14 +23,11 @@ import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcOutputStream;
 import com.perforce.p4java.impl.mapbased.server.ServerAddressBuilder;
+import com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServerAddress;
 import com.perforce.p4java.server.IServerAddress.Protocol;
-
-// p4ic4idea: allow for better error messages
-import com.perforce.p4java.server.IServerMessage;
-
 import com.perforce.p4java.server.ServerStatus;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import com.perforce.p4java.server.callback.IParallelCallback;
@@ -47,9 +43,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrors;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleWarnings;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
+// p4ic4idea: allow for better error messages
+import com.perforce.p4java.server.IServerMessage;
 
 /**
  * NTS (non-thread-safe) version of the P4Java RPC implementation.<p>
@@ -171,7 +166,7 @@ public class NtsServerImpl extends RpcServer {
 	public void connect() throws ConnectionException,
 								AccessException, RequestException, ConfigException {
 		this.rpcConnection = new RpcStreamConnection(serverHost, serverPort, props,
-												this.serverStats, this.charset, null, null,
+												this.serverStats, this.p4Charset, null, null,
 												this.secure, this.rsh);
 		this.dispatcher = new RpcPacketDispatcher(props, this);
 				
@@ -213,7 +208,7 @@ public class NtsServerImpl extends RpcServer {
 	 */
 	public boolean setCharsetName(String charsetName) throws UnsupportedCharsetException {
 		boolean retVal = super.setCharsetName(charsetName);
-		this.rpcConnection.setClientCharset(this.charset);
+		this.rpcConnection.setClientCharset(this.p4Charset);
 		return retVal;
 	}
 	
@@ -554,13 +549,13 @@ public class NtsServerImpl extends RpcServer {
 			if (!ignoreCallbacks && (this.commandCallback != null)) {
 				this.processCmdCallbacks(cmdCallBackKey, endTime - startTime, resultMaps);
 			}
-			
+
 			if ((resultMaps != null) && (resultMaps.size() != 0)) {
 				for (Map<String, Object> map : resultMaps) {
 					// p4ic4idea: use IServerMessage
-					IServerMessage msg = toServerMessage(map);
-					handleErrors(msg);
-					handleWarnings(msg);
+					IServerMessage msg = ResultMapParser.toServerMessage(map);
+					ResultMapParser.handleErrors(msg);
+					ResultMapParser.handleWarnings(msg);
 				}
 			}
 
@@ -642,8 +637,8 @@ public class NtsServerImpl extends RpcServer {
 					this.getUsageOptions().getTextLanguage(),
 					this.getOsTypeForEnv(),
 					this.getUserForEnv(),
-					this.charsetName != null,
-					this.charset
+					this.isServerUnicode(),
+					this.getClientCharset()
 				);
 		
 		if (!ignoreCallbacks && (this.commandCallback != null)) {
@@ -680,6 +675,12 @@ public class NtsServerImpl extends RpcServer {
 			// Set the 'host' (P4HOST) and 'port' (P4PORT) protocol parameters
 			protocolSpecs.setHost(env.getHost());
 			protocolSpecs.setPort(env.getPort());
+
+			if (props.containsKey(RpcFunctionMapKey.IPADDR)
+					&& props.containsKey(RpcFunctionMapKey.SVRNAME)
+					&& props.containsKey(RpcFunctionMapKey.PORT)) {
+				protocolSpecs.setIpAddr(props.getProperty(RpcFunctionMapKey.IPADDR));
+			}
 
 			protPacket = RpcPacket.constructRpcPacket(
 									RpcFunctionSpec.PROTOCOL_PROTOCOL,

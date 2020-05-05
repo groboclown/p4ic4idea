@@ -23,6 +23,7 @@ import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ISingleServerMessage;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -182,6 +183,12 @@ public class ServerMessage implements IServerMessage {
     public byte[] getBytes(final String charsetName) throws UnsupportedEncodingException {
         String msg = toString() + CommandEnv.LINE_SEPARATOR;
         return msg.getBytes(charsetName);
+    }
+
+    @Nullable
+    @Override
+    public String getErrorOrInfoStr() {
+        return str;
     }
 
     @Override

@@ -16,8 +16,10 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.StreamSummary;
 import com.perforce.p4java.option.server.GetStreamsOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IStreamsDelegator;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
 
 /**
  * Implementation to handle the Streams command.

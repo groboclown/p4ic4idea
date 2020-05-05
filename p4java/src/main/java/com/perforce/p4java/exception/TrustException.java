@@ -49,7 +49,7 @@ public class TrustException extends SslException {
 		this.fingerprint = fingerprint;
 	}
 
-        // p4ic4idea: copy the source exception details.
+	// p4ic4idea: copy the source exception details.
 	public TrustException(final TrustException source) {
 		this(source.type, source.serverHostPort, source.serverIpPort,
 				source.fingerprint, source.getMessage(), source);

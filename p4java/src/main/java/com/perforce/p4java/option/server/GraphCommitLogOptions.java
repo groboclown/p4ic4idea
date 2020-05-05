@@ -68,13 +68,13 @@ public class GraphCommitLogOptions extends Options {
 	/**
 	 * Constructs a GraphCommitLogOptions with the given arguments
 	 *
-	 * @param repo
-	 * @param maxResults
-	 * @param startDate
-	 * @param endDate
-	 * @param minNumberOfParents
-	 * @param maxNumberOfParents
-	 * @param commitValue
+	 * @param repo - repo against which the 'p4 graph log' command is issued
+	 * @param maxResults - maximum number of items to be returned by the graph log command
+	 * @param startDate - Date starting from when the commit logs will be fetched
+	 * @param endDate - Date used as the end date up to when the commit logs will be fetched
+	 * @param minNumberOfParents - lower bound for the number of parents a commit is expected to have as part of the fetch
+	 * @param maxNumberOfParents - upper bound for the number of parents a commit is expected to have as part of the fetch
+	 * @param commitValue - Additional commit SHA values that can be used to filter the search
 	 */
 	public GraphCommitLogOptions(String repo, int maxResults, String startDate, String endDate,
 	                             int minNumberOfParents, int maxNumberOfParents, String... commitValue) {
@@ -93,7 +93,7 @@ public class GraphCommitLogOptions extends Options {
 	 *               is acceptable to throw an OptionsException, but it is also
 	 *               possible to ignore it and do the best you can with what you've
 	 *               got...
-	 * @return
+	 * @return list of options strings associated with this Option
 	 * @throws OptionsException
 	 */
 	@Override
@@ -115,8 +115,7 @@ public class GraphCommitLogOptions extends Options {
 	 * which defines the repository against which the
 	 * command is
 	 *
-	 * @param repo
-	 * @return
+	 * @param repo - repo against which the 'p4 graph log' command is issued
 	 */
 	public void setRepo(String repo) {
 		this.repo = repo;
@@ -125,7 +124,7 @@ public class GraphCommitLogOptions extends Options {
 	/**
 	 * Returns the repo used as part of option -n
 	 *
-	 * @return
+	 * @return repo against which the 'p4 graph log' command is issued
 	 */
 	public String getRepo() {
 		return this.repo;
@@ -134,17 +133,14 @@ public class GraphCommitLogOptions extends Options {
 	/**
 	 * Sets the optional option value for option -m
 	 *
-	 * @param maxResults
-	 * @return
+	 * @param maxResults - maximum number of items to be returned by the graph log command
 	 */
 	public void setMaxResults(int maxResults) {
 		this.maxResults = maxResults;
 	}
 
 	/**
-	 * Returns the maximum results expected from the log command
-	 *
-	 * @return
+	 * @return maximum number of items to be returned by the graph log command
 	 */
 	public int getMaxResults() {
 		return this.maxResults;
@@ -153,8 +149,7 @@ public class GraphCommitLogOptions extends Options {
 	/**
 	 * Sets the optional argument of commit SHA values
 	 *
-	 * @param commitValue
-	 * @return
+	 * @param commitValue - Additional commit SHA values that can be used to filter the search
 	 */
 	public void setCommitValue(String... commitValue) {
 		this.commitValue = commitValue;
@@ -163,7 +158,7 @@ public class GraphCommitLogOptions extends Options {
 	/**
 	 * Returns the commit SHA values
 	 *
-	 * @return
+	 * @return Additional commit SHA values that can be used to filter the search
 	 */
 	public String[] getCommitValue() {
 		return this.commitValue;
@@ -173,17 +168,14 @@ public class GraphCommitLogOptions extends Options {
 	 * The value expected by the -A option
 	 * The lower date limit of the logs retrieved.
 	 *
-	 * @param startDate
-	 * @return
+	 * @param startDate - Date starting from when the commit logs will be fetched
 	 */
 	public void setStartDate(String startDate) {
 		this.startDate = startDate;
 	}
 
 	/**
-	 * Returns The lower date limit of the logs retrieved.
-	 *
-	 * @return
+	 * @return The lower date limit of the logs retrieved.
 	 */
 	public String getStartDate() {
 		return this.startDate;
@@ -193,17 +185,14 @@ public class GraphCommitLogOptions extends Options {
 	 * The value expected by -B option
 	 * The upper date limit of logs retrieved
 	 *
-	 * @param endDate
-	 * @return
+	 * @param endDate - Date used as the end date up to when the commit logs will be fetched
 	 */
 	public void setEndDate(String endDate) {
 		this.endDate = endDate;
 	}
 
 	/**
-	 * Returns the he upper date limit of logs retrieved
-	 *
-	 * @return
+	 * @return the he upper date limit of logs retrieved
 	 */
 	public String getEndDate() {
 		return this.endDate;
@@ -213,17 +202,14 @@ public class GraphCommitLogOptions extends Options {
 	 * The value expected by the -N option.
 	 * The minimum number of parents the fetched log commit is expected to have
 	 *
-	 * @param minimumNumberOfParents
-	 * @return
+	 * @param minimumNumberOfParents - lower bound for the number of parents a commit is expected to have as part of the fetch
 	 */
 	public void setMinParents(int minimumNumberOfParents) {
 		this.minNumberOfParents = minimumNumberOfParents;
 	}
 
 	/**
-	 * Returns the minimum number of parents the fetched log commit is expected to have
-	 *
-	 * @return
+	 * @return the minimum number of parents the fetched log commit is expected to have
 	 */
 	public int getMinParents() {
 		return this.minNumberOfParents;
@@ -233,17 +219,14 @@ public class GraphCommitLogOptions extends Options {
 	 * The value expected by -X option
 	 * The maximum number of parents the fetched log commit is expected to have.
 	 *
-	 * @param maximumNumberOfParents
-	 * @return
+	 * @param maximumNumberOfParents - upper bound for the number of parents a commit is expected to have as part of the fetch
 	 */
 	public void setMaxParents(int maximumNumberOfParents) {
 		this.maxNumberOfParents = maximumNumberOfParents;
 	}
 
 	/**
-	 * Returns the maximum number of parents the fetched log commit is expected to have.
-	 *
-	 * @return
+	 * @return the maximum number of parents the fetched log commit is expected to have.
 	 */
 	public int getMaxParents() {
 		return this.maxNumberOfParents;
@@ -253,17 +236,14 @@ public class GraphCommitLogOptions extends Options {
 	 * The value expected by -u option
 	 * The user who is responsible for the commits retrieved  by p4 log
 	 *
-	 * @param user
-	 * @return
+	 * @param user - User who has made the commits
 	 */
 	public void setUser(String user) {
 		this.user = user;
 	}
 
 	/**
-	 * Returns the user of the commit
-	 *
-	 * @return
+	 * @return  the user of the commit
 	 */
 	public String getUser() {
 		// p4ic4idea: correctness

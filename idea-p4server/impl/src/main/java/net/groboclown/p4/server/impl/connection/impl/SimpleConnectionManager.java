@@ -41,6 +41,7 @@ import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.NotOnServerException;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.impl.commands.AnswerUtil;
 import net.groboclown.p4.server.impl.connection.ConnectionManager;
@@ -115,7 +116,7 @@ public class SimpleConnectionManager implements ConnectionManager {
                     try {
                         IClient client = server.getClient(config.getClientname());
                         if (client == null) {
-                            throw new ConfigException("Client does not exist: " + config.getClientname());
+                            throw new NotOnServerException("client", config.getClientname());
                         }
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Connected to client " + client.getName());

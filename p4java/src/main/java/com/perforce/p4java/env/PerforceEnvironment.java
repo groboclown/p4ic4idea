@@ -75,6 +75,7 @@ public class PerforceEnvironment {
 		return System.getenv(P4CONFIG);
 	}
 
+	// p4ic4idea: added getter
 	public static String getP4ServerFingerprint() {
 		return System.getenv(P4SERVER_FINGERPRINT);
 	}

@@ -57,7 +57,6 @@ import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IResolveRecord;
-import com.perforce.p4java.exception.MessageSeverityCode;
 import com.perforce.p4java.server.IServer;
 
 // p4ic4idea: allow for construction from a server message
@@ -323,16 +322,16 @@ public class ExtendedFileSpec extends FileSpec implements IExtendedFileSpec {
     }
 
     // p4ic4idea: these string + code based constructors are no longer used
-    //public ExtendedFileSpec(FileSpecOpStatus status, String errStr, String errCodeStr) {
-    //    super(status, errStr, errCodeStr);
-    //}
-    //
-    //public ExtendedFileSpec(FileSpecOpStatus status, String errStr, int rawCode) {
-    //    super(status, errStr, rawCode);
-    //}
-
-
     /*
+    public ExtendedFileSpec(FileSpecOpStatus status, String errStr, String errCodeStr) {
+        super(status, errStr, errCodeStr);
+    }
+
+    public ExtendedFileSpec(FileSpecOpStatus status, String errStr, int rawCode) {
+        super(status, errStr, rawCode);
+    }
+
+    /
      * Construct an ExtendedFileSpec object from a status, message string,
      * generic code, severity code tuple. See the corresponding FileSpec
      * constructor for details -- this constructor does not add any
@@ -346,11 +345,12 @@ public class ExtendedFileSpec extends FileSpec implements IExtendedFileSpec {
      *            Perforce generic code to use
      * @param severityCode
      *            Perforce severity code to use.
-     */
-    //public ExtendedFileSpec(FileSpecOpStatus status, String errStr, int genericCode,
-    //        int severityCode) {
-    //    super(status, errStr, genericCode, severityCode);
-    //}
+     /
+    public ExtendedFileSpec(FileSpecOpStatus status, String errStr, int genericCode,
+            int severityCode) {
+        super(status, errStr, genericCode, severityCode);
+    }
+    */
 
     public String getActionOwner() {
         return this.actionOwner;
@@ -619,26 +619,4 @@ public class ExtendedFileSpec extends FileSpec implements IExtendedFileSpec {
     public void setUnresolved(boolean unresolved) {
         this.unresolved = unresolved;
     }
-
-    // p4ic4idea: IServerMessage construction
-
-	/**
-	 * Construct an ExtendedFileSpec object from a status, message string,
-	 * generic code, severity code tuple. See the corresponding FileSpec
-	 * constructor for details -- this constructor does not add any
-	 * ExtendedFileSpec-specific semantics.
-	 * 
-	 * @param message server message
-	 */
-	public ExtendedFileSpec(IServerMessage message) {
-		super(getStatusFor(message), message);
-	}
-
-
-	private static FileSpecOpStatus getStatusFor(IServerMessage message) {
-		if (message.getSeverity() == MessageSeverityCode.E_INFO) {
-			return FileSpecOpStatus.INFO;
-		}
-		return FileSpecOpStatus.ERROR;
-	}
 }

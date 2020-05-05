@@ -12,6 +12,7 @@ import java.io.IOException;
 // p4ic4idea: redone to use TestServer instead of SimpleTestServer
 // TODO use the ServerRule instead.
 public class SimpleServerRule implements TestRule {
+	// TODO SimpleTestServer instead???
 	private final TestServer testServer;
 
 	public SimpleServerRule(String p4dVersion, String dataExtractLoc) {
@@ -38,6 +39,11 @@ public class SimpleServerRule implements TestRule {
 
 	public String getPathToRoot() {
 		return testServer.getPathToRoot();
+	}
+
+	public String getNonThreadSafeRSHURL()
+			throws IOException {
+		return testServer.getRSHURL();
 	}
 
 	public class ServerStatement extends Statement {

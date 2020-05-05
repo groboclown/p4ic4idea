@@ -8,7 +8,6 @@ import static com.perforce.p4java.server.CmdSpec.COUNTER;
 import java.util.List;
 import java.util.Map;
 
-import com.perforce.p4java.common.base.P4JavaExceptions;
 import com.perforce.p4java.common.function.Function;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -18,6 +17,10 @@ import com.perforce.p4java.option.server.CounterOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.delegator.ICounterDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: better exceptions
+import com.perforce.p4java.common.base.P4JavaExceptions;
+
 
 /**
  * @author Sean Shou

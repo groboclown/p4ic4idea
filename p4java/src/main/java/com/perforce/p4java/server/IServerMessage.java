@@ -15,6 +15,7 @@
 package com.perforce.p4java.server;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
@@ -64,4 +65,13 @@ public interface IServerMessage extends ISingleServerMessage {
     String getAllInfoStrings(@Nonnull String separator);
 
     byte[] getBytes(String charsetName) throws UnsupportedEncodingException;
+
+    /**
+     * Returns the raw string that the server call to getErrorOrInfoStr originally returned.
+     * This is for writing data back to the RPC output stream.
+     *
+     * @return raw info string
+     */
+    @Nullable
+    String getErrorOrInfoStr();
 }

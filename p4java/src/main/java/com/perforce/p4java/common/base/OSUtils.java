@@ -1,9 +1,7 @@
 package com.perforce.p4java.common.base;
 
+// p4ic4idea: add security checks and extra code for looking up system information.
 import java.security.AccessController;
-
-// p4ic4idea: allow for openjdk to be used.
-//import sun.security.action.GetPropertyAction;
 import javax.annotation.Nonnull;
 import java.security.PrivilegedAction;
 import java.util.Locale;

@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.common.base.P4JavaExceptions.throwRequestExceptionIfConditionFails;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorString;
@@ -20,9 +19,12 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.FileLineMatch;
 import com.perforce.p4java.option.server.MatchingLinesOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IGrepDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 
 /**
  * Implementation of 'p4 grep'.

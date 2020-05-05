@@ -43,7 +43,7 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 		Properties rpcTimeOutProperties = configRpcTimeOut("GetExportRecordsTest", TIME_OUT_IN_SECONDS);
 
 		// initialization code (before each test).
-		server = getServerAsSuper(rpcTimeOutProperties);
+		server = getServerAsSuper(rpcTimeOutProperties, getServerUrlString());
 		assertNotNull(server);
 		client = server.getClient("p4TestUserWS");
 		assertNotNull(client);

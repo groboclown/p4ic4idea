@@ -3,11 +3,11 @@
  */
 package com.perforce.p4java.impl.generic.core;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.core.IMapEntry;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Default implementation of the IMapEntry interface.
@@ -171,7 +171,7 @@ public class MapEntry implements IMapEntry {
 	}
 
 	/**
-	 * @see com.perforce.p4java.core.IMapEntry#toString(java.lang.String)
+	 * @see com.perforce.p4java.core.IMapEntry#toString(String, boolean)
 	 */
 	public String toString(String sepString, boolean quoteBlanks) {
 		StringBuilder retVal = new StringBuilder();
@@ -221,17 +221,22 @@ public class MapEntry implements IMapEntry {
 	 * string is returned.
 	 */
 	public static String stripTypePrefix(String str) {
-		if (str != null) {
-			if (str.startsWith(IMapEntry.EXCLUDE_PREFIX)) {
-				return str.substring(IMapEntry.EXCLUDE_PREFIX.length());
-			} else if (str.startsWith(IMapEntry.OVERLAY_PREFIX)){
-				return str.substring(IMapEntry.OVERLAY_PREFIX.length());
-			} else {
-				return str;
+		if (str == null) {
+			return null;
+		}
+
+		for(IMapEntry.EntryType type : IMapEntry.EntryType.values()) {
+			// skip over the INCLUDE type as there is no symbol to match
+			if(type.equals(EntryType.INCLUDE)) {
+				continue;
+			}
+			if(str.startsWith(type.getSymbol())) {
+				return str.substring(type.getSymbol().length());
 			}
 		}
-		
-		return null;
+
+		// No match, return original string
+		return str;
 	}
 	
 	/**
@@ -257,7 +262,7 @@ public class MapEntry implements IMapEntry {
 	 * and will need further processing to get the entry type (and or remove
 	 * the entry type character).
 	 * 
-	 * @param if not null, string to be parsed; if null, this method returns
+	 * @param str if not null, string to be parsed; if null, this method returns
 	 * 			an empty (but not null) array
 	 * @return non-null two-element string array; element 0 contains the left
 	 * 			element, element 1 contains the right. Either or both can be null,

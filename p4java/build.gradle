@@ -37,6 +37,9 @@ dependencies {
             'org.slf4j:slf4j-api:1.7.25',
             'javassist:javassist:3.12.1.GA',
     )
+    testRuntimeOnly (
+            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
+    )
 
     testImplementation project(':p4d-test-core')
 }
@@ -55,36 +58,44 @@ group 'net.groboclown.p4ic4idea'
 version '1.0'
 
 
-tasks.getByName('test') {
-    def testOutDir = project.file("$buildDir/test-out")
-
+test {
     useJUnitPlatform()
-    workingDir = testOutDir
     exclude 'com/perforce/p4java/impl/mapbased/server/cmd/**'
     exclude 'com/perforce/p4java/tests/dev/unit/**'
     exclude 'com/perforce/p4java/tests/qa/**'
+}
+
+
+tasks.getByName('test') {
+    def testOutDir = project.file("$buildDir/test-out")
+
+    workingDir = testOutDir
 
     doFirst {
         testOutDir.mkdirs()
     }
 }
 
-task integrationTest(type: Test) {
-    // FIXME this doesn't run any tests.  Figure out why.
-
+task integrationTest(type: Test, dependsOn: compileTestJava) {
     def testOutDir = project.file("$buildDir/test-out")
 
     useJUnitPlatform()
     workingDir = testOutDir
     enableAssertions true
-    classpath = files(configurations.testRuntime.files)
-    testClassesDirs = files(file("src/test/java"))
 
     include 'com/perforce/p4java/impl/mapbased/server/cmd/**'
     include 'com/perforce/p4java/tests/dev/unit/**'
     include 'com/perforce/p4java/tests/qa/**'
 
     doFirst {
+        //logger.lifecycle("Configurations:")
+        //configurations.each {
+        //    logger.lifecycle("  " + it.name)
+        //}
+        //logger.lifecycle("Classpath:")
+        //classpath.asFileTree.visit {
+        //    logger.lifecycle("  " + it)
+        //}
         testOutDir.mkdirs()
     }
 

@@ -4,7 +4,6 @@
 package com.perforce.p4java.impl.mapbased.rpc;
 
 import com.perforce.p4java.Log;
-import com.perforce.p4java.common.base.P4JavaExceptions;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
@@ -26,6 +25,7 @@ import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool.ShutdownHandle
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcStreamConnection;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcOutputStream;
 import com.perforce.p4java.impl.mapbased.server.ServerAddressBuilder;
+import com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IServerAddress;
@@ -45,13 +45,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-
-// p4ic4idea: use robust error messaes
+// p4ic4idea: use robust error messages
 import com.perforce.p4java.server.IServerMessage;
-
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleErrors;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.handleWarnings;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 
 /**
  * A one-shot (connection-per-command) version of the RPC protocol
@@ -139,7 +134,7 @@ public class OneShotServerImpl extends RpcServer {
 								serverHost, serverPort,
 								OneShotServerImpl.this.props,
 								OneShotServerImpl.this.serverStats,
-								OneShotServerImpl.this.charset,
+								OneShotServerImpl.this.p4Charset,
 								socket, null,
 								OneShotServerImpl.this.secure,
 								OneShotServerImpl.this.rsh);
@@ -328,7 +323,7 @@ public class OneShotServerImpl extends RpcServer {
 			long startTime = System.currentTimeMillis();
 			dispatcher = new RpcPacketDispatcher(props, this);
 			rpcConnection = new RpcStreamConnection(serverHost, serverPort,
-					props, this.serverStats, this.charset, null, this.socketPool,
+					props, this.serverStats, this.p4Charset, null, this.socketPool,
 					this.secure, this.rsh);
 			ProtocolCommand protocolSpecs = new ProtocolCommand();
 			
@@ -511,7 +506,7 @@ public class OneShotServerImpl extends RpcServer {
 			long startTime = System.currentTimeMillis();
 			dispatcher = new RpcPacketDispatcher(props, this);
 			rpcConnection = new RpcStreamConnection(serverHost, serverPort,
-					props, this.serverStats, this.charset, null, this.socketPool,
+					props, this.serverStats, this.p4Charset, null, this.socketPool,
 					this.secure, this.rsh);
 			ProtocolCommand protocolSpecs = new ProtocolCommand();
 			if (inMap != null && ClientLineEnding.CONVERT_TEXT) {
@@ -550,9 +545,9 @@ public class OneShotServerImpl extends RpcServer {
 			if ((retMapList != null) && (retMapList.size() != 0)) {
 				for (Map<String, Object> map : retMapList) {
 					// p4ic4idea: use IServerMessage
-					IServerMessage msg = toServerMessage(map);
-					handleErrors(msg);
-					handleWarnings(msg);
+					IServerMessage msg = ResultMapParser.toServerMessage(map);
+					ResultMapParser.handleErrors(msg);
+					ResultMapParser.handleWarnings(msg);
 				}
 			}
 
@@ -628,8 +623,8 @@ public class OneShotServerImpl extends RpcServer {
 					this.getUsageOptions().getTextLanguage(),
 					this.getOsTypeForEnv(),
 					this.getUserForEnv(),
-					this.charsetName != null,
-					this.charset
+					this.isServerUnicode(),
+					this.getClientCharset()
 				);
 		
 		if (!ignoreCallbacks && (this.commandCallback != null)) {

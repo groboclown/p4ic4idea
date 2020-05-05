@@ -1,5 +1,50 @@
 package com.perforce.p4java.impl.mapbased.rpc.stream;
 
+import com.perforce.p4java.AbstractP4JavaUnitTest;
+import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.P4JavaError;
+import com.perforce.p4java.impl.mapbased.rpc.ExternalEnv;
+import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
+import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionSpec;
+import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacket;
+import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher;
+import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
+import com.perforce.p4java.server.P4Charset;
+import com.perforce.p4java.server.callback.IFilterCallback;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.perforce.p4java.exception.NullPointerError;
+import com.perforce.p4java.exception.SslException;
+import com.perforce.p4java.exception.SslHandshakeException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.platform.runner.JUnitPlatform;
+import org.junit.runner.RunWith;
+
+import com.google.common.collect.ImmutableMap;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,48 +60,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-
-import com.perforce.p4java.exception.NullPointerError;
-import com.perforce.p4java.exception.SslException;
-import com.perforce.p4java.exception.SslHandshakeException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.google.common.collect.ImmutableMap;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaError;
-import com.perforce.p4java.impl.mapbased.rpc.ExternalEnv;
-import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
-import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionSpec;
-import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacket;
-import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher;
-import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
-import com.perforce.p4java.server.callback.IFilterCallback;
 
 /**
  * @author Sean Shou
@@ -75,6 +78,7 @@ public class RpcStreamConnectionTest {
 	private int socketBufferSize = 10;
 	private int recvBufferSize = 15;
 
+	@Before
 	@BeforeEach
 	public void beforeEach() throws ConnectionException, IOException {
 		socket = mock(Socket.class);
@@ -85,7 +89,7 @@ public class RpcStreamConnectionTest {
 		rpcSocketPool = mock(RpcSocketPool.class);
 		when(rpcSocketPool.acquire()).thenReturn(socket);
 
-		mockConnection = new RpcStreamConnection("localhost", serverPort, null, serverStats, StandardCharsets.UTF_8,
+		mockConnection = new RpcStreamConnection("localhost", serverPort, null, serverStats, P4Charset.getUTF8(),
 				socket, rpcSocketPool, false, rsh);
 		mockConnection.topInputStream(topInputStream).topOutputStream(topOutputStream);
 	}
@@ -122,7 +126,7 @@ public class RpcStreamConnectionTest {
 
 	@Test
 	public void disconnect_null_socketPool_and_null_rsh() throws Exception {
-		mockConnection = new RpcStreamConnection("localhost", serverPort, null, serverStats, StandardCharsets.UTF_8,
+		mockConnection = new RpcStreamConnection("localhost", serverPort, null, serverStats, P4Charset.getUTF8(),
 				socket, null, false, rsh);
 		InputStream topInputStream = mock(InputStream.class);
 		OutputStream topOutputStream = mock(OutputStream.class);
@@ -138,7 +142,7 @@ public class RpcStreamConnectionTest {
 
 	@Test
 	public void disconnect_null_socketPool_null_socket_null_rsh() throws Exception {
-		mockConnection = new RpcStreamConnection("localhost", serverPort, null, serverStats, StandardCharsets.UTF_8,
+		mockConnection = new RpcStreamConnection("localhost", serverPort, null, serverStats, P4Charset.getUTF8(),
 				socket, null, false, rsh);
 		InputStream topInputStream = mock(InputStream.class);
 		OutputStream topOutputStream = mock(OutputStream.class);

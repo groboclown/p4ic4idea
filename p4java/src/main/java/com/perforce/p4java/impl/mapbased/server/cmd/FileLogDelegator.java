@@ -28,8 +28,10 @@ import com.perforce.p4java.impl.generic.core.file.FileRevisionData;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IFileLogDelegator;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
 
 /**
  * @author Sean Shou

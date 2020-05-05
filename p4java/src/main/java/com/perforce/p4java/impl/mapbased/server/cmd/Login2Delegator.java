@@ -4,7 +4,6 @@ import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.server.Login2Options;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.ILogin2Delegator;
 import org.apache.commons.lang3.Validate;
 
@@ -22,6 +21,9 @@ import static com.perforce.p4java.server.CmdSpec.LOGIN2;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
 
 public class Login2Delegator extends BaseDelegator implements ILogin2Delegator {
 
@@ -48,7 +50,7 @@ public class Login2Delegator extends BaseDelegator implements ILogin2Delegator {
 		return resultMaps;
 	}
 
-	// p4ic4idea: use iServerMessage
+	// p4ic4idea: use IServerMessage
 	@Override
 	public IServerMessage getLogin2Status() throws P4JavaException {
 
@@ -65,7 +67,7 @@ public class Login2Delegator extends BaseDelegator implements ILogin2Delegator {
 		return statusStr;
 	}
 
-	// p4ic4idea: use iServerMessage
+	// p4ic4idea: use IServerMessage
 	@Override
 	public IServerMessage getLogin2Status(IUser user) throws P4JavaException {
 

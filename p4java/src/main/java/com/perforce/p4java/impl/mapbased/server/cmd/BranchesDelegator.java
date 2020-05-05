@@ -6,7 +6,6 @@ import static com.perforce.p4java.server.CmdSpec.BRANCHES;
 import java.util.List;
 import java.util.Map;
 
-import com.perforce.p4java.common.base.P4JavaExceptions;
 import com.perforce.p4java.common.function.Function;
 import com.perforce.p4java.core.IBranchSpecSummary;
 import com.perforce.p4java.exception.AccessException;
@@ -17,6 +16,9 @@ import com.perforce.p4java.impl.generic.core.BranchSpecSummary;
 import com.perforce.p4java.option.server.GetBranchSpecsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.delegator.IBranchesDelegator;
+
+// p4ic4idea: better exception handling
+import com.perforce.p4java.common.base.P4JavaExceptions;
 
 /**
  * @author Sean Shou
@@ -48,7 +50,7 @@ public class BranchesDelegator extends BaseDelegator implements IBranchesDelegat
                 // p4ic4idea: use defined generics
                 new Function<Map<String, Object>, IBranchSpecSummary>() {
                     @Override
-                    public IBranchSpecSummary apply(Map map) {
+                    public IBranchSpecSummary apply(Map<String, Object> map) {
                         return new BranchSpecSummary(map, true);
                     }
                 });

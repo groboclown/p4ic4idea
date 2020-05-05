@@ -1,9 +1,11 @@
 package com.perforce.p4java.tests;
 
+import com.perforce.p4java.server.IServerAddress;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
@@ -17,18 +19,20 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// TODO rewrite to use TestServer
+// p4ic4idea: TODO rewrite to use TestServer
 
 public class SimpleTestServer {
 
 	private static Logger logger = LoggerFactory.getLogger(SimpleTestServer.class);
 
-	private static final String RESOURCES = "src/test/resources/";
+	// p4ic4idea: should use "resources" instead of file paths...
+	public static final String RESOURCES = "src/test/resources/";
 	private String p4d;
-	private File p4root;
+	private final File p4root;
 
 	public SimpleTestServer(String p4dVersion, String testId) {
 
@@ -59,7 +63,11 @@ public class SimpleTestServer {
 	}
 
 	public String getRSHURL() {
-		return "p4jrsh://" + getP4d() + " -r " + getPathToRoot() + " -L log -i --java";
+		return IServerAddress.Protocol.P4JRSH + "://" + getP4d() + " -r " + getPathToRoot() + " -L log -i --java -vrpc=3";
+	}
+
+	public String getNonThreadSafeRSHURL() {
+		return IServerAddress.Protocol.P4JRSHNTS + "://" + getP4d() + " -r " + getPathToRoot() + " -L log -i --java -vrpc=3";
 	}
 
 	public String getPathToRoot() {
@@ -84,11 +92,15 @@ public class SimpleTestServer {
 	}
 
 	protected void upgrade() throws Exception {
-		exec(new String[]{"-xu"});
+		exec(new String[]{"-xu"}, true);
+	}
+
+	public void rotateJournal() throws Exception {
+		exec(new String[]{"-jj"}, true);
 	}
 
 	protected void restore(File ckp) throws Exception {
-		exec(new String[]{"-z", "-jr", formatPath(ckp.getAbsolutePath())});
+		exec(new String[]{"-z", "-jr", formatPath(ckp.getAbsolutePath())}, true);
 	}
 
 	public void extract(File archive) throws Exception {
@@ -141,9 +153,27 @@ public class SimpleTestServer {
 			try {
 				FileUtils.deleteDirectory(p4root);
 			} catch (IOException e) {
-				logger.warn("Unable to delete p4root: ", e);
+				if (!retryDestroy()) {
+					logger.warn("Unable to delete p4root.");
+				}
 			}
 		}
+	}
+
+	private boolean retryDestroy() {
+		int count = 10;
+		while (count > 0) {
+			try {
+				Thread.sleep(10);
+				FileUtils.deleteDirectory(p4root);
+				return true;
+			} catch (IOException e) {
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			count--;
+		}
+		return false;
 	}
 
 	public int getVersion() throws Exception {
@@ -171,7 +201,11 @@ public class SimpleTestServer {
 		return version;
 	}
 
-	protected int exec(String[] args) throws Exception {
+	protected void exec(String[] args, boolean block) throws Exception {
+		exec(args, block, null);
+	}
+
+	protected void exec(String[] args, boolean block, HashMap<String, String> environment) throws Exception {
 		CommandLine cmdLine = new CommandLine(p4d);
 		cmdLine.addArgument("-C0");
 		cmdLine.addArgument("-r");
@@ -183,7 +217,12 @@ public class SimpleTestServer {
 		logger.debug("EXEC: " + cmdLine.toString());
 
 		DefaultExecutor executor = new DefaultExecutor();
-		return executor.execute(cmdLine);
+		if (block) {
+			executor.execute(cmdLine, environment);
+		} else {
+			DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+			executor.execute(cmdLine, environment, resultHandler);
+		}
 	}
 
 	private String formatPath(String path) {

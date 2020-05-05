@@ -3,7 +3,6 @@
  */
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.P4JavaExceptions.throwRequestExceptionIfPerforceServerVersionOldThanExpected;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorString;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -23,8 +22,11 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.server.CmdSpec;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 
 /**
  *

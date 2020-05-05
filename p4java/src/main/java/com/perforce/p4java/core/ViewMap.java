@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.P4JavaError;
+import com.perforce.p4java.mapapi.*;
 
 /**
  * Defines the common operations to Perforce view maps. View maps are
@@ -27,7 +28,12 @@ import com.perforce.p4java.exception.P4JavaError;
  */
 
 public class ViewMap<E extends IMapEntry> implements Iterable<E> {
-	
+
+	public enum MapDirection {
+		MapLeftRight,
+		MapRightLeft
+	}
+
 	protected List<E> entryList = null;
 	
 	/**
@@ -200,5 +206,24 @@ public class ViewMap<E extends IMapEntry> implements Iterable<E> {
 	 */
 	public Iterator<E> iterator() {
 		return this.entryList.iterator();
+	}
+
+	/**
+	 * MapApi Translate wrapper
+	 * @param dir The translation direction
+	 * @param from the path to translate
+	 * @return the translated path or null
+	 */
+	public String translate(String from, MapDirection dir) {
+		MapTable mt = new MapTable();
+		for(E i : this) {
+			mt.insert(i.getLeft(), i.getRight(),
+					i.getType() == IMapEntry.EntryType.EXCLUDE ? MapFlag.MfUnmap :
+					i.getType() == IMapEntry.EntryType.OVERLAY ? MapFlag.MfRemap :
+					i.getType() == IMapEntry.EntryType.DITTO   ? MapFlag.MfAndmap :
+							                                     MapFlag.MfMap);
+		}
+		MapWrap mw = mt.translate(dir == MapDirection.MapLeftRight ? MapTableT.LHS : MapTableT.RHS, from);
+		return mw != null ? mw.getTo() : null;
 	}
 }

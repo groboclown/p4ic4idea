@@ -16,11 +16,10 @@ import com.perforce.p4java.impl.mapbased.rpc.RpcServer;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionSpec;
 import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.server.callback.IProgressCallback;
 
 // p4ic4idea: use server messages
 import com.perforce.p4java.server.IServerMessage;
-
-import com.perforce.p4java.server.callback.IProgressCallback;
 
 /**
  * Report the progress of the command tick by tick.

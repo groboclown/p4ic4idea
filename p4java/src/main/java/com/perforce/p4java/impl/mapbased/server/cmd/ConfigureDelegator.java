@@ -9,9 +9,7 @@ import static com.perforce.p4java.impl.mapbased.MapKeys.SERVER_NAME_KEY;
 import static com.perforce.p4java.impl.mapbased.MapKeys.VALUE_KEY;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.SET;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.UNSET;
-import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
 import static com.perforce.p4java.server.CmdSpec.CONFIGURE;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -24,9 +22,13 @@ import com.perforce.p4java.admin.ServerConfigurationValue;
 import com.perforce.p4java.common.function.Function;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IConfigureDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Handles configure commands.
@@ -70,6 +72,7 @@ public class ConfigureDelegator extends BaseDelegator implements IConfigureDeleg
                 // p4ic4idea: use IServerMessage
                 if (nonNull(map)) {
                     IServerMessage msg = toServerMessage(map);
+                    // p4ic4idea: this is the "else" block that was at the end.
                     if (nonNull(msg) && msg.isInfoOrError()) {
                         return msg.toString();
                     }

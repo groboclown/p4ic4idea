@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseCode0ErrorString;
 import static com.perforce.p4java.common.base.P4ResultMapUtils.parseString;
@@ -27,9 +26,12 @@ import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.server.GetDirectoriesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServer;
-import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.delegator.IDirsDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: use IServerMessage
+import com.perforce.p4java.server.IServerMessage;
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 
 /**
  * Implementation for a delegator to handle 'p4 dirs'.
@@ -84,17 +86,23 @@ public class DirsDelegator extends BaseDelegator implements IDirsDelegator {
         if (nonNull(resultMaps)) {
             for (Map<String, Object> map : resultMaps) {
                 if (nonNull(map)) {
-                    // p4ici4dea: use IServerMessage
+                    String code0String = parseCode0ErrorString(map);
+                    // p4ic4idea: use IServerMessage
                     IServerMessage errStr = ResultMapParser.handleFileErrorStr(map);
-                    if (isNull(errStr) || errStr.isInfoOrError()) {
+                    if (isNull(errStr) || ResultMapParser.isInfoMessage(map)) {
                         String dirName = parseString(map, "dirName");
                         String dir = parseString(map, "dir");
                         if (isNotBlank(dirName)) {
                             specList.add(new FileSpec(dirName));
                         } else if (isNotBlank(dir)) {
                             specList.add(new FileSpec(dir));
-                        } else if (nonNull(errStr) && errStr.isInfo()) {
-                            specList.add(new FileSpec(INFO, errStr));
+                        } else if (isNull(errStr)) {
+                            // p4ic4idea: extra case, what to do here?  Ignoring for now.
+                            // specList.add();
+                        } else {
+                            if (ResultMapParser.isInfoMessage(map)) {
+                                specList.add(new FileSpec(INFO, errStr));
+                            }
                         }
                     } else {
                         specList.add(new FileSpec(ERROR, errStr));

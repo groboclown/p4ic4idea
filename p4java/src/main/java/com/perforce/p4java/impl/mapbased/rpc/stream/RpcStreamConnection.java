@@ -3,48 +3,9 @@
  */
 package com.perforce.p4java.impl.mapbased.rpc.stream;
 
-import static com.perforce.p4java.common.base.ObjectUtils.isNull;
-import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
-import static com.perforce.p4java.common.base.P4JavaExceptions.throwConnectionException;
-import static com.perforce.p4java.common.base.P4JavaExceptions.throwConnectionExceptionIfConditionFails;
-import static com.perforce.p4java.common.base.P4JavaExceptions.throwP4JavaError;
-import static com.perforce.p4java.common.base.P4JavaExceptions.throwP4JavaErrorIfConditionFails;
-import static com.perforce.p4java.common.base.P4JavaExceptions.throwProtocolErrorIfConditionFails;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicLong;
-import javax.annotation.Nonnull;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-
 import com.perforce.p4java.Log;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaError;
-
-// p4ic4idea: use more precise exceptions
-import com.perforce.p4java.exception.SslException;
-import com.perforce.p4java.exception.SslHandshakeException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-
 import com.perforce.p4java.impl.mapbased.rpc.ExternalEnv;
 import com.perforce.p4java.impl.mapbased.rpc.ServerStats;
 import com.perforce.p4java.impl.mapbased.rpc.connection.RpcConnection;
@@ -58,9 +19,48 @@ import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
 import com.perforce.p4java.impl.mapbased.rpc.stream.RpcSocketPool.ShutdownHandler;
 import com.perforce.p4java.impl.mapbased.rpc.stream.helper.RpcSocketHelper;
 import com.perforce.p4java.impl.mapbased.server.Server;
+import com.perforce.p4java.server.P4Charset;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
+import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
+import static com.perforce.p4java.common.base.P4JavaExceptions.throwConnectionException;
+import static com.perforce.p4java.common.base.P4JavaExceptions.throwConnectionExceptionIfConditionFails;
+import static com.perforce.p4java.common.base.P4JavaExceptions.throwP4JavaError;
+import static com.perforce.p4java.common.base.P4JavaExceptions.throwP4JavaErrorIfConditionFails;
+import static com.perforce.p4java.common.base.P4JavaExceptions.throwProtocolErrorIfConditionFails;
+import static com.perforce.p4java.common.base.StringHelper.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+// p4ic4idea: use more precise exceptions
+import com.perforce.p4java.exception.SslException;
+import com.perforce.p4java.exception.SslHandshakeException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 /**
  * Socket stream I/O based implementation of the RpcConnection class.
@@ -109,8 +109,8 @@ public class RpcStreamConnection extends RpcConnection {
      * of simple socket streams.
      */
     public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset) throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, (Socket) null);
+                               ServerStats stats, P4Charset p4Charset, boolean secure) throws ConnectionException {
+        this(serverHost, serverPort, props, stats, p4Charset, (Socket) null, secure);
     }
 
     /**
@@ -119,43 +119,10 @@ public class RpcStreamConnection extends RpcConnection {
      * up the default non-compressed stack; in general this means just a couple
      * of simple socket streams.
      */
-    public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, boolean secure) throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, (Socket) null, secure);
-    }
-
-    /**
-     * Construct a new Perforce RPC connection to the named Perforce server
-     * using java.io socket streams at the lowest level. This constructor sets
-     * up the default non-compressed stack; in general this means just a couple
-     * of simple socket streams.
-     */
-    public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, Socket socket) throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, socket, false);
-    }
-
-    /**
-     * Construct a new Perforce RPC connection to the named Perforce server
-     * using java.io socket streams at the lowest level. This constructor sets
-     * up the default non-compressed stack; in general this means just a couple
-     * of simple socket streams.
-     */
-    public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, RpcSocketPool pool) throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, null, pool, false);
-    }
-
-    /**
-     * Construct a new Perforce RPC connection to the named Perforce server
-     * using java.io socket streams at the lowest level. This constructor sets
-     * up the default non-compressed stack; in general this means just a couple
-     * of simple socket streams.
-     */
-    public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, Socket socket, boolean secure)
+    private RpcStreamConnection(String serverHost, int serverPort, Properties props,
+            ServerStats stats, P4Charset p4Charset, Socket socket, boolean secure)
             throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, socket, null, secure);
+        this(serverHost, serverPort, props, stats, p4Charset, socket, null, secure);
     }
 
     /**
@@ -164,10 +131,10 @@ public class RpcStreamConnection extends RpcConnection {
      * up the default non-compressed stack; in general this means just a couple
      * of simple socket streams.
      */
-    public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, RpcSocketPool pool, boolean secure)
+    private RpcStreamConnection(String serverHost, int serverPort, Properties props,
+            ServerStats stats, P4Charset p4Charset, Socket socket, RpcSocketPool pool, boolean secure)
             throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, null, pool, secure);
+        this(serverHost, serverPort, props, stats, p4Charset, socket, pool, secure, null);
     }
 
     /**
@@ -177,21 +144,9 @@ public class RpcStreamConnection extends RpcConnection {
      * of simple socket streams.
      */
     public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, Socket socket, RpcSocketPool pool, boolean secure)
-            throws ConnectionException {
-        this(serverHost, serverPort, props, stats, charset, socket, pool, secure, null);
-    }
-
-    /**
-     * Construct a new Perforce RPC connection to the named Perforce server
-     * using java.io socket streams at the lowest level. This constructor sets
-     * up the default non-compressed stack; in general this means just a couple
-     * of simple socket streams.
-     */
-    public RpcStreamConnection(String serverHost, int serverPort, Properties props,
-            ServerStats stats, Charset charset, Socket socket, RpcSocketPool pool, boolean secure,
+            ServerStats stats, P4Charset p4Charset, Socket socket, RpcSocketPool pool, boolean secure,
             String rsh) throws ConnectionException {
-        super(serverHost, serverPort, props, stats, charset, secure);
+        super(serverHost, serverPort, props, stats, p4Charset, secure);
         this.socket = socket;
         this.pool = pool;
         this.rsh = rsh;
@@ -392,7 +347,7 @@ public class RpcStreamConnection extends RpcConnection {
         if (!StringUtils.equals(hostIp, UNKNOWN_SERVER_HOST)) {
             serverIpPort = hostIp;
             if (hostPort != UNKNOWN_SERVER_PORT) {
-		// p4ic4idea: use the more efficient Integer.valueOf
+		        // p4ic4idea: use the more efficient Integer.valueOf
                 serverIpPort += ":" + Integer.valueOf(hostPort);
             }
         } else if (hostPort != UNKNOWN_SERVER_PORT) {
@@ -521,7 +476,7 @@ public class RpcStreamConnection extends RpcConnection {
                     packetBytesRead);
 
             packet = RpcPacket.constructRpcPacket(preamble, packetBytes, unicodeServer,
-                    clientCharset, fieldRule, filterCallback);
+                    p4Charset.getCharset(), fieldRule, filterCallback);
             stats.packetsRecv.incrementAndGet();
             stats.largestRpcPacketRecv
                     .set(Math.max(stats.largestRpcPacketRecv.get(), packet.getPacketLength()));
@@ -529,9 +484,9 @@ public class RpcStreamConnection extends RpcConnection {
             throwConnectionException(exc);
         } catch (ConnectionException | P4JavaError p4jexc) {
             throw p4jexc;
-	// p4ic4idea: never catch Throwable unless you're really careful
+	    // p4ic4idea: never catch Throwable unless you're really careful
         //} catch (Throwable thr) {
-	} catch (Exception thr) {
+	    } catch (Exception thr) {
             // Never a good sign; typically a buffer overflow or positioning
             // problem, and almost always unrecoverable.
             Log.error("Unexpected exception: %s", thr.getLocalizedMessage());

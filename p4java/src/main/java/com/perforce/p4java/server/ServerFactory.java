@@ -4,21 +4,13 @@
 
 package com.perforce.p4java.server;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 import com.perforce.p4java.CharsetDefs;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.Metadata;
 import com.perforce.p4java.common.base.OSUtils;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.InvalidImplementationException;
+import com.perforce.p4java.exception.P4JavaInternalError;
 import com.perforce.p4java.exception.NoSuchObjectException;
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.ResourceException;
@@ -32,6 +24,14 @@ import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.impl.mapbased.server.ServerAddressBuilder;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IServerAddress.Protocol;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * The main P4Java server factory class. This class is used to obtain an IServer interface
@@ -139,8 +139,8 @@ public class ServerFactory {
 	 * usage up a lot over time.<p>
 	 * 
 	 * The format of the server URI string is protocol + "://" + hostaddr [+ ":" + port] [+ queryString],
-	 * e.g. "p4java://server.perforce.com:1666" or "p4java://192.168.1.12:999" or
-	 * "p4jrpc://play.perforce.com:1199?progName=p4javaTest21&progVersion=Alpha203B".
+	 * e.g. "p4java://example.perforce.com:1666" or "p4java://192.168.1.2:1999" or
+	 * "p4jrpc://example.perforce.com:1199?progName=p4javaTest21&progVersion=Alpha203B".
 	 * The protocol, port, and hostaddr fields can't be missing, but the port and hostaddr fields
 	 * can be anything acceptable to the protocol, e.g. typically something like an IP address or
 	 * hostname coupled with a port number.<p>
@@ -226,8 +226,8 @@ public class ServerFactory {
 	 * tighten usage up a lot over time.<p>
 	 * 
 	 * The format of the server URI string is protocol + "://" + hostaddr [+ ":" + port] [+ queryString],
-	 * e.g. "p4java://server.perforce.com:1666" or "p4java://192.168.1.12:999" or
-	 * "p4java://play.perforce.com:1199?progName=p4javaTest21&progVersion=Alpha203B".
+	 * e.g. "p4java://example.perforce.com:1666" or "p4java://192.168.1.2:1999" or
+	 * "p4java://example.perforce.com:1199?progName=p4javaTest21&progVersion=Alpha203B".
 	 * The protocol, port, and hostaddr fields can't be missing, but the port and hostaddr fields
 	 * can be anything acceptable to the protocol, e.g. typically something like an IP address or
 	 * hostname coupled with a port number.<p>
@@ -335,14 +335,14 @@ public class ServerFactory {
 			Log.error("Unable to instantiate Perforce server implementation class '"
 					+ implMetadata.getImplClassName() + "' (class cast error)");
 			Log.exception(cce);
-			throw new InvalidImplementationException(
+			throw new P4JavaInternalError(
 				"Specified Perforce server implementation class does not implement required interface(s)",
 								cce);
 		} catch (InstantiationException ie) {
 			Log.error("Unable to instantiate Perforce server implementation class '"
 					+ implMetadata.getImplClassName() + "' (instantiation failed)");
 			Log.exception(ie);
-			throw new InvalidImplementationException(
+			throw new P4JavaInternalError(
 								"Unable to instantiate Perforce server implementation class '"
 								+ implMetadata.getImplClassName() + "'",
 								ie);
@@ -350,7 +350,7 @@ public class ServerFactory {
 			Log.error("Unable to instantiate Perforce server implementation class '"
 					+ implMetadata.getImplClassName() + "' (illegal access exception)");
 			Log.exception(iae);
-			throw new InvalidImplementationException(
+			throw new P4JavaInternalError(
 								"Unable to instantiate Perforce server class '"
 								+ implMetadata.getImplClassName() + "'",
 								iae);

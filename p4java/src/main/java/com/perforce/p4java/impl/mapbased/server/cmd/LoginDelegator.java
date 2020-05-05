@@ -2,7 +2,8 @@ package com.perforce.p4java.impl.mapbased.server.cmd;
 
 import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
-import static com.perforce.p4java.common.base.P4JavaExceptions.asRequestException;
+// p4ic4idea: not supported
+// import static com.perforce.p4java.common.base.P4JavaExceptions.throwAccessExceptionIfConditionFails;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.PASSWORD;
 import static com.perforce.p4java.impl.mapbased.server.Parameters.processParameters;
 import static com.perforce.p4java.server.CmdSpec.LOGIN;
@@ -10,8 +11,6 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,18 +20,22 @@ import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConfigException;
 import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.NoPasswordSetForUserException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey;
-import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
-import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerMessage;
-import com.perforce.p4java.server.ISingleServerMessage;
 import com.perforce.p4java.server.delegator.ILoginDelegator;
 import org.apache.commons.lang3.Validate;
+
+// p4ic4idea: Use IServerMessage
+import static com.perforce.p4java.common.base.P4JavaExceptions.asRequestException;
+import java.util.ArrayList;
+import com.perforce.p4java.exception.NoPasswordSetForUserException;
+import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
+import com.perforce.p4java.impl.mapbased.rpc.msg.ServerMessage;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.server.ISingleServerMessage;
 
 /**
  * Implementation for 'p4 login'.
@@ -59,7 +62,7 @@ public class LoginDelegator extends BaseDelegator implements ILoginDelegator {
             // p4ic4idea: use IServerMessage
             IServerMessage message = ResultMapParser.getErrorOrInfoStr(firstResultMap);
             if (nonNull(message)) {
-                statusStr = message.toString();
+                statusStr = message.getErrorOrInfoStr();
             }
         }
 

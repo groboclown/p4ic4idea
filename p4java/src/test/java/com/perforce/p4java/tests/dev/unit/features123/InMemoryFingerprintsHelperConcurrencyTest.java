@@ -3,27 +3,23 @@
  */
 package com.perforce.p4java.tests.dev.unit.features123;
 
-import static org.junit.Assert.fail;
+import com.perforce.p4java.server.Fingerprint;
+import com.perforce.p4java.server.FingerprintsHelper;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
-import com.perforce.p4java.server.Fingerprint;
-import com.perforce.p4java.server.FingerprintsHelper;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
-@Jobs({ "job059814" })
+@Jobs({"job059814"})
 @TestId("Dev123_InMemoryFingerprintsHelperConcurrencyTest")
-public class InMemoryFingerprintsHelperConcurrencyTest extends P4JavaTestCase {
+public class InMemoryFingerprintsHelperConcurrencyTest extends P4JavaRshTestCase {
 
 	class FingerprintsWriter implements Runnable {
 
@@ -33,7 +29,7 @@ public class InMemoryFingerprintsHelperConcurrencyTest extends P4JavaTestCase {
 		private String trustFilePath = null;
 
 		FingerprintsWriter(String user, String address, String value,
-				String trustFilePath) {
+						   String trustFilePath) {
 			this.user = user;
 			this.address = address;
 			this.value = value;
@@ -76,37 +72,11 @@ public class InMemoryFingerprintsHelperConcurrencyTest extends P4JavaTestCase {
 	}
 
 	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
 	}
 
 	/**

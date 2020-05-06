@@ -3,25 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r152;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -35,17 +16,27 @@ import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.ShelveFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test shelve changelist from another client that is not the server's current client.
  */
-@Jobs({ "job062825" })
+@Jobs({"job062825"})
 @TestId("Dev152_ShelveChangelistClientTest")
 public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 
@@ -59,36 +50,29 @@ public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 	@ClassRule
 	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ShelveChangelistClientTest.class.getSimpleName());
 
-    @BeforeClass
-    public static void beforeAll() throws Exception {
-    	setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", false, null);
-    
-    }
+	@BeforeClass
+	public static void beforeAll() throws Exception {
+		setupServer(p4d.getRSHURL(), userName, password, true, null);
+	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() {
-		try {
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS");
-			assertNotNull(client);
-			// Another client for testing
-			client2 = server.getClient("testClient731676005");
-			assertNotNull(client2);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+	public void setUp() throws Exception {
+		assertNotNull(server);
+		client = server.getClient("p4TestUserWS");
+		assertNotNull(client);
+		// Another client for testing
+		client2 = createClient(server, "testClient731676005");
+		assertNotNull(client2);
+		server.setCurrentClient(client);
 	}
-
 
 	/**
 	 * Test shelve changelist from another client that is not the server's current client.
 	 */
 	@Test
-	@Ignore("Clients do not exist anymore")
 	public void testShelveChangelistClient() {
 
 		IChangelist changelist = null;
@@ -99,7 +83,7 @@ public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 		String dir = "branch" + randNum;
 
 		String sourceFile = "//depot/112Dev/GetOpenedFilesTest/bin/gnu/getopt/MessagesBundle_es.properties";
-		String targetFile = "//depot/112Dev/GetOpenedFilesTest/bin/gnu/getopt/"	+ dir + "/MessagesBundle_es.properties";
+		String targetFile = "//depot/112Dev/GetOpenedFilesTest/bin/gnu/getopt/" + dir + "/MessagesBundle_es.properties";
 
 		try {
 			// Copy a file to be used for shelving
@@ -132,7 +116,7 @@ public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 			writeFileBytes(localFilePath, "// some test text." + LINE_SEPARATOR, true);
 
 			changelist.refresh();
-			
+
 			// Set the server's current to client2 (which is not the current client)
 			server.setCurrentClient(client2);
 			files = client.shelveFiles(
@@ -154,10 +138,7 @@ public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 			assertTrue(files.size() > 0);
 			assertNotNull(files.get(0) != null);
 			assertTrue(files.get(0).getOpStatus() == FileSpecOpStatus.INFO);
-			assertThat(
-					files.get(0).getStatusMessage(),
-					isText("Shelved change " + changelist.getId() + " deleted."));
-
+			assertEquals("Shelved change " + changelist.getId() + " deleted.", files.get(0).getStatusMessage());
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} catch (IOException e) {

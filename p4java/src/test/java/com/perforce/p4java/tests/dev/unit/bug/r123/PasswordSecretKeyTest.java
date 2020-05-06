@@ -1,24 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-import static com.google.common.collect.Maps.newHashMap;
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.StringContains.containsString;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IDepot;
@@ -29,56 +10,57 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.User;
 import com.perforce.p4java.option.server.UpdateUserGroupOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.StringContains.containsString;
 
 /**
  * Test setting password and clearing secret key.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job065140"})
 @TestId("Dev123_PasswordSecretKeyTest")
-@Disabled("Uses external p4d server")
-public class PasswordSecretKeyTest extends P4JavaTestCase {
-  private IOptionsServer server = null;
+public class PasswordSecretKeyTest extends P4JavaRshTestCase {
+  
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", PasswordSecretKeyTest.class.getSimpleName());
+
   private IOptionsServer superServer = null;
   private IUser newUser = null;
-  private MockCommandCallback callback;
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    server = getServer(
-        getServerUrlString(),
-        props, getUserName(),
-        getPassword());
-    assertThat(server, notNullValue());
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
     IClient client = server.getClient("p4TestUserWS20112");
     assertThat(client, notNullValue());
-    server.setCurrentClient(client);
-    // Register callback
-    callback = new MockCommandCallback();
-    server.registerCallback(callback);
-
-    superServer = getServer(
-        getServerUrlString(),
-        props,
-        getSuperUserName(),
-        getSuperUserPassword());
-    assertThat(superServer, notNullValue());
+    server.setCurrentClient(client);    
+    superServer = getSuperConnection(p4d.getRSHURL());
     IClient superClient = superServer.getClient("p4TestSuperWS20112");
     superServer.setCurrentClient(superClient);
-    // Register callback
-    // note: reuses the same callback instance for message matching!
-    superServer.registerCallback(callback);
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
-    if (nonNull(superServer)) {
+    if (superServer != null) {
       endServerSession(superServer);
     }
   }
@@ -137,8 +119,8 @@ public class PasswordSecretKeyTest extends P4JavaTestCase {
 
       // Login with the new password
       server.login("simon");
-      assertThat(callback.getMessage(), notNullValue());
-      assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+      assertThat(serverMessage, notNullValue());
+      assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
       // Should get a list of depots
       depots = server.getDepots();
@@ -159,15 +141,15 @@ public class PasswordSecretKeyTest extends P4JavaTestCase {
       setPassword("garbage", "simon");
       // Login with the new password
       server.login("simon");
-      assertThat(callback.getMessage(), notNullValue());
-      assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+      assertThat(serverMessage, notNullValue());
+      assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
       // Should get a list of depots
       depots = server.getDepots();
       assertThat(depots, notNullValue());
       assertThat(depots.size() > 0, is(true));
     } finally {
-      if (nonNull(superServer) && nonNull(newUser)) {
+      if (superServer != null && newUser != null) {
         String message = superServer.deleteUser(newUser.getLoginName(), true);
         assertThat(message, notNullValue());
         // Remove the user in the p4users group
@@ -186,7 +168,7 @@ public class PasswordSecretKeyTest extends P4JavaTestCase {
   }
 
   private void setPassword(String oldPwd, String newPwd) throws P4JavaException {
-    Map<String, Object> map = newHashMap();
+    Map<String, Object> map = new HashMap<String, Object>();
     map.put("oldPassword", oldPwd);
     map.put("newPassword", newPwd);
     map.put("newPassword2", newPwd);

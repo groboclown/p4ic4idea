@@ -15,6 +15,7 @@ import com.perforce.p4java.impl.mapbased.rpc.msg.RpcMessage;
 import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.ParallelSyncOptions;
 import com.perforce.p4java.option.client.SyncOptions;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
 import static org.junit.Assert.fail;
 
 public class ParallelCallbackTest extends P4JavaRshTestCase {
@@ -87,7 +89,7 @@ public class ParallelCallbackTest extends P4JavaRshTestCase {
 		List<IFileSpec> resultSpec = testClientFromServer.sync(fileSpec, syncOptions);
 		Assert.assertNotNull(resultSpec);
 		Assert.assertTrue(resultSpec.size() > 10);
-		new Helper().assertFileSpecError(resultSpec);
+		assertFileSpecError(resultSpec);
 
 		// check a file
 		Path path = Paths.get(clientRoot, "readonly/labelsync/misc/p4cmd.tar.gz");
@@ -196,7 +198,7 @@ public class ParallelCallbackTest extends P4JavaRshTestCase {
 		List<IFileSpec> resultSpec = testClientFromServer.syncParallel(fileSpec, syncOptions, poptions);
 		Assert.assertNotNull(resultSpec);
 		Assert.assertTrue(resultSpec.size() > 10);
-		new Helper().assertFileSpecError(resultSpec);
+		assertFileSpecError(resultSpec);
 	}
 
 	/**
@@ -236,7 +238,10 @@ public class ParallelCallbackTest extends P4JavaRshTestCase {
 		List<IFileSpec> resultSpec = testClientFromServer.syncParallel(fileSpec, syncOptions, poptions);
 		Assert.assertNotNull(resultSpec);
 		Assert.assertTrue(resultSpec.size() > 10);
-		new Helper().assertFileSpecError(resultSpec);
+		List<IServerMessage> errors = getErrorsFromFileSpecList(resultSpec);
+		Assert.assertNotNull(errors);
+		Assert.assertEquals(1, errors.size());
+		Assert.assertThat(errors.get(0), containsText("Can't clobber writable file"));
 	}
 
 	/**
@@ -295,51 +300,6 @@ public class ParallelCallbackTest extends P4JavaRshTestCase {
 	private void createFile(String root, String path) throws IOException {
 		File file = new File(root + path);
 		Assert.assertTrue(file.createNewFile());
-	}
-
-	public static class ParallelStreamingHandler implements IStreamingCallback {
-
-		int expectedKey = 0;
-
-		List<Map<String, Object>> resultsList = null;
-
-		public ParallelStreamingHandler(int key, List<Map<String, Object>> resultsList) {
-			this.expectedKey = key;
-			this.resultsList = resultsList;
-		}
-
-		public boolean startResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean endResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean handleResult(Map<String, Object> resultMap, int key)
-				throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			if (resultMap == null) {
-				fail("null resultMap passed to handleResult callback");
-			}
-			this.resultsList.add(resultMap);
-			return true;
-		}
-
-		public List<Map<String, Object>> getResultsList() {
-			return this.resultsList;
-		}
 	}
 
 	/**

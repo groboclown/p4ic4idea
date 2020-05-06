@@ -11,6 +11,9 @@ import static org.junit.Assert.fail;
 
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.option.server.CounterOptions;
@@ -26,6 +29,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 public class CountersTest extends P4JavaTestCase {
 
 	public CountersTest() {
+	}
+
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	@Test

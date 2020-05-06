@@ -3,63 +3,35 @@
  */
 package com.perforce.p4java.tests.dev.unit.features141;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.mapbased.server.ServerInfo;
+import com.perforce.p4java.server.IServerInfo;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
-import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Properties;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.impl.mapbased.server.ServerInfo;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test server info date as calendar
  */
 @Jobs({ "job059516" })
 @TestId("Dev141_ServerInfoDateAsCalendarTest")
-public class ServerInfoDateAsCalendarTest extends P4JavaTestCase {
+public class ServerInfoDateAsCalendarTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
-	String serverMessage = null;
-	long completedTime = 0;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1",ServerInfoDateAsCalendarTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -70,33 +42,10 @@ public class ServerInfoDateAsCalendarTest extends P4JavaTestCase {
 		try {
 			Properties properties = new Properties();
 			properties.put("relaxCmdNameChecks", "true");
-			
-			server = ServerFactory.getOptionsServer(getServerUrlString(), properties);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(getSuperUserName());
-
-			// Login using the normal method
-			server.login(getSuperUserPassword(), new LoginOptions());
-
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			setupServer(p4d.getRSHURL(), userName, password, true, properties);
+			setupUtf8(server);
+			client = getClient(server);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -128,8 +77,7 @@ public class ServerInfoDateAsCalendarTest extends P4JavaTestCase {
 			// Print the date out from calendar
 			DateFormat dateFormat = new SimpleDateFormat(ServerInfo.SERVER_INFO_DATE_PATTERN);
 			Calendar cal = Calendar.getInstance();
-			System.out.println(dateFormat.format(cal.getTime()));			
-			
+			System.out.println(dateFormat.format(cal.getTime()));
 		} catch (P4JavaException exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		}

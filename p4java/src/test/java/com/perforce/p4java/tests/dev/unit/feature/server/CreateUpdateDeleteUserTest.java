@@ -3,29 +3,33 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.server;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.impl.generic.core.User;
 import com.perforce.p4java.option.server.UpdateUserOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Simple test of server create / update / delete user methods. Not
  * intended to be encyclopedic.
  */
 @TestId("Server_CreateUpdateDeleteUserTest")
-public class CreateUpdateDeleteUserTest extends P4JavaTestCase {
+public class CreateUpdateDeleteUserTest extends P4JavaRshTestCase {
 
 	public CreateUpdateDeleteUserTest() {
 	}
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CreateUpdateDeleteUserTest.class.getSimpleName());
 
 	@Test
 	public void testCreateUpdateDeleteUserNewStyle() {
@@ -44,7 +48,7 @@ public class CreateUpdateDeleteUserTest extends P4JavaTestCase {
 			final String jobView1 = "type=bug & ^status=closed";
 			final String jobView2 = "priority<=b description=gui";
 			
-			server = getServerAsSuper();
+			server = getSuperConnection(p4d.getRSHURL());
 			String userName = null;
 			String opResultStr = null;
 			// Try to ensure it's not already in use:

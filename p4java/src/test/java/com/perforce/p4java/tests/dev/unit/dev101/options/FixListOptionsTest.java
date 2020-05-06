@@ -3,22 +3,21 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.exception.OptionsException;
 import com.perforce.p4java.option.server.GetFixesOptions;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.Standalone;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simple standalone test scaffold for experimenting with and testing
@@ -28,7 +27,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Standalone
 @Jobs({"job039408"})
 @TestId("Dev101_FixListOptionsTest")
-public class FixListOptionsTest extends P4JavaTestCase {
+public class FixListOptionsTest extends P4JavaRshTestCase {
 
 	public FixListOptionsTest() {
 	}

@@ -3,23 +3,24 @@
  */
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * A very simple end-to-end test that creates a new binary file, creates
@@ -34,7 +35,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("E2E_SimpleAddSubmitSyncDeleteBinaryTest")
-public class SimpleAddSubmitSyncDeleteBinaryTest extends P4JavaTestCase {
+public class SimpleAddSubmitSyncDeleteBinaryTest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
 	
 	// Where to sync the reference files from (reuses SimpleAddSubmitSyncTest dir):
 	
@@ -47,9 +51,10 @@ public class SimpleAddSubmitSyncDeleteBinaryTest extends P4JavaTestCase {
 
 	@Test
 	public void testSimpleAddSubmitSyncCycle() {
-		IOptionsServer server = null;
 		try {
-			server = getServer();
+			Properties properties = new Properties();
+			setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
 			IClient client = null;
 			assertNotNull(server);
 			client = getDefaultClient(server);

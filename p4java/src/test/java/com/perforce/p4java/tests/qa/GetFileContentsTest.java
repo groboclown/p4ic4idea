@@ -20,9 +20,8 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.test.TestServer;
-import org.junit.jupiter.api.Disabled;
 
-@Disabled("Uses external p4d server")
+
 public class GetFileContentsTest {
 
     private static TestServer ts = null;

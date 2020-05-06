@@ -6,11 +6,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.StringReader;
 import java.util.Properties;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -70,7 +69,8 @@ public class SocketPoolTest {
 
         boolean programNameFound = false;
 
-        BufferedReader reader = new BufferedReader(ts.getLogAsReader());
+        BufferedReader reader = new BufferedReader(new FileReader(
+                ts.getLog()));
         String line = null;
 
         while ((line = reader.readLine()) != null) {

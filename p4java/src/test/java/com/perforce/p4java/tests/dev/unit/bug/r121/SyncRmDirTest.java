@@ -3,31 +3,29 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r121;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientSummary;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.generic.client.ClientOptions;
+import com.perforce.p4java.option.client.SyncOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Test the sync testdir/...#0 with client option "rmdir". This should remove
@@ -35,29 +33,12 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job052977" })
 @TestId("Dev112_SyncSafetyCheckTest")
-@Disabled("Uses external p4d server")
-public class SyncRmDirTest extends P4JavaTestCase {
+public class SyncRmDirTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SyncRmDirTest.class.getSimpleName());
+
 	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -66,14 +47,11 @@ public class SyncRmDirTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS20112");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = getClient(server);
+			createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/src/com/perforce/branch11136/file1.txt", "desc");
+			createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/src/com/perforce/branch11136/file2.txt", "desc");
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -116,6 +94,10 @@ public class SyncRmDirTest extends P4JavaTestCase {
 			assertTrue(parentDir.exists());
 
 			// Sync to #0 with client option "rmdir"
+			IClientSummary.IClientOptions clientOptions = new ClientOptions(false, false, false, false, false, true);
+			client.setOptions(clientOptions);
+			client.update();
+			client = getClient(server);
 			assertTrue(client.getOptions().isRmdir());
 			files = client
 					.sync(FileSpecBuilder.makeFileSpecList("//depot/"
@@ -135,7 +117,8 @@ public class SyncRmDirTest extends P4JavaTestCase {
 							FileSpecBuilder.makeFileSpecList("//depot/"
 									+ relativePath + "/..."),
 							new SyncOptions().setForceUpdate(true));
-				} catch (P4JavaException e) {
+					cleanupFiles(client);
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}

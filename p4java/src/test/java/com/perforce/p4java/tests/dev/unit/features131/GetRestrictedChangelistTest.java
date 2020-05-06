@@ -3,55 +3,36 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.impl.generic.core.User;
+import com.perforce.p4java.option.server.ChangelistOptions;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.ChangelistOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test get restricted changelist: 'p4 change -o -f changelist#'
  */
 @Jobs({ "job062697" })
 @TestId("GetRestrictedChangelistTest")
-public class GetRestrictedChangelistTest extends P4JavaTestCase {
+public class GetRestrictedChangelistTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", GetRestrictedChangelistTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	IChangelist changelist = null;
+	IOptionsServer superServer = null;
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -59,15 +40,14 @@ public class GetRestrictedChangelistTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		String user2Name = "p4jtestuser2";
+		User user2 = User.newUser(user2Name, "test@test.com", "test", user2Name);
+
 		try {
-			server = getServerAsSuper();
-			assertNotNull(server);
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
+			superServer = getSuperConnection(p4d.getRSHURL());
+			assertNotNull(superServer);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -76,7 +56,7 @@ public class GetRestrictedChangelistTest extends P4JavaTestCase {
 	 * @After annotation to a method to be run after each test in a class.
 	 */
 	@After
-	public void tearDown() {
+	public void tearDown() throws Exception {
 		// cleanup code (after each test).
 		if (server != null) {
 			this.endServerSession(server);
@@ -88,19 +68,18 @@ public class GetRestrictedChangelistTest extends P4JavaTestCase {
      */
     @Test
 	public void testGetRestrictedChangelist() {
+    	int changelistID = 30124;
     	// This pending changelist is restricted to view by user p4jtestuser2
-    	int restrictedChange = 167674;
-    	
 		try {
 			// Get the changelist without the '-f' flag
-			IChangelist change = server.getChangelist(restrictedChange);
-			assertNotNull(change);
-			assertTrue(change.getDescription().contains("restricted, no permission to view"));
+			IChangelist changelist = server.getChangelist(changelistID);
+			assertNotNull(changelist);
+			assertTrue(changelist.getDescription().contains("restricted, no permission to view"));
 
 			// Now, get the changelist with the '-f' flag
-			change = server.getChangelist(restrictedChange, new ChangelistOptions().setForce(true));
-			assertNotNull(change);
-			assertFalse(change.getDescription().contains("restricted, no permission to view"));
+			changelist = superServer.getChangelist(changelistID, new ChangelistOptions().setForce(true));
+			assertNotNull(changelist);
+			assertFalse(changelist.getDescription().contains("restricted, no permission to view"));
 
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());

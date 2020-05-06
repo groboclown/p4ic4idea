@@ -10,10 +10,6 @@ import org.junit.Test;
 
 import com.perforce.p4java.exception.OptionsException;
 
-/**
- * @author Sean Shou
- * @since 9/09/2016
- */
 public class OptionsHelperTest {
   @Test
   public void applyRule_boolean() throws Exception {

@@ -8,8 +8,7 @@ import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 
-import org.junit.AfterClass;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -87,10 +86,5 @@ public class SetClientOptionsTest {
                 new SyncOptions());
 
         assertFalse("Directory exists, it should not.", p.exists());
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        h.after(ts);
     }
 }

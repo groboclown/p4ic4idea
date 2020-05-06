@@ -1,5 +1,12 @@
 package com.perforce.p4java.tests.qa;
 
+import java.io.File;
+import java.util.List;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary.IClientOptions;
 import com.perforce.p4java.core.IUser;
@@ -10,22 +17,7 @@ import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.test.TestServer;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.util.List;
-
-import static org.junit.Assert.fail;
-
-/**
- * Tests using a compressed client connection to a server
- * over the standard socket wire.
- */
-@RunWith(JUnitPlatform.class)
 public class CompressedConnectionTest {
 
     private static TestServer ts = null;
@@ -33,25 +25,23 @@ public class CompressedConnectionTest {
 
     private static IClient client = null;
 
-    // simple setup with one file and a fix
-    @BeforeAll
+    /**
+     * simple setup with one file and a fix
+     * @throws Throwable
+     */
+    @BeforeClass
     public static void beforeClass() throws Throwable {
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
-
-        ts.initialize();
-        // For the RSH version, see CompressedRshConnectionTest
         ts.startAsync();
 
-        IOptionsServer server = helper.getServerWithLocalUrl(ts);
+        IOptionsServer server = helper.getServer(ts);
         server.setUserName(ts.getUser());
         server.connect();
 
         IUser user = server.getUser(ts.getUser());
 
-        // FIXME test hangs here
-        //fail("This test hangs forever.");
         client = helper.createClient(server, "client1");
         IClientOptions opts = new ClientOptions();
         opts.setCompress(true);
@@ -63,7 +53,10 @@ public class CompressedConnectionTest {
         helper.addFile(server, user, client, testFile.getAbsolutePath(), "CompressedConnectionTest", "text");
     }
 
-    // sync a file to ensure the compression works
+    /**
+     * Sync a file to ensure the compression works
+     * @throws Throwable
+     */
     @Test
     public void simple() throws Throwable {
         List<IFileSpec> fileSpec = FileSpecBuilder.makeFileSpecList("//depot/...");
@@ -71,7 +64,7 @@ public class CompressedConnectionTest {
         helper.validateFileSpecs(fileSpec);
     }
 
-    @AfterAll
+    @AfterClass
     public static void afterClass() {
         helper.after(ts);
     }

@@ -7,6 +7,9 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.IUser;
@@ -32,6 +35,16 @@ public class SimpleUserTest extends P4JavaTestCase {
 	public SimpleUserTest() {
 	}
 
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
+
 	/**
 	 * test the basic IServer.getUsers() method.
 	 */
@@ -41,7 +54,7 @@ public class SimpleUserTest extends P4JavaTestCase {
 		IServer server = null;
 		
 		try {
-			server = getServer(getServerUrlString(), null, testUserName, "");
+			server = getServer(null, testUserName, "");
 			assertNotNull("Null server returned", server);
 			
 			List<IUserSummary> users = server.getUsers(null, 0);
@@ -71,7 +84,7 @@ public class SimpleUserTest extends P4JavaTestCase {
 		IServer server = null;
 		
 		try {
-			server = getServer(getServerUrlString(), null, testUserName, "");
+			server = getServer(null, testUserName, "");
 			assertNotNull("Null server returned", server);
 			
 			IUser user = server.getUser(null);
@@ -92,7 +105,7 @@ public class SimpleUserTest extends P4JavaTestCase {
     @Test
     public void testLoginNotRequired() {
         try {
-            getServer(getServerUrlString(), null, testUserName, testUserPassword);
+            getServer(null, testUserName, testUserPassword);
             fail("Expected exception!");
         } catch (Exception exc) {
             Assert.assertEquals("'login' not necessary, no password set for this user.",

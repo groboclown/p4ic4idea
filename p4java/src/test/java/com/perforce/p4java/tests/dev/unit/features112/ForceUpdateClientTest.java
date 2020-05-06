@@ -3,20 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary.IClientOptions;
 import com.perforce.p4java.exception.P4JavaException;
@@ -25,52 +11,44 @@ import com.perforce.p4java.impl.generic.client.ClientView;
 import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Properties;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test force update of locked client
  */
 @Jobs({ "job044623" })
 @TestId("Dev112_ForceUpdateClientTest")
-public class ForceUpdateClientTest extends P4JavaTestCase {
+public class ForceUpdateClientTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
+    IOptionsServer superServer = null;
 	IClient testClient = null;
 	String message = null;
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ForceUpdateClientTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
+    /**
+     * @BeforeClass annotation to a method to be run before all the tests in a
+     *              class.
+     */
+    @BeforeClass
+    public static void beforeAll() throws Exception {
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+    }
 
 	/**
 	 * @After annotation to a method to be run after each test in a class.
@@ -91,22 +69,8 @@ public class ForceUpdateClientTest extends P4JavaTestCase {
 		int randNum = getRandomInt();
 
 		try {
-			server = getServer();
-			assertNotNull(server);
-
-			// Register callback
-			MockCommandCallback callback = new MockCommandCallback();
-			server.registerCallback(callback);
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
 			// Set the server user to a super user ("p4jtestsuper")
-			server.setUserName("p4jtestsuper");
+			server.setUserName(superUserName);
 
 			IClient p4TestUserWS = server.getClient("p4TestUserWS");
 
@@ -181,22 +145,18 @@ public class ForceUpdateClientTest extends P4JavaTestCase {
 
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
 			try {
 				// Delete the test clients
-				server = getServerAsSuper();
-				if (server != null) {
+			    superServer = getSuperConnection(p4d.getRSHURL());
+				if (superServer != null) {
 					if (testClient != null) {
-						server.deleteClient(testClient.getName(), true);
+					    superServer.deleteClient(testClient.getName(), true);
 					}
 				}
-			} catch (P4JavaException e) {
+			} catch (Exception e) {
 				// Can't do much here...
-			} catch (URISyntaxException e) {
-				// Can't do much here...
-			}
+			} 
 		}
 	}
 }

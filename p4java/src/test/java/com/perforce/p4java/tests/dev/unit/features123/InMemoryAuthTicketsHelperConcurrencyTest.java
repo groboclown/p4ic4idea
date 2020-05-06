@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,18 +16,38 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.perforce.p4java.server.AuthTicket;
 import com.perforce.p4java.server.AuthTicketsHelper;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 
 @Jobs({ "job059814" })
 @TestId("Dev123_InMemoryAuthTicketsHelperConcurrencyTest")
-public class InMemoryAuthTicketsHelperConcurrencyTest extends P4JavaTestCase {
+public class InMemoryAuthTicketsHelperConcurrencyTest extends P4JavaRshTestCase {
 
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", InMemoryAuthTicketsHelperConcurrencyTest.class.getSimpleName());
+
+    /**
+     * @BeforeClass annotation to a method to be run before all the tests in a
+     *              class.
+     */
+    @BeforeClass
+    public static void beforeAll() throws Exception {
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+    }
+    
 	class AuthTicketsWriter implements Runnable {
 
 		private String user = null;
@@ -75,40 +96,6 @@ public class InMemoryAuthTicketsHelperConcurrencyTest extends P4JavaTestCase {
 			}
 
 		}
-	}
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
 	}
 
 	/**

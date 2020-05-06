@@ -3,20 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.IStreamSummary;
@@ -24,32 +10,64 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.Stream;
 import com.perforce.p4java.option.server.GetStreamsOptions;
 import com.perforce.p4java.option.server.StreamOptions;
+import com.perforce.p4java.option.server.UnloadOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test task streams.
  */
 @Jobs({ "job062270" })
 @TestId("Dev131_TaskStreamsTest")
-public class TaskStreamsTest extends P4JavaTestCase {
+public class TaskStreamsTest extends P4JavaRshTestCase {
 
-	private static IClient client = null;
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", TaskStreamsTest.class.getSimpleName());
+
 	private static IOptionsServer superServer = null;
+	private final static String depotName = "p4java_stream";
+	private final static String unloadDepotName = "p4java_unload";
+	private final static String streamPath = "//" + unloadDepotName + "/task-unloaded";
+	private final static String streamPath2 = "//" + unloadDepotName + "/task-unloaded";
+
 
 	/**
 	 * @BeforeClass annotation to a method to be run before all the tests in a
 	 *              class.
 	 */
 	@BeforeClass
-	public static void oneTimeSetUp() throws Exception{
-		server = getServer();
-		assertNotNull(server);
-		client = server.getClient("p4TestUserWS");
+	public static void oneTimeSetUp() throws Exception {
+		setupServer(p4d.getRSHURL(), userName, password, true, props);
+		createStreamsDepot(depotName, server, null);
+		createUnloadDepot(unloadDepotName , server);
+		IClient client = createClient(server, "p4TestUserWS");
 		assertNotNull(client);
 		server.setCurrentClient(client);
+
+		IStream stream = Stream.newStream(server, streamPath, "task", null, null, null, null, null, null, null);
+		server.createStream(stream);
+		stream = Stream.newStream(server, streamPath2, "task", null, null, null, null, null, null, null);
+		server.createStream(stream);
+		UnloadOptions o = new UnloadOptions(true, false, null, null);
+		o.setStream(streamPath);
+		server.unload(o);
 	}
 
 	/**
@@ -69,10 +87,10 @@ public class TaskStreamsTest extends P4JavaTestCase {
 	public void testCreateTaskStreams() {
 		int randNum = getRandomInt();
 		String streamName = "testmain" + randNum;
-		String newStreamPath = "//p4java_stream/" + streamName;
+		String newStreamPath = "//" + depotName + "/" + streamName;
 
 		String streamName2 = "testtask" + randNum;
-		String newStreamPath2 = "//p4java_stream/" + streamName2;
+		String newStreamPath2 = "//" + depotName + "/" + streamName2;
 
 		try {
 			// Create a stream
@@ -168,7 +186,7 @@ public class TaskStreamsTest extends P4JavaTestCase {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
 			try {
-				superServer = getServerAsSuper();
+				superServer = getSuperConnection(p4d.getRSHURL());
 				assertNotNull(superServer);
 				String serverMessage = superServer.deleteStream(newStreamPath2,
 						new StreamOptions().setForceUpdate(true));
@@ -188,10 +206,6 @@ public class TaskStreamsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetUnloadedTaskStreams() {
-
-		String streamPath = "//p4java_stream/task-unloaded";
-		String streamPath2 = "//p4java_stream/task-unloaded2";
-
 		try {
 			List<String> streamPaths = new ArrayList<String>();
 			streamPaths.add(streamPath);
@@ -201,9 +215,9 @@ public class TaskStreamsTest extends P4JavaTestCase {
 			opts.setUnloaded(true);
 
 			List<IStreamSummary> streams = server.getStreams(streamPaths, opts);
+
 			assertNotNull(streams);
 			assertEquals(2, streams.size());
-
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}

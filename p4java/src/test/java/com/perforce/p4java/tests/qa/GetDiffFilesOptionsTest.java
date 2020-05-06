@@ -17,6 +17,7 @@ import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.ConnectionException;
+import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.GetDiffFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
@@ -34,9 +35,10 @@ import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.core.file.FileSpecOpStatus.VALID;
 import static com.perforce.p4java.option.client.GetDiffFilesOptions.OPTIONS_SPECS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,9 +61,6 @@ public class GetDiffFilesOptionsTest {
     private static File openedForIntegResolvedNotModified = null;
     private static File openedForIntegResolvedModified = null;
     private static File integSource = null;
-    private static GetDiffFilesOptions getDiffFilesOptions = null;
-    private static Valids valids = null;
-    private static List<File> validFiles = null;
     private static boolean ConnectionExceptionWhileImmutable = false;
 
     @BeforeAll
@@ -133,636 +132,593 @@ public class GetDiffFilesOptionsTest {
     }
 
 
-    @DisplayName("OPTIONS SPECS")
     @Test
     public void optionsSpecs() throws Throwable {
         assertThat(OPTIONS_SPECS, is("i:m:gtz b:t b:sa b:sb b:sd b:se b:sl b:sr"));
     }
 
 
-    @Disabled("client-OpenDiff is not implemented")
-    @DisplayName("CONSTRUCTORS")
     @Test
+    @Ignore
     public void defaultConstructor() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void explicitConstructorDefaults() throws Throwable {
+	    GetDiffFilesOptions getDiffFilesOptions = null;
         getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, false, false, false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
 
-    @DisplayName("OPENED DIFFERENT MISSING")
     @Test
     public void explicitConstructorOpenedDifferentMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(0, false, true, false, false, false, false, false);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(0, false, true, false, false, false, false, false);
+        Valids valids = new Valids();
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setOpenedDifferentMissingFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+	    GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setOpenedDifferentMissing(false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setOpenedDifferentMissingTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+	    GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+	    testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorOpenedDifferentMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-sa");
-        valids = new Valids();
+	    GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-sa");
+	    getDiffFilesOptions.setOpenedDifferentMissing(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+	    valids.openedDifferentMissingGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseOpenedDifferentMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
+        valids.immutable = false;
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueOpenedDifferentMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.openedDifferentMissingGet = true;
-        testMethod(false);
+        valids.openedDifferentMissing = true;
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
 
-    @DisplayName("OPENED FOR INTEGRATE")
     @Test
     public void explicitConstructorOpenedForIntegrate() throws Throwable {
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, true, false, false, false, false);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedForIntegrateGet = true;
         valids.openedForIntegrate = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setOpenedForIntegrateFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+	    GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setOpenedForIntegrate(false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(false, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setOpenedForIntegrateTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setOpenedForIntegrate(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedForIntegrateGet = true;
         valids.openedForIntegrate = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorOpenedForIntegrate() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-sb");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-sb");
+        getDiffFilesOptions.setOpenedForIntegrate(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.openedForIntegrate = true;
-        testMethod(true);
-        testMethod(false);
+        valids.openedForIntegrateGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseOpenedForIntegrate() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setOpenedForIntegrate(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedForIntegrateGet = true;
         valids.openedForIntegrate = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueOpenedForIntegrate() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setOpenedForIntegrate(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.openedForIntegrateGet = true;
-        testMethod(false);
+        valids.openedForIntegrate = true;
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
 
-    @DisplayName("OPENED SAME")
     @Test
     public void explicitConstructorOpenedSame() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, false, false, true);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, false, false, true);
+        Valids valids = new Valids();
         valids.openedSameGet = true;
         valids.openedSame = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setOpenedSameFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setOpenedSame(false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setOpenedSameTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setOpenedSame(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedSameGet = true;
         valids.openedSame = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorOpenedSame() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-sr");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-sr");
+        getDiffFilesOptions.setOpenedSame(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.openedSame = true;
-        testMethod(true);
-        testMethod(false);
+        valids.openedSameGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseOpenedSame() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setOpenedSame(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedSameGet = true;
         valids.openedSame = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueOpenedSame() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setOpenedSame(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.openedSameGet = true;
-        testMethod(false);
+        valids.openedSame = true;
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @DisplayName("UNOPENED DIFFERENT")
     @Test
     public void explicitConstructorUnopenedDifferent() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, true, false, false);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, true, false, false);
+        Valids valids = new Valids();
         valids.unopenedDifferentGet = true;
         valids.unopenedDifferent = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setUnopenedDifferentFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setUnopenedDifferent(false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setUnopenedDifferentTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setUnopenedDifferent(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.unopenedDifferentGet = true;
         valids.unopenedDifferent = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorUnopenedDifferent() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-se");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-se");
+        getDiffFilesOptions.setUnopenedDifferent(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.unopenedDifferent = true;
-        testMethod(true);
-        testMethod(false);
+        valids.unopenedDifferentGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseUnopenedDifferent() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setUnopenedDifferent(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.unopenedDifferentGet = true;
         valids.unopenedDifferent = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueUnopenedDifferent() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setUnopenedDifferent(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.unopenedDifferentGet = true;
-        testMethod(false);
+        valids.unopenedDifferent = true;
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
 
-    @DisplayName("UNOPENED MISSING")
     @Test
     public void explicitConstructorUnopenedMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, true, false, false, false);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, true, false, false, false);
+        Valids valids = new Valids();
         valids.unopenedMissingGet = true;
         valids.unopenedMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setUnopenedMissingFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setUnopenedMissing(false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setUnopenedMissingTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setUnopenedMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.unopenedMissingGet = true;
         valids.unopenedMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorUnopenedMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-sd");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-sd");
+        getDiffFilesOptions.setUnopenedMissing(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.unopenedMissing = true;
-        testMethod(true);
-        testMethod(false);
+        valids.unopenedMissingGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseUnopenedMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setUnopenedMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.unopenedMissingGet = true;
         valids.unopenedMissing = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueUnopenedMissing() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setUnopenedMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.unopenedMissingGet = true;
-        testMethod(false);
+        valids.unopenedMissing = true;
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-
-    @DisplayName("UNOPENED WITH STATUS")
     @Test
     public void explicitConstructorUnopenedWithStatus() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, false, true, false);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(0, false, false, false, false, false, true, false);
+        Valids valids = new Valids();
         valids.unopenedWithStatusGet = true;
         valids.unopenedWithStatus = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setUnopenedWithStatusFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setUnopenedWithStatus(false);
-        valids = new Valids();
-        testMethod(true);
-        testMethod(false);
+        Valids valids = new Valids();
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setUnopenedWithStatusTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setUnopenedWithStatus(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.unopenedWithStatusGet = true;
         valids.unopenedWithStatus = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorUnopenedWithStatus() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-sl");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-sl");
+        getDiffFilesOptions.setUnopenedWithStatus(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.unopenedWithStatus = true;
-        testMethod(true);
-        testMethod(false);
+        valids.unopenedWithStatusGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableFalseUnopenedWithStatus() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setUnopenedWithStatus(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.unopenedWithStatusGet = true;
         valids.unopenedWithStatus = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void setImmutableTrueUnopenedWithStatus() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setUnopenedWithStatus(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.unopenedWithStatusGet = true;
-        testMethod(false);
+        valids.unopenedWithStatus = true;
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-
-    @DisplayName("MAX")
     @Test
     public void explicitConstructorMax() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(1, false, true, false, false, false, false, false);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(1, false, true, false, false, false, false, false);
+        Valids valids = new Valids();
         valids.maxGet = 1;
         valids.max = 1;
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setMaxZero() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setMaxFiles(0);
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setMaxOne() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setMaxFiles(1);
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.maxGet = 1;
         valids.max = 1;
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorMaxOne() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-m 1", "-sa");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-m 1", "-sa");
+        getDiffFilesOptions.setMaxFiles(1);
+        getDiffFilesOptions.setOpenedDifferentMissing(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.max = 1;
+        valids.maxGet = 1;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        valids.openedDifferentMissingGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setImmutableFalseMax() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setMaxFiles(1);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.maxGet = 1;
         valids.max = 1;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setImmutableTrueMax() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
-        valids.immutable = true;
-        testMethod(false);
         getDiffFilesOptions.setMaxFiles(1);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.maxGet = 1;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-
-    @DisplayName("DIFF NON TEXT")
     @Test
     public void explicitConstructorDiffNonText() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions(0, true, true, false, false, false, false, false);
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions(0, true, true, false, false, false, false, false);
+        Valids valids = new Valids();
         valids.diffNonTextGet = true;
         valids.diffNonText = true;
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setDiffNonTextFalse() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setDiffNonTextFiles(false);
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @Test
     public void setDiffNonTextTrue() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setDiffNonTextFiles(true);
         getDiffFilesOptions.setOpenedDifferentMissing(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.diffNonTextGet = true;
         valids.diffNonText = true;
         valids.openedDifferentMissingGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
     public void stringConstructorDiffNonText() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-t", "-sa");
-        valids = new Valids();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-t", "-sa");
+        getDiffFilesOptions.setOpenedDifferentMissing(true);
+        getDiffFilesOptions.setDiffNonTextFiles(true);
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.diffNonText = true;
+        valids.diffNonTextGet = true;
         valids.openedDifferentMissing = true;
-        testMethod(true);
-        testMethod(false);
+        valids.openedDifferentMissingGet = true;
+        testMethod(true, valids, getDiffFilesOptions);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setImmutableFalseDiffNonText() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(false);
-        valids = new Valids();
-        testMethod(false);
         getDiffFilesOptions.setDiffNonTextFiles(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.diffNonTextGet = true;
         valids.diffNonText = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-    @Disabled("client-OpenDiff is not implemented")
     @Test
+    @Ignore
     public void setImmutableTrueDiffNonText() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         getDiffFilesOptions.setImmutable(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
         getDiffFilesOptions.setDiffNonTextFiles(true);
         valids = new Valids();
         valids.immutable = true;
         valids.diffNonTextGet = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
-
-    @DisplayName("SETTER RETURNS")
     @Test
     public void setterReturns() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions();
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions();
         assertThat(getDiffFilesOptions.setDiffNonTextFiles(true), instanceOf(GetDiffFilesOptions.class));
         assertThat(getDiffFilesOptions.setMaxFiles(1), instanceOf(GetDiffFilesOptions.class));
         assertThat(getDiffFilesOptions.setOpenedDifferentMissing(true), instanceOf(GetDiffFilesOptions.class));
@@ -773,23 +729,21 @@ public class GetDiffFilesOptionsTest {
         assertThat(getDiffFilesOptions.setUnopenedWithStatus(true), instanceOf(GetDiffFilesOptions.class));
     }
 
-
-    @DisplayName("OVERRIDE STRING CONSTRUCTOR")
     @Test
     public void overrideStringConstructor() throws Throwable {
-        getDiffFilesOptions = new GetDiffFilesOptions("-m 1", "-t", "-sa");
+        GetDiffFilesOptions getDiffFilesOptions = new GetDiffFilesOptions("-m 1", "-t", "-sa");
         getDiffFilesOptions.setMaxFiles(0);
         getDiffFilesOptions.setDiffNonTextFiles(false);
         getDiffFilesOptions.setOpenedDifferentMissing(false);
         getDiffFilesOptions.setOpenedForIntegrate(true);
-        valids = new Valids();
+        Valids valids = new Valids();
         valids.immutable = true;
         valids.max = 1;
         valids.diffNonText = true;
         valids.openedDifferentMissing = true;
         valids.openedForIntegrateGet = true;
         valids.openedForIntegrate = true;
-        testMethod(false);
+        testMethod(false, valids, getDiffFilesOptions);
     }
 
     @AfterAll
@@ -797,7 +751,7 @@ public class GetDiffFilesOptionsTest {
         helper.after(ts);
     }
 
-    private static void testMethod(boolean useOldMethod) throws Throwable {
+    private void testMethod(boolean useOldMethod, Valids valids, GetDiffFilesOptions getDiffFilesOptions) throws Throwable {
 
         assertThat(getDiffFilesOptions.isImmutable(), is(valids.immutable));
         assertThat(getDiffFilesOptions.getMaxFiles(), is(valids.maxGet));
@@ -835,48 +789,49 @@ public class GetDiffFilesOptionsTest {
 
         helper.validateFileSpecs(diffFileSpecs);
 
-        validFiles = newArrayList();
+        Set<File> validFiles = new HashSet<>();
 
         if (valids.openedDifferentMissing) {
 
-            setFileValid(openedDifferent);
-            setFileValid(openedDifferentBinary);
-            setFileValid(openedMissing);
-            setFileValid(openedForIntegResolvedModified);
+            validFiles.add(openedDifferent);
+            validFiles.add(openedDifferent);
+            validFiles.add(openedDifferentBinary);
+            validFiles.add(openedMissing);
+            validFiles.add(openedForIntegResolvedModified);
 
         }
 
         if (valids.openedForIntegrate) {
 
-            setFileValid(openedForIntegResolvedModified);
+            validFiles.add(openedForIntegResolvedModified);
 
         }
 
         if (valids.openedSame) {
 
-            setFileValid(openedSame);
-            setFileValid(openedForIntegResolvedNotModified);
+            validFiles.add(openedSame);
+            validFiles.add(openedForIntegResolvedNotModified);
 
         }
 
         if (valids.unopenedDifferent) {
 
-            setFileValid(unopenedDifferent);
+            validFiles.add(unopenedDifferent);
 
         }
 
         if (valids.unopenedMissing) {
 
-            setFileValid(unopenedMissing);
+            validFiles.add(unopenedMissing);
 
         }
 
         if (valids.unopenedWithStatus) {
 
-            setFileValid(unopenedMissing);
-            setFileValid(unopenedDifferent);
-            setFileValid(unopenedSame);
-            setFileValid(integSource);
+            validFiles.add(unopenedMissing);
+            validFiles.add(unopenedDifferent);
+            validFiles.add(unopenedSame);
+            validFiles.add(integSource);
 
         }
 
@@ -908,13 +863,7 @@ public class GetDiffFilesOptionsTest {
         }
     }
 
-    private static void setFileValid(File validFile) {
-        if (!validFiles.contains(validFile)) {
-            validFiles.add(validFile);
-        }
-    }
-
-    @Ignore
+    //@Ignore
     private static class Valids {
         private boolean immutable = false;
         private boolean diffNonTextGet = false;

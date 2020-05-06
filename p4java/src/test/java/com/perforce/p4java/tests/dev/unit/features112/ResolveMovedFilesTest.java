@@ -3,26 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileAction;
@@ -44,10 +24,25 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test Resolve moved files.
@@ -74,32 +69,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046102", "job046829" })
 @TestId("Dev112_ResolveMovedFilesTest")
-public class ResolveMovedFilesTest extends P4JavaTestCase {
+public class ResolveMovedFilesTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ResolveMovedFilesTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -108,14 +81,10 @@ public class ResolveMovedFilesTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+			createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/bin/gnu/getopt/MessagesBundle_cs.properties", "desc");
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -278,7 +247,8 @@ public class ResolveMovedFilesTest extends P4JavaTestCase {
 			resolveFilesAutoOptions.setChangelistId(changelist.getId());
 			resolveFilesAutoOptions.setResolveMovedFiles(true);
 			List<IFileSpec> resolveFiles = client.resolveFilesAuto(
-					FileSpecBuilder.makeFileSpecList(releaseTargetDir, targetFile2),
+					FileSpecBuilder.makeFileSpecList(new String[] {
+							releaseTargetDir, targetFile2 }),
 					resolveFilesAutoOptions);
 			assertNotNull(resolveFiles);
 
@@ -328,19 +298,19 @@ public class ResolveMovedFilesTest extends P4JavaTestCase {
 					.submit(new SubmitOptions());
 			assertNotNull(submitFiles2);
 
-			// There should be 6 filespecs
-			assertEquals(6, submitFiles2.size());
+			// There should be 3 filespecs
+			assertEquals(3, submitFiles2.size());
 
 			// Check the statuses and file actions of the two submitted files
-			assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(3)
+			assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(0)
 					.getOpStatus());
-			assertEquals(FileAction.BRANCH, submitFiles2.get(3).getAction());
-			assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(4)
+			assertEquals(FileAction.BRANCH, submitFiles2.get(0).getAction());
+			assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(1)
 					.getOpStatus());
-			assertEquals(FileAction.INTEGRATE, submitFiles2.get(4).getAction());
+			assertEquals(FileAction.INTEGRATE, submitFiles2.get(1).getAction());
 
 			// Check for 'Submitted as change' in the info message
-			assertThat(submitFiles2.get(5).getStatusMessage(),
+			assertThat(submitFiles2.get(2).getStatusMessage(),
 					containsText(submittedChange + " " + changelist.getId()));
 
 			// Make sure the changelist is submitted

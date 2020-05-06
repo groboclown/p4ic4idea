@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features151;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.ConnectionException;
@@ -27,35 +14,27 @@ import com.perforce.p4java.server.IServerInfo;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.net.URISyntaxException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'rsh' mode server.
  */
 @Jobs({ "job034706" })
 @TestId("Dev151_RshServerTest")
-public class RshServerTest extends P4JavaTestCase {
+public class RshServerTest extends P4JavaRshTestCase {
 
 	IOptionsServer server = null;
 	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.

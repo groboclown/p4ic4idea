@@ -1,15 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r92;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.After;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -20,9 +10,20 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * - Add a gif file to the depot
@@ -37,23 +38,20 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @TestId("Job036923Test")
 @Jobs({"Job036923Test"})
-public class Job036923Test extends P4JavaTestCase {
+public class Job036923Test extends P4JavaRshTestCase {
+    
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job036923Test.class.getSimpleName());
+
     private static final String TEST_GIF_DEPOT_PATH = "//depot/92bugs/Job036923Test/testgif02.gif";
     private static final String TEST_JPEG_DEPOT_PATH = "//depot/92bugs/Job036923Test/testjpeg02.jpg";
     private IClient client = null;
 
     @Test
     public void testResolve() throws Exception {
-        fail("FIXME connects to remote p4d server");
-
-        IServer server = null;
-
         IChangelist changelist = null;
-        server = getServer("p4java://eng-p4java-vm.perforce.com:20131", null, userName, password);
-        assertNotNull(server);
-        client = getDefaultClient(server);
-        assertNotNull("Unable to get default client '" + this.defaultTestClientName + "'", client);
-        server.setCurrentClient(client);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        client = getClient(server);
         syncInitialResolveTestFiles(client);
         initialEditTestFile(server, client);
         int headRev = getHeadRev(client);

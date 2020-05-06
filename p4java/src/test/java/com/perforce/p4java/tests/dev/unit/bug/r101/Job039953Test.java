@@ -10,6 +10,8 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -21,37 +23,46 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 
 /**
  *
  */
 @TestId("Bugs101_Job039953Test")
-@Disabled("Uses external p4d server")
-public class Job039953Test extends P4JavaTestCase {
+public class Job039953Test extends P4JavaRshTestCase {
 
 	public Job039953Test() {
 	}
+	
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job039953Test.class.getSimpleName());
 
+	IClient client = null;
+	/**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
+    
 	@Test
 	public void testJob039953DeleteOptions() {
 		final String testRoot = "//depot/101Bugs/Bugs101_Job039953Test";
 		final String testFile01 = testRoot + "/" + "test01.txt";
 		final String testFile02 = testRoot + "/" + "test02.txt";
-		IOptionsServer server = null;
-		IClient client = null;
 		IChangelist changelist01 = null;
 		IChangelist changelist02 = null;
 		DeleteFilesOptions opts = null;
 
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, testRoot + "/...");
 			assertNull(this.reportInvalidSpecs(syncFiles));
 			changelist01 = client.createChangelist(new Changelist(

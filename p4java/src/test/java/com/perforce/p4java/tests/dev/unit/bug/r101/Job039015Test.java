@@ -3,14 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r101;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.io.InputStream;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -19,36 +11,55 @@ import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.client.RevertFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  *
  */
 @TestId("Bugs101_Job039015Test")
-@Disabled("Uses external p4d server")
-public class Job039015Test extends P4JavaTestCase {
+public class Job039015Test extends P4JavaRshTestCase {
 
 	public Job039015Test() {
 	}
 
+	IClient client = null;
+	
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job039015Test.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
+    
 	@Test
 	public void testJob039015AuthException() {
 		final String testRoot = "//depot/101Bugs/Job039015Test";
 		final String testFile01 = testRoot + "/" + "test01.txt";
-		final String testFile02 = testRoot + "/" + "test02.txt";
-		IOptionsServer server = null;
-		IClient client = null;
+		final String testFile02 = testRoot + "/" + "test02.txt";	
 		IChangelist changelist = null;
 		InputStream diffStream = null;
 
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			this.forceSyncFiles(client, testRoot + "/...");
 			diffStream = server.getServerFileDiffs(new FileSpec(testFile01), new FileSpec(testFile02),
 															null, null, false, false, false);

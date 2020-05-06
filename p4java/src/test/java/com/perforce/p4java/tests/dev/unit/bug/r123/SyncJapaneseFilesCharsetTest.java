@@ -1,10 +1,19 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.option.client.SyncOptions;
+import com.perforce.p4java.server.PerforceCharsets;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.dev.unit.features123.InMemoryAuthTicketsTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.util.List;
@@ -12,65 +21,35 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.PerforceCharsets;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test sync Japanese files
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job036721"})
 @TestId("Dev112_SyncJapaneseFilesTest")
-@Disabled("Uses external p4d server")
-public class SyncJapaneseFilesCharsetTest extends P4JavaTestCase {
+public class SyncJapaneseFilesCharsetTest extends P4JavaRshTestCase {
 
-  private final static String playUnicodeServerURL = "p4java://qaplay.perforce.com:8838";
-  private IOptionsServer server = null;
+  @ClassRule
+  public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", InMemoryAuthTicketsTest.class.getSimpleName());
+
   private IClient client = null;
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    fail("FIXME Attempts a connection to a remote perforce server");
-    server = ServerFactory.getOptionsServer(playUnicodeServerURL, null);
-    assertThat(server, notNullValue());
-
-    // Register callback
-    server.registerCallback(new MockCommandCallback());
-    server.connect();
-    if (server.isConnected()) {
-      if (server.supportsUnicode()) {
-        // server.setCharsetName("utf8");
-        // server.setCharsetName("windows-932");
-        server.setCharsetName("shiftjis");
-      }
-    }
-    server.setUserName("p4jtestsuper");
-    server.login(null);
-    client = server.getClient("p4jtestsuper_mac");
+    setupServer(p4d.getRSHURL(), superUserName, superUserPassword, true, null);
+    client = createClient(server, "p4jtestsuper_mac");
     assertThat(client, notNullValue());
     server.setCurrentClient(client);
   }
 
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
   }
@@ -112,8 +91,7 @@ public class SyncJapaneseFilesCharsetTest extends P4JavaTestCase {
   @Test
   public void testSyncJapaneseFiles() throws Exception {
 
-    // p4ic4idea: escape Java
-    String[] depotPath = new String[]{"//depot/viv/test/\u306F\u3042\u3075test/...",
+    String[] depotPath = new String[]{"//depot/viv/test/\u306f\u3042\u3075test/...",
         "//depot/toyo_problem/...", "//depot/toyo1/..."};
     // Sync Japanese files from depot
     List<IFileSpec> files = client.sync(FileSpecBuilder.makeFileSpecList(depotPath),

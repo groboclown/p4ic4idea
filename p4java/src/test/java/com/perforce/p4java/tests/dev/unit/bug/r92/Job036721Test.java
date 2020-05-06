@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -33,10 +36,18 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @TestId("Job036721Test")
 @Jobs({"job036721"})
 public class Job036721Test extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass("unicode");
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass("unicode");
+	}
 
 	@Test
 	public void testSync() throws Exception {
-		fail("FIXME connects to remote p4d server");
 		final String clientName = getRandomClientName(null);
 		final String testCharsetName = "shiftjis";
 		final String testMapping00 = "//depot/viv/test/ã?¯ã?ã?µtest/... "
@@ -45,12 +56,10 @@ public class Job036721Test extends P4JavaTestCase {
 		IServer server = null;
 		IClient client = null;
 		try {
-			server = getServer(unicodeServerUrlString, null);
-			assertNotNull("Null server returned for Unicode server '"
-										+ unicodeServerUrlString + "'", server);
+			server = getServer();
+			assertNotNull("Null server returned for Unicode server", server);
 			if (!server.setCharsetName(testCharsetName)) {
-				fail("Unable to set charset to '" + testCharsetName + "' for Unicode server '"
-						+ unicodeServerUrlString + "'");
+				fail("Unable to set charset to '" + testCharsetName + "' for Unicode server");
 			}
 			Client testClient = makeTempClient(clientName, server);
 			assertNotNull(testClient);

@@ -3,33 +3,37 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.server.GetFixesOptions;
 import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Simple login / logout tests based on the new Options server.
  */
 
 @TestId("Dev101_LoginLogoutTest")
-public class LoginLogoutTest extends P4JavaTestCase {
+public class LoginLogoutTest extends P4JavaRshTestCase {
 
-	public LoginLogoutTest() {
+	@Before
+	public void setUp() throws Exception {
+		setupServer(p4d.getRSHURL(), userName, password, true, props);
 	}
+	
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", LoginLogoutTest.class.getSimpleName());
 
 	@Test
 	public void testLoginLogout() {
@@ -39,45 +43,42 @@ public class LoginLogoutTest extends P4JavaTestCase {
 		try {
 			// First just test options setter chaining:
 			assertEquals(true, new LoginOptions().setAllHosts(true).isAllHosts());
-			IOptionsServer optsServer = ServerFactory.getOptionsServer(
-					getServerUrlString(), null);
-			assertNotNull(optsServer);
-			optsServer.connect();
-			optsServer.setUserName(invalidUserName);
+			server.connect();
+			server.setUserName(invalidUserName);
 			@SuppressWarnings("unused")
 			List<IFix> fixes = null;
 			try {
-				 fixes = optsServer.getFixes(null, new GetFixesOptions());
+				 fixes = server.getFixes(null, new GetFixesOptions());
 				 fail("access allowed for invalid user");
 			} catch (AccessException aexc) {
 			}
 			try {
-				optsServer.setUserName(testUserName);
-				optsServer.login(this.invalidUserPassword, null);
+			    server.setUserName(testUserName);
+			    server.login(this.invalidUserPassword, null);
 				fail("access allowed with bad password");
 			} catch (AccessException aex) {
 			}
 			try {
-				optsServer.login(testUserPassword, new LoginOptions("-z"));
+			    server.login(testUserPassword, new LoginOptions("-z"));
 				fail("bad login option accepted");
 			} catch (RequestException aexc) {
 				assertEquals(1, aexc.getGenericCode());
 				assertEquals(3, aexc.getSeverityCode());
 			}
 			try {
-				optsServer.setUserName(testUserName);
-				optsServer.login(testUserPassword, null);
+				server.setUserName(testUserName);
+				server.login(testUserPassword, null);
 			} catch (RequestException aexc) {
 				fail("login failed for valid login / password pair");
 			}
 			try {
-				 fixes = optsServer.getFixes(null, new GetFixesOptions());
+				 fixes = server.getFixes(null, new GetFixesOptions());
 			} catch (AccessException aexc) {
 				fail("'fixes' access disallowed for valid user");
 			}
-			optsServer.logout(null);
+			server.logout(null);
 			try {
-				 fixes = optsServer.getFixes(null, new GetFixesOptions());
+				 fixes = server.getFixes(null, new GetFixesOptions());
 				 fail("'fixes' access allowed for logged-out user");
 			} catch (AccessException aexc) {
 			}

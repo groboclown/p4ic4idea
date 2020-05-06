@@ -88,7 +88,10 @@ public class GetFileAnnotationsTest {
         pendingChangelist.submit(false);
     }
 
-    @DisplayName("test the -I flag")
+    /**
+     * test the -I flag
+     * @throws Throwable
+     */
     @Test
     public void followIntegrations() throws Throwable {
         GetFileAnnotationsOptions opts = new GetFileAnnotationsOptions();
@@ -103,7 +106,10 @@ public class GetFileAnnotationsTest {
         assertThat("wrong number of sources", annotations.get(1).getAllIntegrations().size(), is(2));
     }
 
-    @DisplayName("test sans flags")
+    /**
+     * test sans flags
+     * @throws Throwable
+     */
     @Test
     public void basic() throws Throwable {
         GetFileAnnotationsOptions opts = new GetFileAnnotationsOptions();
@@ -114,7 +120,10 @@ public class GetFileAnnotationsTest {
         assertThat("wrong change number", annotations.get(1).getLower(), is(2));
     }
 
-    @DisplayName("test the -i flag")
+    /**
+     * test the -i flag
+     * @throws Throwable
+     */
     @Test
     public void followBranches() throws Throwable {
         GetFileAnnotationsOptions opts = new GetFileAnnotationsOptions();

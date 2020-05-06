@@ -16,6 +16,7 @@ package com.perforce.test;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DaemonExecutor;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
@@ -39,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -131,7 +133,7 @@ public class TestServer {
         ensureNotRunning();
         delete();
 
-        File p4d = extractP4d(outDir);
+        File p4d = P4ExtFileUtils.extractP4d(outDir, version);
         if (initialDepotResource == null) {
             // Perform an initial startup of the server to initialize the database
             // This will create a checkpoint, and the empty file system will force
@@ -166,7 +168,7 @@ public class TestServer {
     @Nonnull
     public String getRSHURL()
             throws IOException {
-        File p4d = extractP4d(outDir);
+        File p4d = P4ExtFileUtils.extractP4d(outDir, version);
         StringBuilder ret = new StringBuilder("p4jrsh://");
         ret
                 .append(p4d.getAbsolutePath())
@@ -182,6 +184,29 @@ public class TestServer {
         return ret.toString();
     }
 
+    public void rotateJournal() throws Exception {
+        exec(new String[]{"-jj"}, true, null);
+    }
+
+    protected void exec(String[] args, boolean block, HashMap<String, String> environment) throws Exception {
+        File p4d = P4ExtFileUtils.extractP4d(outDir, version);
+        CommandLine cmdLine = new CommandLine(p4d);
+        cmdLine.addArgument("-C0");
+        cmdLine.addArgument("-r");
+        cmdLine.addArgument(outDir.getAbsolutePath());
+        for (String arg : args) {
+            cmdLine.addArgument(arg);
+        }
+
+        DefaultExecutor executor = new DefaultExecutor();
+        if (block) {
+            executor.execute(cmdLine, environment);
+        } else {
+            DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+            executor.execute(cmdLine, environment, resultHandler);
+        }
+    }
+
 
     /**
      * Start the server in the background.  This should only be used by tests that
@@ -195,7 +220,7 @@ public class TestServer {
         if (!outDir.exists() && !outDir.mkdirs()) {
             throw new IOException("could not create output dir " + outDir);
         }
-        final File p4d = extractP4d(outDir);
+        final File p4d = P4ExtFileUtils.extractP4d(outDir, version);
         try {
             status.with(() -> {
                 ensureNotRunning();
@@ -408,45 +433,6 @@ public class TestServer {
         }
     }
 
-    private String getP4dPath(String version)
-            throws IOException {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            return "bin/" + version + "/bin.ntx64/p4d.exe";
-        }
-        if (os.contains("mac")) {
-            return "bin/" + version + "/bin.darwin90x86_64/p4d";
-        }
-        if (os.contains("nix") || os.contains("nux")) {
-            return "bin/" + version + "/bin.linux26x86_64/p4d";
-        }
-        throw new IOException("No p4d registered for OS " + os);
-    }
-
-    private File getP4dOutput(File outdir) {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            return new File(outdir, "p4d.exe");
-        }
-        return new File(outdir, "p4d");
-    }
-
-    private File extractP4d(File outdir)
-            throws IOException {
-        File outP4d = getP4dOutput(outdir);
-        if (!outP4d.exists()) {
-            if (!outdir.exists() && !outdir.mkdirs()) {
-                throw new IOException("could not create output dir " + outdir);
-            }
-            String osP4d = getP4dPath(version);
-            P4ExtFileUtils.extractResource(getClass().getClassLoader(), osP4d, outP4d, false);
-            if (!outP4d.setExecutable(true)) {
-                throw new IOException("Could not make executable: " + outP4d);
-            }
-        }
-        return outP4d;
-    }
-
     private synchronized void ensureNotRunning() {
         if (status.isRunning()) {
             throw new IllegalStateException("Server is actively running; cannot run another command.");
@@ -455,7 +441,7 @@ public class TestServer {
 
     private int innerExec(String... args)
             throws IOException {
-        File p4d = extractP4d(outDir);
+        File p4d = P4ExtFileUtils.extractP4d(outDir, version);
         CommandLine cmdLine = createBaseCmdLine(p4d);
         for (String arg : args) {
             cmdLine.addArgument(arg);

@@ -32,9 +32,8 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -84,7 +83,7 @@ public class CoreFactoryTest {
         List<IJob> jobs = server.getJobs(null, null);
         int startingCount = jobs.size();
 
-        HashMap<String, Object> map = newHashMap();
+        HashMap<String, Object> map = new HashMap<String, Object>();
 
         map.put("Job", "new");
         map.put("Description", "Adding a job with CoreFactory");
@@ -107,7 +106,7 @@ public class CoreFactoryTest {
     public void createJob() throws Exception {
         List<IJob> jobs = server.getJobs(null, null);
         int startingCount = jobs.size();
-        HashMap<String, Object> map = newHashMap();
+        HashMap<String, Object> map = new HashMap<String, Object>();
         map.put("Job", "new");
         map.put("Description", "Adding a job with CoreFactory");
         map.put("Status", "open");
@@ -128,7 +127,7 @@ public class CoreFactoryTest {
     @Test
     public void createFailJobOnServer() throws Exception {
         try {
-            HashMap<String, Object> map = newHashMap();
+            HashMap<String, Object> map = new HashMap<String, Object>();
 
             map.put("Job", "new");
             map.put("Description", "Adding a job with CoreFactory");
@@ -194,7 +193,7 @@ public class CoreFactoryTest {
         List<IClientSummary> clients = server.getClients(null);
         int startingCount = clients.size();
 
-        HashMap<String, Object> map = newHashMap();
+        HashMap<String, Object> map = new HashMap<String, Object>();
         map.put("//depot/foo*", "//client2/foo*");
 
         CoreFactory.createClient(server, "client2", "new client from CoreFactory", client.getRoot(), new String[]{"//depot/foo* //client2/foo*"}, true);
@@ -310,7 +309,7 @@ public class CoreFactoryTest {
         List<IUserGroup> groups = server.getUserGroups(null, null);
         int startingCount = groups.size();
 
-        List<String> users = newArrayList();
+        List<String> users = new ArrayList<String>();
         users.add(user.getLoginName());
 
         IUserGroup group = CoreFactory.createUserGroup(server, "group1", users, true);
@@ -327,7 +326,7 @@ public class CoreFactoryTest {
         List<IUserGroup> groups = server.getUserGroups(null, null);
         int startingCount = groups.size();
 
-        List<String> users = newArrayList();
+        List<String> users = new ArrayList<String>();
         users.add(user.getLoginName());
 
         IUserGroup group = CoreFactory.createUserGroup(server, "group1", users, false);

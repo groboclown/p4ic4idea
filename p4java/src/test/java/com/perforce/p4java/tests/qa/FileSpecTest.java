@@ -37,7 +37,10 @@ public class FileSpecTest {
     private static IChangelist pendingChangelist = null;
 
 
-    // setup a server with one open and locked file with two clients and users
+    /**
+     * setup a server with one open and locked file with two clients and users
+     * @throws Throwable
+     */
     @BeforeAll
     public static void beforeClass() throws Throwable {
         helper = new Helper();

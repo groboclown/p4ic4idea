@@ -3,13 +3,14 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r152;
 
-import static com.google.common.collect.Lists.newArrayList;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -95,7 +96,7 @@ public class ConcurrentTrustFingerprintsTest extends P4JavaTestCase {
 
         try {
             // Run concurrent reads and writes
-            List<FingerprintsWriter> fingerprintsWriters = newArrayList();
+            List<FingerprintsWriter> fingerprintsWriters = new ArrayList<FingerprintsWriter>();
             ExecutorService executor = Executors.newFixedThreadPool(10);
             for (int i = 0; i < 25; i++) {
                 String addr = address + i;
@@ -127,8 +128,10 @@ public class ConcurrentTrustFingerprintsTest extends P4JavaTestCase {
             Fingerprint[] fingerprints = FingerprintsHelper.getFingerprints(trustFilePath);
             assertNotNull(fingerprints);
 
-            int numFingerprints = fingerprintsWriters.stream()
-                    .mapToInt(FingerprintsWriter::getTotalSuccessSaveFingerprints).sum();
+            int numFingerprints = 0;
+            for(FingerprintsWriter f : fingerprintsWriters) {
+                numFingerprints += f.getTotalSuccessSaveFingerprints();
+            }
             assertEquals(numFingerprints, fingerprints.length);
         } finally {
             File trustFile = new File(trustFilePath);

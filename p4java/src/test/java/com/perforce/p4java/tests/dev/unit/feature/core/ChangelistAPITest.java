@@ -1,15 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.feature.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.Date;
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -20,8 +10,23 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 
 
@@ -33,33 +38,36 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("ChangelistAPITest01")
-public class ChangelistAPITest extends P4JavaTestCase {
+public class ChangelistAPITest extends P4JavaRshTestCase {
 	
-	@Test(expected=RequestException.class)
+    private IClient client = null;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistAPITest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), userName, password, true, properties);
+        client = getClient(server);
+     }
+    
+	@Test(expected=com.perforce.p4java.exception.RequestException.class)
 	public void testCreateChangelistImplDefaultId() throws AccessException, ConnectionException, RequestException { 
 		
-			IServer server = null;
-			IClient client = null;
-		
-			try {
-				server = getServer();
-				assertNotNull("Server unexpectedly Null.", server);
-				client = this.getDefaultClient(server);
-				assertNotNull("Null client returned", client);
-				server.setCurrentClient(client);
-				
-			} catch (Exception exc) {
-				System.err.println("Unexpected Exception: " + exc.getLocalizedMessage());
-				fail("Unexpected Exception: " + exc.getLocalizedMessage());			
-			} 
-			
 			@SuppressWarnings("unused")
 			IChangelist changelist = createTestChangelist(server, client, "This creation should fail", true); 
 
 	}
 
 
-	@Test(expected=RequestException.class)
+	@Test(expected=com.perforce.p4java.exception.RequestException.class)
 	public void testDefaultConstructorGetFilesTrue()
 				throws AccessException, ConnectionException, RequestException { 
 		
@@ -71,7 +79,7 @@ public class ChangelistAPITest extends P4JavaTestCase {
 		
 	}
 
-	@Test(expected=RequestException.class)
+	@Test(expected=com.perforce.p4java.exception.RequestException.class)
 	public void testDefaultConstructorGetFilesFalse()
 				throws AccessException, ConnectionException, RequestException { 
 		
@@ -123,7 +131,7 @@ public class ChangelistAPITest extends P4JavaTestCase {
 			debugPrint("DefaultConstructor changelist.getStatus()" + changeStat);
 			assertEquals("DefaultConstructor changelist.getStatus() should be Null", null, changeStat);
 				
-			Date changeDate = changelist.getDate();
+			java.util.Date changeDate = changelist.getDate();
 			debugPrint("DefaultConstructor changelist.getUsername()" + changeDate);
 			assertEquals("DefaultConstructor changelist.getUsername() should be Null", null, changeDate);
 						

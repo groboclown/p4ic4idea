@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -37,7 +40,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @TestId("Job035290Test")
 @Jobs({"job035290"})
 public class Job035290Test extends P4JavaTestCase {
-	
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
+
 	/**
 	 * Code adapted from user's example in job 035290 description.
 	 */

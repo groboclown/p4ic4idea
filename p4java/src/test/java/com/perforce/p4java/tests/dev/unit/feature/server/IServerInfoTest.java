@@ -1,17 +1,18 @@
 package com.perforce.p4java.tests.dev.unit.feature.server;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.server.IServerInfo;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.server.IServer;
-import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Simple very minimal tests for some of the IServerInfo fields.
@@ -21,20 +22,26 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("IServerInfoTest01")
-public class IServerInfoTest extends P4JavaTestCase {
+public class IServerInfoTest extends P4JavaRshTestCase {
+
+    private IClient client = null;
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", IServerInfoTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        client = getClient(server);
+     }
 
 	@Test
 	public void testGetClientInfo() throws Exception {
 		
-		IServer server = null;
-		IClient client = null;
-		
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull("Null client returned", client);
-			server.setCurrentClient(client);
-
 			IServerInfo serverInfo = server.getServerInfo();		
 	
 			assertNotNull("Unexpected Null returned by serverInfo.getClientName()",

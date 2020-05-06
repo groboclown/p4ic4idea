@@ -15,7 +15,9 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.CoreFactory;
@@ -29,17 +31,23 @@ import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Tests Job043500's issue with branch specs.
  */
 @TestId("Bugs111_Job043500Test")
-@Disabled("Uses external p4d server")
 public class Job043500Test extends P4JavaTestCase {
+    // p4ic4idea: use local server
+    @BeforeClass
+    public static void oneTimeSetUp() {
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+    }
+
     @AfterClass
     public static void tearDownAll() throws Exception {
         endServerSession(server);
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.endTestClass();
     }
 
     @Test
@@ -115,6 +123,7 @@ public class Job043500Test extends P4JavaTestCase {
     }
 
     private List<IFileSpec> getValidSpecs(List<IFileSpec> specs) {
+        // p4ic4idea: IServerMessage
         List<IFileSpec> validSpecs = specs.stream()
                 .filter(spec -> spec.getOpStatus().equals(VALID)
                         || (spec.getOpStatus().equals(INFO) && !isMessageStringNumeric(spec.getStatusMessage())))

@@ -3,18 +3,18 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
+import com.perforce.p4java.option.server.KeyOptions;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.option.server.KeyOptions;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test the 'p4 key name'
@@ -24,7 +24,11 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({"job062031"})
 @TestId("Dev131_GetSetDeleteKeyTest")
-public class GetSetDeleteKeyTest extends P4JavaTestCase {
+public class GetSetDeleteKeyTest extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1",GetSetDeleteKeyTest.class.getSimpleName());
+
 
     /**
      * @Before annotation to a method to be run before each test in a class.
@@ -32,16 +36,8 @@ public class GetSetDeleteKeyTest extends P4JavaTestCase {
     @BeforeClass
     public static void beforeAll() throws Exception {
         // initialization code (before each test).
-        server = getServerAsSuper();
-        assertNotNull(server);
-    }
-
-    /**
-     * @After annotation to a method to be run after each test in a class.
-     */
-    @AfterClass
-    public static void afterAll() {
-       afterEach(server);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        server = getSuperConnection(p4d.getRSHURL());
     }
 
     /**

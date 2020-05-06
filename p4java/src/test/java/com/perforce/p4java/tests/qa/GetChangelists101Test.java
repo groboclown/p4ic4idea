@@ -20,6 +20,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
+
 @Disabled("We no longer support 2010.1.")
 @RunWith(JUnitPlatform.class)
 public class GetChangelists101Test {

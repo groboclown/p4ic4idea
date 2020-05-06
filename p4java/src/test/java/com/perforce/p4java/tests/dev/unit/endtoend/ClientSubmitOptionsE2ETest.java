@@ -1,18 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileAction;
@@ -20,8 +7,23 @@ import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.client.ClientSubmitOptions;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * The ClientSubmitOptionsTest class exercises the ClientSubmitOptions class as it affects files.
@@ -29,17 +31,23 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 
 @TestId("ClientSubmitOptionsE2ETest01")
-public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
+public class ClientSubmitOptionsE2ETest extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
 
     private static IClient client = null;
     private static String clientDir;
 
     @BeforeClass
     public static void before() throws Exception {
-        server = getServer();
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
         client = getDefaultClient(server);
         clientDir = defaultTestClientName + File.separator + testId;
         server.setCurrentClient(client);
+        createFileOnDisk(client.getRoot() + File.separator + textBaseFile);
     }
 
     /**
@@ -82,9 +90,9 @@ public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
         dumpFileSpecInfo(openedSpecs, "client.openedFiles()");
 
         assertEquals("Number of opened files is incorrect.", numExpectedOpen, openedSpecs.size());
-        assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(3).getEndRevision());
-        assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(4).getEndRevision());
-        assertEquals("Unchanged file should be at Rev 2.", 2, submittedSpecs.get(5).getEndRevision());
+        assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(0).getEndRevision());
+        assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(1).getEndRevision());
+        assertEquals("Unchanged file should be at Rev 2.", 2, submittedSpecs.get(2).getEndRevision());
 
         submitOpts.setLeaveunchanged(false);
         assertFalse("Setting for isLeaveunchanged() should be false.", submitOpts.isLeaveunchanged());
@@ -128,8 +136,8 @@ public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
             dumpFileSpecInfo(openedSpecs, "client.openedFiles()");
 
             assertEquals("Number of opened files is incorrect.", numExpectedOpen, openedSpecs.size());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(3).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(4).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(1).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(2).getEndRevision());
 
             submitOpts.setLeaveunchangedReopen(false);
             assertFalse("Setting for isLeaveunchangedReopen() should be false.", submitOpts.isLeaveunchangedReopen());
@@ -179,8 +187,8 @@ public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
             dumpFileSpecInfo(openedSpecs, "client.openedFiles()");
 
             assertEquals("Number of opened files is incorrect.", numExpectedOpen, openedSpecs.size());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(3).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(4).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(1).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(2).getEndRevision());
 
     }
 
@@ -219,9 +227,9 @@ public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
             dumpFileSpecInfo(openedSpecs, "client.openedFiles()");
 
             assertEquals("Number of opened files is incorrect.", numExpectedOpen, openedSpecs.size());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(3).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(4).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(5).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(0).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(1).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(2).getEndRevision());
 
             submitOpts.setRevertunchangedReopen(false);
             assertFalse("Setting for isRevertunchanged() should be false.", submitOpts.isRevertunchangedReopen());
@@ -262,8 +270,8 @@ public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
             dumpFileSpecInfo(openedSpecs, "client.openedFiles()");
 
             assertEquals("Number of opened files is incorrect.", numExpectedOpen, openedSpecs.size());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(3).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(4).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(0).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(1).getEndRevision());
 
             submitOpts.setSubmitunchanged(false);
             assertFalse("Setting for isSubmitunchanged() should be false.", submitOpts.isSubmitunchanged());
@@ -308,8 +316,8 @@ public class ClientSubmitOptionsE2ETest extends P4JavaTestCase {
             assertEquals("Number of opened files is incorrect.", numExpectedOpen, openedSpecs.size());
             assertEquals("Open file should have been reverted.", FileAction.EDIT, openedSpecs.get(0).getAction());
             assertEquals("Reverted File should be at Rev 1.", 2, openedSpecs.get(0).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(3).getEndRevision());
-            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(4).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(0).getEndRevision());
+            assertEquals("File should be at Rev 2.", 2, submittedSpecs.get(1).getEndRevision());
 
             submitOpts.setSubmitunchangedReopen(false);
             assertFalse("Setting for isSubmitunchangedReopen() should be false.", submitOpts.isSubmitunchangedReopen());

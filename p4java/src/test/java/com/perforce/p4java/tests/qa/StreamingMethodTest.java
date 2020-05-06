@@ -1,25 +1,5 @@
 package com.perforce.p4java.tests.qa;
 
-import static com.perforce.p4java.AbstractP4JavaUnitTest.dummyServerErrorMessage;
-import static com.perforce.p4java.server.ServerFactory.getOptionsServer;
-import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.containsString;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.ConnectionNotConnectedException;
@@ -27,9 +7,23 @@ import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.IStreamingCallback;
 import com.perforce.test.TestServer;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.P4JavaUtil.dummyServerErrorMessage;
+import static com.perforce.p4java.server.ServerFactory.getOptionsServer;
+import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 public class StreamingMethodTest {

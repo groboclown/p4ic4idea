@@ -9,11 +9,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.StringReader;
 import java.util.Properties;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,13 +32,7 @@ public class ServerFactoryTest {
     public static void beforeClass() throws Throwable {
         h = new Helper();
         ts = new TestServer();
-        ts.setMonitor(3);
         ts.getServerExecutableSpecification().setCodeline(h.getServerVersion());
-
-        ts.initialize();
-
-        // We're looking for log values when the client connects,
-        // which means we need to use non-RSH connection method.
         ts.startAsync();
     }
 
@@ -58,7 +51,7 @@ public class ServerFactoryTest {
 
         boolean programNameFound = false;
 
-        BufferedReader reader = new BufferedReader(ts.getLogAsReader());
+        BufferedReader reader = new BufferedReader(new FileReader(ts.getLog()));
         String line = null;
 
         while ((line = reader.readLine()) != null) {

@@ -73,7 +73,10 @@ public class CreateUser101Test {
         }
     }
 
-    // attempt to create a user
+    /**
+     * attempt to create a user
+     * @throws Throwable
+     */
     @Test
     public void basicUsage() throws Throwable {
 
@@ -102,7 +105,10 @@ public class CreateUser101Test {
         }
     }
 
-    // attempt to create a user
+    /**
+     * attempt to create a user forced
+     * @throws Throwable
+     */
     @Test
     public void forcedCreation() throws Throwable {
 
@@ -130,8 +136,11 @@ public class CreateUser101Test {
         }
     }
 
-    // attempt to create a service user; currently we don't have a way to run
-    // p4 users -a so we can't see the user that is created
+    /**
+     * attempt to create a service user; currently we don't have a way to run
+     * p4 users -a so we can't see the user that is created
+     * @throws Throwable
+     */
     @Test
     public void userType() throws Throwable {
         try {

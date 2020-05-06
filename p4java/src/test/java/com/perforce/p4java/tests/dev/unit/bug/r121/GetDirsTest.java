@@ -3,27 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r121;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -31,39 +10,40 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.GetDirectoriesOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.callback.IStreamingCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 dirs' command.
  */
 @Jobs({ "job050447" })
 @TestId("Dev112_GetDirsTest")
-@Disabled("Uses external p4d server")
-public class GetDirsTest extends P4JavaTestCase {
+public class GetDirsTest extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetDirsTest.class.getSimpleName());
+
 	IOptionsServer server = null;
 	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -72,16 +52,13 @@ public class GetDirsTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServerAsSuper();
-			assertNotNull(server);
+			server = getSuperConnection(p4d.getRSHURL());
 			client = server.getClient("p4TestUserWS");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 
 	/**
@@ -91,7 +68,7 @@ public class GetDirsTest extends P4JavaTestCase {
 	public void tearDown() {
 		// cleanup code (after each test).
 		if (server != null) {
-			endServerSession(server);
+			this.endServerSession(server);
 		}
 	}
 
@@ -103,7 +80,8 @@ public class GetDirsTest extends P4JavaTestCase {
 
 		try {
 			List<IFileSpec> directories = server.getDirectories(
-					FileSpecBuilder.makeFileSpecList("//depot/101*", "//depot/112Dev/*"),
+					FileSpecBuilder.makeFileSpecList(new String[] {
+							"//depot/101*", "//depot/112Dev/*" }),
 					new GetDirectoriesOptions());
 			assertNotNull(directories);
 
@@ -120,8 +98,9 @@ public class GetDirsTest extends P4JavaTestCase {
 
 		try {
 			List<IFileSpec> directories = server.getDirectories(
-					FileSpecBuilder.makeFileSpecList("//depotadfa/adf", "//depot/101*", "//depot/abc",
-							"//adfadf/", "adsfasdf", "..."),
+					FileSpecBuilder.makeFileSpecList(new String[] {
+							"//depotadfa/adf", "//depot/101*", "//depot/abc",
+							"//adfadf/", "adsfasdf", "..." }),
 					new GetDirectoriesOptions());
 			assertNotNull(directories);
 
@@ -209,93 +188,4 @@ public class GetDirsTest extends P4JavaTestCase {
 		fail(msg);
 	}
 
-	public static class SimpleCallbackHandler implements IStreamingCallback {
-		int expectedKey = 0;
-		GetDirsTest testCase = null;
-
-		public SimpleCallbackHandler(GetDirsTest testCase, int key) {
-			if (testCase == null) {
-				throw new NullPointerException(
-						"null testCase passed to CallbackHandler constructor");
-			}
-			this.expectedKey = key;
-			this.testCase = testCase;
-		}
-
-		public boolean startResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				this.testCase.fails("key mismatch; expected: "
-						+ this.expectedKey + "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean endResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				this.testCase.fails("key mismatch; expected: "
-						+ this.expectedKey + "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean handleResult(Map<String, Object> resultMap, int key)
-				throws P4JavaException {
-			if (key != this.expectedKey) {
-				this.testCase.fails("key mismatch; expected: "
-						+ this.expectedKey + "; observed: " + key);
-			}
-			if (resultMap == null) {
-				this.testCase.fails("null result map in handleResult");
-			}
-			return true;
-		}
-	};
-
-	public static class ListCallbackHandler implements IStreamingCallback {
-
-		int expectedKey = 0;
-		GetDirsTest testCase = null;
-		List<Map<String, Object>> resultsList = null;
-
-		public ListCallbackHandler(GetDirsTest testCase, int key,
-				List<Map<String, Object>> resultsList) {
-			this.expectedKey = key;
-			this.testCase = testCase;
-			this.resultsList = resultsList;
-		}
-
-		public boolean startResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				this.testCase.fails("key mismatch; expected: "
-						+ this.expectedKey + "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean endResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				this.testCase.fails("key mismatch; expected: "
-						+ this.expectedKey + "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean handleResult(Map<String, Object> resultMap, int key)
-				throws P4JavaException {
-			if (key != this.expectedKey) {
-				this.testCase.fails("key mismatch; expected: "
-						+ this.expectedKey + "; observed: " + key);
-			}
-			if (resultMap == null) {
-				this.testCase
-						.fails("null resultMap passed to handleResult callback");
-			}
-			this.resultsList.add(resultMap);
-			return true;
-		}
-
-		public List<Map<String, Object>> getResultsList() {
-			return this.resultsList;
-		}
-	};
 }

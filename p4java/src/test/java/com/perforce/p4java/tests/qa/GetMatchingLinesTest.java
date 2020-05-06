@@ -9,6 +9,8 @@ import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
 import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 
 import java.io.File;

@@ -3,30 +3,25 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r112;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 print -a' command. Retrieve the contents of a depot file to the
@@ -42,28 +37,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job042748" })
 @TestId("Dev112_GetFileContentsTest")
-public class GetFileContentsTest extends P4JavaTestCase {
+public class GetFileContentsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetFileContentsTest.class.getSimpleName());
 
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	private String fileName = "112Dev/GetOpenedFilesTest/src/com/perforce/main/P4CmdDispatcher.java";
+	private String copyFile = "//depot/" + fileName;
+	private String depotFile = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdDispatcher.java";
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -72,14 +55,16 @@ public class GetFileContentsTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = getClient(server);
+			createTextFileOnServer(client, fileName, "desc");
+			//make 6 revs of depotFile
+			copyFile(server, client, "desc", copyFile, depotFile);
+			editFile(server, client, "edit file", depotFile);
+			editFile(server, client, "edit file", depotFile);
+			editFile(server, client, "edit file", depotFile);
+			editFile(server, client, "edit file", depotFile);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -109,10 +94,6 @@ public class GetFileContentsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetFileContent() {
-
-		// This file has 6 revs
-		String depotFile = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdDispatcher.java";
-
 		// Limit the file to a rev (up-to that rev)
 		String depotFileRev = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdDispatcher.java#3";
 
@@ -170,10 +151,8 @@ public class GetFileContentsTest extends P4JavaTestCase {
 			// Should contain no headers
 			assertTrue(headers.size() == 0);
 
-		} catch (P4JavaException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (IOException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 }

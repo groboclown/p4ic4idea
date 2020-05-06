@@ -3,26 +3,25 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.impl.mapbased.server.Parameters;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.tests.dev.annotations.Standalone;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Simple test for one of the more irritating Parameter methods.
  */
 @Standalone
 @TestId("Dev101_Parameters")
-public class ParametersTest extends P4JavaTestCase {
+public class ParametersTest extends P4JavaRshTestCase {
 
 	public ParametersTest() {
 	}

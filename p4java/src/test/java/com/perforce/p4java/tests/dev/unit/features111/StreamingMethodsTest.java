@@ -1,39 +1,41 @@
 package com.perforce.p4java.tests.dev.unit.features111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientSummary;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.client.IClientSummary;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.impl.mapbased.client.Client;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.callback.IStreamingCallback;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Basic sanity tests for the new Streaming interface. Not related
  * at all to 'streams'.
  */
 @TestId("Features102_StreamingMethodsTest")
-@Disabled("Uses external p4d server")
+//@Disabled("Uses external p4d server")
 public class StreamingMethodsTest extends P4JavaTestCase {
     private static final int TIME_OUT_IN_SECONDS = 60;
 
     @BeforeClass
     public static void beforeEach() throws Exception {
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+
         Properties rpcTimeOutProperties = configRpcTimeOut("StreamingMethodsTest", TIME_OUT_IN_SECONDS);
         server = getServer(getServerUrlString(), rpcTimeOutProperties, null, null);
     }
@@ -41,6 +43,8 @@ public class StreamingMethodsTest extends P4JavaTestCase {
     @AfterClass
     public static void afterEach() throws Exception {
         afterEach(server);
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.endTestClass();
     }
 
     /**
@@ -112,93 +116,4 @@ public class StreamingMethodsTest extends P4JavaTestCase {
         fail(msg);
     }
 
-    public static class SimpleCallbackHandler implements IStreamingCallback {
-        int expectedKey = 0;
-        StreamingMethodsTest testCase = null;
-
-        public SimpleCallbackHandler(StreamingMethodsTest testCase, int key) {
-            if (testCase == null) {
-                throw new NullPointerException(
-                        "null testCase passed to CallbackHandler constructor");
-            }
-            this.expectedKey = key;
-            this.testCase = testCase;
-        }
-
-        public boolean startResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                this.testCase.fails("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean endResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                this.testCase.fails("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean handleResult(Map<String, Object> resultMap, int key)
-                throws P4JavaException {
-            if (key != this.expectedKey) {
-                this.testCase.fails("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            if (resultMap == null) {
-                this.testCase.fails("null result map in handleResult");
-            }
-            return true;
-        }
-    }
-
-    public static class ListCallbackHandler implements IStreamingCallback {
-
-        int expectedKey = 0;
-        StreamingMethodsTest testCase = null;
-        List<Map<String, Object>> resultsList = null;
-
-        public ListCallbackHandler(StreamingMethodsTest testCase, int key,
-                                   List<Map<String, Object>> resultsList) {
-            this.expectedKey = key;
-            this.testCase = testCase;
-            this.resultsList = resultsList;
-        }
-
-        public boolean startResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                this.testCase.fails("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean endResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                this.testCase.fails("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean handleResult(Map<String, Object> resultMap, int key)
-                throws P4JavaException {
-            if (key != this.expectedKey) {
-                this.testCase.fails("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            if (resultMap == null) {
-                this.testCase.fails("null resultMap passed to handleResult callback");
-            }
-            this.resultsList.add(resultMap);
-            return true;
-        }
-
-
-        public List<Map<String, Object>> getResultsList() {
-            return this.resultsList;
-        }
-    }
 }

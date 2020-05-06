@@ -3,24 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -38,49 +20,43 @@ import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.option.server.ObliterateFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.net.URISyntaxException;
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.isText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test obliterate permanently removes files and their history from the server.
  */
 @Jobs({ "job041780", "job041824" })
 @TestId("Dev112_ObliterateFilesTest")
-public class ObliterateFilesTest extends P4JavaTestCase {
+public class ObliterateFilesTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ObliterateFilesTest.class.getSimpleName());
+
 	IChangelist changelist = null;
 	List<IFileSpec> files = null;
-
-	MockCommandCallback callback;
 
 	IOptionsServer server2 = null;
 	IClient client2 = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+	String serverMessage = null;
+	long completedTime = 0;
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -89,38 +65,32 @@ public class ObliterateFilesTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
+			setupServer(p4d.getRSHURL(), superUserName, superUserPassword, false, props);
 
-			// Register callback
-			callback = new MockCommandCallback();
-			server.registerCallback(callback);
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
+			client = createClient(server, "ObliterateFilesTestClient");
 
-			// Set the server user
-			server.setUserName(this.superUserName);
 
-			// Login using the normal method
-			server.login(this.superUserPassword, new LoginOptions());
+			String[] files = new String[2];
+			files[0] = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/"
+					+ "p4cmd/P4CmdDispatcher.java";
+			files[1] = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/"
+					+ "p4cmd/random.java";
+			createTextFilesOnServer(client, files, "test");
 
 			client = server.getClient("p4TestSuperWS20112");
 			assertNotNull(client);
 			server.setCurrentClient(client);
 
-			server2 = getServer();
+			server2 = ServerFactory.getOptionsServer(p4d.getRSHURL(), props);;
+			server2.registerCallback(createCommandCallback());
+			server2.connect();
+			server2.setUserName(userName);
+			server2.login(password, new LoginOptions());
 			assertNotNull(server2);
-			client2 = server.getClient("p4TestUserWS20112");
+			client2 = server2.getClient("p4TestUserWS20112");
 			assertNotNull(client2);
 			server2.setCurrentClient(client2);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -222,7 +192,7 @@ public class ObliterateFilesTest extends P4JavaTestCase {
 				assertTrue(result.isReportOnly());
 			}
 
-			long nonOptimizedTime = callback.getMillisecsTaken();
+			long nonOptimizedTime = completedTime;
 
 			// Run obliterate - preview only - performance enhanced options
 			results = server.obliterateFiles(
@@ -242,13 +212,13 @@ public class ObliterateFilesTest extends P4JavaTestCase {
 				assertTrue(result.isReportOnly());
 			}
 
-			long optimizedTime = callback.getMillisecsTaken();
+			long optimizedTime = completedTime;
 
 			// Compare the completion times of the obliterate commands.
 			// One without options and one with performance enhancement options.
 			// Obliterate "//depot/client/ResolveFileStreamTest/..." should show
 			// a difference in completion times (standard vs enhanced options)
-			assertTrue(optimizedTime < nonOptimizedTime);
+			assertTrue(optimizedTime <= nonOptimizedTime);
 
 			// Setting the user to a non-super user and see what happen
 			results = server2.obliterateFiles(

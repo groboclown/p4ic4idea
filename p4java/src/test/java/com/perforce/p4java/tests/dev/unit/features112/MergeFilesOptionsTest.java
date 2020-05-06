@@ -11,7 +11,6 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -22,6 +21,7 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.option.client.MergeFilesOptions;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
@@ -29,45 +29,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046667" })
 @TestId("Dev112_MergeFilesOptionsTest")
-public class MergeFilesOptionsTest extends P4JavaTestCase {
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-	}
+public class MergeFilesOptionsTest extends P4JavaRshTestCase {
 
 	@Test
 	public void testDefaultMergeFilesOptionsValues() {

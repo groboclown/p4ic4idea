@@ -3,20 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features122;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.List;
-import java.util.Properties;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -28,26 +14,37 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.client.ReconcileFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.dev.unit.PlatformType;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
+import java.util.Properties;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test 'p4 reconcile'
  */
 @Jobs({"job054780"})
 @TestId("Dev122_ReconcileFilesTest")
-public class ReconcileFilesTest extends P4JavaTestCase {
-
-    final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20121";
-
-    private IOptionsServer server = null;
+public class ReconcileFilesTest extends P4JavaRshTestCase {
+    
     private IClient client = null;
     private String testZipFile;
     private String deleteFile;
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ReconcileFilesTest.class.getSimpleName());
 
     /**
      * @Before annotation to a method to be run before each test in a class.
@@ -55,25 +52,15 @@ public class ReconcileFilesTest extends P4JavaTestCase {
     @Before
     public void setUp() throws Exception {
         // initialization code (before each test).
-        fail("FIXME uses remote p4d server");
         Properties properties = new Properties();
-        properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM,
-                ".p4ignore");
-
-        server = ServerFactory.getOptionsServer(serverURL, properties);
+        properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM, ".p4ignore");
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
         assertNotNull(server);
-
-        // Register callback
-        server.registerCallback(new MockCommandCallback());
-        server.connect();
-        if (server.isConnected()) {
-            if (server.supportsUnicode()) {
-                server.setCharsetName("utf8");
-            }
+       
+        client = server.getClient("p4TestUserWS20112");
+        if (getHostPlatformType() == PlatformType.WINDOWS) {
+            client = server.getClient("p4TestUserWS20112Windows");
         }
-        server.setUserName("p4jtestuser");
-        server.login("p4jtestuser");
-        client = server.getClient(getPlatformClientName("p4TestUserWS20112"));
         assertNotNull(client);
         server.setCurrentClient(client);
 
@@ -117,7 +104,7 @@ public class ReconcileFilesTest extends P4JavaTestCase {
             assertTrue(delFile.delete());
 
             changelist = getNewChangelist(server, client,
-                    "Dev121_IgnoreFilesTest add files");
+                    "Dev141_IgnoreFilesTest add files");
             assertNotNull(changelist);
             changelist = client.createChangelist(changelist);
             assertNotNull(changelist);

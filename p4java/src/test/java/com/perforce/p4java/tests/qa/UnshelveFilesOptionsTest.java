@@ -22,17 +22,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IUser;
-import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.option.client.EditFilesOptions;

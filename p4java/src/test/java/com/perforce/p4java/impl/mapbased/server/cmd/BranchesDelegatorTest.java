@@ -31,10 +31,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-/**
- * @author Sean Shou
- * @since 21/09/2016
- */
 public class BranchesDelegatorTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -182,7 +178,7 @@ public class BranchesDelegatorTest {
      * name filter is provided to the branches command.
      * @throws P4JavaException when supported version is too low
      */
-    @Test
+    @Test(expected=RequestException.class)
     public void testUserNameFilterSupportMinVersion()
             throws P4JavaException {
         // given
@@ -191,8 +187,7 @@ public class BranchesDelegatorTest {
 //                any(int.class), any(String.class), eq("branch"));
 
         // then
-        assertThrows(RequestException.class,
-                () -> branchesDelegator.getBranchSpecs("sean", "Date_Modified>453470485", 10));
+        branchesDelegator.getBranchSpecs("sean", "Date_Modified>453470485", 10);
     }
 
     /**
@@ -200,7 +195,7 @@ public class BranchesDelegatorTest {
      * max results filter is provided to the branches command.
      * @throws P4JavaException when supported version is too low
      */
-    @Test
+    @Test(expected=RequestException.class)
     public void testMaxResultsFilterSupportMinVersion()
         throws P4JavaException {
         // given
@@ -209,8 +204,7 @@ public class BranchesDelegatorTest {
 //                any(int.class), any(String.class), eq("branch"));
 
         // then
-        assertThrows(RequestException.class,
-                () -> branchesDelegator.getBranchSpecs(EMPTY, "Date_Modified>453470485", 10));
+        branchesDelegator.getBranchSpecs(EMPTY, "Date_Modified>453470485", 10);
     }
 
     /**
@@ -218,7 +212,7 @@ public class BranchesDelegatorTest {
      * a query filter is provided to the branches command.
      * @throws P4JavaException when supported version is too low
      */
-    @Test
+    @Test(expected=RequestException.class)
     public void testQueryFilterSupportMinVersion()
             throws P4JavaException {
         // given
@@ -227,8 +221,7 @@ public class BranchesDelegatorTest {
 //                any(int.class), any(String.class), eq("branch"));
 
         // then
-        assertThrows(RequestException.class,
-                () -> branchesDelegator.getBranchSpecs(EMPTY, "Date_Modified>453470485", -1));
+        branchesDelegator.getBranchSpecs(EMPTY, "Date_Modified>453470485", -1);
     }
     
     /**

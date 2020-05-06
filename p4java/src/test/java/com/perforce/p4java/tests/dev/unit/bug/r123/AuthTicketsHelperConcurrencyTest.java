@@ -9,9 +9,7 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import org.junit.Test;
 
 import com.perforce.p4java.server.AuthTicket;
 import com.perforce.p4java.server.AuthTicketsHelper;
@@ -19,7 +17,7 @@ import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job059813"})
 @TestId("Dev123_AuthTicketsHelperConcurrencyTest")
 public class AuthTicketsHelperConcurrencyTest extends P4JavaTestCase {

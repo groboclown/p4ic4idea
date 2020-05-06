@@ -34,7 +34,7 @@ public class SubmitAndSyncUtf8FileTypeTest extends P4JavaRshTestCase {
     private List<IFileSpec> submittedOrPendingFileSpecs = null;
 
     @ClassRule
-	public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", SubmitAndSyncUtf8FileTypeTest.class.getSimpleName());
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", SubmitAndSyncUtf8FileTypeTest.class.getSimpleName());
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -72,7 +72,7 @@ public class SubmitAndSyncUtf8FileTypeTest extends P4JavaRshTestCase {
 
  
     @Test
-    public void testSubmitValidUtf8FileWithUnixLineEndingButWithoutBOM_UnlixClientLineEnding() throws Exception {
+    public void testSubmitValidUtf8FileWithUnixLineEndingButWithoutBOM_UnixClientLineEnding() throws Exception {
         File testResourceFile = loadFileFromClassPath(CLASS_PATH_PREFIX + "/has_utf8_bom_but_its_text.txt");
 
         long originalSize = Files.size(testResourceFile.toPath());
@@ -87,7 +87,7 @@ public class SubmitAndSyncUtf8FileTypeTest extends P4JavaRshTestCase {
 
     @Test
     @Ignore("issue with data in unicode file")
-    public void testSubmitValidUtf8FileWithUnixLineEndingButWithouBOM_WinClientLineEnding() throws Exception {
+    public void testSubmitValidUtf8FileWithUnixLineEndingButWithoutBOM_WinClientLineEnding() throws Exception {
         File testResourceFile = loadFileFromClassPath(CLASS_PATH_PREFIX + "/utf_8-jp_without_bom.txt");
         int totalUnixLineEndings = 9;
         long originalSize = Files.size(testResourceFile.toPath());

@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
@@ -24,9 +11,23 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.SetFileAttributesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simple tests for setting and getting file attributes using the
@@ -34,46 +35,79 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * gubbins.
  */
 @TestId("Features102_FileAttributesTest")
-public class FileAttributesTest extends P4JavaTestCase {
+public class FileAttributesTest extends P4JavaRshTestCase {
+    
+    public FileAttributesTest() {
+    }
+
+    IClient client = null;
+	final private String filePath = "//depot/102Dev/Attributes";
+	final private String test1fileName = filePath + "/" + "test01.txt";
+	final private String attr1Name = "test1";
+	final private String attr1Value = "Test1Value";
+	final private String attr2Name = "test2";
+	final private String attr2Value = this.getRandomName("test1");
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", FileAttributesTest.class.getSimpleName());
+    
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            server = getSuperConnection(p4d.getRSHURL());
+            assertNotNull(server);
+            client = getClient(server);
+
+			Map<String, String> attrMap = new HashMap<String, String>();
+			attrMap.put(attr1Name, attr1Value);
+			attrMap.put(attr2Name, attr2Value);
+			List<IFileSpec> fileList = server.setFileAttributes(
+					FileSpecBuilder.makeFileSpecList(test1fileName),
+					attrMap,
+					new SetFileAttributesOptions().setSetOnSubmittedFiles(true)
+			);
+			assertNotNull("null file list returned", fileList);
+			assertEquals(1, fileList.size());
+			assertNotNull(fileList.get(0));
+			assertNotNull(fileList.get(0).getOpStatus());
+			assertEquals(FileSpecOpStatus.VALID, fileList.get(0).getOpStatus());
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
+
 	@Test
 	public void testFileAttributesRetrieval() {
-		final String filePath = "//depot/102Dev/Attributes";
-		final String fileName = filePath + "/" + "test01.txt";
-		final String attr1Name = "test1";
-		final String attr1Value = "Test1Value";
 		final String attr1HexValue = "546573743156616C7565";
-		final String attr2Name = "test2";
-		final byte[] attr2Value = {-85, -51, -17}; 	// FIXME: byte order -- HR.
 		final String attr2HexValue = "ABCDEF";
-		IOptionsServer server = null;
-		IClient client = null;
 
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
 			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
+
 			FileStatAncilliaryOptions fsaOpts = new FileStatAncilliaryOptions();
 			fsaOpts.setShowAttributes(true);
 			GetExtendedFilesOptions gefOpts = new GetExtendedFilesOptions();
 			gefOpts.setAncilliaryOptions(fsaOpts);
 			List<IExtendedFileSpec> fileSpecs = server.getExtendedFiles(
-													FileSpecBuilder.makeFileSpecList(fileName),
+													FileSpecBuilder.makeFileSpecList(test1fileName),
 													gefOpts);
 			assertNotNull(fileSpecs);
 			assertEquals(1, fileSpecs.size());
 			IExtendedFileSpec fSpec = fileSpecs.get(0);
 			Map<String,byte[]> expectedAttributes = new HashMap<String, byte[]>();
 			expectedAttributes.put(attr1Name, attr1Value.getBytes());
-			expectedAttributes.put(attr2Name, attr2Value);
+			expectedAttributes.put(attr2Name, attr2Value.getBytes());
 			checkAttributes(fSpec, expectedAttributes, false);
 
 			fsaOpts.setShowHexAttributes(true);
 			fileSpecs = server.getExtendedFiles(
-												FileSpecBuilder.makeFileSpecList(fileName),
+												FileSpecBuilder.makeFileSpecList(test1fileName),
 												gefOpts);
 			assertNotNull(fileSpecs);
 			assertEquals(1, fileSpecs.size());
@@ -92,21 +126,11 @@ public class FileAttributesTest extends P4JavaTestCase {
 
 	@Test
 	public void testFileTextAttributesSet() {
-		final String filePath = "//depot/102Dev/Attributes";
+
 		final String fileName = filePath + "/" + "test03.txt";
-		final String attr1Name = "test1";
-		final String attr1Value = this.getRandomName("test1");
-		final String attr2Name = "test2";
 		final String attr2Value = this.getRandomName("test1");
 
-		IOptionsServer server = null;
-		IClient client = null;
-
 		try {
-			server = getServerAsSuper();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
 			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
@@ -173,22 +197,13 @@ public class FileAttributesTest extends P4JavaTestCase {
 
 	@Test
 	public void testStreamAttributeSet() {
-		final String filePath = "//depot/102Dev/Attributes";
 		final String fileName = filePath + "/" + "test04.txt";
 		final String inputFile = filePath + "/" + "test04inputA.jpg";
-		final String attr1Name = "test1";
 		final int imageSize = 92647 * 2; // as hex bytes
 		final String hexStart = "ffd8ffe000104a46494600010200006400640000ffec00114475636b79000100".toUpperCase();
 		final String hexEnd = "3a74ebfb5d96a22defb62f9ade0b5adb7f96dfcda0ffd9".toUpperCase();
 
-		IOptionsServer server = null;
-		IClient client = null;
-
 		try {
-			server = getServerAsSuper();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
 			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
@@ -257,22 +272,7 @@ public class FileAttributesTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testAttributePatterns() {
-
-		final String filePath = "//depot/102Dev/Attributes";
-		final String fileName = filePath + "/" + "test01.txt";
-		final String attr1Name = "test1";
-		final String attr1Value = "Test1Value";
-		final String attr2Name = "test2";
-		final byte[] attr2Value = {-85, -51, -17}; 	// FIXME: byte order -- HR.
-		IOptionsServer server = null;
-		IClient client = null;
-
 		try {
-
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, filePath + "/...");
 			assertTrue(syncFiles.size() > 0);
 			assertEquals(syncFiles.get(0).getStatusString(), 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());
@@ -281,19 +281,19 @@ public class FileAttributesTest extends P4JavaTestCase {
 			GetExtendedFilesOptions gefOpts = new GetExtendedFilesOptions();
 			gefOpts.setAncilliaryOptions(fsaOpts);
 			List<IExtendedFileSpec> fileSpecs = server.getExtendedFiles(
-													FileSpecBuilder.makeFileSpecList(fileName),
+													FileSpecBuilder.makeFileSpecList(test1fileName),
 													gefOpts);
 			assertNotNull(fileSpecs);
 			assertEquals(1, fileSpecs.size());
 			IExtendedFileSpec fSpec = fileSpecs.get(0);
 			Map<String,byte[]> expectedAttributes = new HashMap<String, byte[]>();
 			expectedAttributes.put(attr1Name, attr1Value.getBytes());
-			expectedAttributes.put(attr2Name, attr2Value);
+			expectedAttributes.put(attr2Name, attr2Value.getBytes());
 			checkAttributes(fSpec, expectedAttributes, false);
 
 			gefOpts.setAttributePattern(attr1Name);
 			fileSpecs = server.getExtendedFiles(
-												FileSpecBuilder.makeFileSpecList(fileName),
+												FileSpecBuilder.makeFileSpecList(test1fileName),
 												gefOpts);
 			assertNotNull(fileSpecs);
 			assertEquals(1, fileSpecs.size());

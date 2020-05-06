@@ -1,23 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.StringContains.containsString;
-
-import java.util.Iterator;
-import java.util.List;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IDepot;
 import com.perforce.p4java.core.IUser;
@@ -26,53 +8,57 @@ import com.perforce.p4java.core.IUserSummary.UserType;
 import com.perforce.p4java.impl.generic.core.User;
 import com.perforce.p4java.option.server.UpdateUserGroupOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Iterator;
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.StringContains.containsString;
 
 /**
  * Test password with high-ascii characters.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job065872"})
 @TestId("Dev131_HighASCIIPasswordTest")
-@Disabled("Uses external p4d server")
-public class HighASCIIPasswordTest extends P4JavaTestCase {
+public class HighASCIIPasswordTest extends P4JavaRshTestCase {
 
-  private IOptionsServer server = null;
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", HighASCIIPasswordTest.class.getSimpleName());
+
   private IOptionsServer superServer = null;
   private IClient superClient = null;
   private IUser newUser = null;
-  private MockCommandCallback callback;
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    server = getServer(getServerUrlString(), props, getUserName(),
-        getPassword());
-    assertThat(server,notNullValue());
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
     IClient client = server.getClient("p4TestUserWS20112");
     assertThat(client,notNullValue());
     server.setCurrentClient(client);
-    // Register callback
-    callback = new MockCommandCallback();
-    server.registerCallback(callback);
-
-    superServer = getServer(getServerUrlString(), props,
-        getSuperUserName(), getSuperUserPassword());
-    assertThat(superServer,notNullValue());
+    
+    superServer = getSuperConnection(p4d.getRSHURL());
     superClient = superServer.getClient("p4TestSuperWS20112");
     superServer.setCurrentClient(superClient);
-    // Register callback
-    superServer.registerCallback(callback);
-
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
-    if (nonNull(superServer)) {
+    if (superServer != null) {
       endServerSession(superServer);
     }
   }
@@ -116,8 +102,7 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
       }
 
       // Change password
-      // p4ic4idea: escape Java
-      String password1 = "\u53F0\u5317 T\u00E1ib\u011Bi rick\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00E4\u00C0\u00C0\u00C0\u00C0\u00C0\u00C0\u00C0\u00C0\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9\u00F9";
+      String password1 = "\u53f0\u5317 T\u00e1ib\u011bi rick\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00e4\u00c0\u00c0\u00c0\u00c0\u00c0\u00c0\u00c0\u00c0\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9\u00f9";
       message = server.changePassword(null, password1, null);
       assertThat(message, notNullValue());
       assertThat(message, containsString("Password updated."));
@@ -141,8 +126,8 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
 
       // Login with the new password
       server.login(password1);
-      assertThat(callback.getMessage(), notNullValue());
-      assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+      assertThat(serverMessage, notNullValue());
+      assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
       // Should get a list of depots
       depots = server.getDepots();
@@ -156,8 +141,8 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
 
       // Login again
       server.login(password2);
-      assertThat(callback.getMessage(), notNullValue());
-      assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+      assertThat(serverMessage, notNullValue());
+      assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
       // Delete the password
       String password3 = null;
@@ -167,15 +152,10 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
 
       // Login again
       server.login(password3);
-      assertThat(callback.getMessage(), notNullValue());
-      assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
+      assertThat(serverMessage, notNullValue());
+      assertThat(serverMessage, containsText("'login' not necessary, no password set for this user."));
 
       // Use the super user to change the password to something else
-      superServer = getServer(getServerUrlString(), props,
-          "p4jtestsuper", "p4jtestsuper");
-      assertThat(superServer, notNullValue());
-      superClient = superServer.getClient("p4TestSuperWS20112");
-      superServer.setCurrentClient(superClient);
       String password4 = "abcd1234";
       message = superServer.changePassword(null, password4, newUserName);
       assertThat(message, notNullValue());
@@ -191,8 +171,8 @@ public class HighASCIIPasswordTest extends P4JavaTestCase {
 
       // Login using the new password
       server.login(password4);
-      assertThat(callback.getMessage(), notNullValue());
-      assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+      assertThat(serverMessage, notNullValue());
+      assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
       // Get a list of depots
       depots = server.getDepots();

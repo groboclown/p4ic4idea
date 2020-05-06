@@ -3,58 +3,31 @@
  */
 package com.perforce.p4java.tests.dev.unit.features141;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
-import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Properties;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test triggers using the raw execMapCmd() method.
  */
 @Jobs({ "job071702" })
 @TestId("Dev141_TriggersExecMapCmdTest")
-public class TriggersExecMapCmdTest extends P4JavaTestCase {
+public class TriggersExecMapCmdTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1",TriggersExecMapCmdTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -65,33 +38,10 @@ public class TriggersExecMapCmdTest extends P4JavaTestCase {
 		try {
 			Properties properties = new Properties();
 			properties.put("relaxCmdNameChecks", "true");
-			
-			server = ServerFactory.getOptionsServer(getServerUrlString(), properties);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(this.getSuperUserName());
-
-			// Login using the normal method
-			server.login(this.getSuperUserPassword(), new LoginOptions());
-
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			setupServer(p4d.getRSHURL(), userName, password, true, properties);
+			setupUtf8(server);
+			client = getClient(server);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

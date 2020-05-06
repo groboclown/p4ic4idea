@@ -3,20 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features152;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.IStreamSummary.Type;
 import com.perforce.p4java.core.IStreamViewMapping;
@@ -27,58 +13,52 @@ import com.perforce.p4java.impl.generic.core.Stream;
 import com.perforce.p4java.impl.generic.core.Stream.StreamViewMapping;
 import com.perforce.p4java.option.server.StreamOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.nio.file.Paths;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test streams with "import+" path type
  */
 @Jobs({ "job080744" })
 @TestId("Dev152_StreamImportPlusPathTest")
-public class StreamImportPlusPathTest extends P4JavaTestCase {
+public class StreamImportPlusPathTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
-
-	IOptionsServer server2 = null;
-	IClient client2 = null;
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", StreamImportPlusPathTest.class.getSimpleName());
 
 	IOptionsServer superServer = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	final String depotName = this.getRandomName(false, "test-stream-import-plus-path-depot");
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
-		// initialization code (before each test).
+		final String streamDepth = "//" + depotName + "/1";
+		final String clientName = "test-stream-import-plus-path-client";
+		final String clientDescription = "temp stream client for test";
+		final String clientRoot = Paths.get("").toAbsolutePath().toString();
+		final String[] clientViews = {"//" + depotName + "/... //" + clientName + "/..."};
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
+			setupServer(p4d.getRSHURL(),userName, password, true, null);
+			createStreamsDepot(depotName, server, streamDepth);
+			client = createClient(server, clientName, clientDescription, clientRoot, clientViews);
 			server.setCurrentClient(client);
-		
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -88,16 +68,11 @@ public class StreamImportPlusPathTest extends P4JavaTestCase {
 	 */
 	@After
 	public void tearDown() {
-		// cleanup code (after each test).
 		if (server != null) {
 			this.endServerSession(server);
 		}
 		if (superServer != null) {
 			this.endServerSession(superServer);
-		}
-
-		if (server2 != null) {
-			this.endServerSession(server2);
 		}
 	}
 
@@ -108,8 +83,8 @@ public class StreamImportPlusPathTest extends P4JavaTestCase {
 	public void testCreateRetrieveStream() {
 
 		int randNum = getRandomInt();
-		String streamName = "testmain" + randNum;
-		String newStreamPath = "//p4java_stream/" + streamName;
+		String streamName = "streamtest" + randNum;
+		String newStreamPath = "//" + depotName + "/" + streamName;
 
 		try {
 			IStream stream = new Stream();

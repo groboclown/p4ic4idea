@@ -3,31 +3,33 @@
  */
 package com.perforce.p4java.tests.dev.unit.features121;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IStream;
+import com.perforce.p4java.core.IStreamSummary;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.generic.client.ClientView;
+import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
+import com.perforce.p4java.impl.generic.core.Stream;
+import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.option.server.SwitchClientViewOptions;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Properties;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.impl.generic.client.ClientView;
-import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
-import com.perforce.p4java.impl.mapbased.client.Client;
-import com.perforce.p4java.option.server.SwitchClientViewOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'AtChange' field with dynamically generated back-in-time stream client:
@@ -37,47 +39,42 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job052514" })
 @TestId("Dev112_StreamClientAtChangeTest")
-public class StreamClientAtChangeTest extends P4JavaTestCase {
+public class StreamClientAtChangeTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IOptionsServer superServer = null;
 	IClient client = null;
 	String message = null;
-	IChangelist changelist = null;
+	private String streamsDepotName = "p4java_stream";
+	private String streamDepth = "//" + streamsDepotName + "/1";
+	private String testStreamMain = "//p4java_stream/main";
+	private String testStreamDev = "//p4java_stream/dev";
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", StreamClientAtChangeTest.class.getSimpleName());
 
 	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
+	 * 
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS20112");
+		    Properties properties = new Properties();
+	        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+			client = createClient(server, "StreamClientAtChangeTestClient");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			createStreamsDepot(streamsDepotName, server, streamDepth);
+			IStream stream = Stream.newStream(server, testStreamMain, IStreamSummary.Type.MAINLINE.toString(), null, null, null, null, null, null, null);
+			String retVal = server.createStream(stream);
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + testStreamMain + " saved.");
+			IStream childStream = Stream.newStream(server, testStreamDev, IStreamSummary.Type.DEVELOPMENT.toString(), testStreamMain, null, null, null, null, null, null);
+			retVal = server.createStream(childStream);
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + testStreamDev + " saved.");
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -102,7 +99,6 @@ public class StreamClientAtChangeTest extends P4JavaTestCase {
 	public void testStreamClientAtChange() {
 
 		int randNum = getRandomInt();
-		String testStream = "//p4java_stream/dev";
 		int atChange = 43866;
 
 		IClient testClient = null;
@@ -140,7 +136,7 @@ public class StreamClientAtChangeTest extends P4JavaTestCase {
 			server.setCurrentClient(testClient);
 
 			// Switch the test client's to a stream view
-			message = server.switchStreamView(testStream, testClient.getName(),
+			message = server.switchStreamView(testStreamDev, testClient.getName(),
 					new SwitchClientViewOptions().setForce(true));
 			assertNotNull(message);
 			assertTrue(message.contentEquals("Client " + testClient.getName()
@@ -156,7 +152,7 @@ public class StreamClientAtChangeTest extends P4JavaTestCase {
 			assertEquals(IChangelist.UNKNOWN, testClient.getStreamAtChange());
 			
 			// Switch the test client's to a stream view with at change
-			message = server.switchStreamView(testStream + "@" + atChange,
+			message = server.switchStreamView(testStreamDev + "@" + atChange,
 					null, new SwitchClientViewOptions().setForce(true));
 			assertNotNull(message);
 			assertTrue(message.contentEquals("Client " + testClient.getName()
@@ -176,7 +172,7 @@ public class StreamClientAtChangeTest extends P4JavaTestCase {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
 			try {
-				superServer = getServerAsSuper();
+			    superServer = getServerAsSuper(p4d.getRSHURL());
 				assertNotNull(superServer);
 				message = superServer.deleteClient(testClient.getName(), true);
 				assertNotNull(message);

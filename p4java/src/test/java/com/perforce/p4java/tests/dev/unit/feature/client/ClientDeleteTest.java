@@ -3,19 +3,23 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.client.Client;
-import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests very simple client deletes as normal user and super user.
@@ -27,16 +31,37 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("ClientDeleteTest")
 @Jobs({"job036916"})
-public class ClientDeleteTest extends P4JavaTestCase {
+public class ClientDeleteTest extends P4JavaRshTestCase {
 
+    IOptionsServer superServer =null;
+    
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ClientDeleteTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, props);
+            assertNotNull(server);
+           superServer = getSuperConnection(p4d.getRSHURL());
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
+    
 	@Test
 	public void testAsNormalUser() {
-		IServer server = null;
 		IClient client = null;
 		final String excStr = "You don't have permission for this operation";
 		
 		try {
-			server = getServer();
 			assertNotNull("Null server returned", server);
 			Client clientImpl = makeTempClient(null, server);
 			assertNotNull("Null client impl", clientImpl);
@@ -71,29 +96,27 @@ public class ClientDeleteTest extends P4JavaTestCase {
 	
 	@Test
 	public void testAsSuperUser() {
-		IServer server = null;
 		IClient client = null;
 		
 		try {
-			server = getServerAsSuper();
-			assertNotNull("Null server returned", server);
-			Client clientImpl = makeTempClient(null, server);
+			assertNotNull("Null server returned", superServer);
+			Client clientImpl = makeTempClient(null, superServer);
 			assertNotNull("Null client impl", clientImpl);
 			clientImpl.setOwnerName(getSuperUserName());
-			String rsltStr = server.createClient(clientImpl);
+			String rsltStr = superServer.createClient(clientImpl);
 			assertNotNull(rsltStr);
-			client = server.getClient(clientImpl.getName());
+			client = superServer.getClient(clientImpl.getName());
 			assertNotNull("couldn't retrieve new client", client);
-			rsltStr = server.deleteClient(client.getName(), false);
+			rsltStr = superServer.deleteClient(client.getName(), false);
 			assertNotNull(rsltStr);
-			clientImpl = makeTempClient(null, server);
+			clientImpl = makeTempClient(null, superServer);
 			assertNotNull("Null client impl", clientImpl);
 			clientImpl.setOwnerName(getSuperUserName());
-			rsltStr = server.createClient(clientImpl);
+			rsltStr = superServer.createClient(clientImpl);
 			assertNotNull(rsltStr);
-			client = server.getClient(clientImpl.getName());
+			client = superServer.getClient(clientImpl.getName());
 			assertNotNull("couldn't retrieve new client", client);
-			rsltStr = server.deleteClient(client.getName(), true);
+			rsltStr = superServer.deleteClient(client.getName(), true);
 			assertNotNull(rsltStr);
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());

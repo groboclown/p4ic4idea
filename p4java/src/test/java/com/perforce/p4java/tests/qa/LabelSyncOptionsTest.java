@@ -10,32 +10,28 @@ NOT TESTING:
 package com.perforce.p4java.tests.qa;
 
 
-import static com.perforce.p4java.core.file.FileSpecBuilder.makeFileSpecList;
-import static com.perforce.p4java.option.client.LabelSyncOptions.OPTIONS_SPECS;
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.util.List;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.ILabel;
+import com.perforce.p4java.core.IUser;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.option.client.LabelSyncOptions;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.test.TestServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.ILabel;
-import com.perforce.p4java.core.IUser;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.option.client.LabelSyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.test.TestServer;
+import java.io.File;
+import java.util.List;
+
+import static com.perforce.p4java.core.file.FileSpecBuilder.makeFileSpecList;
+import static com.perforce.p4java.option.client.LabelSyncOptions.OPTIONS_SPECS;
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class LabelSyncOptionsTest {

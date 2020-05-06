@@ -28,10 +28,6 @@ import com.perforce.p4java.impl.generic.client.ClientLineEnding;
 
 /**
  * RpcInputStream Tester.
- *
- * @author Sean
- * @version 1.0
- * @since <pre>Jul 21, 2016</pre>
  */
 public class RpcInputStreamTest {
   /*
@@ -177,19 +173,17 @@ public class RpcInputStreamTest {
   public void testReadForTargetBytesTargetOffsetTargetLen_read_from_RpcLineEndFilterInputStream() throws Exception {
     mockCRLRLineEndingAndUTF8EncodingFile();
 
-
     byte[] targetBytes = new byte[1001];
 
     int read = rpcInputStream.read(targetBytes, 0, 1000);
     /*
-      od -c utf8_win_line_endings.txt
-      ﻿
-       0000000   a  \r  \n   b  \r  \n
-       0000006
-
-      after replace line ending with P4D server line ending
-
-      0000000   a  \n   b  \n
+         * od -c utf8_win_line_endings.txt
+         *  ﻿ 0000000 a \r \n b \r \n
+         *   0000006
+         *
+         * after replace line ending with P4D server line ending
+         *
+         *   0000000 a \n b \n
     */
     int expectedLengthAsCRLFWasReplaceByLF = 4;
     assertThat(read, is(expectedLengthAsCRLFWasReplaceByLF));
@@ -247,7 +241,7 @@ public class RpcInputStreamTest {
   }
 
   private void mockCRLRLineEndingAndUTF8EncodingFile() throws IOException, FileEncoderException {
-    char[] chars = {(char) 51, (char) 51};
+    char[] chars = { (char) 51, (char) 51 };
     String lineEndings = new String(chars);
     file = new RpcPerforceFile(mockFileName, lineEndings);
     file.setFileType(RpcPerforceFileType.FST_UTF8);

@@ -1,20 +1,14 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-
-import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.util.List;
-import java.util.Properties;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelistSummary;
@@ -22,36 +16,33 @@ import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 
 /**
  * Test auto load user's auth ticket from the tickets file.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job064875"})
 @TestId("Dev123_AutoloadUserAuthTicketTest")
-@Disabled("Uses external p4d server")
-public class AutoloadUserAuthTicketTest extends P4JavaTestCase {
+public class AutoloadUserAuthTicketTest extends P4JavaRshTestCase {
 
-  private static final String p4superuser = "p4jtestsuper";
-  private static final String p4superpasswd = "p4jtestsuper";
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", AutoloadUserAuthTicketTest.class.getSimpleName());
 
-  private static final String p4testuser = "p4jtestuser";
   private static final String p4testclient = "p4TestUserWS20112";
 
   private IOptionsServer superserver = null;
-  private IOptionsServer server = null;
 
-  @AfterEach
+  @After
   public void tearDown() {
     // cleanup code (after each test).
-    if (nonNull(superserver)) {
+    if (superserver != null) {
       endServerSession(superserver);
     }
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
   }
@@ -65,21 +56,11 @@ public class AutoloadUserAuthTicketTest extends P4JavaTestCase {
       // user's auth ticket to file
       loginTestUser();
 
-      Properties props = new Properties();
       //props.put("com.perforce.p4java.rpc.socketPoolSize", 100);
-      server = ServerFactory.getOptionsServer(getServerUrlString(), props);
-      assertThat(server, notNullValue());
-
-      // Register callback
-      server.registerCallback(new MockCommandCallback());
-      // Connect to the server.
-      server.connect();
-      setUtf8CharsetIfServerSupportUnicode(server);
-      // Set the test user
-      server.setUserName(p4testuser);
+      setupServer(p4d.getRSHURL(), userName, password, true, props);
 
       // Get and set the test client
-    IClient client = server.getClient(p4testclient);
+      IClient client = server.getClient(p4testclient);
       assertThat(client, notNullValue());
       server.setCurrentClient(client);
 
@@ -94,23 +75,9 @@ public class AutoloadUserAuthTicketTest extends P4JavaTestCase {
    * user will be written to file
    */
   private void loginTestUser() throws Exception{
-      superserver = ServerFactory.getOptionsServer(getServerUrlString(), null);
+      superserver = getSuperConnection(p4d.getRSHURL());
       assertThat(superserver, notNullValue());
-
-      // Register callback
-      superserver.registerCallback(new MockCommandCallback());
-
-      // Connect to the server.
-      superserver.connect();
-      setUtf8CharsetIfServerSupportUnicode(superserver);
-
-      // Set the super user to the server
-      superserver.setUserName(p4superuser);
-
-      // Login the super user
-      superserver.login(p4superpasswd, new LoginOptions());
-
-      IUser anotherUser = superserver.getUser(p4testuser);
+      IUser anotherUser = superserver.getUser(userName);
       assertThat(anotherUser, notNullValue());
 
       StringBuffer authTicketFromMemory = new StringBuffer();

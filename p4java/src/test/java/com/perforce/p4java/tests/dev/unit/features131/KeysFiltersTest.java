@@ -3,38 +3,43 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.option.server.GetCountersOptions;
+import com.perforce.p4java.option.server.GetKeysOptions;
+import com.perforce.p4java.option.server.KeyOptions;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.option.server.GetCountersOptions;
-import com.perforce.p4java.option.server.GetKeysOptions;
-import com.perforce.p4java.option.server.KeyOptions;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test the 'p4 keys -e[nameFilter] -e[nameFilter] -e[nameFilter] ...'
  */
 @Jobs({"job062715"})
 @TestId("Dev131_KeysFiltersTest")
-public class KeysFiltersTest extends P4JavaTestCase {
+public class KeysFiltersTest extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", KeysFiltersTest.class.getSimpleName());
+
     /**
      * @BeforeClass annotation to a method to be run before all the tests in a
      * class.
      */
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        server = getServerAsSuper();
-        assertNotNull(server);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        server = getSuperConnection(p4d.getRSHURL());
     }
 
     /**

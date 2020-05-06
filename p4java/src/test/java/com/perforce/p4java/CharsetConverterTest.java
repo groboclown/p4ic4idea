@@ -24,17 +24,13 @@ import com.perforce.p4java.exception.ResourceException;
 import com.perforce.p4java.server.PerforceCharsets;
 import org.junit.rules.TemporaryFolder;
 
-public class CharsetConverterTest {
-	@Rule
-	public TemporaryFolder tmpDir = new TemporaryFolder();
+public class CharsetConverterTest extends AbstractP4JavaUnitTest {
 
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
     
 	@Test
 	public void testCharsetConverterCharsetCharsetValid() throws IOException, UnsupportedCharsetException, ConnectionException, RequestException, AccessException, NoSuchObjectException, ConfigException, ResourceException, URISyntaxException, FileDecoderException, FileEncoderException {
-		File testResourceFile = tmpDir.newFile();
-		P4ExtFileUtils.extractResource(this, CLASS_PATH_PREFIX + "/shift_jis.txt",
-				testResourceFile, false);
+		File testResourceFile = loadFileFromClassPath(CLASS_PATH_PREFIX + "/shift_jis.txt");
 		
 		CharsetConverter convert = new CharsetConverter(PerforceCharsets.getP4Charset("shiftjis"), CharsetDefs.UTF8);
 		
@@ -69,9 +65,7 @@ public class CharsetConverterTest {
 
 	@Test(expected=FileDecoderException.class)
 	public void testCharsetConverterCharsetCharsetInvalid() throws IOException, UnsupportedCharsetException, ConnectionException, RequestException, AccessException, NoSuchObjectException, ConfigException, ResourceException, URISyntaxException, FileDecoderException, FileEncoderException {
-		File testResourceFile = tmpDir.newFile();
-		P4ExtFileUtils.extractResource(this, CLASS_PATH_PREFIX + "/euc-jp.txt",
-				testResourceFile, false);
+		File testResourceFile = loadFileFromClassPath(CLASS_PATH_PREFIX + "/euc-jp.txt");
 
 		CharsetConverter convert = new CharsetConverter(PerforceCharsets.getP4Charset("shiftjis"), CharsetDefs.UTF8);
 		

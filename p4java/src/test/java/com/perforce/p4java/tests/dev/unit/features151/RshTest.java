@@ -1,16 +1,12 @@
 package com.perforce.p4java.tests.dev.unit.features151;
 
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -24,36 +20,7 @@ import static org.junit.Assert.fail;
 @Jobs({ "job034706" })
 @TestId("Dev151_RshTest")
 @Ignore
-public class RshTest extends P4JavaTestCase {
-
-	IOptionsServer server = null;
-	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
+public class RshTest extends P4JavaRshTestCase {
 
 	/**
 	 * @After annotation to a method to be run after each test in a class.

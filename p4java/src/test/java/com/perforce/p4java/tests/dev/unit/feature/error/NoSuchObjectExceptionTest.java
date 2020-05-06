@@ -13,29 +13,29 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 public class NoSuchObjectExceptionTest extends BaseThrowableTestHelper {
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable()
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable()
      */
     protected Throwable createThrowable() {
 	return new NoSuchObjectException();
     }
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.String)
      */
     protected Throwable createThrowable(String message) {
 	return new NoSuchObjectException(message);
     }
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable(Throwable)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.Throwable)
      */
     protected Throwable createThrowable(Throwable cause) {
 	return new NoSuchObjectException(cause);
     }
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable(String,
-     *      Throwable)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.String,
+     *      java.lang.Throwable)
      */
     protected Throwable createThrowable(String message, Throwable cause) {
 	return new NoSuchObjectException(message, cause);

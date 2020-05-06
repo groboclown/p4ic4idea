@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -35,7 +38,17 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 
 	public NewAuthTicketTest() {
 	}
-	
+
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
+
 	/**
 	 * See what happens when we do a simple log in followed
 	 * by a couple of boring commands, then log out, then do it again...

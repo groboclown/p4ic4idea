@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -74,6 +75,10 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
 
     @BeforeClass
     public static void before() throws Exception {
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+
+
         server = getServer();
         client = getDefaultClient(server);
         server.setCurrentClient(client);
@@ -90,6 +95,12 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
                 },
                 null);
         assertNotNull(result);
+    }
+
+    // p4ic4idea: use local server
+    @AfterClass
+    public static void oneTimeTearDown() {
+        UnitTestDevServerManager.INSTANCE.endTestClass();
     }
 
     /**

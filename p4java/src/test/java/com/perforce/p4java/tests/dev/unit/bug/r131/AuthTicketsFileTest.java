@@ -1,28 +1,25 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-
-import java.io.File;
-
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.server.AuthTicket;
 import com.perforce.p4java.server.AuthTicketsHelper;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import java.io.File;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test auth tickets file
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job065305"})
 @TestId("Dev131_AuthTicketsFileTest")
-public class AuthTicketsFileTest extends P4JavaTestCase {
+public class AuthTicketsFileTest extends P4JavaRshTestCase {
   /**
    * Test auth tickets file
    */

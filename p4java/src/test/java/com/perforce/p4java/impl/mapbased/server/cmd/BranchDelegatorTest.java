@@ -179,11 +179,10 @@ public class BranchDelegatorTest {
      * @throws P4JavaException
      *             when the server request is not completed
      */
-    @Test
+    @Test(expected=NullPointerException.class)
     public void testGetNullBranchName() throws P4JavaException {
         // then
-        assertThrows(NullPointerException.class,
-                () -> branchSpecDelegator.getBranchSpec(null, mock(GetBranchSpecOptions.class)));
+        branchSpecDelegator.getBranchSpec(null, mock(GetBranchSpecOptions.class));
     }
 
     /**
@@ -234,11 +233,11 @@ public class BranchDelegatorTest {
      * @throws P4JavaException
      *             when the server request is not completed
      */
-    @Test
+    @Test(expected=NullPointerException.class)
     public void testUpdateNullBranchSpec()
             throws P4JavaException {
         // then
-        assertThrows(NullPointerException.class, () -> branchSpecDelegator.updateBranchSpec(null));
+        branchSpecDelegator.updateBranchSpec(null);
     }
 
     /**
@@ -340,12 +339,11 @@ public class BranchDelegatorTest {
         assertThat(deleteBranchSpec, is(mockBranchSpecName));
     }
 
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void deleteBranchSpec_byBranchNameAndDeleteBranchSpecOptions_shouldThrownIllegalArgumentExceptionWhenBranchNameIsBlank()
             throws P4JavaException {
         // then
-        assertThrows(IllegalArgumentException.class, () -> branchSpecDelegator
-                .deleteBranchSpec(EMPTY, mock(DeleteBranchSpecOptions.class)));
+        branchSpecDelegator.deleteBranchSpec(EMPTY, mock(DeleteBranchSpecOptions.class));
     }
 
     /**

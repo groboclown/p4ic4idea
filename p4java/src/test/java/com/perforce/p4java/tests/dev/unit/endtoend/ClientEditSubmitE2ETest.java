@@ -1,27 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static com.perforce.p4java.tests.ServerMessageMatcher.isMessageStringNumeric;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Date;
-import java.util.List;
-
-import com.perforce.p4java.server.IServerMessage;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -35,9 +13,33 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static com.perforce.p4java.tests.ServerMessageMatcher.isMessageStringNumeric;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 //import org.junit.BeforeClass;
 
@@ -45,7 +47,10 @@ import org.apache.commons.lang3.StringUtils;
  * Tests Edit->Submit scenarios from end-to-end.
  */
 @TestId("ClientEditSubmitE2ETest01")
-public class ClientEditSubmitE2ETest extends P4JavaTestCase {
+public class ClientEditSubmitE2ETest extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
 
     private static IClient client = null;
     private static String clientDir;
@@ -53,7 +58,9 @@ public class ClientEditSubmitE2ETest extends P4JavaTestCase {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        server = getServer();
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
         client = getDefaultClient(server);
         clientDir = defaultTestClientName + File.separator + testId;
         server.setCurrentClient(client);

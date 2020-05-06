@@ -3,16 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.CoreFactory;
 import com.perforce.p4java.core.IChangelist;
@@ -25,26 +15,50 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.SetFileAttributesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for file attribute visibility when a file is open
  * for edit (Job042258).
  */
 @TestId("Bugs111_Job042258Test")
-@Disabled("Uses external p4d server")
-public class Job042258Test extends P4JavaTestCase {
+public class Job042258Test extends P4JavaRshTestCase {
 
 	public Job042258Test() {
 	}
 
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job042258Test.class.getSimpleName());
+
+	IClient client = null;
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
+    
 	@Test
 	public void testAttributeRetrieval() {
-		IOptionsServer server = null;
-		IClient client = null;
 		IChangelist changelist = null;
 		final String description = "Test changelist for test " + testId;
 		final String testRoot = "//depot/111bugs/Bugs111_Job042258Test";
@@ -54,10 +68,6 @@ public class Job042258Test extends P4JavaTestCase {
 		final String attrValue = this.getRandomName("value");
 		
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull("null client returned", client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncFiles = this.forceSyncFiles(client, testRoot + "/...");
 			assertNotNull("bad forced sync", syncFiles);
 			changelist = CoreFactory.createChangelist(client, description, true);

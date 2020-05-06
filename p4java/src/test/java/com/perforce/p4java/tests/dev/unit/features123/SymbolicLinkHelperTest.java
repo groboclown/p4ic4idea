@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -29,6 +30,8 @@ public class SymbolicLinkHelperTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.startTestClass("unicode");
 	}
 
 	/**
@@ -38,6 +41,8 @@ public class SymbolicLinkHelperTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.endTestClass("unicode");
 	}
 
 	/**

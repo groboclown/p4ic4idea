@@ -3,20 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IChangelistSummary;
@@ -26,10 +12,21 @@ import com.perforce.p4java.impl.generic.client.ClientView;
 import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test correctness of changelist visibility (access type) for the
@@ -37,27 +34,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046271" })
 @TestId("Dev112_GetChangelistsTest")
-public class GetChangelistsTest extends P4JavaTestCase {
+public class GetChangelistsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetChangelistsTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -66,14 +46,10 @@ public class GetChangelistsTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer(getServerUrlString(), null, "p4jtestuser",
-					"p4jtestuser");
-			assertNotNull(server);
-		} catch (P4JavaException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 
 	/**
@@ -101,7 +77,6 @@ public class GetChangelistsTest extends P4JavaTestCase {
 
 		try {
 			IClient p4jTestClient = server.getClient("p4TestUserWS");
-
 			// Create a test client and set it to the server
 			testClient = new Client();
 			testClient.setName("testClient" + randNum);
@@ -157,17 +132,15 @@ public class GetChangelistsTest extends P4JavaTestCase {
 		} finally {
 			try {
 				// Delete the test client
-				server = getServerAsSuper();
+				server = getSuperConnection(p4d.getRSHURL());
 				if (server != null) {
 					if (testClient != null) {
 						server.deleteClient(testClient.getName(), true);
 					}
 				}
-			} catch (P4JavaException e) {
+			} catch (Exception e) {
 				// Can't do much here...
-			} catch (URISyntaxException e) {
-				// Can't do much here...
-			}
+			} 
 		}
 	}
 }

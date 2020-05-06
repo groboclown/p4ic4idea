@@ -3,33 +3,29 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test non-tagged output for the 'spec -o' commands.
@@ -47,9 +43,14 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job061531" })
 @TestId("Dev131_NonTaggedOutputTest")
-public class NonTaggedOutputTest extends P4JavaTestCase {
+public class NonTaggedOutputTest extends P4JavaRshTestCase {
 
-	private static IClient client = null;
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", NonTaggedOutputTest.class.getSimpleName());
+
+	private static String serverMessage = null;
+	private static long completedTime = 0;
+	private static IOptionsServer superServer = null;
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -59,34 +60,9 @@ public class NonTaggedOutputTest extends P4JavaTestCase {
 		// initialization code (before each test).
 		try {
 			Properties props = new Properties();
-			//props.put("quietMode", "true");
-
-			server = ServerFactory
-					.getOptionsServer(getServerUrlString(), props);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(superUserName);
-
-			// Login using the normal method
-			server.login(superUserPassword, new LoginOptions());
-
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
+			superServer = getSuperConnection(p4d.getRSHURL());
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -256,7 +232,7 @@ public class NonTaggedOutputTest extends P4JavaTestCase {
 		try {
 			HashMap<String, Object> inMap = new HashMap<String, Object>();
 			inMap.put("useTags", "no");
-			Map<String, Object>[] result = server.execMapCmd(
+			Map<String, Object>[] result = superServer.execMapCmd(
 					CmdSpec.PROTECT.toString(), new String[] { "-o"}, inMap);
 			assertNotNull(result);
 			assertTrue(result.length > 0);
@@ -278,7 +254,7 @@ public class NonTaggedOutputTest extends P4JavaTestCase {
 		try {
 			HashMap<String, Object> inMap = new HashMap<String, Object>();
 			inMap.put("useTags", "no");
-			is = server.execStreamCmd(CmdSpec.PROTECT.toString(), new String[] {"-o"}, inMap);
+			is = superServer.execStreamCmd(CmdSpec.PROTECT.toString(), new String[] {"-o"}, inMap);
 			assertNotNull(is);
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 

@@ -3,49 +3,61 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simple test of a sync / edit / revert cycle.
  */
 
 @TestId("Client_SimpleEditRevertTest")
-@Disabled("Uses external p4d server")
-@Ignore("Uses external p4d server")
-public class SimpleEditRevertTest extends P4JavaTestCase {
+public class SimpleEditRevertTest extends P4JavaRshTestCase {
 
 	public SimpleEditRevertTest() {
 		super();
 	}
 
+	private IClient client = null;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SimpleEditRevertTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+        client = getClient(server);
+     }
+    
 	@Test
 	public void testSimpleEditRevert() {
 		final String editRoot = "//depot/client/SimpleEditRevertTest/...";
-		IOptionsServer server = null;
-		IClient client = null;
 		IChangelist changelist = null;
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> revertFiles = client.revertFiles(
 								FileSpecBuilder.makeFileSpecList(editRoot),
 								false,
@@ -83,9 +95,7 @@ public class SimpleEditRevertTest extends P4JavaTestCase {
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		} finally {
-			if (server != null) {
-				endServerSession(server);
-			}
+			endServerSession(server);
 		}
 	}
 }

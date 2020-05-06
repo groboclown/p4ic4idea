@@ -3,23 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -32,41 +15,49 @@ import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the Options and DeleteFilesOptions functionality.
  */
 @Jobs({"job046086"})
 @TestId("Dev112_DeleteFilesOptionsTest")
-@Disabled("Uses external p4d server")
-public class DeleteFilesOptionsTest extends P4JavaTestCase {
+public class DeleteFilesOptionsTest extends P4JavaRshTestCase {
     private IClient client = null;
 
-    @BeforeAll
-    public static void beforeAll() throws Exception {
-        server = getServer();
-        assertNotNull(server);
-    }
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", DeleteFilesOptionsTest.class.getSimpleName());
 
     /**
      * @Before annotation to a method to be run before each test in a class.
      */
-    @BeforeEach
+    @Before
     public void beforeEach() throws Exception{
-        client = getDefaultClient(server);
-        assertNotNull(client);
-        server.setCurrentClient(client);
-        // p4ic4idea: special setup
-        UnitTestDevServerManager.INSTANCE.endTestClass();
-    }
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        client = getClient(server);
+     }
 
     /**
      * @After annotation to a method to be run after each test in a class.
      */
-    @AfterAll
+    @AfterClass
     public static void afterAll() throws Exception {
         afterEach(server);
     }
@@ -164,6 +155,7 @@ public class DeleteFilesOptionsTest extends P4JavaTestCase {
      */
     @Test
     public void testBypassClientDelete() {
+       
         int randNum = getRandomInt();
 
         String files = "//depot/112Dev/GetOpenedFilesTest/bin/com/perforce/test4delete/...";
@@ -178,6 +170,7 @@ public class DeleteFilesOptionsTest extends P4JavaTestCase {
         List<IFileSpec> deleteFiles = null;
 
         try {
+            createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/bin/com/perforce/test4delete/file.java", "desc");
             copyChangelist = getNewChangelist(server, client,
                     "Dev112_DeleteFilesOptionsTest copy changelist");
             assertNotNull(copyChangelist);
@@ -260,7 +253,8 @@ public class DeleteFilesOptionsTest extends P4JavaTestCase {
                                     .setChangelistId(deleteChangelist.getId()));
                     deleteChangelist.refresh();
                     deleteChangelist.submit(null);
-                } catch (P4JavaException e) {
+                    cleanupFiles(client);
+                } catch (Exception e) {
                     // Can't do much here...
                 }
             }

@@ -1,21 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.isMessageStringNumeric;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
-import com.perforce.p4java.server.IServerMessage;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -29,9 +13,27 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.isMessageStringNumeric;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -44,7 +46,11 @@ import org.apache.commons.lang3.StringUtils;
  * 					java.lang.String fileType, boolean useWildcards) 
  */
 @TestId("ClientAddFilesE2ETest01")
-public class ClientAddFilesE2ETest extends P4JavaTestCase {
+public class ClientAddFilesE2ETest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
+
 	private static IClient client = null;
 	private static String clientDir;
 	private static String sourceFile;
@@ -52,7 +58,9 @@ public class ClientAddFilesE2ETest extends P4JavaTestCase {
 	
 	@BeforeClass
 	public static void beforeAll() throws Exception {
-		server = getServer();
+		Properties properties = new Properties();
+		setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
 		client = getDefaultClient(server);
 		clientDir = defaultTestClientName + File.separator + testId;
 		server.setCurrentClient(client);
@@ -66,7 +74,7 @@ public class ClientAddFilesE2ETest extends P4JavaTestCase {
 		
 		try {
 			IClient client = getDefaultClient(server);
-			debugPrint("serverUrlString: " + getServerUrlString(), "defaultTestClientName: " + defaultTestClientName);
+			debugPrint("serverUrlString: " + serverUrlString, "defaultTestClientName: " + defaultTestClientName);	
 			debugPrint(true, "ClientRoot: " + client.getRoot(), "HostName: " + client.getHostName(), "userName: " + userName);
 			
 		} catch (Exception exc){
@@ -435,10 +443,9 @@ public class ClientAddFilesE2ETest extends P4JavaTestCase {
 			//submit files
 			changelist.update();
 			submittedFiles = changelist.submit(true);
-			submittedFiles = changelist.submit(false);
-			
+
 			verifyFilesAdded(submittedFiles, 0);
-			verifyTestFilesNotSubmitted(submittedFiles, 1, 0, true, "No files to submit.");
+			verifyTestFilesNotSubmitted(submittedFiles, 2, 1, true, "No files to submit.");
 			//verifyTestFileRevision(submittedFiles, numValidFiles, 1);
 			// FIXME: fails due to bug	verifySpecListFileType(submittedFiles, P4JTEST_FILETYPE_TEXT);
 			
@@ -528,7 +535,7 @@ public class ClientAddFilesE2ETest extends P4JavaTestCase {
 		
 		if(newFSList.size() > 0) {
 			for (IFileSpec fileSpec : newFSList) {
-				if (fileSpec != null && fileSpec.getOpStatus() == FileSpecOpStatus.VALID) {
+				if (fileSpec != null && fileSpec.getOpStatus() == FileSpecOpStatus.VALID && fileSpec.getAction() != null) {
 					assertEquals("Expected FileSpec Action ADD.", fileSpec.getAction(), FileAction.ADD);
 					validFSpecCount++;
 				}
@@ -778,7 +785,7 @@ public class ClientAddFilesE2ETest extends P4JavaTestCase {
 		
 		debugPrint("** verifyTestFilesNotSubmitted **");
 		//need to simplify this a bit
-		if(! "".equals(expMsg)) {
+		if(expMsg != "") {
 			submitMsg = expMsg; 
 		}
 		if(newFSList.size() > 0) {

@@ -40,21 +40,18 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @TestId("Dev152_UnshelveUtf6leWindowsTest")
 public class UnshelveUtf6leWindowsTest extends P4JavaRshTestCase {
 
-	
 	@ClassRule
 	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", UnshelveUtf6leWindowsTest.class.getSimpleName());
-
-    @BeforeClass
-    public static void beforeAll() throws Exception {
-    	setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, null);
-    }
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		// initialization code (before each test).
+		setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, null);
+		client = getClient(server);
+		assertNotNull(client);
 		try {
 			if (server.isConnected()) {
 				if (server.supportsUnicode()) {
@@ -76,10 +73,6 @@ public class UnshelveUtf6leWindowsTest extends P4JavaRshTestCase {
 		IChangelist targetChangelist = null;
 
 		try {
-			IClient client = server.getClient("p4TestUserWS20112Windows");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-			
 			changelist = server.getChangelist(changelistNumber);
 			assertNotNull(changelist);
 			targetChangelist = client.createChangelist(this.createChangelist(client));

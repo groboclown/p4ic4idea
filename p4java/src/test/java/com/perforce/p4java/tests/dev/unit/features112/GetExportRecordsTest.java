@@ -3,25 +3,25 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
+import com.perforce.p4java.option.server.ExportRecordsOptions;
+import com.perforce.p4java.tests.SSLServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaLocalServerTestCase;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.option.server.ExportRecordsOptions;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test 'p4 export' command. In particular, test the ability to retrieve field
@@ -29,22 +29,26 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job037798" })
 @TestId("Dev112_GetExportRecordsTest")
-@Disabled("Uses external p4d server")
-public class GetExportRecordsTest extends P4JavaTestCase {
-    private static final int TIME_OUT_IN_SECONDS = 90;
+public class GetExportRecordsTest extends P4JavaLocalServerTestCase {
 
-	private static IClient client = null;
+	@ClassRule
+	public static SSLServerRule p4d = new SSLServerRule("r16.1", GetExportRecordsTest.class.getSimpleName(),"ssl:localhost:10674");
+
 	private Integer journal = 0;
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
-	@BeforeAll
+	@BeforeClass
 	public static void beforeAll() throws Exception{
-		Properties rpcTimeOutProperties = configRpcTimeOut("GetExportRecordsTest", TIME_OUT_IN_SECONDS);
-
-		// initialization code (before each test).
-		server = getServerAsSuper(rpcTimeOutProperties, getServerUrlString());
-		assertNotNull(server);
+		props.put(RpcPropertyDefs.RPC_RELAX_CMD_NAME_CHECKS_NICK, "true");
+		setupSSLServer(p4d.getP4JavaUri(), superUserName, superUserPassword, false, props);
+		server.execMapCmd("admin", new String[]{"journal"}, null);
+		IClient client = createClient(server, "getExportRecordsTestClient");
+		String[] filenames = new String[100];
+		for (int i=0 ; i <100; i++) {
+			filenames[i] = "test" + i;
+		}
+		createTextFilesOnServer(client, filenames, "test");
 		client = server.getClient("p4TestUserWS");
 		assertNotNull(client);
 		server.setCurrentClient(client);
@@ -53,7 +57,7 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
-	@BeforeEach
+	@Before
 	public void setUp() throws Exception{
 		journal = new Integer(server.getCounter("journal"));
 	}
@@ -61,7 +65,7 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 	/**
 	 * @After annotation to a method to be run after each test in a class.
 	 */
-	@AfterAll
+	@AfterClass
 	public static void afterAll() throws Exception {
 		afterEach(server);
 	}
@@ -73,15 +77,15 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 	public void testExportNoSkip() throws Exception {
 		// Set skipDataConversion to false, so we should get data as strings
 		List<Map<String, Object>> exportList = server.getExportRecords(new ExportRecordsOptions()
-				.setUseJournal(true).setSourceNum(journal).setMaxRecs(1000000)
-				.setFilter("table=db.traits"));
+				.setUseJournal(true).setSourceNum(journal).setMaxRecs(10000)
+				.setFilter("table=db.have"));
 		assertNotNull(exportList);
 		assertTrue(exportList.size() > 0);
 
 		// Get the first data map and inspect the data is in string format
 		Map<String, Object> dataMap = exportList.get(0);
 		assertNotNull(dataMap);
-		Object dataObject = dataMap.get("TTvalue");
+		Object dataObject = dataMap.get("HAdfile");
 		assertNotNull(dataObject);
 		assertTrue(dataObject instanceof String);
 	}
@@ -102,20 +106,20 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 		List<Map<String, Object>> exportList = server
 				.getExportRecords(new ExportRecordsOptions()
 						.setUseJournal(true).setSourceNum(journal)
-						.setFilter("TTname=test2")
+						.setFilter("HAdfile=//depot/test0")
 						.setSkipDataConversion(true));
 		assertNotNull(exportList);
-		assertTrue(exportList.size() > 2);
+		assertTrue(exportList.size() > 0);
 
 		// The first data map contains the data in bytes
 		Map<String, Object> dataMap = exportList.get(0);
 		assertNotNull(dataMap);
-		Object dataObject = dataMap.get("TTvalue");
+		Object dataObject = dataMap.get("HAdfile");
 		assertNotNull(dataObject);
 
 		// Verify the return data is of byte[] and it's size
 		assertTrue(dataObject instanceof byte[]);
-		assertEquals(40, ((byte[]) dataObject).length);
+		assertEquals(13, ((byte[]) dataObject).length);
 	}
 
 	/**
@@ -130,17 +134,14 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 	public void testExportSkipFieldRange2() throws Exception{
 		// Set skipDataConversion to true
 		List<Map<String, Object>> exportList = server.getExportRecords(new ExportRecordsOptions()
-				.setMaxRecs(1000000).setUseJournal(true).setSourceNum(journal)
-				.setFilter("table=db.traits").setSkipDataConversion(true));
+				.setMaxRecs(50).setUseJournal(true).setSourceNum(journal)
+				.setSkipDataConversion(true));
 		assertNotNull(exportList);
-		assertTrue(exportList.size() > 0);
+		assertEquals(exportList.size(),51);
 
 		// Get the first data map and inspect the data is in bytes
 		Map<String, Object> dataMap = exportList.get(0);
 		assertNotNull(dataMap);
-		Object dataObject = dataMap.get("TTvalue");
-		assertNotNull(dataObject);
-		assertTrue(dataObject instanceof byte[]);
 	}
 
 	/**
@@ -152,7 +153,8 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 		// Set skipDataConversion to true
 		List<Map<String, Object>> exportList = server.getExportRecords(new ExportRecordsOptions()
 				.setMaxRecs(1000000).setUseJournal(true).setSourceNum(journal)
-				.setFilter("table=db.traits").setSkipDataConversion(true)
+				.setSkipDataConversion(true)
+				.setFilter("table=db.have")
 				.setSkipFieldPattern("^[A-Z]{2}\\w+"));
 		assertNotNull(exportList);
 		assertTrue(exportList.size() > 0);
@@ -160,7 +162,7 @@ public class GetExportRecordsTest extends P4JavaTestCase {
 		// Get the first data map and inspect the data is in bytes
 		Map<String, Object> dataMap = exportList.get(0);
 		assertNotNull(dataMap);
-		Object dataObject = dataMap.get("TTvalue");
+		Object dataObject = dataMap.get("HAdfile");
 		assertNotNull(dataObject);
 		assertTrue(dataObject instanceof byte[]);
 	}

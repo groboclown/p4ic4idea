@@ -3,23 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -30,59 +13,51 @@ import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the Options and CopyFilesOptions functionality.
  */
 @Jobs({ "job046063" })
 @TestId("Dev112_CopyFilesOptionsTest")
-public class CopyFilesOptionsTest extends P4JavaTestCase {
-	IOptionsServer server = null;
+public class CopyFilesOptionsTest extends P4JavaRshTestCase {
+
+	IOptionsServer superServer = null;
 	IClient client = null;
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CopyFilesOptionsTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
-	/**
+    	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		// initialization code (before each test).
-        // p4ic4idea: just throw the exception.
-		//try {
-			server = getServer();
-			assertNotNull(serverUrlString, server);
-            client = getDefaultClient(server);
-			assertNotNull(defaultTestClientName, client);
-			server.setCurrentClient(client);
-		//} catch (P4JavaException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//} catch (URISyntaxException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//}
+		try {
+		    Properties properties = new Properties();
+	        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+            client = getClient(server);
+			superServer = getSuperConnection(p4d.getRSHURL());
+		} catch (Exception e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -180,6 +155,7 @@ public class CopyFilesOptionsTest extends P4JavaTestCase {
         try {
             CopyFilesOptions opts = new CopyFilesOptions();
             opts.setChangelistId(100);
+            opts.setForce(true);
             opts.setNoUpdate(true);
             opts.setNoClientSyncOrMod(false);
             opts.setBidirectional(true);
@@ -187,6 +163,7 @@ public class CopyFilesOptionsTest extends P4JavaTestCase {
             opts.setMaxFiles(1000);
 
             assertEquals(100, opts.getChangelistId());
+            assertEquals(true, opts.isForce());
             assertEquals(true, opts.isNoUpdate());
             assertEquals(false, opts.isNoClientSyncOrMod());
             assertEquals(true, opts.isBidirectional());
@@ -215,11 +192,13 @@ public class CopyFilesOptionsTest extends P4JavaTestCase {
             copyChangelist = client.createChangelist(copyChangelist);
             CopyFilesOptions options = new CopyFilesOptions();
             options.setChangelistId(copyChangelist.getId());
+            options.setForce(true);
             options.setMaxFiles(10);
 
             List<IFileSpec> copyFiles = client.copyFiles(new FileSpec(
                     sourceFiles), new FileSpec(targetFiles), null, options);
             assertNotNull(copyFiles);
+
             List<IFileSpec> nonValidFiles = FileSpecBuilder
                     .getInvalidFileSpecs(copyFiles);
             if (nonValidFiles.size() != 0) {

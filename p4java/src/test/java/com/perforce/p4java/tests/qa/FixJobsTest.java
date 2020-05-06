@@ -19,13 +19,14 @@ import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+
 @RunWith(JUnitPlatform.class)
 public class FixJobsTest {
 
@@ -69,7 +70,7 @@ public class FixJobsTest {
 			pendingChangelist = helper.createChangelist(server, user, client);
 			helper.editFile(testFile.getAbsolutePath(), "GetFixListTest\nLine 2", pendingChangelist, client);
 
-			Map<String, Object> reset = newHashMap();
+			Map<String, Object> reset = new HashMap<String, Object>();
 			reset.put("Status", "open");
 			job.setRawFields(reset);
 			job.update();
@@ -77,10 +78,13 @@ public class FixJobsTest {
 		}
 	}
 
-	@DisplayName("just make sure the darn thing works")
+	/**
+	 * just make sure the darn thing works
+	 * @throws Throwable
+	 */
 	@Test
 	public void basic() throws Throwable {
-		List<String> jobs = newArrayList();
+		List<String> jobs = new ArrayList<String>();
 		jobs.add(job.getId());
 		List<IFix> fixes = server.fixJobs(jobs, pendingChangelist.getId(), null);
 
@@ -100,10 +104,13 @@ public class FixJobsTest {
 	}
 
 
-	@DisplayName(" verify SubmitOptions.set")
+	/**
+	 * verify SubmitOptions.set
+	 * @throws Throwable
+	 */
 	@Test
 	public void leaveOpen() throws Throwable {
-		List<String> jobs = newArrayList();
+		List<String> jobs = new ArrayList<String>();
 		jobs.add(job.getId());
 		List<IFix> fixes = server.fixJobs(jobs, pendingChangelist.getId(), null);
 

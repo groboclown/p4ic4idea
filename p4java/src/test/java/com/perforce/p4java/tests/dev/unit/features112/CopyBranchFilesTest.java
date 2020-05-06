@@ -10,11 +10,16 @@ import static org.junit.Assert.fail;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.core.IBranchSpec;
+import com.perforce.p4java.impl.generic.core.BranchSpec;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.dev.unit.features172.FilesysUTF8bomTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -35,47 +40,33 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046694" })
 @TestId("Dev112_CopyBranchFilesTest")
-public class CopyBranchFilesTest extends P4JavaTestCase {
+public class CopyBranchFilesTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CopyBranchFilesTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+	String fileName ="SandboxTest/Attributes/test01.txt";
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		// initialization code (before each test).
-		// p4ic4idea: just throw the exception.
-		//try {
-			server = getServer();
-			assertNotNull(server);
-		//} catch (P4JavaException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//} catch (URISyntaxException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//}
+		try {
+			setupServer(p4d.getRSHURL(), userName, password, true, null);
+			client = createClient(server, "testclient");
+			createTextFileOnServer(client, fileName, "test");
+			editFile(server, client, "test", "//depot/" + fileName);
+			IBranchSpec branchSpec =  BranchSpec.newBranchSpec(server, "test_sadfdsfasd", "testbranch", new String[]{"//depot/... //depot/..."});
+			server.createBranchSpec(branchSpec);
+		} catch (P4JavaException e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		} catch (URISyntaxException e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -113,7 +104,7 @@ public class CopyBranchFilesTest extends P4JavaTestCase {
 					.copyFiles(
 							null,
 							FileSpecBuilder
-									.makeFileSpecList(new String[] { "//depot/SandboxTest/Attributes/test01.txt#1" }),
+									.makeFileSpecList(new String[] { "//depot/"+ fileName + "#1" }),
 							new CopyFilesOptions().setChangelistId(
 									changelist.getId()).setBranch(
 									"test_sadfdsfasd").setBidirectional(true));
@@ -125,7 +116,7 @@ public class CopyBranchFilesTest extends P4JavaTestCase {
 			assertEquals(1, files.size());
 			assertNotNull(files.get(0));
 			assertNotNull(files.get(0).getAnnotatedPreferredPathString());
-			assertEquals("//depot/SandboxTest/Attributes/test01.txt#2", files.get(0).getAnnotatedPreferredPathString());
+			assertEquals("//depot/"+ fileName + "#2", files.get(0).getAnnotatedPreferredPathString());
 
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
@@ -151,3 +142,4 @@ public class CopyBranchFilesTest extends P4JavaTestCase {
 
 	}
 }
+

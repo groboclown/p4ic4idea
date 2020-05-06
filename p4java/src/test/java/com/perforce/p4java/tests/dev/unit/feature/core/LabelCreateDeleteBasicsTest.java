@@ -8,16 +8,26 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Test;
+import java.util.Properties;
 
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ILabel;
 import com.perforce.p4java.core.ILabelMapping;
 import com.perforce.p4java.core.ViewMap;
 import com.perforce.p4java.impl.generic.core.Label;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.features112.DeleteFilesOptionsTest;
 
 /**
  * Tests very basic label creation and deletion functionality.
@@ -30,8 +40,25 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @Jobs({"job036573"})
 @TestId("LabelCreateDelete01")
-public class LabelCreateDeleteBasicsTest extends P4JavaTestCase {
+public class LabelCreateDeleteBasicsTest extends P4JavaRshTestCase {
 
+    private IClient client = null;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", LabelCreateDeleteBasicsTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), userName, password, true, properties);
+        client = getClient(server);
+     }
 	/**
 	 * Just attempt to create then delete a label; nothing
 	 * significant in the view or any other field.
@@ -40,9 +67,6 @@ public class LabelCreateDeleteBasicsTest extends P4JavaTestCase {
 	public void testLabelCreateDeleteAbsoluteBasics() {
 		final int MAX_ATTEMPTS = 5;
 		try {
-			IServer server = getServer();
-			assertNotNull("Null server returned", server);
-			
 			String newLabelName = getRandomLabelName(testId);
 			
 			ILabel newLabel = null;

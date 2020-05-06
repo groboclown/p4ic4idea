@@ -13,7 +13,6 @@ import com.perforce.test.TestServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -25,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
 import static com.perforce.p4java.core.file.FileSpecBuilder.makeFileSpecList;
 import static com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs.RPC_RELAX_CMD_NAME_CHECKS_NICK;
 import static com.perforce.p4java.server.CmdSpec.EXPORT;
@@ -42,7 +39,7 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 public class ExecStreamingMapCommandTest {
     private class StreamingCallback implements IStreamingCallback {
 
-        private ArrayList<Map<String, Object>> results = newArrayList();
+        private ArrayList<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
 
         public boolean startResults(int key) throws P4JavaException {
             // TODO Auto-generated method stub
@@ -59,10 +56,6 @@ public class ExecStreamingMapCommandTest {
         public boolean handleResult(Map<String, Object> resultMap, int key) throws P4JavaException {
             results.add(resultMap);
             return false;
-        }
-
-        public ArrayList<Map<String, Object>> getResults() {
-            return results;
         }
 
         public Map<String, Object> getResult() {
@@ -132,7 +125,10 @@ public class ExecStreamingMapCommandTest {
     }
 
 
-    @DisplayName("try something that would normally accept")
+    /**
+     * try something that would normally accept
+     * @throws Throwable
+     */
     @Test
     public void acceptableCommand() throws Throwable {
         StreamingCallback cb = new StreamingCallback();
@@ -153,7 +149,10 @@ public class ExecStreamingMapCommandTest {
     }
 
 
-    @DisplayName("verify that FileSpec can parse dirs output")
+    /**
+     * verify that FileSpec can parse dirs output
+     * @throws Throwable
+     */
     @Test
     public void parseDirs() throws Throwable {
         StreamingCallback cb = new StreamingCallback();
@@ -170,7 +169,10 @@ public class ExecStreamingMapCommandTest {
         assertThat("bad path", file.getDepotPathString(), containsString("dir"));
     }
 
-    @DisplayName("verify that FileSpec can parse errors with \"dirs\" output")
+    /**
+     * verify that FileSpec can parse errors with \"dirs\" output
+     * @throws Throwable
+     */
     @Test
     public void badArgumentParseDirs() throws Throwable {
         StreamingCallback cb = new StreamingCallback();
@@ -185,7 +187,10 @@ public class ExecStreamingMapCommandTest {
         assertThat(results, nullValue());
     }
 
-    @DisplayName("verify that FileSpec can parse errors with \"files\" output")
+    /**
+     * verify that FileSpec can parse errors with \"files\" output
+     * @throws Throwable
+     */
     @Test
     public void badArgumentParseFiles() throws Throwable {
         StreamingCallback cb = new StreamingCallback();
@@ -200,11 +205,14 @@ public class ExecStreamingMapCommandTest {
         assertThat(results, notNullValue());
     }
 
-    @DisplayName("verify we can turn off string translation")
+    /**
+     * verify we cna turn off string translation
+     * @throws Throwable
+     */
     @Test
     public void exportWithoutTranslation() throws Throwable {
-        HashMap<String, Object> inMap = newHashMap();
-        Map<String, Object> skipParams = newHashMap();
+        HashMap<String, Object> inMap = new HashMap<String, Object>();
+        Map<String, Object> skipParams = new HashMap<String, Object>();
         skipParams.put("fieldPattern", "^HAdfile");
         inMap.put(EXPORT.toString(), skipParams);
 
@@ -224,7 +232,10 @@ public class ExecStreamingMapCommandTest {
     }
 
 
-    @DisplayName("verify we get translation without an inmap")
+    /**
+     * verify we get translation without an inmap
+     * @throws Throwable
+     */
     @Test
     public void exportWithTranslation() throws Throwable {
         StreamingCallback cb = new StreamingCallback();

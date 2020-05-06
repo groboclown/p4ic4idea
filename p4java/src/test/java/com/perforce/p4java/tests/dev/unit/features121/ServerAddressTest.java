@@ -3,67 +3,28 @@
  */
 package com.perforce.p4java.tests.dev.unit.features121;
 
+import com.perforce.p4java.impl.mapbased.server.ServerAddressBuilder;
+import com.perforce.p4java.server.IServerAddress;
+import com.perforce.p4java.server.IServerAddress.Protocol;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import java.net.URISyntaxException;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.impl.mapbased.server.ServerAddressBuilder;
-import com.perforce.p4java.server.IServerAddress;
-import com.perforce.p4java.server.IServerAddress.Protocol;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * Test server address syntax
  */
 @Jobs({ "job051534" })
 @TestId("Dev121_ServerAddressTest")
-public class ServerAddressTest extends P4JavaTestCase {
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-	}
+public class ServerAddressTest extends P4JavaRshTestCase {
 
 	/**
 	 * Test server address syntax
@@ -76,8 +37,8 @@ public class ServerAddressTest extends P4JavaTestCase {
 		
 		// address format looks good
 		try {
-			addressBuilder = new ServerAddressBuilder(
-					"p4javassl://eng-p4java-vm.perforce.com:30121?socketPoolSize=10&testKey1=testVal1");
+		    addressBuilder = new ServerAddressBuilder(
+                    "p4javassl://fakeserver.perforce.com:30121?socketPoolSize=10&testKey1=testVal1");
 			serverAddress = addressBuilder.build();
 			assertNotNull(serverAddress);
 			assertNotNull(serverAddress.getProtocol());
@@ -85,7 +46,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 			assertTrue(serverAddress.isSecure());
 			assertEquals(30121, serverAddress.getPort());
 			assertNotNull(serverAddress.getHost());
-			assertEquals("eng-p4java-vm.perforce.com", serverAddress.getHost());
+			assertEquals("fakeserver.perforce.com", serverAddress.getHost());
 			assertNotNull(serverAddress.getProperties());
 			assertEquals(2, serverAddress.getProperties().size());
 			assertEquals("10", serverAddress.getProperties().getProperty("socketPoolSize"));
@@ -97,7 +58,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 		// supported protocols
 		try {
 			// p4java
-			addressBuilder = new ServerAddressBuilder("p4java://eng-p4java-vm.perforce.com:30121");
+			addressBuilder = new ServerAddressBuilder("p4java://fakeserver.perforce.com:30121");
 			serverAddress = addressBuilder.build();
 			assertNotNull(serverAddress);
 			assertNotNull(serverAddress.getProtocol());
@@ -105,7 +66,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 			assertFalse(serverAddress.isSecure());
 			
 			// p4jrpc
-			addressBuilder = new ServerAddressBuilder("p4jrpc://eng-p4java-vm.perforce.com:30121");
+			addressBuilder = new ServerAddressBuilder("p4jrpc://fakeserver.perforce.com:30121");
 			serverAddress = addressBuilder.build();
 			assertNotNull(serverAddress);
 			assertNotNull(serverAddress.getProtocol());
@@ -113,7 +74,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 			assertFalse(serverAddress.isSecure());
 			
 			// p4jrpcssl
-			addressBuilder = new ServerAddressBuilder("p4jrpcssl://eng-p4java-vm.perforce.com:30121");
+			addressBuilder = new ServerAddressBuilder("p4jrpcssl://fakeserver.perforce.com:30121");
 			serverAddress = addressBuilder.build();
 			assertNotNull(serverAddress);
 			assertNotNull(serverAddress.getProtocol());
@@ -121,7 +82,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 			assertTrue(serverAddress.isSecure());
 			
 			// p4jrpcnts
-			addressBuilder = new ServerAddressBuilder("p4jrpcnts://eng-p4java-vm.perforce.com:30121");
+			addressBuilder = new ServerAddressBuilder("p4jrpcnts://fakeserver.perforce.com:30121");
 			serverAddress = addressBuilder.build();
 			assertNotNull(serverAddress);
 			assertNotNull(serverAddress.getProtocol());
@@ -129,7 +90,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 			assertFalse(serverAddress.isSecure());
 
 			// p4jrpcntsssl
-			addressBuilder = new ServerAddressBuilder("p4jrpcntsssl://eng-p4java-vm.perforce.com:30121");
+			addressBuilder = new ServerAddressBuilder("p4jrpcntsssl://fakeserver.perforce.com:30121");
 			serverAddress = addressBuilder.build();
 			assertNotNull(serverAddress);
 			assertNotNull(serverAddress.getProtocol());
@@ -143,7 +104,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 		// unknown protocol
 		try {
 			addressBuilder = new ServerAddressBuilder(
-					"blahblah://eng-p4java-vm.perforce.com:30121");
+					"blahblah://fakeserver.perforce.com:30121");
 		} catch (URISyntaxException e) {
 			assertTrue(e.getMessage().contains("unknown protocol"));
 		}
@@ -159,7 +120,7 @@ public class ServerAddressTest extends P4JavaTestCase {
 		// no port
 		try {
 			addressBuilder = new ServerAddressBuilder(
-					"p4jrpc://abcserver");
+					"p4jrpc://fakeserver.perforce.com");
 		} catch (URISyntaxException e) {
 			assertTrue(e.getMessage().contains("missing or malformed Perforce server port specifier"));
 		}

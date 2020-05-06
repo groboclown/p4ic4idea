@@ -187,4 +187,43 @@ public class P4ExtFileUtils {
         }
         return inp;
     }
+
+    public static String getP4dPath(String version)
+            throws IOException {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            return "bin/" + version + "/bin.ntx64/p4d.exe";
+        }
+        if (os.contains("mac")) {
+            return "bin/" + version + "/bin.darwin90x86_64/p4d";
+        }
+        if (os.contains("nix") || os.contains("nux")) {
+            return "bin/" + version + "/bin.linux26x86_64/p4d";
+        }
+        throw new IOException("No p4d registered for OS " + os);
+    }
+
+    public static File getP4dOutput(File outdir) {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            return new File(outdir, "p4d.exe");
+        }
+        return new File(outdir, "p4d");
+    }
+
+    public static File extractP4d(File outdir, String version)
+            throws IOException {
+        File outP4d = getP4dOutput(outdir);
+        if (!outP4d.exists()) {
+            if (!outdir.exists() && !outdir.mkdirs()) {
+                throw new IOException("could not create output dir " + outdir);
+            }
+            String osP4d = getP4dPath(version);
+            extractResource(P4ExtFileUtils.class.getClassLoader(), osP4d, outP4d, false);
+            if (!outP4d.setExecutable(true)) {
+                throw new IOException("Could not make executable: " + outP4d);
+            }
+        }
+        return outP4d;
+    }
 }

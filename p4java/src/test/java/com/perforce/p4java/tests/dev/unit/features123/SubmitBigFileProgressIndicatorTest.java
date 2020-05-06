@@ -3,24 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features123;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -35,125 +17,41 @@ import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.server.callback.IStreamingCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test submit big files using IStreamingCallback.
  */
 @Jobs({ "job059434" })
 @TestId("Dev123_SubmitBigFileProgressIndicatorTest")
-public class SubmitBigFileProgressIndicatorTest extends P4JavaTestCase {
+public class SubmitBigFileProgressIndicatorTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
 	IChangelist changelist = null;
 	List<IFileSpec> files = null;
+	String serverMessage = null;
+	long completedTime = 0;
 
-	public static class SimpleCallbackHandler implements IStreamingCallback {
-		int expectedKey = 0;
-		SubmitBigFileProgressIndicatorTest testCase = null;
-
-		public SimpleCallbackHandler(SubmitBigFileProgressIndicatorTest testCase,
-				int key) {
-			if (testCase == null) {
-				throw new NullPointerException(
-						"null testCase passed to CallbackHandler constructor");
-			}
-			this.expectedKey = key;
-			this.testCase = testCase;
-		}
-
-		public boolean startResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean endResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean handleResult(Map<String, Object> resultMap, int key)
-				throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			if (resultMap == null) {
-				fail("null result map in handleResult");
-			}
-			return true;
-		}
-	};
-
-	public static class ListCallbackHandler implements IStreamingCallback {
-
-		int expectedKey = 0;
-		SubmitBigFileProgressIndicatorTest testCase = null;
-		List<Map<String, Object>> resultsList = null;
-
-		public ListCallbackHandler(SubmitBigFileProgressIndicatorTest testCase,
-				int key, List<Map<String, Object>> resultsList) {
-			this.expectedKey = key;
-			this.testCase = testCase;
-			this.resultsList = resultsList;
-		}
-
-		public boolean startResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean endResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean handleResult(Map<String, Object> resultMap, int key)
-				throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			if (resultMap == null) {
-				fail("null resultMap passed to handleResult callback");
-			}
-			this.resultsList.add(resultMap);
-			return true;
-		}
-
-		public List<Map<String, Object>> getResultsList() {
-			return this.resultsList;
-		}
-	};
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SubmitBigFileProgressIndicatorTest.class.getSimpleName());
 
 	/**
 	 * @AfterClass annotation to a method to be run after all the tests in a
@@ -172,35 +70,11 @@ public class SubmitBigFileProgressIndicatorTest extends P4JavaTestCase {
 		// initialization code (before each test).
 		try {
 			Properties props = new Properties();
-
 			props.put("enableProgress", "true");
-
-			server = ServerFactory
-					.getOptionsServer(getServerUrlString(), props);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(this.userName);
-
-			// Login using the normal method
-			server.login(this.password, new LoginOptions());
-
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, props);
+            assertNotNull(server);
+			client = getClient(server);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -229,7 +103,7 @@ public class SubmitBigFileProgressIndicatorTest extends P4JavaTestCase {
 			String sourceFile = client.getRoot() + File.separator + "localTestFiles2.tar.gz";
 			String targetFile = client.getRoot() + File.separator + "localTestFiles2.tar.gz" + "-" + randNum;
 			depotFile = "//depot/localTestFiles2.tar.gz" + "-" + randNum;
-			
+
 			List<IFileSpec> files = client.sync(
 					FileSpecBuilder.makeFileSpecList(sourceFile),
 					new SyncOptions().setForceUpdate(true));
@@ -256,14 +130,14 @@ public class SubmitBigFileProgressIndicatorTest extends P4JavaTestCase {
 			int key = this.getRandomInt();
 			ListCallbackHandler handler = new ListCallbackHandler(this, key,
 					resultsList);
-			
+
 			changelist.submit(new SubmitOptions(), handler, key);
 
 			assertNotNull(resultsList);
 			assertTrue(resultsList.size() > 0);
 
 			List<IFileSpec> fileList = new ArrayList<IFileSpec>();
-			
+
 			for (Map<String, Object> resultmap : resultsList) {
 				if (resultmap != null) {
 					for (Map.Entry<String, Object> entry : resultmap.entrySet()) {
@@ -284,10 +158,10 @@ public class SubmitBigFileProgressIndicatorTest extends P4JavaTestCase {
 					}
 				}
 			}
-			
+
 			assertNotNull(fileList);
 			assertTrue(fileList.size() > 0);
-			
+
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {

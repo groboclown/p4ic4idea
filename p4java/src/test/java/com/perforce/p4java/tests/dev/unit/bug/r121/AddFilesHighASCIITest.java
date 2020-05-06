@@ -3,33 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r121;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.zip.ZipException;
-
-import com.perforce.p4java.server.IServerMessage;
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.CharsetDefs;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
@@ -43,46 +16,46 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.PerforceCharsets;
-import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.zip.ZipException;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 add' ignore files
  */
 @Jobs({ "job052619" })
 @TestId("Dev121_IgnoreFilesTest")
-@Disabled("Uses external p4d server")
-public class AddFilesHighASCIITest extends P4JavaTestCase {
+public class AddFilesHighASCIITest extends P4JavaRshTestCase {
 
-	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20121";
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", AddFilesHighASCIITest.class.getSimpleName());
 
-	IOptionsServer server = null;
 	IClient client = null;
-	MockCommandCallback callback = new MockCommandCallback();
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -90,30 +63,13 @@ public class AddFilesHighASCIITest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-		fail("FIXME uses an external p4d server");
 		try {
-			
 			Properties props = new Properties();
 			props.put(PropertyDefs.IGNORE_FILE_NAME_KEY, ".p4ignore");
-			server = ServerFactory.getOptionsServer(serverURL, props);
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
 			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(callback);
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-			server.setUserName("p4jtestuser");
-			server.login("p4jtestuser");
-			client = server.getClient(getPlatformClientName("p4TestUserWS20112"));
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			client = getClient(server);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -146,10 +102,7 @@ public class AddFilesHighASCIITest extends P4JavaTestCase {
 				+ "/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd2/dir1.zip";
 
 		try {
-			Log.info("serverURL: " + serverURL);
-
 			SortedMap<String,Charset> charsetMap = Charset.availableCharsets();
-
 			debugPrint("------------- availableCharsets ----------------");
 			for (Map.Entry<String, Charset> entry : charsetMap.entrySet())
 			{
@@ -190,7 +143,7 @@ public class AddFilesHighASCIITest extends P4JavaTestCase {
 					syncErrorMessages.add(f.getStatusMessage());
 				}
 			}
-			assertEquals("Add files returned errors <" + syncErrorMessages + ">", 0, syncErrorMessages.size());
+			assertTrue("Add files returned errors <" + syncErrorMessages + ">", syncErrorMessages.size() == 0);
 
 			unpack(new File(testZipFile), new File(dir));
 
@@ -268,7 +221,7 @@ public class AddFilesHighASCIITest extends P4JavaTestCase {
 				}
 			}
 			debugPrint("------------------------------------");
-			assertEquals("Add files returned errors <" + addErrorMessages + ">", 0, addErrorMessages.size());
+			assertTrue("Add files returned errors <" + addErrorMessages + ">", addErrorMessages.size() == 0);
 			assertTrue("Add files returned no INFO messages!", infoCount > 0);
 
 			changelist.refresh();

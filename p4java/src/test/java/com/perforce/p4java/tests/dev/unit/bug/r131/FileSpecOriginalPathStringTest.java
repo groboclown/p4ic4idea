@@ -18,7 +18,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({ "job061945" })
 @TestId("Bug131_FileSpecOriginalPathStringTest")
-public class FileSpecOriginalPathStringTest extends P4JavaTestCase {
+public class FileSpecOriginalPathStringTest {
 	/**
 	 * Test FileSpec.getOriginalPath().
 	 */

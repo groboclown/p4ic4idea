@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -39,7 +40,7 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job044472", "job044417" })
 @TestId("Dev112_ChangePasswordTest")
-@Disabled("Uses external p4d server")
+//@Disabled("Uses external p4d server")
 public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 
 	final static String highSecurityLevelServerURL = "p4java://eng-p4java-vm.perforce.com:30111";
@@ -62,6 +63,8 @@ public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -71,6 +74,8 @@ public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -79,7 +84,6 @@ public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-		fail("FIXME uses an external p4d server");
 		try {
 			server = ServerFactory.getOptionsServer(highSecurityLevelServerURL,
 					null);

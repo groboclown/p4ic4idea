@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features121;
 
-import static com.perforce.p4java.exception.TrustException.Type.NEW_CONNECTION;
-import static com.perforce.p4java.exception.TrustException.Type.NEW_KEY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.Test;
-
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.option.server.LoginOptions;
@@ -23,17 +10,32 @@ import com.perforce.p4java.option.server.TrustOptions;
 import com.perforce.p4java.server.Fingerprint;
 import com.perforce.p4java.server.IServerInfo;
 import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SSLServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaLocalServerTestCase;
+import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static com.perforce.p4java.exception.TrustException.Type.NEW_CONNECTION;
+import static com.perforce.p4java.exception.TrustException.Type.NEW_KEY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test fingerprint and 'p4 trust'
  */
 @Jobs({"job053040"})
 @TestId("Dev121_FingerprintTest")
-public class FingerprintTest extends P4JavaTestCase {
-    private static String SSL_ENABLED_P4D_SERVER = "p4javassl://eng-p4java-vm.perforce.com:30121";
+public class FingerprintTest extends P4JavaLocalServerTestCase {
+
+    @ClassRule
+    public static SSLServerRule p4d = new SSLServerRule("r16.1", FingerprintTest.class.getSimpleName(), "ssl:localhost:10670");
+
     /**
      * @After annotation to a method to be run after each test in a class.
      */
@@ -47,12 +49,11 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testAddTrust() throws Exception {
-        fail("FIXME uses remote p4d server");
-        server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
+        server = ServerFactory.getOptionsServer(p4d.getP4JavaUri(), props);
         assertNotNull(server);
 
         // Register callback
-        server.registerCallback(new MockCommandCallback());
+        server.registerCallback(createCommandCallback());
 
         // Run remove trust first
         String result = server.removeTrust();
@@ -125,11 +126,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testRemoveTrust() throws Exception {
-        fail("FIXME uses remote p4d server");
-        server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
-        assertNotNull(server);
-        // Register callback
-        server.registerCallback(new MockCommandCallback());
+        setupSSLServer(p4d.getP4JavaUri(), userName, password, true, props);
 
         // Remove trust
         String removeResult = server.removeTrust();
@@ -142,12 +139,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testGetTrust() throws Exception {
-        fail("FIXME uses remote p4d server");
-        server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
-        assertNotNull(server);
-
-        // Register callback
-        server.registerCallback(new MockCommandCallback());
+        setupSSLServer(p4d.getP4JavaUri(), userName, password, true, props);
 
         // Get fingerprint
         String fingerprint = server.getTrust();
@@ -159,12 +151,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testGetTrusts() throws Exception {
-        fail("FIXME uses remote p4d server");
-        server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
-        assertNotNull(server);
-
-        // Register callback
-        server.registerCallback(new MockCommandCallback());
+        setupSSLServer(p4d.getP4JavaUri(), userName, password, true, props);
 
         // Add a fingerprints
         String fp = "B3:C6:B3:C6:B3:C6:B3:C6:B3:C6:B3:C6:B3:C6:B3:C6:B3:C6:B3:C6";
@@ -208,12 +195,7 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testTrustKey() throws Exception {
-        fail("FIXME uses remote p4d server");
-        server = ServerFactory.getOptionsServer(SSL_ENABLED_P4D_SERVER, props);
-        assertNotNull(server);
-
-        // Register callback
-        server.registerCallback(new MockCommandCallback());
+        setupSSLServer(p4d.getP4JavaUri(), userName, password, true, props);
 
         // Get fingerprint
         String fingerprint = server.getTrust();
@@ -225,13 +207,12 @@ public class FingerprintTest extends P4JavaTestCase {
      */
     @Test
     public void testConnection() throws Exception {
-        fail("FIXME uses remote p4d server");
-        String serverUri = SSL_ENABLED_P4D_SERVER + "?socketPoolSize=10&testKey1=testVal1";
+        String serverUri = p4d.getP4JavaUri() + "?socketPoolSize=10&testKey1=testVal1";
         server = ServerFactory.getOptionsServer(serverUri, props);
         assertNotNull(server);
 
         // Register callback
-        server.registerCallback(new MockCommandCallback());
+        server.registerCallback(createCommandCallback());
 
         try {
             // Connect to the server.

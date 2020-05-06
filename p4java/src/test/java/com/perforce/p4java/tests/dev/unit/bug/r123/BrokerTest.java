@@ -1,59 +1,45 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.Properties;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test broker
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job059311"})
 @TestId("Dev123_PasswordTest")
-@Disabled("Uses external p4d server")
-public class BrokerTest extends P4JavaTestCase {
+public class BrokerTest extends P4JavaRshTestCase {
+    
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", BrokerTest.class.getSimpleName());
 
-  private IOptionsServer server = null;
-
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
     // P4Broker URL
-    fail("FIXME Attempts a connection to a remote perforce server");
-    String serverUrl = "p4jrpcnts://eng-p4java-vm.perforce.com:50121";
     Properties props = new Properties();
     props.put("useAuthMemoryStore", "1");
-    server = getServer(serverUrl,
-        props,
-        getUserName(),
-        getPassword());
-    assertThat(server, notNullValue());
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
     IClient client = server.getClient("p4TestUserWS20112");
     assertThat(client, notNullValue());
     server.setCurrentClient(client);
-    // Register callback
-    server.registerCallback(new MockCommandCallback());
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
   }

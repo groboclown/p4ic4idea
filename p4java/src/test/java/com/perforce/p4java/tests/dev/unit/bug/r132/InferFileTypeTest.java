@@ -44,9 +44,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @TestId("Dev131_InferFileTypeTest")
 public class InferFileTypeTest extends P4JavaRshTestCase {
     // Unicode server
-    private static final String serverURL = "p4java://localhost:20132";
     private static final String p4Charset = "utf8";
-   
     
     @ClassRule
 	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", InferFileTypeTest.class.getSimpleName());
@@ -113,6 +111,7 @@ public class InferFileTypeTest extends P4JavaRshTestCase {
      * Test the inferFileType() method.
      */
     @Test
+    @Ignore
     public void testInferFileType() throws Exception {
         String depotFilePath = "//depot/FileTypeTest/...";
         byte[] bytes = new byte[RpcPropertyDefs.RPC_DEFAULT_FILETYPE_PEEK_SIZE];

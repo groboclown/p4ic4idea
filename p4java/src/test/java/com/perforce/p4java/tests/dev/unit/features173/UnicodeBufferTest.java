@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.perforce.p4java.server.CmdSpec.RETYPE;
-import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +54,7 @@ public class UnicodeBufferTest extends P4JavaRshTestCase {
 		// initialization code (before each test).
 		try {
 			// Creates new client
-			String clientRoot = p4d.getPathToRoot() + FILE_SEP + "client";
+			String clientRoot = p4d.getPathToRoot() + File.separator + "client";
 			String[] paths = {"//depot/r173/... //" + clientName + "/..."};
 			IClient testClient = Client.newClient(server, clientName, "UTF8 to UTF16 buffer test", clientRoot, paths);
 			server.createClient(testClient);
@@ -85,7 +84,7 @@ public class UnicodeBufferTest extends P4JavaRshTestCase {
 		// ... copy from resource to workspace
 		File utf8 = loadFileFromClassPath(CLASS_PATH_PREFIX + "/ko_utf8.xml");
 		File utf16 = loadFileFromClassPath(CLASS_PATH_PREFIX + "/ko_utf16.xml");
-		File testFile = new File(client.getRoot() + FILE_SEP + "ko_utf8.xml");
+		File testFile = new File(client.getRoot() + File.separator + "ko_utf8.xml");
 		Files.copy(utf8.toPath(), testFile.toPath());
 
 		// ... add to pending change
@@ -155,7 +154,7 @@ public class UnicodeBufferTest extends P4JavaRshTestCase {
 
 		// ... copy from resource to workspace
 		File utf16 = loadFileFromClassPath(CLASS_PATH_PREFIX + "/ko_utf16.xml");
-		File testFile = new File(client.getRoot() + FILE_SEP + "ko_utf16.xml");
+		File testFile = new File(client.getRoot() + File.separator + "ko_utf16.xml");
 		Files.copy(utf16.toPath(), testFile.toPath());
 
 		// ... add to pending change

@@ -3,31 +3,29 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.option.client.CopyFilesOptions;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * Test the Options and CopyFilesOptions functionality.
  */
 @Jobs({ "job059637" })
 @TestId("Dev131_CopyFilesOptionsQuietTest")
-public class CopyFilesOptionsQuietTest extends P4JavaTestCase {
+public class CopyFilesOptionsQuietTest extends P4JavaRshTestCase {
 
-	private static IClient client = null;
-
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", CopyFilesOptionsQuietTest.class.getSimpleName());
 
 	/**
 	 * @BeforeClass annotation to a method to be run before all the tests in a
@@ -35,21 +33,7 @@ public class CopyFilesOptionsQuietTest extends P4JavaTestCase {
 	 */
 	@BeforeClass
 	public static void oneTimeSetUp() throws Exception{
-		// initialization code (before each test).
-			server = getServer();
-			assertNotNull(server);
-            client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		afterEach(server);
+		setupServer(p4d.getRSHURL(), userName, password, true, props);
 	}
 
 	/**

@@ -120,7 +120,10 @@ public class GetDirectoriesTest {
         server.setCurrentClient(defaultClient);
     }
 
-    @DisplayName("verify the -S flag works - validates job046696")
+    /**
+     * verify the -S flag works - validates job046696
+     * @throws Throwable
+     */
     @Test
     public void getDirsInStreamMatch() throws Throwable {
         GetDirectoriesOptions opts = new GetDirectoriesOptions();
@@ -132,7 +135,10 @@ public class GetDirectoriesTest {
         assertThat("wrong number of paths", paths.size(), is(1));
     }
 
-    @DisplayName("verify the -S flag works, use a classic depot with the -S flag - validates job046696")
+    /**
+     * verify the -S flag works, use a classic depot with the -S flag - validates job046696
+     * @throws Throwable
+     */
     @Test
     public void getDirsInStreamNonStream() throws Throwable {
         GetDirectoriesOptions opts = new GetDirectoriesOptions();
@@ -146,7 +152,10 @@ public class GetDirectoriesTest {
         assertThat(paths.get(0).getStatusMessage(), isText(format("%s - no such file(s).", depotPath)));
     }
 
-    @DisplayName("verify the -S flag works, use a stream that should have no hits - validates job046696")
+    /**
+     * verify the -S flag works, use a stream that should have no hits - validates job046696
+     * @throws Throwable
+     */
     @Test
     public void getDirsInStreamNoMatch() throws Throwable {
         GetDirectoriesOptions opts = new GetDirectoriesOptions();

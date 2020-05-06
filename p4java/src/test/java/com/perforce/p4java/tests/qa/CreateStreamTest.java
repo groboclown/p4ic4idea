@@ -68,7 +68,10 @@ public class CreateStreamTest {
         helper.addFile(server, user, client, testFile.getAbsolutePath(), "GetStreamIntegrationStatusTest", "text");
     }
 
-    @DisplayName("just make sure the darn thing works")
+    /**
+     * just make sure the darn thing works
+     * @throws Exception
+     */
     @Test
     public void simple() throws Exception {
         ViewMap<IStreamRemappedMapping> remappedView = new ViewMap<>();

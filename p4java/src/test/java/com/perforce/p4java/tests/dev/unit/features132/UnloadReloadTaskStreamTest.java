@@ -1,24 +1,7 @@
 package com.perforce.p4java.tests.dev.unit.features132;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.StringContains.containsString;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.IDepot;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.IStreamSummary;
 import com.perforce.p4java.impl.generic.core.Stream;
@@ -27,38 +10,57 @@ import com.perforce.p4java.option.server.ReloadOptions;
 import com.perforce.p4java.option.server.StreamOptions;
 import com.perforce.p4java.option.server.UnloadOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.StringContains.containsString;
 
 /**
  * Test unload and reload task stream
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job066055"})
 @TestId("Dev132_UnloadReloadTaskStreamTest")
-@Disabled("Uses external p4d server")
-public class UnloadReloadTaskStreamTest extends P4JavaTestCase {
+public class UnloadReloadTaskStreamTest extends P4JavaRshTestCase {
 
-  private IOptionsServer server = null;
+  @ClassRule
+  public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1",UnloadReloadTaskStreamTest.class.getSimpleName());
+
   private IOptionsServer superServer = null;
+  final String streamsDepotName = "p4java_stream";
+  final String streamDepth = "//" + streamsDepotName + "/1";
+  final String unloadDepotName = "p4java_unload";
+  final int randNum = getRandomInt();
+  final String streamName = "testmain" + randNum;
+  final String newStreamPath = "//" + streamsDepotName + "/" + streamName;
+  final String streamName2 = "testtask" + randNum;
+  final String newStreamPath2 = "//" + streamsDepotName + "/" + streamName2;
+  IDepot streamsDepot;
+  IDepot unloadDepot;
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    server = getServer();
-    assertThat(server, notNullValue());
-    IClient client = getDefaultClient(server);
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
-
-    superServer = getServerAsSuper();
-    assertThat(superServer, notNullValue());
-    IClient superClient = getDefaultClient(superServer);
-    assertThat(superClient, notNullValue());
-    superServer.setCurrentClient(superClient);
+    setupServer(p4d.getRSHURL(), userName, password, true, null);
+    client = getClient(server);
+    streamsDepot = createStreamsDepot(streamsDepotName, server, streamDepth);
+    unloadDepot = createUnloadDepot(unloadDepotName, server);
+    superServer = getSuperConnection(p4d.getRSHURL());
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
     afterEach(server, superServer);
   }
@@ -68,13 +70,6 @@ public class UnloadReloadTaskStreamTest extends P4JavaTestCase {
    */
   @Test
   public void testUnloadReloadTaskStreams() throws Exception {
-    int randNum = getRandomInt();
-    String streamName = "testmain" + randNum;
-    String newStreamPath = "//p4java_stream/" + streamName;
-
-    String streamName2 = "testtask" + randNum;
-    String newStreamPath2 = "//p4java_stream/" + streamName2;
-
     try {
       // Create a stream
       IStream newStream = Stream.newStream(server, newStreamPath,
@@ -153,8 +148,7 @@ public class UnloadReloadTaskStreamTest extends P4JavaTestCase {
       assertThat(streams, notNullValue());
 
       // Get only the two new streams
-      streams = server.getStreams(
-          newArrayList(Arrays.asList(newStreamPath, newStreamPath2)),
+      streams = server.getStreams(Arrays.asList(newStreamPath, newStreamPath2),
           new GetStreamsOptions());
       assertThat(streams, notNullValue());
       assertThat(streams.size(), is(2));
@@ -181,7 +175,7 @@ public class UnloadReloadTaskStreamTest extends P4JavaTestCase {
       assertThat(retVal, containsString("Stream " + newStreamPath2 + " reloaded."));
 
     } finally {
-      if (nonNull(superServer)) {
+      if (superServer != null) {
         try {
           String serverMessage = superServer.deleteStream(
               newStreamPath2,

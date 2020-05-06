@@ -38,7 +38,6 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 import com.perforce.p4java.tests.dev.unit.bug.r152.ShelveChangelistClientTest;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Test IClient.getDiffFiles() with unchanged files (unicode, unicode+C) under
@@ -46,7 +45,6 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job071340" })
 @TestId("Dev141_GetDiffFilesUnchangedTest")
-@Disabled("Uses external p4d server")
 public class GetDiffFilesUnchangedTest extends P4JavaRshTestCase {
 
 	
@@ -69,7 +67,7 @@ public class GetDiffFilesUnchangedTest extends P4JavaRshTestCase {
 		// initialization code (before each test).
 		try {
 			// Connect to a replica server
-			//server = getServer("p4java://eng-p4java-vm.perforce.com:40132", null);
+			//server = getServer("p4java://eng-p4java-vm.das.perforce.com:40132", null);
 			assertNotNull(server);
 			// Client with line endings 'win'.
 			client = server.getClient(((Server)server).isRunningOnWindows() ? "p4TestUserWS20112Windows" : "p4TestUserWS20112");
@@ -91,8 +89,8 @@ public class GetDiffFilesUnchangedTest extends P4JavaRshTestCase {
 	 * diff -se (unopened file - no change)
 	 */
 	@Test
+	@Ignore("Tries to connect to p4java://eng-p4java-vm.das.perforce.com:40132 that does not exist")
 	public void testGetDiffFilesUnchangedFiles() {
-		fail("Tries to connect to p4java://eng-p4java-vm.perforce.com:40132 that does not exist");
 
 		// This file is type <unicode+C>
 		// ~ 13mb file size

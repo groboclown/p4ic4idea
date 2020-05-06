@@ -1,8 +1,7 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-import static com.google.common.collect.Lists.newArrayList;
+
 import static com.perforce.p4java.common.base.StringHelper.format;
-import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -10,16 +9,14 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientViewMapping;
@@ -27,39 +24,44 @@ import com.perforce.p4java.core.IMapEntry.EntryType;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.client.ClientView;
 import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Test exotic client view mappings.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({ "job059253" })
 @TestId("Dev123_ClientViewMapTest")
-@Disabled("Uses external p4d server")
-public class ClientViewMapTest extends P4JavaTestCase {
+public class ClientViewMapTest extends P4JavaRshTestCase {
+    
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ClientViewMapTest.class.getSimpleName());
+
 	/**
 	 * Split a string by whitespace, except inside double quotes.
 	 */
 	private static final String TOKEN_REGEX_PATTERN = "([^\"]\\S*|\".+?\")\\s*";
 
-	private IOptionsServer server = null;
-
-	@BeforeEach
+	@Before
 	public void setUp() throws Exception {
-		server = getServer();
-		assertThat(server, notNullValue());
-		IClient client = getDefaultClient(server);
-		assertThat(client, notNullValue());
-		server.setCurrentClient(client);
-
+	    setupServer(p4d.getRSHURL(), userName, password, true, props);
 	}
 
-	@AfterEach
+	@After
 	public void tearDown() {
-		if (nonNull(server)) {
+		if (server != null) {
 			endServerSession(server);
 		}
 	}
@@ -77,7 +79,7 @@ public class ClientViewMapTest extends P4JavaTestCase {
 				"\"+//job059253_client/fi les/abc123.txt\"", "+//job059253_client/files/abc123.txt",
 				"+//job059253_client/files/\"abc123.txt\"" };
 
-		List<String> list = newArrayList();
+		List<String> list = new ArrayList<String>();
 		Pattern p = Pattern.compile(TOKEN_REGEX_PATTERN);
 		for (String viewMapping : viewMappings) {
 			Matcher m = p.matcher(viewMapping);
@@ -94,7 +96,9 @@ public class ClientViewMapTest extends P4JavaTestCase {
 			}
 		}
 		assertThat(list, notNullValue());
-		list.forEach(System.out::println);
+		for(String item : list) {
+		    System.out.println(item);
+		}
 	}
 
 	/**

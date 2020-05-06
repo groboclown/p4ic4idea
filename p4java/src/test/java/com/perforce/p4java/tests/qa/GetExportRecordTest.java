@@ -62,26 +62,41 @@ public class GetExportRecordTest {
         opts.setFilter("table=db.have");
     }
 
-    @DisplayName("test for assertion when no checkpoint is found")
+    /**
+     * test for assertion when no checkpoint is found
+     * @throws Throwable
+     */
     @Test
     public void missingCheckpoint() throws Throwable {
         ExportRecordsOptions opts = new ExportRecordsOptions();
         assertThrows(P4JavaException.class, () -> server.getExportRecords(opts));
     }
 
-    @DisplayName("test for assertion when no checkpoint is found")
+    /**
+     * test for assertion when no checkpoint is found
+     * @throws Throwable
+     */
     @Test
     public void unspecifiedCheckpoint() throws Throwable {
         assertThrows(P4JavaException.class, () -> server.getExportRecords(null));
     }
 
-    @DisplayName("verify job037798: skip data conversion")
+    /**
+     * verify job037798: skip data conversion
+     * @throws Throwable
+     */
     @Test
     public void rawRecords() throws Throwable {
         List<Map<String, Object>> exportList = server.getExportRecords(opts);
         assertThat(exportList, notNullValue());
-        assertThat("incorrect file", (String) exportList.get(0).get("HAdfile"), containsString("//depot/foo.txt"));
-
+        Boolean doesFooDotTxtExist = false;
+        for (int i=0; i < exportList.size() - 1; i++) {
+            if (exportList.get(i).get("HAdfile").toString().contains("//depot/foo.txt")) {
+                doesFooDotTxtExist = true;
+                break;
+            }
+        }
+        assertThat("correct file does not exist in export list", doesFooDotTxtExist);
         opts.setSkipDataConversion(true);
         exportList = server.getExportRecords(opts);
         assertThat(exportList, notNullValue());
@@ -89,7 +104,10 @@ public class GetExportRecordTest {
         assertThat(data, instanceOf(byte[].class));
     }
 
-    @DisplayName("verify job037798: skip data conversion")
+    /**
+     * verify job037798: skip data conversion
+     * @throws Throwable
+     */
     @Test
     public void rawRecordsRegex() throws Throwable {
         opts.setSkipFieldPattern("^HAdfile");
@@ -102,7 +120,10 @@ public class GetExportRecordTest {
         //assertThat("incorrect file", (String)exportList.get(0).get("HAdfile"), containsString("//depot/foo.txt"));
     }
 
-    @DisplayName("verify job037798: skip data conversion")
+    /**
+     * verify job037798: skip data conversion
+     * @throws Throwable
+     */
     @Test
     public void rawRecordsWithStartStop() throws Throwable {
         opts.setSkipStartField("HAcfile");

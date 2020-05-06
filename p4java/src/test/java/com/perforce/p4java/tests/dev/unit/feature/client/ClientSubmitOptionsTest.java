@@ -1,17 +1,16 @@
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
+import com.perforce.p4java.impl.generic.client.ClientSubmitOptions;
+import com.perforce.p4java.tests.dev.annotations.Standalone;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
-import com.perforce.p4java.impl.generic.client.ClientSubmitOptions;
-import com.perforce.p4java.tests.dev.annotations.Standalone;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  *
@@ -27,13 +26,13 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * toString is utilized in most of the tests. It is used in verification of the setters
  * and getters, but its return values are also tested with erroneous or oddly formatted input.
  *
- * @throws Exception
+ * @throws java.lang.Exception
  */
 
 
 @TestId("ClientSubmitOptionsTest01")
 @Standalone
-public class ClientSubmitOptionsTest extends P4JavaTestCase {
+public class ClientSubmitOptionsTest extends P4JavaRshTestCase {
 
 	/**
 	 * The testClientSubmitOptionsDefaultConstructor verifies the assertion that the default

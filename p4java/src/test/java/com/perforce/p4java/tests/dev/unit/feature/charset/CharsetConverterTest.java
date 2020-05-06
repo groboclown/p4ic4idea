@@ -3,25 +3,23 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.charset;
 
-import static org.junit.Assert.assertEquals;
+import com.perforce.p4java.CharsetConverter;
+import com.perforce.p4java.CharsetDefs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
-import org.junit.Test;
-
-import com.perforce.p4java.CharsetConverter;
-import com.perforce.p4java.CharsetDefs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Kevin Sawicki (ksawicki@perforce.com)
  */
 @TestId("CharsetConverterTest")
-public class CharsetConverterTest extends P4JavaTestCase {
-
+public class CharsetConverterTest extends P4JavaRshTestCase {
     /**
      * Test byte buffer conversion using utf 8 character set
      * @throws Exception 

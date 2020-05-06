@@ -7,105 +7,98 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.generic.core.file.FileSpec;
+import com.perforce.p4java.option.client.CopyFilesOptions;
+import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.features121.GetStreamOptionsTest;
 
 /**
  * Test for allow a revision range to be specified for 'p4 filelog'.
  */
 @Jobs({ "job046612" })
 @TestId("Dev112_RevisionHistoryTest")
-public class RevisionHistoryTest extends P4JavaTestCase {
+public class RevisionHistoryTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
+    IClient client = null;
+    private int randNum = getRandomInt();
+    private String dir = "main" + randNum;
+    private String copyTargetFile = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/" + dir + "/P4CmdLogListener.java";
+    private String depotFile = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdLogListener.java";
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", RevisionHistoryTest.class.getSimpleName());
 
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+            createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdLogListener.java", "desc");
 
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-		try {
-			server = getServerAsSuper();
-			assertNotNull(server);
-            client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
-	}
+            copyFile(server, client, "desc", depotFile, copyTargetFile);
+            editFile(server, client, "edit file", copyTargetFile);
+            editFile(server, client, "edit file", copyTargetFile);
+            editFile(server, client, "edit file", copyTargetFile);
+            editFile(server, client, "edit file", copyTargetFile);
+            editFile(server, client, "edit file", copyTargetFile);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
 
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-		if (server != null) {
-			this.endServerSession(server);
-		}
-	}
+    /**
+     * @After annotation to a method to be run after each test in a class.
+     */
+    @After
+    public void tearDown() {
+        // cleanup code (after each test).
+        if (server != null) {
+            this.endServerSession(server);
+        }
+    }
 
     /**
      * Test for allow a revision range to be specified for 'p4 filelog'.
      */
     @Test
     public void testRevisionHistoryWithRevisionRange() {
-
-        // This test file has contiguous revisions from #1 to #6
-        String depotFile = "//depot/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdLogListener.java";
-
         try {
             // Retrieve the revision history ('filelog') of a file spec with a
             // specified revision range
             Map<IFileSpec, List<IFileRevisionData>> fileRevisionHisotryMap = server
                     .getRevisionHistory(
-                            FileSpecBuilder.makeFileSpecList(depotFile
+                            FileSpecBuilder.makeFileSpecList(copyTargetFile
                                     + "#2,#5"), new GetRevisionHistoryOptions());
 
             // Check for null
@@ -125,7 +118,7 @@ public class RevisionHistoryTest extends P4JavaTestCase {
             IFileSpec fileSpec = entry.getKey();
             assertNotNull(fileSpec);
             assertNotNull(fileSpec.getDepotPathString());
-            assertEquals(depotFile, fileSpec.getDepotPathString());
+            assertEquals(copyTargetFile, fileSpec.getDepotPathString());
 
             // Make sure we have the revision data
             List<IFileRevisionData> fileRevisionDataList = entry.getValue();

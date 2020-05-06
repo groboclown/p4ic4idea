@@ -1,21 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
-import com.perforce.p4java.server.IServerMessage;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -29,8 +13,26 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -39,7 +41,11 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * that used this API. Therefore, it is in no way exhaustive.
  */
 @TestId("ChangelistE2ETest01")
-public class ChangelistE2ETest extends P4JavaTestCase {
+public class ChangelistE2ETest extends P4JavaRshTestCase {
+
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
 
     public final int P4JTEST_COMPARE_EXACT = 0;
     private static IClient client = null;
@@ -48,7 +54,9 @@ public class ChangelistE2ETest extends P4JavaTestCase {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        server = getServer();
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
         client = getDefaultClient(server);
         clientDir = defaultTestClientName + File.separator + testId;
         server.setCurrentClient(client);
@@ -57,7 +65,7 @@ public class ChangelistE2ETest extends P4JavaTestCase {
     }
 
 
-    @Test(expected = RequestException.class)
+    @Test(expected = com.perforce.p4java.exception.RequestException.class)
     public void testCreateDefaultChangelistRequestException() throws Exception {
         try {
             debugPrintTestName("testCreateDefaultChangelistErr");
@@ -122,7 +130,7 @@ public class ChangelistE2ETest extends P4JavaTestCase {
     }
 
 
-    @Test(expected = RequestException.class)
+    @Test(expected = com.perforce.p4java.exception.RequestException.class)
     public void testUpdateOnDefaultChangelistErr() throws Exception {
 
         List<IFileSpec> testFiles = null;

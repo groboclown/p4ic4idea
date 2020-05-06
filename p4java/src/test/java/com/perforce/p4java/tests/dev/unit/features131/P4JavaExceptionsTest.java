@@ -3,23 +3,22 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
-import static org.junit.Assert.fail;
-
-import com.perforce.p4java.server.IServerMessage;
-import org.junit.Test;
-
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 /**
  * Test different types of P4Java exceptions.
  */
 @TestId("Dev131_P4JavaExceptionsTest")
-public class P4JavaExceptionsTest extends P4JavaTestCase {
+public class P4JavaExceptionsTest extends P4JavaRshTestCase {
 
 	/**
 	 * Test different types of P4Java exceptions.

@@ -3,29 +3,28 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.IBranchMapping;
+import com.perforce.p4java.core.IBranchSpec;
+import com.perforce.p4java.core.IStream;
+import com.perforce.p4java.core.ViewMap;
+import com.perforce.p4java.impl.generic.core.BranchSpec;
+import com.perforce.p4java.impl.generic.core.Stream;
+import com.perforce.p4java.option.server.GetBranchSpecOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.IBranchMapping;
-import com.perforce.p4java.core.IBranchSpec;
-import com.perforce.p4java.core.ViewMap;
-import com.perforce.p4java.option.server.GetBranchSpecOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'p4 branch [ -S stream ] [ -P parent ] -o name'.
@@ -36,51 +35,49 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046692" })
 @TestId("Dev112_GetBranchSpecTest")
-public class GetBranchSpecTest extends P4JavaTestCase {
+public class GetBranchSpecTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
+	String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
+	int randNum = getRandomInt();
+	String streamPath = "//p4java_stream/dev";
+	String streamName = "main" + randNum;
+	String parentStreamPath = "//p4java_stream/" + streamName;
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetBranchSpecTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
-	/**
+   	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		   try {
+		       setupServer(p4d.getRSHURL(), userName, password, true, props);
+    			client = server.getClient("p4TestUserWS20112");
+    			assertNotNull(client);
+    			server.setCurrentClient(client);
+    			IBranchSpec branchSpec =  BranchSpec.newBranchSpec(server, "test-branch", "testbranch", new String[]{});
+                server.createBranchSpec(branchSpec);
+                createStreamsDepot(streamsDepotName, server, streamDepth);
 
-		try {
-			server = getServer(props, getUserName(),
-					getPassword());
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS20112");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-
-		} catch (Exception exc) {
+			   // Create a parentstream
+			   IStream newParentStream = Stream.newStream(server, parentStreamPath,
+					   "mainline", null, null, null, null, null, null, null);
+			   String retVal = server.createStream(newParentStream);
+			   // parent stream should be created
+			   assertNotNull(retVal);
+			   assertEquals(retVal, "Stream " + parentStreamPath + " saved.");
+			   // Create a stream
+			   IStream stream = Stream.newStream(server, streamPath,
+					   "development", parentStreamPath, null, null, null, null, null, null);
+			   String retVal1 = server.createStream(stream);
+			   // The stream should be created
+			   assertNotNull(retVal1);
+			   assertEquals(retVal1, "Stream " + streamPath + " saved.");
+		   } catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		}
 	}
@@ -105,8 +102,6 @@ public class GetBranchSpecTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetBranchSpecWithStreamView() {
-		int randNum = getRandomInt();
-
 		try {
 			// Get an existing branch spec
 			IBranchSpec existingBranchSpec = server.getBranchSpec("test-branch");
@@ -129,7 +124,7 @@ public class GetBranchSpecTest extends P4JavaTestCase {
 			IBranchSpec newBranchSpecStreamView = server
 					.getBranchSpec("new-branch-stream-view" + randNum,
 							new GetBranchSpecOptions()
-									.setStream("//p4java_stream/dev"));
+									.setStream(streamPath));
 			assertNotNull(newBranchSpecStreamView);
 
 			// The "Updated" and "Accessed" fields should be null
@@ -151,8 +146,8 @@ public class GetBranchSpecTest extends P4JavaTestCase {
 			// as if it were a child of this specified parent stream
 			IBranchSpec newBranchSpecStreamView2 = server.getBranchSpec(
 					"new-branch-stream-view2" + randNum,
-					new GetBranchSpecOptions().setStream("//p4java_stream/dev")
-							.setParentStream("//p4java_stream/main2"));
+					new GetBranchSpecOptions().setStream(streamPath)
+							.setParentStream(parentStreamPath));
 			assertNotNull(newBranchSpecStreamView2);
 
 			// The "Updated" and "Accessed" fields should be null
@@ -166,7 +161,7 @@ public class GetBranchSpecTest extends P4JavaTestCase {
 			assertNotNull(viewMap2);
 			for (IBranchMapping entry : viewMap2.getEntryList()) {
 				assertTrue(
-					entry.toString().contains("//p4java_stream/main2")
+					entry.toString().contains(parentStreamPath)
 					|| entry.toString().contains("//p4java_stream/...")
 					|| entry.toString().contains("//p4java_stream/...")
 					|| entry.toString().contains("//p4java_stream/..."));

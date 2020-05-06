@@ -8,11 +8,11 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;

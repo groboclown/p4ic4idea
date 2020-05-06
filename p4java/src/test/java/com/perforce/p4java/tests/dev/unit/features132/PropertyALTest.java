@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2014 Perforce Software.  All rights reserved.
  */
 package com.perforce.p4java.tests.dev.unit.features132;
@@ -10,8 +10,11 @@ import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.GetPropertyOptions;
 import com.perforce.p4java.option.server.PropertyOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.net.URISyntaxException;
@@ -29,40 +32,45 @@ import static org.junit.Assert.fail;
  * Test P4Java supports 'large errors': p4 cmd --explain
  */
 @TestId("Dev132_PropertyALTest")
-public class PropertyALTest extends P4JavaTestCase {
-    
-    IOptionsServer adminserver = null;
+public class PropertyALTest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static SimpleServerRule p4d171 = new SimpleServerRule("r17.1",PropertyALTest.class.getSimpleName());
+	@ClassRule
+	public static SimpleServerRule p4d181 = new SimpleServerRule("r16.1", PropertyALTest.class.getSimpleName() + "-2");
+
+	IOptionsServer adminserver = null;
 
 	/**
 	 * Test that P4Java handles 'p4 property -l -A' output change 
 	 */
 	@Test
-	public void testPropertyAL() {
-	    fail("References external Perforce server");
+	public void testPropertyAL() throws Exception {
 	
         String pname = "PropertyALTest";
         String pval = "PropertyALTest";
         String pseq = "4";
-        
+
         HashMap<String, String> targets = new HashMap<String, String>();
-        targets.put("2013.1", "p4java://eng-p4java-vm.perforce.com:20131");
-        targets.put("2013.2", "p4java://eng-p4java-vm.perforce.com:20132");
+        targets.put("2016.1", p4d181.getRSHURL());
+        targets.put("2017.1", p4d171.getRSHURL());
         
 		try {
 		    for(Entry<String, String> target : targets.entrySet() ) {
 		        
     			// Connect to a 2013.1 server for 1st phase
-    		    setServerUrlString(target.getValue());
+    		    serverUrlString = target.getValue();
     			
-    			adminserver = getServerAsSuper();
+    			adminserver = ServerFactory.getOptionsServer(serverUrlString, null);
                 assertNotNull(adminserver);
     
     			// Connect to the server.
                 adminserver.connect();
+                adminserver.setUserName(superUserName);
     
                 adminserver.setProperty(pname, pval,
                         new PropertyOptions().setSequence(pseq));
-                
+
                 List<IProperty> properties = adminserver.getProperty(
                         new GetPropertyOptions().setListAll(true));
                 
@@ -121,7 +129,7 @@ public class PropertyALTest extends P4JavaTestCase {
 		        adminserver.deleteProperty(pname, null);
 		    } catch (Throwable e) {}
             if (adminserver != null) {
-                this.endServerSession(adminserver);
+                endServerSession(adminserver);
             }
 		}
 	}

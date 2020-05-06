@@ -26,7 +26,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 @RunWith(JUnitPlatform.class)
-@Disabled("Uses external p4d server")
 public class GetChangelistsTest {
 
     private static final String PENDING_DESCRIPTION_MORE_THAN_250 = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
@@ -75,7 +74,10 @@ public class GetChangelistsTest {
         pendingChange.submit(false);
     }
 
-    @DisplayName("Default changelist descriptions use 31 characters")
+    /**
+     * Default changelist descriptions use 31 characters
+     * @throws Throwable
+     */
     @Test
     public void basic() throws Throwable {
         List<IChangelistSummary> changes = server.getChangelists(null, null);
@@ -87,7 +89,10 @@ public class GetChangelistsTest {
         assertThat("wrong changelist description", changes.get(3).getDescription().length(), is(31));
     }
 
-    @DisplayName("The -L flag displays the changelist descriptions, truncated to 250 characters if longer.")
+    /**
+     * The -L flag displays the changelist descriptions, truncated to 250 characters if longer.
+     * @throws Throwable
+     */
     @Test
     public void slightlyShortenedDescriptions() throws Throwable {
         GetChangelistsOptions opts = new GetChangelistsOptions();

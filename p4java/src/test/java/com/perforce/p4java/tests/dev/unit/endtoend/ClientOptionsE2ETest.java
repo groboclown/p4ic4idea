@@ -1,28 +1,30 @@
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.List;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.client.ClientOptions;
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SysFileHelperBridge;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  
@@ -31,7 +33,10 @@ import org.apache.commons.io.FileUtils;
  */
 
 @TestId("ClientOptionsE2ETest01")
-public class ClientOptionsE2ETest extends P4JavaTestCase {
+public class ClientOptionsE2ETest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
 	
 	private static IClient client = null;
 	private static String clientDir;
@@ -39,7 +44,9 @@ public class ClientOptionsE2ETest extends P4JavaTestCase {
 	
 	@BeforeClass
 	public static void before() throws Exception {
-		server = getServer();
+		Properties properties = new Properties();
+		setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
 		client = getDefaultClient(server);
 		clientDir = defaultTestClientName + File.separator + testId;
 		server.setCurrentClient(client);

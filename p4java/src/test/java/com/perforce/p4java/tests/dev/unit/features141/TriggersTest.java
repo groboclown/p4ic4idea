@@ -12,11 +12,9 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.*;
 
 import com.perforce.p4java.admin.ITriggerEntry;
 import com.perforce.p4java.exception.P4JavaException;
@@ -24,34 +22,16 @@ import com.perforce.p4java.impl.generic.admin.TriggerEntry;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test for Perforce triggers functionality. Requires super user login.
  */
 @Jobs({ "job072794", "job071702" })
 @TestId("Dev112_TriggersTest")
-public class TriggersTest extends P4JavaTestCase {
+public class TriggersTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", TriggersTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -60,11 +40,8 @@ public class TriggersTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			// Requires super user
-			server = getServerAsSuper();
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			setupServer(p4d.getRSHURL(), superUserName, superUserPassword, true, null);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

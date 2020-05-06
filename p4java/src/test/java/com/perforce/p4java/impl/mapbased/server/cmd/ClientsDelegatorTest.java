@@ -35,10 +35,6 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.GetClientsOptions;
 
-/**
- * @author Sean Shou
- * @since 15/09/2016
- */
 @RunWith(NestedRunner.class)
 public class ClientsDelegatorTest {
     private static final String MESSAGE_CODE_IN_ERROR_RANGE = "968435456";

@@ -3,22 +3,21 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r101;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * 
@@ -39,9 +38,11 @@ import org.junit.jupiter.api.Disabled;
 
 @TestId("Job039331Test")
 @Jobs({"job039331"})
-@Disabled("Uses external p4d server")
-public class Job039331Test extends P4JavaTestCase {
+public class Job039331Test extends P4JavaRshTestCase {
 	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job039331Test.class.getSimpleName());
+
 	/**
 	 * Code adapted from user's example in job 039331 description.
 	 */
@@ -49,11 +50,8 @@ public class Job039331Test extends P4JavaTestCase {
 	public void testFileActionImport() {
 		final int changeListId = 1751;
 		
-		IServer server = null;
-
 		try {
-			server = getServer();
-			assertNotNull("Null server returned", server);
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
 
 			IChangelist changelist = server.getChangelist(changeListId);
 			assertNotNull("Null changelist returned", changelist);

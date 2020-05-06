@@ -21,6 +21,7 @@ import static com.perforce.p4java.core.IStreamSummary.Type.DEVELOPMENT;
 import static com.perforce.p4java.core.IStreamSummary.Type.MAINLINE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
+
 @RunWith(JUnitPlatform.class)
 public class GetBranchspecTest {
 
@@ -60,7 +61,10 @@ public class GetBranchspecTest {
     }
 
 
-    @DisplayName("verify -S flag support")
+    /**
+     * verify -S flag support
+     * @throws Throwable
+     */
     @Test
     public void streamBranchspecPrototype() throws Throwable {
         GetBranchSpecOptions opts = new GetBranchSpecOptions();
@@ -71,7 +75,10 @@ public class GetBranchspecTest {
         assertThat("incorrect view", branch.getBranchView().getEntry(0).getRight(), containsString("//Ace/main/..."));
     }
 
-    @DisplayName("verify -P flag support")
+    /**
+     * verify -P flag support
+     * @throws Throwable
+     */
     @Test
     public void streamBranchspecPrototypeWithOtherParent() throws Throwable {
         GetBranchSpecOptions opts = new GetBranchSpecOptions();

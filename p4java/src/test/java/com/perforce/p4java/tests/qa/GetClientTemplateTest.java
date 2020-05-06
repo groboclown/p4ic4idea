@@ -72,14 +72,20 @@ public class GetClientTemplateTest {
     }
 
 
-    @DisplayName("just make sure the darn thing works")
+    /**
+     * just make sure the darn thing works
+     * @throws Throwable
+     */
     @Test
     public void simple() throws Throwable {
         IClient client2 = server.getClientTemplate("client3");
         assertThat(client2.getName(), is("client3"));
     }
 
-    @DisplayName("just make sure the darn thing works")
+    /**
+     * just make sure the darn thing works
+     * @throws Throwable
+     */
     @Test
     public void existingClient() throws Throwable {
         IClient client2 = server.getClientTemplate("client1");

@@ -8,10 +8,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.perforce.p4java.common.base.OSUtils;
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.RpcSystemFileCommandsHelper;
@@ -25,7 +23,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 /**
  * The Class AuthTicketsHelperTest.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({ "job057711" })
 @TestId("Dev123_AuthTicketsHelperTest")
 public class AuthTicketsHelperTest extends P4JavaTestCase {
@@ -36,7 +34,7 @@ public class AuthTicketsHelperTest extends P4JavaTestCase {
     /**
      * Before all.
      */
-    @BeforeAll
+    @BeforeClass
     public static void beforeAll() {
         filesHelper = OSUtils.isWindows() 
                 ? new WindowsRpcSystemFileCommandsHelper() : new RpcSystemFileCommandsHelper();

@@ -53,7 +53,10 @@ public class CorruptionCheckTest {
         helper.addFile(server, user, client, testFile.getAbsolutePath(), "CorruptionCheckTest", "text");
     }
 
-    @DisplayName("we should see an error saying the sync failed as don't ignore corrupted file")
+    /**
+     * we should see an error saying the sync failed as don't ignore corrupted file
+     * @throws Exception
+     */
     @Test
     public void corruptedFile() throws Exception {
         server.setOrUnsetServerConfigurationValue("lbr.verify.out", "1");
@@ -67,7 +70,10 @@ public class CorruptionCheckTest {
         assertThat(firstFileSpec.getStatusMessage(), containsText("corrupted during transfer (or bad on the server)"));
     }
 
-    @DisplayName("we should saying the sync success as ignore corrupted files")
+    /**
+     * we should saying the sync success as ignore corrupted files
+     * @throws Throwable
+     */
     @Test
     public void ignoreCorruptedFile() throws Throwable {
         server.setOrUnsetServerConfigurationValue("lbr.verify.out", "0");

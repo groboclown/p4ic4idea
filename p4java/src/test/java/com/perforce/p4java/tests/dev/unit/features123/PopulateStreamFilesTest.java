@@ -3,20 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features123;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IStream;
@@ -32,56 +18,67 @@ import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.PopulateFilesOptions;
 import com.perforce.p4java.option.server.StreamOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test "p4 populate -Sstream -PparentStream".
  */
 @Jobs({ "job058523" })
 @TestId("Dev123_PopulateStreamFilesTest")
-public class PopulateStreamFilesTest extends P4JavaTestCase {
+public class PopulateStreamFilesTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IOptionsServer superServer = null;
+	IOptionsServer superServer;
+	private final static String depotName = "p4java_stream";
 	IClient client = null;
 	IClient streamClient = null;
+	private int randNum = getRandomInt();
+	private String streamName = "testmain" + randNum;
+	private String parentStreamPath = "//p4java_stream/" + streamName;
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", PopulateStreamFilesTest.class.getSimpleName());
 
 	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
+	 * @throws Exception 
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		// initialization code (before each test).
+		final String clientRoot = Paths.get("tmp\\setupClient").toAbsolutePath().toString();
+		final String[] clientViews = {parentStreamPath + "/... //setupClient/..."};
 		try {
-			server = getServer();
+		    Properties properties = new Properties();
+	        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+	        createStreamsDepot(depotName, server, null);
+		    assertNotNull(server);
 			client = getDefaultClient(server);
 			assertNotNull(client);
 			server.setCurrentClient(client);
-			superServer = getServerAsSuper();
+			superServer = getSuperConnection(p4d.getRSHURL());
 			assertNotNull(superServer);
+			IStream newParentStream = Stream.newStream(server, parentStreamPath,
+					"mainline", null, null, null, null, null, null, null);
+			String retVal = server.createStream(newParentStream);
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + parentStreamPath + " saved.");
 		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -105,14 +102,10 @@ public class PopulateStreamFilesTest extends P4JavaTestCase {
 		String serverMessage = null;
 		List<IFileSpec> files = null;
 
-		int randNum = getRandomInt();
-		String parentStreamPath = "//p4java_stream/main2";
-
-		String streamName = "testdev" + randNum;
-		String newStreamPath = "//p4java_stream/" + streamName;
+		String streamName2 = "testdev" + randNum;
+		String newStreamPath = "//p4java_stream/" + streamName2;
 
 		try {
-
 			String options = "locked ownersubmit notoparent nofromparent";
 			String[] viewPaths = new String[] {
 					"share ...",

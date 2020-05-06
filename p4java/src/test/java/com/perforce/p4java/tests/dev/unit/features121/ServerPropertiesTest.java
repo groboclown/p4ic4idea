@@ -3,9 +3,20 @@
  */
 package com.perforce.p4java.tests.dev.unit.features121;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.IServerInfo;
+import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.Socket;
@@ -13,73 +24,21 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.Properties;
 
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.ConnectionException;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.TrustException;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.option.server.TrustOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test server construction with properties
  */
 @Jobs({ "job051534" })
 @TestId("Dev121_ServerPropertiesTest")
-public class ServerPropertiesTest extends P4JavaTestCase {
+public class ServerPropertiesTest extends P4JavaRshTestCase { //TODO: still need to remove us server dependencies
 
-	IOptionsServer server = null;
-	IClient client = null;
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ServerPropertiesTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-	}
+	String serverMessage = null;
+	long completedTime = 0;
 
 	/**
 	 * Test server properties
@@ -87,15 +46,14 @@ public class ServerPropertiesTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testServerProperties() {
-		fail("FIXME uses remote p4d server");
 
 		String[] serverUris = {
-				"p4java://eng-p4java-vm.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",
-				"p4javassl://eng-p4java-vm.perforce.com:30121?socketPoolSize=10&testKey1=testVal1",
-				"p4jrpc://eng-p4java-vm.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",
-				"p4jrpcssl://eng-p4java-vm.perforce.com:30121?socketPoolSize=10&testKey1=testVal1",
-				"p4jrpcnts://eng-p4java-vm.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",
-				"p4jrpcntsssl://eng-p4java-vm.perforce.com:30121?socketPoolSize=10&testKey1=testVal1" };
+				"p4java://eng-p4java-vm.das.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",
+				"p4javassl://eng-p4java-vm.das.perforce.com:30121?socketPoolSize=10&testKey1=testVal1",
+				"p4jrpc://eng-p4java-vm.das.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",
+				"p4jrpcssl://eng-p4java-vm.das.perforce.com:30121?socketPoolSize=10&testKey1=testVal1",
+				"p4jrpcnts://eng-p4java-vm.das.perforce.com:20121?socketPoolSize=10&testKey1=testVal1",
+				"p4jrpcntsssl://eng-p4java-vm.das.perforce.com:30121?socketPoolSize=10&testKey1=testVal1" };
 
 		try {
 			// List all the providers and the algorithms supporter
@@ -138,32 +96,10 @@ public class ServerPropertiesTest extends P4JavaTestCase {
 
 				// Register callback
 				server.registerCallback(new MockCommandCallback());
-				// Connect to the server.
-				try {
-				    server.connect();
-				} catch (ConnectionException ce) {
-				    if (!(ce.getCause() instanceof TrustException)) {
-				        throw(ce);
-				    }
-                    server.addTrust(new TrustOptions().setAutoAccept(true).setForce(true));
-    				server.connect();
-				}
-				if (server.isConnected()) {
-					if (server.supportsUnicode()) {
-						server.setCharsetName("utf8");
-					}
-				}
-
-				// Set the server user
-				server.setUserName(this.userName);
-
-				// Login using the normal method
-				server.login(this.password, new LoginOptions());
-
+				setupServer(p4d.getRSHURL(), userName, password, true, props);
 				client = server.getClient("p4TestUserWS20112");
 				assertNotNull(client);
 				server.setCurrentClient(client);
-
 				IServerInfo serverInfo = server.getServerInfo();
 				assertNotNull(serverInfo);
 			}

@@ -3,60 +3,38 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.option.server.LoginOptions;
+import com.perforce.p4java.server.AuthTicketsHelper;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.AuthTicketsHelper;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * Test setting and retrieving the auth tickets file.
  */
 @Jobs({ "job064162" })
 @TestId("Dev131_TicketsFileTest")
-public class TicketsFileTest extends P4JavaTestCase {
+public class TicketsFileTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", TicketsFileTest.class.getSimpleName());
+
 	String ticketFile = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -64,8 +42,12 @@ public class TicketsFileTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-		ticketFile = System.getProperty("user.dir") + File.separator
-				+ testId + getRandomInt() + ".p4tickets";
+		try {
+			ticketFile = System.getProperty("user.dir") + File.separator + testId + getRandomInt() + ".p4tickets";
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
+		} catch (Exception e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -88,16 +70,11 @@ public class TicketsFileTest extends P4JavaTestCase {
 	public void testTicketsFile() {
 
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
-			assertNotNull(server);
-
+//			server.logout();
 			assertFalse(ticketFile.contentEquals(server.getTicketsFilePath()));
 			
 			server.setTicketsFilePath(ticketFile);
 			assertTrue(ticketFile.contentEquals(server.getTicketsFilePath()));
-			
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
 
 			// Connect to the server.
 			server.connect();
@@ -106,7 +83,6 @@ public class TicketsFileTest extends P4JavaTestCase {
 					server.setCharsetName("utf8");
 				}
 			}
-
 			// Set a normal user
 			server.setUserName(this.userName);
 
@@ -120,11 +96,7 @@ public class TicketsFileTest extends P4JavaTestCase {
 			assertNotNull(authTicket);
 			assertEquals(server.getAuthTicket(), authTicket);
 			
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (IOException e) {
+		} catch (P4JavaException | IOException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

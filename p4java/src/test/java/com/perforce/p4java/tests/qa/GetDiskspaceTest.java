@@ -51,7 +51,10 @@ public class GetDiskspaceTest {
     }
 
 
-    @DisplayName("test basic diskspace query")
+    /**
+     * test basic diskspace query
+     * @throws Throwable
+     */
     @Test
     public void getSpace() throws Throwable {
         List<IDiskSpace> report = server.getDiskSpace(null);

@@ -3,32 +3,7 @@
  */
 package com.perforce.p4java.tests.dev.unit.features121;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.zip.ZipException;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.perforce.p4java.PropertyDefs;
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -39,26 +14,43 @@ import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.IServerInfo;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.zip.ZipException;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 add' ignore files
  */
 @Jobs({ "job051892" })
 @TestId("Dev121_IgnoreFilesTest")
-public class IgnoreFilesTest extends P4JavaTestCase {
+public class IgnoreFilesTest extends P4JavaRshTestCase {
 
-	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20121";
-
-	IOptionsServer server = null;
-	IClient client = null;
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", IgnoreFilesTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -66,31 +58,16 @@ public class IgnoreFilesTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-		fail("FIXME uses remote p4d server");
 		try {
 			Properties properties = new Properties();
 			properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM,
 					".p4ignore");
 
-			server = ServerFactory.getOptionsServer(serverURL, properties);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-			server.setUserName("p4jtestuser");
-			server.login("p4jtestuser");
-			client = server.getClient(getPlatformClientName("p4TestUserWS20112"));
+			setupServer(p4d.getRSHURL(), userName, password, true, properties);
+			client = createClient(server, "IgnoreFilesTestClient");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -544,43 +521,18 @@ public class IgnoreFilesTest extends P4JavaTestCase {
 	@Test
 	public void testSetIgnoreFileName() {
 
-		String serverUri = "p4javassl://eng-p4java-vm.perforce.com:30121";
-
 		try {
 			Properties properties = new Properties();
 			properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM,
 					".myp4ignore");
-
-			server = ServerFactory.getOptionsServer(serverUri, properties);
-			assertNotNull(server);
-
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(this.userName);
-
-			// Login using the normal method
-			server.login(this.password, new LoginOptions());
-
-			client = server.getClient("p4TestUserWS20112");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-
+			setupServer(p4d.getRSHURL(), userName, password, true, properties);
 			IServerInfo serverInfo = server.getServerInfo();
 			assertNotNull(serverInfo);
 
 			// The ignore file name should be set
 			assertEquals(".myp4ignore", ((Server) server).getIgnoreFileName());
 
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

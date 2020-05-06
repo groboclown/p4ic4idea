@@ -11,12 +11,16 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Properties;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
@@ -36,8 +40,10 @@ import com.perforce.p4java.option.server.GetLabelsOptions;
 import com.perforce.p4java.option.server.ReloadOptions;
 import com.perforce.p4java.option.server.UnloadOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
@@ -46,31 +52,14 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job056531" })
 @TestId("Dev123_UnloadTest")
-public class UnloadReloadTest extends P4JavaTestCase {
+public class UnloadReloadTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
-
-	IOptionsServer superserver = null;
+	IOptionsServer superServer = null;
 	IClient superclient = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", UnloadReloadTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -79,23 +68,20 @@ public class UnloadReloadTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
+		    Properties properties = new Properties();
+	        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
 			assertNotNull(server);
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
+			client = getClient(server);
 
-			superserver = getServerAsSuper();
-			assertNotNull(superserver);
-			superclient = getDefaultClient(superserver);
+			superServer = getSuperConnection(p4d.getRSHURL());
+			assertNotNull(superServer);
+			superclient = getDefaultClient(superServer);
 			assertNotNull(superclient);
-			superserver.setCurrentClient(superclient);
+			superServer.setCurrentClient(superclient);
 
-		} catch (P4JavaException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 
 	/**
@@ -107,8 +93,8 @@ public class UnloadReloadTest extends P4JavaTestCase {
 		if (server != null) {
 			this.endServerSession(server);
 		}
-		if (superserver != null) {
-			this.endServerSession(superserver);
+		if (superServer != null) {
+			this.endServerSession(superServer);
 		}
 	}
 
@@ -129,7 +115,7 @@ public class UnloadReloadTest extends P4JavaTestCase {
 		try {
 			depot = new Depot(
 					depotName,
-					superserver.getUserName(),
+					superServer.getUserName(),
 					null,
 					depotDescription,
 					DepotType.UNLOAD,
@@ -137,11 +123,11 @@ public class UnloadReloadTest extends P4JavaTestCase {
 					null,
 					depotMap
 				);
-			String resultStr = superserver.createDepot(depot);
+			String resultStr = superServer.createDepot(depot);
 			assertNotNull("null result string from createDepot()", resultStr);
 			assertEquals(expectedCreationResultString, resultStr);
 
-			IDepot newDepot = superserver.getDepot(depotName);
+			IDepot newDepot = superServer.getDepot(depotName);
 			assertNotNull("null depot returned from getDepot method", newDepot);
 			assertEquals("depot address mismatch", depot.getAddress(), newDepot.getAddress());
 			assertEquals("depot name mismatch", depot.getName(), newDepot.getName());
@@ -154,9 +140,9 @@ public class UnloadReloadTest extends P4JavaTestCase {
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
-			if (depot != null && superserver != null) {
+			if (depot != null && superServer != null) {
 				try {
-					String resultStr = superserver.deleteDepot(depotName);
+					String resultStr = superServer.deleteDepot(depotName);
 					assertNotNull("null result string returned by deleteDepot", resultStr);
 					assertEquals(expectedDeletionResultString, resultStr);
 				} catch (P4JavaException e) {

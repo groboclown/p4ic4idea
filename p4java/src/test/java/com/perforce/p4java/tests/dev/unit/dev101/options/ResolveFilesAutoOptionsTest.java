@@ -3,28 +3,27 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
+import com.perforce.p4java.impl.mapbased.server.Parameters;
+import com.perforce.p4java.option.client.ResolveFilesAutoOptions;
+import com.perforce.p4java.tests.dev.annotations.Standalone;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.List;
-
-import org.junit.Test;
-
-import com.perforce.p4java.impl.mapbased.server.Parameters;
-import com.perforce.p4java.option.client.ResolveFilesAutoOptions;
-import com.perforce.p4java.tests.dev.annotations.Standalone;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * Simple standalone tests for the ResolveFilesAutoOptions class.
  */
 @Standalone
 @TestId("Dev101_ResolveFilesAutoOptionsTest")
-public class ResolveFilesAutoOptionsTest extends P4JavaTestCase {
+public class ResolveFilesAutoOptionsTest extends P4JavaRshTestCase {
 
 	public ResolveFilesAutoOptionsTest() {
 	}

@@ -179,7 +179,10 @@ public class CopyFilesTest {
         server.setCurrentClient(client);
     }
 
-    // verify that we get a warning about the missing file
+    /**
+     * verify that we get a warning about the missing file
+     * @throws Exception
+     */
     @Test
     public void usingFilespec() throws Exception {
         IFileSpec sourceSpec = new FileSpec("//depot/foo...");
@@ -201,7 +204,6 @@ public class CopyFilesTest {
         }
     }
 
-    // using branch spec
     @Test
     public void usingBranchspec() throws Throwable {
 
@@ -217,7 +219,6 @@ public class CopyFilesTest {
         verifyUseBranchSpecCopyListFiles(copyList);
     }
 
-    // filespec with rev
     @Test
     public void usingFilespecWithRev() throws Exception {
         IFileSpec sourceSpec = new FileSpec("//depot/foo...@2");
@@ -229,7 +230,6 @@ public class CopyFilesTest {
         verifyUseBranchSpecCopyListFiles(copyList);
     }
 
-    // branchspec with rev
     @Test
     public void usingBranchspecWithRev() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();
@@ -244,7 +244,6 @@ public class CopyFilesTest {
         verifyUseBranchSpecCopyListFiles(copyList);
     }
 
-    // branchspec with rev
     @Test
     public void usingOnlySourceWithBranchspec() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();
@@ -257,7 +256,6 @@ public class CopyFilesTest {
 
     }
 
-    // branchspec with rev
     @Test
     public void usingOnlyTargetWithBranchspec() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();
@@ -270,7 +268,6 @@ public class CopyFilesTest {
 
     }
 
-    // filespec with rev
     @Test
     public void preview() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();
@@ -288,7 +285,10 @@ public class CopyFilesTest {
         assertThat("should be none", opened.size(), is(0));
     }
 
-    // make sure a delete, a branch, and an integ occurs
+    /*
+     * make sure a delete, a branch, and an integ occurs
+     * @throws Exception
+     */
     @Test
     public void properCopyBehavior() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();
@@ -314,7 +314,6 @@ public class CopyFilesTest {
         }
     }
 
-    // filespec with rev
     @Test
     public void failure() throws Exception {
         IFileSpec sourceSpec = new FileSpec("//depot/foo...");
@@ -325,7 +324,10 @@ public class CopyFilesTest {
         assertThat("wasn't an error", copyList.get(0).getOpStatus(), is(FileSpecOpStatus.ERROR));
     }
 
-    // verify the -S flag works
+    /**
+     * verify the -S flag works
+     * @throws Exception
+     */
     @Test
     public void usingStreamSpec() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();
@@ -339,7 +341,10 @@ public class CopyFilesTest {
         verifyUseBranchSpecCopyListFiles(copyList);
     }
 
-    // verify the -S flag works
+    /**
+     * verify the -S flag works
+     * @throws Exception
+     */
     @Test
     public void usingSpecifiedParent() throws Exception {
         CopyFilesOptions opts = new CopyFilesOptions();

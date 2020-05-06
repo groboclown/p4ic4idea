@@ -3,21 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features131;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.client.IClientSummary.ClientLineEnd;
@@ -38,9 +23,25 @@ import com.perforce.p4java.option.server.ReloadOptions;
 import com.perforce.p4java.option.server.StreamOptions;
 import com.perforce.p4java.option.server.UnloadOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test for 'IsUnloaded' '1' tagged output for  'streams -U', 'clients -U' and
@@ -48,11 +49,14 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({"job066150"})
 @TestId("Dev131_UnloadedStatusTest")
-public class UnloadedStatusTest extends P4JavaTestCase {
+public class UnloadedStatusTest extends P4JavaRshTestCase {
 
-    private static IClient client = null;
+    @ClassRule
+    public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", UnloadedStatusTest.class.getSimpleName());
+
     private static IOptionsServer superserver = null;
-    private static IClient superclient = null;
+    private final static String depotName = "p4java_stream";
+    private final static String unloadDepotName = "p4java_unload";
 
     /**
      * @Before annotation to a method to be run before each test in a class.
@@ -60,17 +64,9 @@ public class UnloadedStatusTest extends P4JavaTestCase {
     @BeforeClass
     public static void beforeAll() throws Exception{
         // initialization code (before each test).
-        server = getServer();
-        assertNotNull(server);
-        client = getDefaultClient(server);
-        assertNotNull(client);
-        server.setCurrentClient(client);
-
-        superserver = getServerAsSuper();
-        assertNotNull(superserver);
-        superclient = getDefaultClient(superserver);
-        assertNotNull(superclient);
-        superserver.setCurrentClient(superclient);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        createStreamsDepot(depotName, server, null);
+        createUnloadDepot(unloadDepotName , server);
     }
 
     /**
@@ -79,7 +75,7 @@ public class UnloadedStatusTest extends P4JavaTestCase {
     @AfterClass
     public static void tearDown() {
         afterEach(server);
-        afterEach(superserver);
+//        afterEach(superserver);
     }
 
     /**
@@ -134,6 +130,7 @@ public class UnloadedStatusTest extends P4JavaTestCase {
             assertNotNull("couldn't retrieve new label", tempLabel);
 
             // unload client and label
+            server = getServer(p4d.getRSHURL(), props, userName, password);
             resultStr = server.unload(new UnloadOptions().setClient(tempClient.getName()).setLabel(tempLabel.getName()));
             assertNotNull(resultStr);
 

@@ -10,8 +10,11 @@ import static org.junit.Assert.fail;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -34,12 +37,14 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job064491" })
 @TestId("Dev131_ForceUpdateByOwnerChangelistTest")
-public class ForceUpdateByOwnerChangelistTest extends P4JavaTestCase {
+public class ForceUpdateByOwnerChangelistTest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", ForceUpdateByOwnerChangelistTest.class.getSimpleName());
 
 	private static IOptionsServer superServer = null;
 	private static IClient superClient = null;
 	private static IClient client = null;
-
 
 	/**
 	 * @BeforeClass annotation to a method to be run before all the tests in a
@@ -48,21 +53,22 @@ public class ForceUpdateByOwnerChangelistTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// initialization code (before each test).
-		// initialization code (before each test).
+		final String superClientName = "p4TestSuperWS20112";
+		final String clientName = "p4TestUserWS20112";
+
 		try {
-			superServer = getServerAsSuper();
-			superClient = superServer.getClient("p4TestSuperWS20112");
-			assertNotNull(superClient);
-			superServer.setCurrentClient(superClient);
-			
-			server = getServer();
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS20112");
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = createClient(server,clientName);
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+
+			superServer = getServerAsSuper(p4d.getRSHURL());
+			superClient = createClient(superServer, superClientName);
+			assertNotNull(superClient);
+			superServer.setCurrentClient(superClient);
+
+			createTextFileOnServer(client, "/112Dev/GetOpenedFilesTest/src/com/perforce/p4cmd/P4CmdDispatcher.java", "test");
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -104,6 +110,7 @@ public class ForceUpdateByOwnerChangelistTest extends P4JavaTestCase {
 					targetFile), null, new CopyFilesOptions()
 					.setChangelistId(changelist.getId()));
 			assertNotNull(files);
+			assertTrue(files.get(0).getOpStatus().toString().contains("VALID"));
 			changelist.refresh();
 			files = changelist.submit(new SubmitOptions());
 			assertNotNull(files);

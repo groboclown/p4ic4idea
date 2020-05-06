@@ -7,6 +7,9 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -45,10 +48,20 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job060376"})
 @TestId("Dev131_FileActionReplacedTest")
-@Disabled("Uses external p4d server")
+//@Disabled("Uses external p4d server")
 public class FileActionReplacedTest extends P4JavaTestCase {
 
   private IOptionsServer server = null;
+
+  // p4ic4idea: use local server
+  @BeforeClass
+  public static void oneTimeSetUp() {
+    UnitTestDevServerManager.INSTANCE.startTestClass();
+  }
+  @AfterClass
+  public static void oneTimeTearDown() {
+    UnitTestDevServerManager.INSTANCE.endTestClass();
+  }
 
 
   @BeforeEach

@@ -6,11 +6,13 @@ package com.perforce.p4java.tests.dev.unit.features131;
 import com.perforce.p4java.admin.IProperty;
 import com.perforce.p4java.option.server.GetPropertyOptions;
 import com.perforce.p4java.option.server.PropertyOptions;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.List;
@@ -25,15 +27,18 @@ import static org.junit.Assert.fail;
  */
 @Jobs({ "job059605" })
 @TestId("Dev131_PropertyTest")
-public class PropertyTest extends P4JavaTestCase {
+public class PropertyTest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", PropertyTest.class.getSimpleName());
+
 	/**
 	 * @BeforeClass annotation to a method to be run before all the tests in a
 	 *              class.
 	 */
 	@BeforeClass
 	public static void oneTimeSetUp() throws Exception{
-		server = getServerAsSuper();
-		assertNotNull(server);
+		setupServer(p4d.getRSHURL(), superUserName, superUserPassword, true, props);
 	}
 
 	/**
@@ -57,17 +62,17 @@ public class PropertyTest extends P4JavaTestCase {
 			// Set property values
 			for (int i = 0; i < 3; i++) {
 				result = server.setProperty("XpropName_" + i, "propVal_" + i,
-						new PropertyOptions().setSequence(Integer.toString(i+1)));
+						new PropertyOptions().setSequence(""+i+1));
 				assertTrue(result.contains("Property XpropName_" + i));
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.setProperty("YpropName_" + i, "propVal_" + i,
-						new PropertyOptions().setSequence(Integer.toString(i+1)));
+						new PropertyOptions().setSequence(""+i+1));
 				assertTrue(result.contains("Property YpropName_" + i));
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.setProperty("ZpropName_" + i, "propVal_" + i,
-						new PropertyOptions().setSequence(Integer.toString(i+1)));
+						new PropertyOptions().setSequence(""+i+1));
 				assertTrue(result.contains("Property ZpropName_" + i));
 			}
 
@@ -102,17 +107,17 @@ public class PropertyTest extends P4JavaTestCase {
 			// Delete property values
 			for (int i = 0; i < 3; i++) {
 				result = server.deleteProperty("XpropName_" + i,
-						new PropertyOptions().setSequence(Integer.toString(i+1)));
+						new PropertyOptions().setSequence(""+i+1));
 				assertEquals("Property XpropName_" + i + " deleted.", result);
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.deleteProperty("YpropName_" + i,
-						new PropertyOptions().setSequence(Integer.toString(i+1)));
+						new PropertyOptions().setSequence(""+i+1));
 				assertEquals("Property YpropName_" + i + " deleted.", result);
 			}
 			for (int i = 0; i < 3; i++) {
 				result = server.deleteProperty("ZpropName_" + i,
-						new PropertyOptions().setSequence(Integer.toString(i+1)));
+						new PropertyOptions().setSequence(""+i+1));
 				assertEquals("Property ZpropName_" + i + " deleted.", result);
 			}
 			

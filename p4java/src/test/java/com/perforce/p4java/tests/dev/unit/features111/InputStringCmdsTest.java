@@ -3,14 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.Map;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.ILabel;
 import com.perforce.p4java.core.ILabelMapping;
 import com.perforce.p4java.core.ViewMap;
@@ -19,9 +11,19 @@ import com.perforce.p4java.impl.generic.core.InputMapper;
 import com.perforce.p4java.impl.generic.core.Label;
 import com.perforce.p4java.impl.mapbased.rpc.func.helper.MapUnmapper;
 import com.perforce.p4java.option.server.DeleteLabelOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Map;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Simple tests of the new (2011.1) input string exec cmds.
@@ -29,14 +31,31 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("Features111_InputStringCmdsTest")
-public class InputStringCmdsTest extends P4JavaTestCase {
+public class InputStringCmdsTest extends P4JavaRshTestCase {
 
 	public InputStringCmdsTest() {
 	}
 
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", InputStringCmdsTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            Properties properties = new Properties();
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+            assertNotNull(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
+    
 	@Test
 	public void testSimpleInputStringMapCmds() {
-		IOptionsServer server = null;
 		ILabel label = null;
 		final String labelName = this.getRandomName("Label");
 		final String description = "Created for test " + testId;
@@ -45,7 +64,6 @@ public class InputStringCmdsTest extends P4JavaTestCase {
 		final String[] cmdArgs = new String[] {"-i"};
 		
 		try {
-			server = getServer();
 			label = Label.newLabel(server, labelName, description, mapping);
 			assertNotNull("unable to create new label locally", label);
 			StringBuffer strBuf = new StringBuffer();

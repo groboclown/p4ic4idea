@@ -5,47 +5,37 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'p4 protect -o'
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job062361"})
 @TestId("Dev132_GetProtectionsTableTest")
-@Disabled("Uses external p4d server")
-public class GetProtectionsTableTest extends P4JavaTestCase {
+public class GetProtectionsTableTest extends P4JavaRshTestCase {
 
-  private IOptionsServer server = null;
-  private IOptionsServer superServer = null;
+  @ClassRule
+  public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", GetProtectionsTableTest.class.getSimpleName());
 
-  @BeforeEach
+  private IOptionsServer superServer;
+
+  @Before
   public void setUp() throws Exception {
-    server = getServer();
-    assertThat(server, notNullValue());
-    IClient client = getDefaultClient(server);
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
-
-    superServer = getServerAsSuper();
-    assertThat(superServer, notNullValue());
-    IClient superclient = getDefaultClient(superServer);
-    assertThat(superclient, notNullValue());
-    superServer.setCurrentClient(superclient);
+    setupServer(p4d.getRSHURL(), userName, password, true, null);
+    superServer = getSuperConnection(p4d.getRSHURL());
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
     afterEach(server, superServer);
   }

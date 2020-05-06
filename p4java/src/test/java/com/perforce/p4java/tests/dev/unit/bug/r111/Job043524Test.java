@@ -14,6 +14,9 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -34,7 +37,6 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Test the server- (etc.) message handling underpinning job 043524. Test
@@ -42,8 +44,16 @@ import org.junit.jupiter.api.Disabled;
  * server handling below. 
  */
 @TestId("Bugs111_Job043524Test")
-@Disabled("Uses external p4d server")
 public class Job043524Test extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	public Job043524Test() {
 	}

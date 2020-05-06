@@ -1,34 +1,35 @@
 package com.perforce.p4java.tests.dev.unit.bug.r162;
 
+import com.perforce.p4java.core.IUserGroup;
+import com.perforce.p4java.impl.generic.core.UserGroup;
+import com.perforce.p4java.option.server.GetUserGroupsOptions;
+import com.perforce.p4java.option.server.LoginOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUnicodeFileTypeOnNonUnicodeEnabledServerTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.core.IUserGroup;
-import com.perforce.p4java.impl.generic.core.UserGroup;
-import com.perforce.p4java.option.server.GetUserGroupsOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * @author Sean Shou
  * @since 20/01/2017
  */
-@RunWith(JUnitPlatform.class)
-@Disabled("Uses external p4d server")
-public class Job089581Test extends P4JavaTestCase {
+
+public class Job089581Test extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job089581Test.class.getSimpleName());
+
     /*
     * group      | max results | max scan rows | max lock time | login time out   | password time out|
     * -----------|-------------|---------------|---------------|------------------|------------------|
@@ -42,16 +43,13 @@ public class Job089581Test extends P4JavaTestCase {
     private static final int EXPECTED_MAX_LOCK_TIME = IUserGroup.UNSET;
     private static final int EXPECTED_LOGIN_TIME_OUT = IUserGroup.UNLIMITED;
     private static final int EXPECTED_PASSWORD_TIME_OUT = IUserGroup.UNSET;
-    private static final String P4D_ADMIN_USER = "p4java";
-    private static final String P4D_ADMIN_USER_PASSWD = "p4java";
 
-
-    @BeforeAll
+    @BeforeClass
     public static void beforeAll() throws Exception {
-        defaultBeforeAll(new MockCommandCallback());
+        setupServer(p4d.getRSHURL(), userName, password, true, null);
     }
 
-    @AfterAll
+    @AfterClass
     public static void afterAll() throws Exception {
         defaultAfterAll();
     }
@@ -111,8 +109,7 @@ public class Job089581Test extends P4JavaTestCase {
     }
 
     private void loginAsAdminUser() throws Exception {
-        server.setUserName(P4D_ADMIN_USER);
-        server.login(P4D_ADMIN_USER_PASSWD, new LoginOptions());
+        server.setUserName(superUserName);
     }
 
     private void verifyUserGroup(IUserGroup userGroup, String expectedGroupName, int expectedLoginTimeOut) {

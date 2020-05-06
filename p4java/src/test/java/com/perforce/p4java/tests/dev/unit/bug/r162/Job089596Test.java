@@ -1,43 +1,36 @@
 package com.perforce.p4java.tests.dev.unit.bug.r162;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
+import com.perforce.p4java.core.IJob;
+import com.perforce.p4java.option.server.LoginOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.dev.unit.bug.r161.SubmitAndSyncUnicodeFileTypeOnNonUnicodeEnabledServerTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
-import com.perforce.p4java.core.IJob;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
-@RunWith(JUnitPlatform.class)
-@Disabled("Uses external p4d server")
-public class Job089596Test extends P4JavaTestCase {
+public class Job089596Test extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job089596Test.class.getSimpleName());
+
     private static String jobName = "job" + System.currentTimeMillis();
     private static final String INITIAL_JOB_DESCRIPTION = "Temporary test job(" + jobName + ") for 'Job089596Test";
     private static final String UPDATE_JOB_DESCRIPTION = INITIAL_JOB_DESCRIPTION + " - changed";
 
 
-    @BeforeAll
+    @BeforeClass
     public static void beforeAll() throws Exception {
-        server = getServer();
-        assertThat(server, notNullValue());
-
-        server.registerCallback(new MockCommandCallback());
-        server.connect();
-        setUtf8CharsetIfServerSupportUnicode(server);
-        server.setUserName(getUserName());
-
-        server.login(getPassword(), new LoginOptions());
+        setupServer(p4d.getRSHURL(), userName, password, true, null);
     }
 
     @Test
@@ -72,7 +65,7 @@ public class Job089596Test extends P4JavaTestCase {
         return job.getDescription();
     }
 
-    @AfterAll
+    @AfterClass
     public static void afterAll() throws Exception {
         afterEach(server);
     }

@@ -171,7 +171,7 @@ public class GraphCommitLogTest extends P4JavaRshTestCase {
 		//non existent SHA value
 		String[] commitValueTest3 = {"40b2770a413267e79b8b3d3adf299dda44b81"};
 
-		exception.expect(RequestException.class);
+		exception.expect(com.perforce.p4java.exception.RequestException.class);
 		graphCommitLogOptions.setCommitValue(commitValueTest3);
 		try {
 			logResult = server.getGraphCommitLogList(graphCommitLogOptions);
@@ -181,7 +181,7 @@ public class GraphCommitLogTest extends P4JavaRshTestCase {
 			//end here and the assertion below is executed.
 		}
 
-		exception.expect(RequestException.class);
+		exception.expect(com.perforce.p4java.exception.RequestException.class);
 		String[] commitValueTest4 = {"40b2770a413267e79b8b3d3adf299dda44b8161fd82a0624a2f64ee867b66a575f924d6147d0695c"};
 		graphCommitLogOptions.setCommitValue(commitValueTest4);
 		logResult = server.getGraphCommitLogList(graphCommitLogOptions);

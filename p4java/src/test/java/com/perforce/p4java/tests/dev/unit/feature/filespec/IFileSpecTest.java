@@ -1,29 +1,30 @@
 package com.perforce.p4java.tests.dev.unit.feature.filespec;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
-
+import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
-import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.VerifyFileSpec;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * The IFileSpecE2ETest class exercises the FileSpec class as it affects files. The fileSpecs
@@ -34,21 +35,23 @@ import com.perforce.p4java.tests.dev.unit.VerifyFileSpec;
 
 
 @TestId("IFileSpecTest01")
-public class IFileSpecTest extends P4JavaTestCase {
+public class IFileSpecTest extends P4JavaRshTestCase {
 
     private String clientDir = defaultTestClientName + "_Dir" + File.separator + testId;
     private String sourceFile;
     private String clientRoot;
+    private IClient client = null;
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", IFileSpecTest.class.getSimpleName());
+
 
     @Before
     public void before() throws Exception {
-        server = getServer(getServerUrlString(), null, userName, "");
-        client = getDefaultClient(server);
-        assertNotNull("client should not be Null.", client);
+        setupServer(p4d.getRSHURL(), userName, password, true, null);
+        client = getClient(server);
         clientRoot = client.getRoot();
         assertNotNull("clientRoot should not be Null.", clientRoot);
-
-        server.setCurrentClient(client);
         sourceFile = clientRoot + File.separator + textBaseFile;
         createTestSourceFile(sourceFile, false);
     }
@@ -60,7 +63,6 @@ public class IFileSpecTest extends P4JavaTestCase {
      */
     @Test
     public void testFileSpecGetInvalidFileSpecsNoPath() throws Exception {
-        IServer server = null;
         int expNumValidFSpecs = 1;
         int expNumInvalidFSpecs = 0;
         debugPrintTestName();
@@ -214,7 +216,6 @@ public class IFileSpecTest extends P4JavaTestCase {
      */
     @Test
     public void testFileSpecSetRev() throws Exception {
-        IServer server = null;
         int expNumValidFSpecs = 1;
         int expNumInvalidFSpecs = 0;
         debugPrintTestName();

@@ -99,13 +99,7 @@ import static org.junit.Assert.fail;
 
 // p4ic4idea: IServerMessage
 import com.perforce.p4java.server.IServerMessage;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import com.perforce.p4java.tests.MockCommandCallback;
-
 import javax.annotation.Nonnull;
-
-import static java.util.Objects.nonNull;
 
 /**
  * Superclass for all normal p4jtest junit tests; should be subclassed further
@@ -998,6 +992,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	protected static IOptionsServer getServer(String uriString, Properties props)
 			throws ConnectionException, NoSuchObjectException, ConfigException, ResourceException,
 			URISyntaxException, AccessException, RequestException {
+		// p4ic4idea: ensure this is done in a non-Perforce server...
+		assertFalse("Invalid server: " + uriString, uriString.contains(".perforce.com"));
 		IOptionsServer server = null;
 		if (props == null) {
 			props = new Properties();
@@ -1023,6 +1019,8 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 
 	protected IOptionsServer getOptionsServer(String uriString, Properties props)
 			throws P4JavaException, URISyntaxException {
+		// p4ic4idea: ensure this is done in a non-Perforce server...
+		assertFalse("Invalid server: " + uriString, uriString.contains(".perforce.com"));
 		IOptionsServer server = ServerFactory.getOptionsServer(uriString, props);
 		if (server != null) {
 			server.connect();
@@ -1052,8 +1050,6 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	 * Equivalent to getServer(null, null, null, null).
 	 */
 	protected static IOptionsServer getServer() throws P4JavaException, URISyntaxException {
-		// p4ic4idea: ensure this is done in a non-Perforce server...
-		assertFalse("Invalid server: " + serverUrlString, serverUrlString.contains(".perforce.com"));
 		IOptionsServer server = getServer(serverUrlString, null, null, null);
 		assertNotNull("Null server returned by server factory in P4JavaTestCase.getServer", server);
 		return server;
@@ -1067,7 +1063,6 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	 * Convenience method for getServer(null, null, getSuperUserName(),
 	 * getSuperUserPassword).
 	 */
-	@Deprecated
 	protected static IOptionsServer getServerAsSuper() throws P4JavaException, URISyntaxException {
 		return getServer(serverUrlString, null, getSuperUserName(),
 				getSuperUserPassword());

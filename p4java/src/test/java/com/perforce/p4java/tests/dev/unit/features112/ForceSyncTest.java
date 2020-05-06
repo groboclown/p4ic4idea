@@ -3,64 +3,40 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.FileAction;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test force sync ('sync -f') so that it always re-deletes a deleted revision.
  */
 @Jobs({ "job046828" })
 @TestId("Dev112_ForceSyncTest")
-public class ForceSyncTest extends P4JavaTestCase {
+public class ForceSyncTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ForceSyncTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -69,15 +45,14 @@ public class ForceSyncTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer(null, "p4jtestuser",
-					"p4jtestuser");
-			assertNotNull(server);
-			client = server.getClient("p4TestUserWS");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = getClient(server);
+            server.setCurrentClient(client);
+		    createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/bin/gnu/getopt/branch10100/ToBeDeleted_forceSyncTest.properties", "desc"); //make global
+		    deleteFile("//depot/112Dev/GetOpenedFilesTest/bin/gnu/getopt/branch10100/ToBeDeleted_forceSyncTest.properties", server, client, "desc");
+			createClient(server, "testClient");
+            client = server.getClient("testClient"); //create a variable
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -105,21 +80,21 @@ public class ForceSyncTest extends P4JavaTestCase {
 	public void testForceSync() {
 
 		List<IFileSpec> files = null;
-
-		String deletedFile = "//depot/112Dev/GetOpenedFilesTest/bin/gnu/getopt/branch10100/ToBeDeleted_MessagesBundle_es.properties";
+		String deletedFile = "//depot/112Dev/GetOpenedFilesTest/bin/gnu/getopt/branch10100/ToBeDeleted_forceSyncTest.properties";
 
 		try {
+		    
 			// sync deletedFile@30155
 			// Get a revision of the file before it was deleted
 			files = client.sync(
-					FileSpecBuilder.makeFileSpecList(deletedFile + "@30155"),
+					FileSpecBuilder.makeFileSpecList(deletedFile + "@24471"),
 					new SyncOptions());
 			assertNotNull(files);
 			assertTrue(files.size() == 1);
 
 			// The action should be "added"
 			assertNotNull(files.get(0).getAction());
-			assertNotNull(files.get(0).getAction() == FileAction.ADDED);
+			assertEquals(files.get(0).getAction(), FileAction.ADDED);
 
 			// The file should now be in the local client workspace
 			File localFile = new File(files.get(0).getClientPathString());
@@ -138,17 +113,17 @@ public class ForceSyncTest extends P4JavaTestCase {
 					new SyncOptions().setForceUpdate(true));
 			assertNotNull(files);
 			assertTrue(files.size() == 1);
-
+          
 			// The action should be "deleted"
 			assertNotNull(files.get(0).getAction());
-			assertNotNull(files.get(0).getAction() == FileAction.DELETED);
+			assertEquals(files.get(0).getAction(), FileAction.DELETED);
 
 			// The file should now be deleted from the local client workspace
 			localFile = new File(files.get(0).getClientPathString());
 			assertNotNull(localFile);
 			assertFalse(localFile.exists());
 
-		} catch (P4JavaException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

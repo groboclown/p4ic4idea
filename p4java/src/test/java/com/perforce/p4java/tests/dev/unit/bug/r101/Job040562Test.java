@@ -11,6 +11,8 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -24,34 +26,43 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.EditFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 
 /**
  * Tests locking issue with job040562.
  */
 @TestId("Bugs101_Job040562Test")
-@Disabled("Uses external p4d server")
-public class Job040562Test extends P4JavaTestCase {
+public class Job040562Test extends P4JavaRshTestCase {
 
 	public Job040562Test() {
 	}
+	IClient client = null;
+	
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job040562Test.class.getSimpleName());
 
+	/**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
+    
 	@Test
 	public void testJob040562Locking() {
 		final String testFile1 = "//depot/101Bugs/Bugs101_Job040562Test/test01.txt";
 		final String testFile2 = "//depot/101Bugs/Bugs101_Job040562Test/test02.txt";
-		IOptionsServer server = null;
-		IClient client = null;
 		IChangelist changelist = null;
 
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			forceSyncFiles(client, "//depot/101Bugs/Bugs101_Job040562Test/...");
 			List<IFileSpec> files1 = client.editFiles(FileSpecBuilder.makeFileSpecList(testFile1), null);
 			assertNotNull(files1);

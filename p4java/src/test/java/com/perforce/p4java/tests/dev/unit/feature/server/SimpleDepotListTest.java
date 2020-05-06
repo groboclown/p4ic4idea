@@ -1,17 +1,18 @@
 package com.perforce.p4java.tests.dev.unit.feature.server;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.core.IDepot;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import java.util.List;
 
-import org.junit.Test;
-
-import com.perforce.p4java.core.IDepot;
-import com.perforce.p4java.server.IServer;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simple tests for the IServer getDepotList method.
@@ -25,13 +26,22 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("Server_SimpleDepotListTest01")
-public class SimpleDepotListTest extends P4JavaTestCase {
-	@Test
+public class SimpleDepotListTest extends P4JavaRshTestCase {
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SimpleDepotListTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+     }
+    
+    @Test
 	public void testGetDepotListBasics() {
-		IServer server = null;
 		try {
-			server = getServer();
-			assertNotNull("Null server returned", server);
 			List<IDepot> depotList = server.getDepots();
 			assertNotNull("Null depot list returned", depotList);
 			assertTrue("Depot list is empty", depotList.size() > 0);

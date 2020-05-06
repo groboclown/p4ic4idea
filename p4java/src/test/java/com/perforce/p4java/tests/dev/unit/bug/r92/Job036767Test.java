@@ -3,18 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r92;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -22,10 +10,22 @@ import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.IJob;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.server.Server;
-import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test for bogus fix lists on newly-created changelists first noted
@@ -42,18 +42,19 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("Job036767Test")
 @Jobs({"job036767"})
-public class Job036767Test extends P4JavaTestCase {
+public class Job036767Test extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job036767Test.class.getSimpleName());
 
 	@Test
 	public void testJobs() {
-		IServer server = null;
 		IClient client = null;
 		IChangelist changelist = null;
 		IChangelist newChangelist = null;
 		boolean succeeded = false;
 		try {
-			server = getServer();
-			assertNotNull("Null server returned", server);			
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
 			client = makeTempClient(null, server);
 			String rsltStr = server.createClient(client);
 			assertNotNull("Null result string from test client creation",

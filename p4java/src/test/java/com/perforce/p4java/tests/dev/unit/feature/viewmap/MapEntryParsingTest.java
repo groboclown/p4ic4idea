@@ -3,16 +3,15 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.viewmap;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IMapEntry.EntryType;
 import com.perforce.p4java.impl.generic.core.MapEntry;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.Standalone;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests the MapEntry parseViewMappingString and toString methods.
@@ -25,7 +24,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Jobs({"Job035374A"})
 @TestId("MapEntryParsing01")
 @Standalone
-public class MapEntryParsingTest extends P4JavaTestCase {
+public class MapEntryParsingTest extends P4JavaRshTestCase {
 	
 	private static final String mapStr01 = "//depot/dev/abc.txt //depot/dev/def.txt";
 	private static final String mapStr02 = "-//depot/dev/abc/... //depot/dev/def/...";

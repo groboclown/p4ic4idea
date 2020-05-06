@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -23,9 +10,24 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the 10.2 IClient.copyFiles method. Note that we're not really
@@ -34,28 +36,42 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("Features102_CopyFilesTest")
-public class CopyFilesTest extends P4JavaTestCase {
+public class CopyFilesTest extends P4JavaRshTestCase {
 
 	public CopyFilesTest() {
 	}
+	
+	IClient client = null;
 
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CopyFilesTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            Properties properties = new Properties();
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
+    
 	@Test
 	public void testCopyFilesBasics() {
 		final String testRoot = "//depot/102Dev/CopyFilesTest";
 		final String fileNames = "test01.txt"; // same for both files...
 		String srcFileName = null;
 		String tgtFileName = null;
-		IOptionsServer server = null;
-		IClient client = null;
 		InputStream inStream = null;
 		PrintStream outStream = null;
 		File tmpFile = null;
 		
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			srcFileName = this.getSystemPath(client, testRoot + "/src/" + fileNames);
 			client.revertFiles(FileSpecBuilder.makeFileSpecList(srcFileName), null);
 			tgtFileName = this.getSystemPath(client, testRoot + "/tgt/" + fileNames);

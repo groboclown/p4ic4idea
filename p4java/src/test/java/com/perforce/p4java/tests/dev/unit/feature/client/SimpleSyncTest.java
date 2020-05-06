@@ -1,22 +1,23 @@
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.file.FileSpecBuilder;
-import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import java.io.File;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Simple basic sync test. Briefly tests basic sync
@@ -31,12 +32,18 @@ public class SimpleSyncTest extends P4JavaTestCase {
     private static IClient client;
     @BeforeClass
     public static void beforeAll() throws Exception {
-        fail("FIXME connects to remote p4d server");
-        server = getServer("p4java://eng-p4java-vm.perforce.com:20121", null, null, null);
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+        server = getServer("p4java://eng-p4java-vm.das.perforce.com:20121", null, null, null);
         assertNotNull(server);
         client = getDefaultClient(server);
         server.setCurrentClient(client);
         assertNotNull("Unable to retrieve default test client '" + defaultTestClientName + "'", client);
+    }
+    // p4ic4idea: use local server
+    @AfterClass
+    public static void oneTimeTearDown() {
+        UnitTestDevServerManager.INSTANCE.endTestClass();
     }
 
     @Test
@@ -45,6 +52,7 @@ public class SimpleSyncTest extends P4JavaTestCase {
         // Nuke any existing local files:
         client.revertFiles(targetFiles, null);
 
+        FileUtils.deleteDirectory(new File("/tmp/p4javatest/basic/readonly/sync"));
 
         List<IFileSpec> haveFileSpecs = FileSpecBuilder.makeFileSpecList(SYNCTEST_ROOT + "#0");
         List<IFileSpec> files = client.sync(

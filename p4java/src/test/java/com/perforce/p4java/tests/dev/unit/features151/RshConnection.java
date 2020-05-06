@@ -1,13 +1,13 @@
 package com.perforce.p4java.tests.dev.unit.features151;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Properties;
-
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Properties;
 
 public class RshConnection {
 
@@ -49,7 +49,7 @@ public class RshConnection {
 	}
 
 	private static String getP4D() {
-	    Path p4dBasePath = Paths.get("src", "test", "resources", "r15.1");
+	    Path p4dBasePath = Paths.get("src", "test", "resources", "bin", "r16.1");
 		String os = System.getProperty("os.name").toLowerCase();
 		String p4d = null;
 		if (os.contains("win")) {

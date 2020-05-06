@@ -9,20 +9,20 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 
-import com.google.common.collect.ImmutableList;
+import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
 
 
 /**
  * @author Sean Shou
  * @since 31/08/2016
  */
-@RunWith(JUnitPlatform.class)
-public class FileSpecBuilderTest {
+
+public class FileSpecBuilderTest extends P4JavaTestCase {
+
   @Test
   public void makeFileSpecList_non_empty_path_string() throws Exception {
     String depotFileSpec = "//depot/p4java/test/test.txt";

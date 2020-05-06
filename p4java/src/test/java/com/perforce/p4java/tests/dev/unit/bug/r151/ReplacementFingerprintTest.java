@@ -5,10 +5,12 @@ package com.perforce.p4java.tests.dev.unit.bug.r151;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.SSLServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaLocalServerTestCase;
+import com.perforce.p4java.tests.dev.unit.features121.FingerprintTest;
 import org.junit.AfterClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.option.server.TrustOptions;
@@ -17,27 +19,28 @@ import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Test replacement fingerprint ('p4 trust -r')
  */
 @Jobs({"job076501"})
 @TestId("Dev151_ReplacementFingerprintTest")
-@Disabled("Uses external p4d server")
-public class ReplacementFingerprintTest extends P4JavaTestCase {
+public class ReplacementFingerprintTest extends P4JavaLocalServerTestCase {
+
+    @ClassRule
+    public static SSLServerRule p4d = new SSLServerRule("r16.1", ReplacementFingerprintTest.class.getSimpleName(), "ssl:localhost:10671");
+
     /**
      * Test replacement fingerprint.
      */
     @Test
     public void testAddRemoveReplacementTrust() throws Exception {
-        fail("FIXME connects to external p4d server");
-        String serverUri = "p4javassl://eng-p4java-vm.perforce.com:30121";
+        String serverUri = p4d.getP4JavaUri();
         server = ServerFactory.getOptionsServer(serverUri, props);
         assertNotNull(server);
 
         // Register callback
-        server.registerCallback(new MockCommandCallback());
+        server.registerCallback(createCommandCallback());
 
         // Remove the normal fingerprint
         String result = server.removeTrust();

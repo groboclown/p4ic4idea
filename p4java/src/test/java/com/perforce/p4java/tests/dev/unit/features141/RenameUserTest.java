@@ -8,12 +8,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.perforce.p4java.impl.mapbased.client.Client;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.*;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IUser;
@@ -24,60 +24,31 @@ import com.perforce.p4java.option.server.UpdateUserOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'p4 renameuser' command.
  */
 @Jobs({ "job071639" })
 @TestId("Dev141_RenameUserTest")
-public class RenameUserTest extends P4JavaTestCase {
+public class RenameUserTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", RenameUserTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
-		// initialization code (before each test).
-		fail("FIXME uses remote p4d server");
+		final String depotName = this.getRandomName(false, "test");
+		final String clientName = "test-rename-user-test-client";
 		try {
-			server = getServer("p4java://eng-p4java-vm.perforce.com:20141", null);
-			assertNotNull(server);
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-			server.setUserName(this.superUserName);
-			server.login(this.superUserPassword, new LoginOptions());
-			client = server.getClient("p4TestUserWS20112");
+			setupServer(p4d.getRSHURL(), superUserName, superUserPassword, true, null);
+			setupUtf8(server);
+			client = new Client();
+			client.setName("test-rename-user-test-client");
 			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

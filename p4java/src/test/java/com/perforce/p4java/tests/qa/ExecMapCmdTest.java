@@ -50,7 +50,10 @@ public class ExecMapCmdTest {
     private static IClient client = null;
     private static File testFile = null;
 
-    @DisplayName("simple setup with one file")
+    /**
+     * simple setup with one file
+     * @throws Throwable
+     */
     @BeforeAll
     public static void beforeClass() throws Throwable {
         helper = new Helper();
@@ -97,7 +100,11 @@ public class ExecMapCmdTest {
         }
     }
 
-    @DisplayName("try something that would normally accept")
+    /**
+     * try something that would normally accept
+     * @throws Throwable
+     */
+    @SuppressWarnings("deprecation")
     @Test
     public void acceptableCommand() throws Throwable {
         Map<String, Object>[] results = server2.execMapCmd("edit", new String[]{"//depot/foo.txt"}, null);
@@ -121,7 +128,11 @@ public class ExecMapCmdTest {
     }
 
 
-    @DisplayName("try something that would normally accept")
+    /**
+     * try something that would normally accept
+     * @throws Throwable
+     */
+    @SuppressWarnings("deprecation")
     @Test
     public void badCommand() throws Throwable {
         Map<String, Object>[] results = server2.execMapCmd("edit", new String[]{"//depot/bar.txt"}, null);
@@ -139,14 +150,20 @@ public class ExecMapCmdTest {
     }
 
 
-    @DisplayName("try to trigger an error")
+    /**
+     * try to trigger an error
+     * @throws Throwable
+     */
     @Test
     public void nonexistentUser() throws Throwable {
         server2.setUserName("otherUser");
         badCommand();
     }
 
-    @DisplayName("try something not accepted by P4Java normally; this should fail")
+    /**
+     * try something not accepted by P4Java normally; this should fail
+     * @throws Throwable
+     */
     @Test
     public void unacceptableCommandControl() throws Throwable {
         String cmdName = "get";
@@ -158,7 +175,11 @@ public class ExecMapCmdTest {
         }
     }
 
-    @DisplayName("try something not accepted by P4Java normally; this should work")
+    /**
+     * try something not accepted by P4Java normally; this should work
+     * @throws Throwable
+     */
+    @SuppressWarnings("deprecation")
     @Test
     public void unacceptableCommand() throws Throwable {
         Map<String, Object>[] results = server2.execMapCmd("get", new String[]{"-f", "//depot/foo.txt"}, null);

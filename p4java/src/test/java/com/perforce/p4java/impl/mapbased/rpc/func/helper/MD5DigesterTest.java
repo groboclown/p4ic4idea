@@ -48,10 +48,6 @@ import static org.mockito.Mockito.verify;
 
 /**
  * MD5Digester Tester.
- *
- * @author Sean
- * @version 1.0
- * @since Jul 11, 2016
  */
 @SuppressWarnings({ "WeakerAccess", "JUnit5Platform" })
 @RunWith(JUnitPlatform.class)

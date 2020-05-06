@@ -8,9 +8,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.List;
 
-import com.perforce.p4java.core.IStreamSummary;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -42,7 +41,8 @@ public class ServerConfigureTest {
 
             IOptionsServer server = getOptionsServer(
                     ts.getLocalUrl(), null);
-            //IOptionsServer server = getOptionsServer(ts.getRSHURL(), null);
+            //IOptionsServer server = getOptionsServer(
+            //        "p4java://localhost:" + ts.getPort(), null);
 
             server.connect();
             String status = server.setOrUnsetServerConfigurationValue(configName,

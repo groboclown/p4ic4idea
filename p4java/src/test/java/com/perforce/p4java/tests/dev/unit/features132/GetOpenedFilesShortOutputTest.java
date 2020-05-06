@@ -6,12 +6,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import com.perforce.p4java.core.file.FileSpecBuilder;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -19,30 +20,29 @@ import com.perforce.p4java.option.server.OpenedFilesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test get opened files with short output: 'p4 opened -s'
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job062832"})
 @TestId("GetOpenedFilesTest")
-@Disabled("Uses external p4d server")
-public class GetOpenedFilesShortOutputTest extends P4JavaTestCase {
+public class GetOpenedFilesShortOutputTest extends P4JavaRshTestCase {
 
-  private IOptionsServer server = null;
-  private IClient client = null;
+  @ClassRule
+  public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", GetOpenedFilesShortOutputTest.class.getSimpleName());
 
-  @BeforeEach
+  private List<IFileSpec> fileSpecs = null;
+
+  @Before
   public void setUp() throws Exception {
-    server = getServerAsSuper();
-    assertThat(server, notNullValue());
-    client = getDefaultClient(server);
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
+    setupServer(p4d.getRSHURL(), userName, password, true, null);
+    client = getClient(server);
+    fileSpecs = FileSpecBuilder.makeFileSpecList("//depot/test", "//depot/test2");
+    client.addFiles(fileSpecs, null);
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
     afterEach(server);
   }

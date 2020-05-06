@@ -1,36 +1,31 @@
 package com.perforce.p4java.tests.qa;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.impl.generic.client.ClientView;
 import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.test.TestServer;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringContains.containsString;
-
-@RunWith(JUnitPlatform.class)
 public class ClientTest {
     private static TestServer ts = null;
     private static Helper helper = null;
     private static IClient client = null;
 
-    @BeforeEach
+    @Before
     public void before() throws Throwable {
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline("main");
-
-        ts.initialize();
-        // just use RSH
-        //ts.start();
+        ts.startAsync();
 
         IOptionsServer server = helper.getServer(ts);
         server.setUserName(ts.getUser());
@@ -85,7 +80,7 @@ public class ClientTest {
 
     }
 
-    @AfterEach
+    @After
     public void after() {
         helper.after(ts);
     }

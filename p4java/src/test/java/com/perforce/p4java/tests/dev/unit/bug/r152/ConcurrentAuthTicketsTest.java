@@ -18,8 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,7 +26,7 @@ import java.util.concurrent.Executors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.google.common.collect.Lists.newArrayList;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -118,7 +117,7 @@ public class ConcurrentAuthTicketsTest extends P4JavaRshTestCase {
         assertThat(ticketsFilePath, notNullValue());
         ticketsFilePath += File.separator + "realticketsfile4" + System.currentTimeMillis();
 
-        List<AuthTicketsWriter> ticketsWriters = newArrayList();
+        List<AuthTicketsWriter> ticketsWriters = new ArrayList<AuthTicketsWriter>();
         try {
             // Run concurrent reads and writes
             int x=0;
@@ -154,8 +153,10 @@ public class ConcurrentAuthTicketsTest extends P4JavaRshTestCase {
 
             // If some thread after try no more than 'max lockTry', it will give
             // up
-            int numTickets = ticketsWriters.stream()
-                    .mapToInt(AuthTicketsWriter::getTotalSuccessSaveTicket).sum();
+            int numTickets = 0;
+            for(AuthTicketsWriter w : ticketsWriters) {
+                numTickets += w.getTotalSuccessSaveTicket();
+            }
             assertThat(tickets.length, is(numTickets));
         } finally {
             filesHelper.setWritable(ticketsFilePath, true);

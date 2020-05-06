@@ -8,6 +8,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -30,6 +33,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @TestId("Job036949Test")
 @Jobs({"job036949"})
 public class Job036949Test extends P4JavaTestCase {
+  // p4ic4idea: use local server
+  @BeforeClass
+  public static void oneTimeSetUp() {
+    UnitTestDevServerManager.INSTANCE.startTestClass();
+  }
+  @AfterClass
+  public static void oneTimeTearDown() {
+    UnitTestDevServerManager.INSTANCE.endTestClass();
+  }
 
   @Test
   public void testAnnotations() throws Exception {

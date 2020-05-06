@@ -9,8 +9,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -21,25 +24,41 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.option.UsageOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.features112.ContentResolveTypeTest;
 
 /**
  * Some simple tests for the global UsageOptions class.
  */
 @TestId("Dev101_UsageOptionsTest")
-public class UsageOptionsTest extends P4JavaTestCase {
+public class UsageOptionsTest extends P4JavaRshTestCase {
     /**
      * Rule for expected exception verification
      */
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private IOptionsServer server = null;
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", UsageOptionsTest.class.getSimpleName());
 
+   /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() throws Exception {
+        // initialization code (before each test).
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, null);
+            assertNotNull(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
     @Test
     public void testUsageOptionsDefaults() throws Exception {
-        server = getServer();
         UsageOptions serverOpts = server.getUsageOptions();
         assertNotNull(serverOpts);
         assertNotNull(serverOpts.getUnsetClientName());
@@ -69,8 +88,6 @@ public class UsageOptionsTest extends P4JavaTestCase {
         thrown.expect(AccessException.class);
         thrown.expectMessage(containsString(userErrMsg));
 
-
-        server = getServer();
         server.setCurrentClient(null);
         UsageOptions opts = new UsageOptions(null).setUnsetClientName(unsetClientName).setUnsetUserName(unsetUserName);
         server.setUsageOptions(opts);

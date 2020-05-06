@@ -3,22 +3,8 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IStream;
-import com.perforce.p4java.core.IStreamSummary.Type;
 import com.perforce.p4java.core.IStreamViewMapping;
 import com.perforce.p4java.core.IStreamViewMapping.PathType;
 import com.perforce.p4java.core.ViewMap;
@@ -27,39 +13,34 @@ import com.perforce.p4java.impl.generic.core.Stream;
 import com.perforce.p4java.impl.generic.core.Stream.StreamViewMapping;
 import com.perforce.p4java.option.server.StreamOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the IOptionsServer.getStreams method.
  */
 @Jobs({ "job050501" })
 @TestId("Dev112_CreateStreamsTest")
-public class CreateStreamsTest extends P4JavaTestCase {
+public class CreateStreamsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
-
 	IOptionsServer superServer = null;
+	String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CreateStreamsTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -68,15 +49,12 @@ public class CreateStreamsTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = getClient(server);
+			createStreamsDepot(streamsDepotName, server, streamDepth);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 
 	/**
@@ -104,10 +82,9 @@ public class CreateStreamsTest extends P4JavaTestCase {
 		String newStreamPath = "//p4java_stream/" + streamName;
 
 		try {
-			IStream stream = new Stream();
-			stream.setStream(newStreamPath);
-			stream.setType(Type.MAINLINE);
-			stream.setParent(null);
+			 // Create a stream
+            IStream stream = Stream.newStream(server, newStreamPath,
+                    "mainline", null, null, null, null, null, null, null);
 
 			ViewMap<IStreamViewMapping> view = new ViewMap<IStreamViewMapping>();
 			StreamViewMapping entry = new StreamViewMapping();
@@ -135,7 +112,7 @@ public class CreateStreamsTest extends P4JavaTestCase {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
 			try {
-				superServer = getServerAsSuper();
+				superServer = getSuperConnection(p4d.getRSHURL());
 				assertNotNull(superServer);
 				String serverMessage = superServer.deleteStream(newStreamPath,
 						new StreamOptions().setForceUpdate(true));

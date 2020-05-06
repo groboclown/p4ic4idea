@@ -1,27 +1,24 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import com.perforce.p4java.impl.mapbased.rpc.helper.RpcUserAuthCounter;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.impl.mapbased.rpc.helper.RpcUserAuthCounter;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 
 /**
  * Test concurrent user login/logout counter.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job064015"})
 @TestId("Dev131_ConcurrentRpcUserAuthCounterTest")
-public class ConcurrentRpcUserAuthCounterTest extends P4JavaTestCase {
+public class ConcurrentRpcUserAuthCounterTest extends P4JavaRshTestCase {
 
   private RpcUserAuthCounter authCounter = new RpcUserAuthCounter();
 

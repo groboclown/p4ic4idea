@@ -3,28 +3,26 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientViewMapping;
+import com.perforce.p4java.core.IStream;
+import com.perforce.p4java.core.ViewMap;
+import com.perforce.p4java.impl.generic.core.Stream;
+import com.perforce.p4java.option.server.GetClientTemplateOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.client.IClientViewMapping;
-import com.perforce.p4java.core.ViewMap;
-import com.perforce.p4java.option.server.GetClientTemplateOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.callback.ICommandCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'p4 client -S stream [[-c change] -o] [name]'.
@@ -35,33 +33,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046693" })
 @TestId("Dev112_GetClientTemplateTest")
-public class GetClientTemplateTest extends P4JavaTestCase {
+public class GetClientTemplateTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
+	String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
+	String streamPath = "//p4java_stream/main";
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetClientTemplateTest.class.getSimpleName());
+    
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
@@ -70,15 +51,19 @@ public class GetClientTemplateTest extends P4JavaTestCase {
 		// initialization code (before each test).
 
 		try {
-			server = getServer(props, getUserName(),
-					getPassword());
-			assertNotNull(server);
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
 			client = server.getClient("p4TestUserWS20112");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
+			createStreamsDepot(streamsDepotName, server, streamDepth);
 
+			// Create a stream
+			IStream stream = Stream.newStream(server, streamPath,
+					"mainline", null, null, null, null, null, null, null);
+			String retVal = server.createStream(stream);
+			// The stream should be created
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + streamPath + " saved.");
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		}
@@ -124,7 +109,7 @@ public class GetClientTemplateTest extends P4JavaTestCase {
 			IClient newClientStreamView = server.getClientTemplate(				
 					"new-client-stream-view" + randNum,
 					new GetClientTemplateOptions()
-					.setStream("//p4java_stream/dev")
+					.setStream(streamPath)
 					.setChangelistId(-1)
 					.setAllowExistent(false));
 			assertNotNull(newClientStreamView);

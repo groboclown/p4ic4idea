@@ -3,28 +3,46 @@
  */
 package com.perforce.p4java.tests.dev.unit.features111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IDepot;
 import com.perforce.p4java.core.IDepot.DepotType;
 import com.perforce.p4java.impl.generic.core.Depot;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Basic tests for the 10.2 IOptionsServer.createDepot method; includes deleteDepot
  * test as a bonus. Only test local depot creation and deletion...
  */
 @TestId("Features102_CreateDepotTest")
-public class CreateDepotTest extends P4JavaTestCase {
+public class CreateDepotTest extends P4JavaRshTestCase {
 
 	public CreateDepotTest() {
 	}
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CreateDepotTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            server = getSuperConnection(p4d.getRSHURL());
+            assertNotNull(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
 
 	@Test
 	public void testCreateDeleteDepotBasics() {
@@ -34,12 +52,8 @@ public class CreateDepotTest extends P4JavaTestCase {
 		final String expectedCreationResultString = "Depot " + depotName + " saved.";
 		final String expectedDeletionResultString = "Depot " + depotName + " deleted.";
 		
-		IOptionsServer server = null;
 		IDepot depot = null;
-
 		try {
-			server = this.getServerAsSuper();
-			assertNotNull(server);
 			depot = new Depot(
 							depotName,
 							server.getUserName(),

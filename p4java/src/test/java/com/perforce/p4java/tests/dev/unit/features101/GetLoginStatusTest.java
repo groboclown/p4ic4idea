@@ -7,34 +7,70 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Properties;
+
+import com.perforce.p4java.server.IOptionsServer;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.features121.GetStreamOptionsTest;
 
 /**
  * Attempts to test the IServer.getLoginStatus method.
  */
 
 @TestId("Features101_GetLoginStatusTest")
-public class GetLoginStatusTest extends P4JavaTestCase {
+public class GetLoginStatusTest extends P4JavaRshTestCase {
 
 	public GetLoginStatusTest() {
 		super();
 	}
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetLoginStatusTest.class.getSimpleName());
 
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        // initialization code (before each test).
+        try {
+            Properties properties = new Properties();
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+            assertNotNull(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
+    
+    /**
+     * @After annotation to a method to be run after each test in a class.
+     */
+    @After
+    public void tearDown() {
+        // cleanup code (after each test).
+        if (server != null) {
+            this.endServerSession(server);
+        }
+    }
+    
 	/**
 	 * Tests string return for validly logged-in user.
 	 */
 	@Test
 	public void testLoginStatusSuccess() {
-		
-		IServer server = null;
-
 		try {
-			server = getServer();			
 			String statusString = server.getLoginStatus();
 			String expectedValue = "User " + this.userName + " ticket expires in";
 			assertNotNull("null login status string returned from IServer.getLoginStatus",
@@ -45,11 +81,7 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 					statusString.contains(expectedValue));
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
-		} finally {
-			if (server != null) {
-				this.endServerSession(server);
-			}
-		}
+		} 
 	}
 	
 	/**
@@ -58,13 +90,8 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testLoginStatusFail() {
-		IServer server = null;
-
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
-			server.connect();
-			server.setUserName(this.invalidUserName);
-			
+			server.setUserName(this.invalidUserName);	
 			String statusString = server.getLoginStatus();
 			String expectedValue = "Access for user '" + this.invalidUserName + "' has not been enabled";
 			assertNotNull("null login status string returned from IServer.getLoginStatus",
@@ -75,11 +102,7 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 					statusString.contains(expectedValue));
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
-		} finally {
-			if (server != null) {
-				this.endServerSession(server);
-			}
-		}
+		} 
 	}
 	
 	/**
@@ -89,13 +112,8 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 	
 	@Test
 	public void testNonLoggedInUser() {
-		IServer server = null;
-
-		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
-			server.connect();
-			server.setUserName(this.noLoginUser);
-			
+		try {  
+			server.setUserName(this.noLoginUser);			
 			String statusString = server.getLoginStatus();
 			String expectedValue = "'login' not necessary, no password set for this user.";
 			assertNotNull("null login status string returned from IServer.getLoginStatus",
@@ -106,10 +124,6 @@ public class GetLoginStatusTest extends P4JavaTestCase {
 					statusString.contains(expectedValue));
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
-		} finally {
-			if (server != null) {
-				this.endServerSession(server);
-			}
-		}
+		} 
 	}
 }

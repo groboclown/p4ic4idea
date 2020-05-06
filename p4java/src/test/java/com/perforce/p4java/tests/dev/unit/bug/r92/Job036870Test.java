@@ -3,16 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r92;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -25,10 +15,20 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.client.Client;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.client.RevertFilesOptions;
-import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the rather insidious RPC protocol-implicated bug at the heart of
@@ -43,11 +43,13 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("Job036870Test")
 @Jobs({"job036870"})
-public class Job036870Test extends P4JavaTestCase {
+public class Job036870Test extends P4JavaRshTestCase {
 
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job036870Test.class.getSimpleName());
+    
 	@Test
 	public void testAddSubmit() {
-		IServer server = null;
 		IClient client = null;
 		String fileName = getRandomName(null) + ".txt";
 		String filePath = null;
@@ -55,8 +57,7 @@ public class Job036870Test extends P4JavaTestCase {
 		final String expectedErrMsg = "No such file or directory";
 		try {
 			String clientName = null;
-			server = getServer();
-			assertNotNull(server);
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
 			Client clientImpl = makeTempClient(null, server);
 			ClientView clientView = new ClientView();
 			clientView.addEntry(new ClientViewMapping(0, "//depot/...", "//" + clientImpl.getName() + "/..."));

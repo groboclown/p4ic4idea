@@ -41,11 +41,6 @@ import com.perforce.p4java.impl.mapbased.rpc.OneShotServerImpl;
 import com.perforce.p4java.option.server.SetFileAttributesOptions;
 import com.perforce.p4java.tests.UnitTestGiven;
 
-
-/**
- * @author Sean Shou
- * @since 22/09/2016
- */
 public class AttributeDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String STREAM_NAME = "testStream";

@@ -4,27 +4,22 @@
 package com.perforce.p4java.tests.dev.unit.features131;
 
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.server.cmd.ResultListBuilder;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.server.callback.IStreamingCallback;
-import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.AfterClass;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,54 +34,12 @@ import static org.junit.Assert.fail;
  */
 @Jobs({ "job059658" })
 @TestId("Dev131_CancelCommandCallbackTest")
-public class CancelCommandCallbackTest extends P4JavaTestCase {
+public class CancelCommandCallbackTest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", CancelCommandCallbackTest.class.getSimpleName());
 
 	private static IClient client = null;
-	private static IChangelist changelist = null;
-	private static List<IFileSpec> files = null;
-
-	public static class SimpleCallbackHandler implements IStreamingCallback {
-		int expectedKey = 0;
-		CancelCommandCallbackTest testCase = null;
-
-		public SimpleCallbackHandler(CancelCommandCallbackTest testCase,
-				int key) {
-			if (testCase == null) {
-				throw new NullPointerException(
-						"null testCase passed to CallbackHandler constructor");
-			}
-			this.expectedKey = key;
-			this.testCase = testCase;
-		}
-
-		public boolean startResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean endResults(int key) throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			return true;
-		}
-
-		public boolean handleResult(Map<String, Object> resultMap, int key)
-				throws P4JavaException {
-			if (key != this.expectedKey) {
-				fail("key mismatch; expected: " + this.expectedKey
-						+ "; observed: " + key);
-			}
-			if (resultMap == null) {
-				fail("null result map in handleResult");
-			}
-			return true;
-		}
-	};
 
 	public static class ListCallbackHandler implements IStreamingCallback {
 
@@ -97,7 +50,7 @@ public class CancelCommandCallbackTest extends P4JavaTestCase {
 		int limit = Integer.MAX_VALUE;
 
 		int count = 0;
-		
+
 		public ListCallbackHandler(CancelCommandCallbackTest testCase,
 				int key, List<Map<String, Object>> resultsList, int limit) {
 			this.expectedKey = key;
@@ -143,24 +96,15 @@ public class CancelCommandCallbackTest extends P4JavaTestCase {
 			if (count >= limit) {
 				return false;
 			}
-			
+
 			return true;
 		}
 
 		public List<Map<String, Object>> getResultsList() {
 			return this.resultsList;
 		}
-	};
-
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		afterEach(server);
 	}
+
 	/**
 	 * @BeforeClass annotation to a method to be run before all the tests in a
 	 *              class.
@@ -168,39 +112,13 @@ public class CancelCommandCallbackTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// initialization code (before each test).
-		fail("FIXME uses remote p4d server");
 		try {
 			Properties props = new Properties();
-
 			props.put("enableProgress", "true");
-
-			server = ServerFactory
-					//.getOptionsServer(this.serverUrlString, props);
-					.getOptionsServer("p4jrpcnts://eng-p4java-vm.perforce.com:20131", props);
+			setupServer(p4d.getRSHURL(), userName, password, true, props);
 			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(userName);
-
-			// Login using the normal method
-			server.login(password, new LoginOptions());
-
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			client = getClient(server);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

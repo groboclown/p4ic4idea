@@ -25,44 +25,7 @@ import com.perforce.p4java.option.Options;
 import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
-/**
- * @author Sean Shou
- * @since 12/09/2016
- */
 public class ParametersTest extends P4JavaTestCase {
-  public void processParameters() throws Exception {
-
-  }
-
-  public void processParameters1() throws Exception {
-
-  }
-
-  public void processParameters2() throws Exception {
-
-  }
-
-  public void processParameters3() throws Exception {
-
-  }
-
-  public void processParameters4() throws Exception {
-
-  }
-
-  public void processParameters5() throws Exception {
-
-  }
-
-
-
-
-
-
-
-
-
-
 
   @Test
   public void addOpts() throws Exception {

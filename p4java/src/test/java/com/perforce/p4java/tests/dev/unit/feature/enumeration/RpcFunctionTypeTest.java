@@ -13,14 +13,14 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 public class RpcFunctionTypeTest extends BaseEnumTestHelper {
 
     /**
-     * @see BaseEnumTestHelper#getEnum()
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#getEnum()
      */
     protected RpcFunctionType[] getEnum() {
 	return RpcFunctionType.values();
     }
 
     /**
-     * @see BaseEnumTestHelper#valueOf(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(java.lang.String)
      */
     protected RpcFunctionType valueOf(String name) {
 	return RpcFunctionType.valueOf(name);

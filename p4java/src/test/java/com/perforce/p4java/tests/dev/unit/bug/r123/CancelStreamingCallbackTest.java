@@ -11,73 +11,48 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.server.cmd.ResultListBuilder;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.IStreamingCallback;
-import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static java.util.Objects.nonNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.fail;
 
 /**
  * Test sync using IStreamingCallback.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job059658"})
 @TestId("Dev123_CancelStreamingCallbackTest")
-@Disabled("Uses external p4d server")
-public class CancelStreamingCallbackTest extends P4JavaTestCase {
-  private IOptionsServer server = null;
+public class CancelStreamingCallbackTest extends P4JavaRshTestCase {
   private IClient client = null;
 
-  @BeforeEach
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CancelStreamingCallbackTest.class.getSimpleName());
+
+  @Before
   public void setUp() throws Exception {
     Properties props = new Properties();
-
     props.put("enableProgress", "true");
-
-    fail("FIXME Attempts a connection to a remote perforce server");
-    server = ServerFactory.getOptionsServer("p4jrpcnts://eng-p4java-vm.perforce.com:20121", props);
-    assertThat(server, notNullValue());
-
-    // Register callback
-    server.registerCallback(new MockCommandCallback());
-    // Connect to the server.
-    server.connect();
-    setUtf8CharsetIfServerSupportUnicode(server);
-
-    // Set the server user
-    server.setUserName(getUserName());
-
-    // Login using the normal method
-    server.login(getPassword(), new LoginOptions());
-
-    client = getDefaultClient(server);
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
+    client = getClient(server);
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
   }
@@ -89,7 +64,7 @@ public class CancelStreamingCallbackTest extends P4JavaTestCase {
   public void testCancelSynFiles() throws Exception {
     String depotFile = "//depot/112Dev/GetOpenedFilesTest/bin/com/perforce/p4cmd/...";
 
-    List<Map<String, Object>> resultsList = newArrayList();
+    List<Map<String, Object>> resultsList = new ArrayList<Map<String, Object>>();
     int key = getRandomInt();
     ListCallbackHandler handler = new ListCallbackHandler(
         this,
@@ -108,13 +83,13 @@ public class CancelStreamingCallbackTest extends P4JavaTestCase {
     assertThat(resultsList, notNullValue());
     assertThat(resultsList.size() > 0, is(true));
 
-    List<IFileSpec> fileList = newArrayList();
+    List<IFileSpec> fileList = new ArrayList<IFileSpec>();
     populateFileSpecs(resultsList, fileList);
     assertThat(fileList, notNullValue());
     assertThat(fileList.size() > 0, is(true));
 
     // Second sync using the same RPC connection (NTS)
-    resultsList = newArrayList();
+    resultsList = new ArrayList<Map<String, Object>>();
     key = getRandomInt();
     handler = new ListCallbackHandler(
         this,
@@ -131,7 +106,7 @@ public class CancelStreamingCallbackTest extends P4JavaTestCase {
     assertThat(resultsList, notNullValue());
     assertThat(resultsList.size() > 0, is(true));
 
-    fileList = newArrayList();
+    fileList = new ArrayList<IFileSpec>();
     populateFileSpecs(resultsList, fileList);
 
     assertThat(fileList, notNullValue());
@@ -143,7 +118,7 @@ public class CancelStreamingCallbackTest extends P4JavaTestCase {
       final List<IFileSpec> fileList) throws AccessException, ConnectionException {
 
     for (Map<String, Object> resultMap : resultsList) {
-      if (nonNull(resultMap)) {
+      if (resultMap != null) {
         for (Map.Entry<String, Object> entry : resultMap.entrySet()) {
           String k = entry.getKey();
           Object v = entry.getValue();
@@ -193,7 +168,7 @@ public class CancelStreamingCallbackTest extends P4JavaTestCase {
       count++;
       failIfConditionFails(count <= limit, "this callback method should not have been called after reaching the limit");
       failIfKeyNotEqualsExpected(key, expectedKey);
-      failIfConditionFails(nonNull(resultMap), "null resultMap passed to handleResult callback");
+      failIfConditionFails(resultMap != null, "null resultMap passed to handleResult callback");
 
       resultsList.add(resultMap);
       return count != limit;

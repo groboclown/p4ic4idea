@@ -39,9 +39,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -65,8 +62,7 @@ import static org.mockito.Mockito.when;
  * @author Sean Shou
  * @since 1/09/2016
  */
-@RunWith(JUnitPlatform.class)
-public class RpcStreamConnectionTest {
+public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	private RpcStreamConnection mockConnection;
 	private int serverPort = 1666;
 	private Socket socket;
@@ -79,7 +75,6 @@ public class RpcStreamConnectionTest {
 	private int recvBufferSize = 15;
 
 	@Before
-	@BeforeEach
 	public void beforeEach() throws ConnectionException, IOException {
 		socket = mock(Socket.class);
 		when(socket.getInetAddress()).thenReturn(null);
@@ -178,7 +173,7 @@ public class RpcStreamConnectionTest {
 		verify(topOutputStream, times(1)).close();
 	}
 
-	@Test
+	@Test(expected=ConnectionException.class)
 	public void disconnect_nonNull_rsh_with_out_exception() throws Exception {
 		RpcPacketDispatcher dispatcher = mock(RpcPacketDispatcher.class);
 		mockConnection.rsh("rsh");
@@ -186,7 +181,7 @@ public class RpcStreamConnectionTest {
 		doThrow(new IOException()).when(topInputStream).close();
 
 		mockConnection.topInputStream(topInputStream);
-		assertThrows(ConnectionException.class, () -> mockConnection.disconnect(dispatcher));
+		mockConnection.disconnect(dispatcher);
 	}
 
 	@Test
@@ -198,38 +193,39 @@ public class RpcStreamConnectionTest {
 		verify(topOutputStream, times(3)).flush();
 	}
 
-	@Test
+	@Test(expected=ConnectionException.class)
 	public void given_usingCompression_isFalse_and_with_exception_when_useConnectionCompression() throws Exception {
 		mockConnection.setUsingCompression(false);
 
 		doThrow(new IOException()).when(topOutputStream).flush();
-		assertThrows(ConnectionException.class, () -> mockConnection.useConnectionCompression());
+		mockConnection.useConnectionCompression();
 	}
 
-	@Test
+	@Test(expected=ConnectionException.class)
 	public void given_topInputStream_read_return_lessThanZero_when_getRpcPacket() throws Exception {
 		RpcPacketFieldRule fieldRule = mock(RpcPacketFieldRule.class);
 		IFilterCallback filterCallback = mock(IFilterCallback.class);
 
 		when(topInputStream.read(any((byte[].class)))).thenReturn(-1);
-		assertThrows(ConnectionException.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
+		mockConnection.getRpcPacket(fieldRule, filterCallback);
 	}
 
-	@Test
-	public void putRpcPacket_null_rpcPacket() {
-		assertThrows(NullPointerException.class, () -> mockConnection.putRpcPacket(null));
+	@Test(expected=NullPointerException.class)
+	public void putRpcPacket_null_rpcPacket() throws ConnectionException {
+		mockConnection.putRpcPacket(null);
 	}
 
-	@Test
+	@Test(expected=P4JavaError.class)
 	public void putRpcPacket_nonNull_rpcPacket_but_funcNameString_isNull() throws Exception {
 		RpcPacket rpcPacket = mock(RpcPacket.class);
 		when(rpcPacket.getFuncNameString()).thenReturn(null);
-		assertThrows(P4JavaError.class, () -> mockConnection.putRpcPacket(rpcPacket));
+		mockConnection.putRpcPacket(rpcPacket);
 	}
 
 	@Test
 	public void processNameArgs() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		ImmutableMap<String, Object> nameArgs = ImmutableMap.of("key1", "value1");
+	    HashMap<String, Object> nameArgs = new HashMap<String, Object>();
+		nameArgs.put("key1", "value1");
 		RpcPacket packet = RpcPacket.constructRpcPacket(RpcFunctionSpec.CLIENT_ACK, nameArgs, null);
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
 		mockConnection.processNameArgs(packet, supplier);
@@ -274,7 +270,7 @@ public class RpcStreamConnectionTest {
 
 		byte[] sendBytes = new byte[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
 		when(supplier.sendBytes()).thenReturn(sendBytes);
-		when(supplier.sendBytes(any())).thenReturn(supplier);
+		when(supplier.sendBytes(any(byte[].class))).thenReturn(supplier);
 		when(supplier.sendPos()).thenReturn(7);
 		when(supplier.sendPos(anyInt())).thenReturn(supplier);
 
@@ -283,7 +279,7 @@ public class RpcStreamConnectionTest {
 
 	private void verifyMockRpcPacketSupplier(RpcStreamConnection.RpcPacketSupplier supplier, int argsLength) {
 		verify(supplier, times(argsLength)).sendBytes();
-		verify(supplier, times(argsLength)).sendBytes(any());
+		verify(supplier, times(argsLength)).sendBytes(any(byte[].class));
 		verify(supplier, times(argsLength)).sendPos();
 		verify(supplier, times(argsLength)).sendPos(anyInt());
 	}
@@ -305,16 +301,17 @@ public class RpcStreamConnectionTest {
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
 		mockConnection.calculatePreambleBytesAndSendtoDownstream(supplier);
 		verify(topOutputStream).flush();
-		verify(topOutputStream).write(any(), eq(0), anyInt());
+		verify(topOutputStream).write(any(byte[].class), eq(0), anyInt());
 	}
 
-	@Test
+	// p4ic4idea: changed exception
+	@Test(expected=ConnectionException.class)
 	public void calculatePreambleBytesAndSendtoDownstream_with_SocketTimeoutException()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
+			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException,
+			ConnectionException {
 		RpcStreamConnection.RpcPacketSupplier supplier = createMockRpcPacketSupplier();
 		doThrow(SocketTimeoutException.class).when(topOutputStream).write(any(), eq(0), anyInt());
-		assertThrows(ConnectionException.class,
-				() -> mockConnection.calculatePreambleBytesAndSendtoDownstream(supplier));
+		mockConnection.calculatePreambleBytesAndSendtoDownstream(supplier);
 	}
 
 	@Test
@@ -375,6 +372,7 @@ public class RpcStreamConnectionTest {
 	@Test
 	public void initRshModeServer_withException() {
 		mockConnection.rsh(null);
+		// p4ic4idea: original throws NPE.
 		assertThrows(ConnectionException.class, () -> mockConnection.initRshModeServer());
 	}
 
@@ -401,43 +399,18 @@ public class RpcStreamConnectionTest {
 
 		reset(rpcSocketPool);
 		doThrow(UnknownHostException.class).when(rpcSocketPool).acquire();
-		// explicit change to throw a ConnectionException.
+		// p4ic4idea: explicit change to throw a ConnectionException; was UnknownHostException
 		assertThrows(ConnectionException.class, () -> mockConnection.initSocketBasedServer());
 
 		reset(rpcSocketPool);
 		doThrow(IOException.class).when(rpcSocketPool).acquire();
+		// p4ic4idea: explicit change to throw a ConnectionException; was IOException
 		assertThrows(ConnectionException.class, () -> mockConnection.initSocketBasedServer());
 
-		// Throwable is never explicitly caught.  Try a runtime instead
+		// p4ic4idea: Throwable is never explicitly caught.  Try a runtime instead
 		reset(rpcSocketPool);
 		doThrow(RuntimeException.class).when(rpcSocketPool).acquire();
 		assertThrows(ConnectionException.class, () -> mockConnection.initSocketBasedServer());
-	}
-
-
-	/**
-	 * Assert exception from method. Tests that the target exception
-	 * and the cause for the target exception is as expected.
-	 *
-	 * @param mockConnection the mock connection
-	 * @param method the method
-	 * @param expectedException the expected exception
-	 * @throws IllegalAccessException the illegal access exception
-	 * @throws IllegalArgumentException the illegal argument exception
-	 */
-	private void assertSslHandshakeExceptionFromMethod(
-			RpcStreamConnection mockConnection,
-			Method method,
-			Class<? extends Throwable> expectedException)
-			throws IllegalAccessException, IllegalArgumentException {
-		try {
-			method.invoke(mockConnection);
-		} catch (InvocationTargetException ite) {
-			assertNotNull(ite.getTargetException());
-			assertEquals(ite.getTargetException().getClass(), SslHandshakeException.class);
-			assertNotNull(ite.getTargetException().getCause());
-			assertEquals(ite.getTargetException().getCause().getClass(), expectedException);
-		}
 	}
 
 	@Test

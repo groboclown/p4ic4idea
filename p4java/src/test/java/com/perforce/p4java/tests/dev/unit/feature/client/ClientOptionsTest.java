@@ -1,19 +1,18 @@
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
+import com.perforce.p4java.impl.generic.client.ClientOptions;
+import com.perforce.p4java.tests.dev.annotations.Standalone;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import java.io.File;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.io.File;
-
-import org.junit.Test;
-
-import com.perforce.p4java.impl.generic.client.ClientOptions;
-import com.perforce.p4java.tests.dev.annotations.Standalone;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  
@@ -32,7 +31,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("ClientOptionsTest01")
 @Standalone
-public class ClientOptionsTest extends P4JavaTestCase {
+public class ClientOptionsTest extends P4JavaRshTestCase {
 	
 	String clientDir = defaultTestClientName + "_Dir" + File.separator + testId;
 	

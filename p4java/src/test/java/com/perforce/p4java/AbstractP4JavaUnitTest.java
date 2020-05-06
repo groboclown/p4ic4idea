@@ -22,7 +22,6 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileSizesOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
 import org.junit.jupiter.api.function.Executable;
@@ -38,28 +37,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Assert;
+
 import static com.perforce.p4java.core.ChangelistStatus.NEW;
 import static com.perforce.p4java.core.ChangelistStatus.PENDING;
 import static com.perforce.p4java.core.ChangelistStatus.SUBMITTED;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
 import static com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser.toServerMessage;
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/**
- * @author Sean Shou
- * @since 25/08/2016
- *
- * @deprecated this is big, old, and nasty.  It shouldn't be used.  There are much better alternatives to
- * 		the general usage that this is trying to solve, and the utility stuff should instead be put into a
- * 	    utility class.
- */
 public abstract class AbstractP4JavaUnitTest {
 	protected static IOptionsServer server = null;
 	protected IClient client = null;
@@ -92,7 +80,7 @@ public abstract class AbstractP4JavaUnitTest {
 			final IChangelist changelist,
 			final List<IFileSpec> revertFileSpecs) {
 
-		if (nonNull(client) && nonNull(changelist)) {
+		if (client != null && changelist != null) {
 			try {
 				ChangelistStatus status = changelist.getStatus();
 				if (status == PENDING) {
@@ -111,7 +99,7 @@ public abstract class AbstractP4JavaUnitTest {
 				.setChangelistId(changelist.getId());
 
 		client.revertFiles(changelist.getFiles(true), revertFilesOptions);
-		if (nonNull(server)) {
+		if (server != null) {
 			server.deletePendingChangelist(changelist.getId());
 		}
 	}
@@ -144,7 +132,7 @@ public abstract class AbstractP4JavaUnitTest {
 
 	protected void connectToServer(final String clientName) throws Exception {
 		client = server.getClient(clientName);
-		assertThat(client, notNullValue());
+		Assert.assertNotNull(client);
 		server.setCurrentClient(client);
 	}
 
@@ -207,9 +195,9 @@ public abstract class AbstractP4JavaUnitTest {
 				FileSpecBuilder.makeFileSpecList(fileDepotPath),
 				false);
 
-		assertThat(fileDepotPath, depotFileSpecs, notNullValue());
-		assertThat(fileDepotPath, depotFileSpecs.size(), is(1));
-		assertThat(fileDepotPath, depotFileSpecs.get(0).getFileType(), is(expectedPerforceFileType));
+		Assert.assertNotNull(fileDepotPath, depotFileSpecs);
+		Assert.assertEquals(fileDepotPath, 1, depotFileSpecs.size());
+		Assert.assertEquals(fileDepotPath, expectedPerforceFileType, depotFileSpecs.get(0).getFileType());
 	}
 
 	protected void verifyServerSideFileSize(
@@ -220,9 +208,9 @@ public abstract class AbstractP4JavaUnitTest {
 				FileSpecBuilder.makeFileSpecList(fileDepotPath),
 				new GetFileSizesOptions().setMaxFiles(1));
 
-		assertThat(fileDepotPath, depotFileSizes, notNullValue());
-		assertThat(fileDepotPath, depotFileSizes.size(), is(1));
-		assertThat(fileDepotPath, depotFileSizes.get(0).getFileSize(), is(expectedFileSize));
+		Assert.assertNotNull(fileDepotPath, depotFileSizes);
+		Assert.assertEquals(fileDepotPath, 1, depotFileSizes.size());
+		Assert.assertEquals(fileDepotPath, expectedFileSize, depotFileSizes.get(0).getFileSize());
 	}
 
 	protected void verifyFileSizeAfterSyncFromDepot(
@@ -234,11 +222,11 @@ public abstract class AbstractP4JavaUnitTest {
 				FileSpecBuilder.makeFileSpecList(fileDepotPath),
 				new SyncOptions().setForceUpdate(true));
 		if (files.size() < 1) {
-			fail("Sync test file: " + fileDepotPath + "failed");
+			Assert.fail("Sync test file: " + fileDepotPath + "failed");
 		}
 		IFileSpec fileSpec = files.get(0);
-		assertThat(fileDepotPath, fileSpec.getDepotPathString(), containsString(fileDepotPath));
-		assertThat(fileDepotPath, Files.size(fileLocalPath), is(expectedFileSize));
+		Assert.assertThat(fileDepotPath, fileSpec.getDepotPathString(), containsString(fileDepotPath));
+		Assert.assertEquals(fileDepotPath, expectedFileSize, Files.size(fileLocalPath));
 	}
 
 	protected SubmittingSupplier submitFileThatLoadFromClassPath(
@@ -253,11 +241,11 @@ public abstract class AbstractP4JavaUnitTest {
 
 		deleteDepotFileFromServerSideIfExist(submittingFileSpecs);
 		IChangelist changelist = submitFileToDepot(submittingFileSpecs);
-		assertThat(changelist, notNullValue());
+		Assert.assertNotNull(changelist);
 		List<IFileSpec> submittedFiles = changelist.getFiles(true);
-		assertThat(submittedFiles.size(), is(1));
+		Assert.assertEquals(1, submittedFiles.size());
 		IFileSpec file = submittedFiles.get(0);
-		assertThat(file.getDepotPathString(), containsString(fileDepotPath));
+		Assert.assertThat(file.getDepotPathString(), containsString(fileDepotPath));
 
 		return new SubmittingSupplier(submittingFileSpecs.get(0), changelist, targetLocalFile);
 	}

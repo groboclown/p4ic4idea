@@ -1,31 +1,22 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test high-ascii client name with non-unicode server.
@@ -37,70 +28,42 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * Client 'xxx_<wrongchar>' unknown - use 'client' command to create it.
  * </pre>
  */
-@RunWith(JUnitPlatform.class)
-@Jobs({ "job060527" })
+
+@Jobs({"job060527"})
 @TestId("Dev131_HighASCIIClientNameTest")
-@Disabled("Uses external p4d server")
-public class HighASCIIClientNameTest extends P4JavaTestCase {
+public class HighASCIIClientNameTest extends P4JavaRshTestCase {
 
-    /** The server. */
-    private IOptionsServer server = null;
+	private static final String utf8_clientName = "Test_job060527_\u00F9_abcd";
 
-    /**
-     * Sets the up.
-     *
-     * @throws Exception the exception
-     */
-    @BeforeEach
-    public void setUp() throws Exception {
-        server = getServer();
-        assertThat(server, notNullValue());
-        IClient client = getDefaultClient(server);
-        assertThat(client, notNullValue());
-        server.setCurrentClient(client);
-    }
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r18.1", HighASCIIClientNameTest.class.getSimpleName());
+	private static IClient client;
 
-    /**
-     * Tear down.
-     */
-    @AfterEach
-    public void tearDown() {
-        if (nonNull(server)) {
-            endServerSession(server);
-        }
-    }
+	@BeforeClass
+	public static void before() throws Throwable {
+		setupServer(p4d.getRSHURL(), userName, password, true, null);
 
-    /**
-     * Test high ascii client name.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testHighASCIIClientName() throws Exception {
-        Charset cs = Charset.defaultCharset();
-        String clientName = cs.name().equals("UTF-8") ? "Test_job060527_ù_abcd"
-                : "Test2_job060527_ù_abcd";
-        final int count = 99;
-        List<IClientSummary> clients = server.getClients("p4jtestuser2", null, count);
-        assertThat(clients.size() > 0, is(true));
+		client = createClient(server, utf8_clientName);
+		server.setCurrentClient(client);
+	}
 
-        String[] args = { "-o", clientName };
-        Map<String, Object>[] resultsMap = server.execMapCmd(CmdSpec.CLIENT.toString(), args, null);
-        assertThat(resultsMap, notNullValue());
+	/**
+	 * Test high ascii client name.
+	 *
+	 * @throws Exception the exception
+	 */
+	@Test
+	public void testHighASCIIClientName() throws Exception {
+		List<IFileSpec> fileSpecs = FileSpecBuilder.makeFileSpecList("//depot/basic/...");
 
-        IClient testClient = server.getClient(clientName);
-        assertThat(clientName + "is not a known client on "
-                + server.getServerInfo().getServerAddress(), testClient != null);
+		fileSpecs = client.where(fileSpecs);
+		assertThat(fileSpecs, notNullValue());
+		assertThat("incorrect size", fileSpecs.size() == 1);
 
-        server.setCurrentClient(testClient);
-        List<IFileSpec> files = FileSpecBuilder
-                .makeFileSpecList("//depot/112Dev/Attributes/test03.txt");
-
-        files = testClient.where(files);
-
-        assertThat(files, notNullValue());
-        assertThat(files.size() > 0, is(true));
-
-        assertThat(files.get(0).getOpStatus(), is(FileSpecOpStatus.VALID));
-    }
+		IFileSpec element = fileSpecs.get(0);
+		String clientPath = "//" + utf8_clientName + "/basic/...";
+		assertThat(element.getOpStatus(), is(FileSpecOpStatus.VALID));
+		assertThat("file spec: " + element.getClientPathString() + " does not contain path: " + clientPath,
+				element.getClientPathString().contains(clientPath));
+	}
 }

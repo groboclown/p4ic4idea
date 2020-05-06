@@ -53,7 +53,10 @@ public class ExceptionCodesTest {
         helper.addFile(server, user, client, testFile.getAbsolutePath(), "ExceptionCodesTest", "text");
     }
 
-    @DisplayName("verify the error code")
+    /**
+     * verify the error code
+     * @throws Throwable
+     */
     @Test
     public void basicUsage() throws Throwable {
         String depotPath = "//asdfaasd/...";

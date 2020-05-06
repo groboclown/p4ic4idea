@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features121;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.IStreamIgnoredMapping;
@@ -31,38 +18,35 @@ import com.perforce.p4java.impl.generic.core.Stream.StreamRemappedMapping;
 import com.perforce.p4java.impl.generic.core.Stream.StreamViewMapping;
 import com.perforce.p4java.option.server.GetStreamOptions;
 import com.perforce.p4java.option.server.StreamOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 stream' command.
  */
 @Jobs({ "job051988" })
 @TestId("Dev121_GetStreamOptionsTest")
-public class GetStreamOptionsTest extends P4JavaTestCase {
+public class GetStreamOptionsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
+	String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetStreamOptionsTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -71,14 +55,16 @@ public class GetStreamOptionsTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
+		    Properties properties = new Properties();
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			createStreamsDepot(streamsDepotName, server, streamDepth);
+			IStream stream = Stream.newStream(server, "//p4java_stream/main", Type.MAINLINE.toString(),null, "main dev stream", null, null, null, null, null);
+			server.createStream(stream);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -104,6 +90,7 @@ public class GetStreamOptionsTest extends P4JavaTestCase {
 		String streamPath = "//p4java_stream/simple" + randNum;
 
 		try {
+
 			ViewMap<IStreamRemappedMapping> remappedView = new ViewMap<IStreamRemappedMapping>();
 			StreamRemappedMapping entry = new StreamRemappedMapping();
 			entry.setLeftRemapPath("y/*");
@@ -135,7 +122,7 @@ public class GetStreamOptionsTest extends P4JavaTestCase {
 			stream.setIgnoredView(ignoredView);
 			stream.setStreamView(view);
 			server.createStream(stream);
-
+			
 			// Using "stream -o"
 			// The client view should be empty
 			stream = server.getStream(streamPath);

@@ -3,25 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features123;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.perforce.p4java.server.IServerMessage;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -37,40 +18,44 @@ import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.ShelveFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileDiffsOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simulate client side 'diff' using server side 'diff2' with shelving.
  */
-@Jobs({ "job057847" })
+@Jobs({"job057847"})
 @TestId("Dev123_DiffFilesTest")
-public class DiffFilesTest extends P4JavaTestCase {
+public class DiffFilesTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
 	IChangelist changelist = null;
 	List<IFileSpec> files = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", DiffFilesTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -79,16 +64,15 @@ public class DiffFilesTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
+			Properties properties = new Properties();
+			setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
 			assertNotNull(server);
-			client = server.getClient(getPlatformClientName("p4TestUserWS20112"));
+			client = createClient(server, "diffFilesTestClient");
 			assertNotNull("Could not get client, "
-					+ getPlatformClientName("p4TestUserWS20112")
+					+ getPlatformClientName("diffFilesTestClient")
 					+ " from " + server.getServerInfo().getServerAddress(), client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -129,7 +113,7 @@ public class DiffFilesTest extends P4JavaTestCase {
 			assertTrue("Sync failed to return anything.", files != null && files.size() > 0);
 			messageList = P4JavaTestCase.getErrorsFromFileSpecList(files);
 			assertTrue("Sync returned errors, " + messageList, messageList.size() == 0);
-			
+
 			// Copy a file to be used for add
 			copyFile(file, file2);
 
@@ -143,12 +127,11 @@ public class DiffFilesTest extends P4JavaTestCase {
 			files = client.addFiles(FileSpecBuilder.makeFileSpecList(file2),
 					new AddFilesOptions().setChangelistId(changelist.getId()));
 
-			assertTrue("Add files returned an empty result.", files != null && files.size()!=0);
+			assertTrue("Add files returned an empty result.", files != null && files.size() != 0);
 			messageList = P4JavaTestCase.getErrorsFromFileSpecList(files);
 			assertTrue("Add files returned errors, " + messageList, messageList.size() == 0);
-			
-			
-			
+
+
 			changelist.refresh();
 			files = changelist.submit(new SubmitOptions());
 			assertNotNull(files);
@@ -164,7 +147,7 @@ public class DiffFilesTest extends P4JavaTestCase {
 					FileSpecBuilder.makeFileSpecList(depotFile),
 					new EditFilesOptions().setChangelistId(changelist.getId()));
 
-			assertTrue("Edit files returned an empty result.", files != null && files.size()!=0);
+			assertTrue("Edit files returned an empty result.", files != null && files.size() != 0);
 			messageList = P4JavaTestCase.getErrorsFromFileSpecList(files);
 			assertTrue("Edit files returned errors, " + messageList, messageList.size() == 0);
 
@@ -177,13 +160,13 @@ public class DiffFilesTest extends P4JavaTestCase {
 			files = client.shelveFiles(
 					FileSpecBuilder.makeFileSpecList(depotFile),
 					changelist.getId(), new ShelveFilesOptions());
-			assertTrue("Shelve files returned an empty result.", files != null && files.size()!=0);
+			assertTrue("Shelve files returned an empty result.", files != null && files.size() != 0);
 			messageList = P4JavaTestCase.getErrorsFromFileSpecList(files);
 			assertTrue("Shelve files returned errors, " + messageList, messageList.size() == 0);
 
 			// Run server side 'diff2' with the shelved file and the depot file head
 			InputStream is = server.getFileDiffsStream(new FileSpec(depotFile
-					+ "@=" + changelist.getId()), new FileSpec(depotFile),
+							+ "@=" + changelist.getId()), new FileSpec(depotFile),
 					null, new GetFileDiffsOptions());
 			assertNotNull(is);
 
@@ -206,7 +189,7 @@ public class DiffFilesTest extends P4JavaTestCase {
 					FileSpecBuilder.makeFileSpecList(depotFile),
 					changelist.getId(),
 					new ShelveFilesOptions().setDeleteFiles(true));
-			assertTrue("Delete shelved files returned an empty result.", files != null && files.size()!=0);
+			assertTrue("Delete shelved files returned an empty result.", files != null && files.size() != 0);
 			messageList = P4JavaTestCase.getErrorsFromFileSpecList(files);
 			assertTrue("Delete shelved files returned errors, " + messageList, messageList.size() == 0);
 
@@ -241,7 +224,7 @@ public class DiffFilesTest extends P4JavaTestCase {
 						deleteChangelist = client
 								.createChangelist(deleteChangelist);
 						client.deleteFiles(FileSpecBuilder
-								.makeFileSpecList(new String[] { depotFile }),
+										.makeFileSpecList(new String[]{depotFile}),
 								new DeleteFilesOptions()
 										.setChangelistId(deleteChangelist
 												.getId()));

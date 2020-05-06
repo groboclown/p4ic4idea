@@ -23,7 +23,6 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.List;
 
-import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -68,7 +67,10 @@ public class CreateUserTest {
         }
     }
 
-    // attempt to create a user
+    /**
+     * attempt to create a user
+     * @throws Exception
+     */
     @Test
     public void basicUsage() throws Exception {
         server.setUserName(testUser);
@@ -89,7 +91,10 @@ public class CreateUserTest {
         verifyCreatedUsers(users);
     }
 
-    // attempt to create a user
+    /**
+     * attempt to create a user forced
+     * @throws Exception
+     */
     @Test
     public void forcedCreation() throws Exception {
         createAndVerifyCreatedUser(null);
@@ -102,7 +107,7 @@ public class CreateUserTest {
 
     private void createAndVerifyCreatedUser(UserType userType) throws ConnectionException, RequestException, AccessException {
         IUser user = new User();
-        if (nonNull(userType)) {
+        if (userType != null) {
             user.setType(userType);
         }
         user.setLoginName(testUser);
@@ -124,8 +129,10 @@ public class CreateUserTest {
         }
     }
 
-    // attempt to create a service user; currently we don't have a way to run
-    // p4 users -a so we can't see the user that is created
+    /** attempt to create a service user; currently we don't have a way to run
+     * p4 users -a so we can't see the user that is created
+     * @throws Exception
+     */
     @Test
     public void userType() throws Exception {
         createAndVerifyCreatedUser(UserType.SERVICE);

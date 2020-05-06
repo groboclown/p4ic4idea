@@ -3,24 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.IStreamSummary;
@@ -29,44 +11,41 @@ import com.perforce.p4java.impl.generic.core.Stream;
 import com.perforce.p4java.option.server.GetStreamsOptions;
 import com.perforce.p4java.option.server.StreamOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the IOptionsServer.getStreams method.
  */
 @Jobs({ "job046686" })
 @TestId("Dev112_GetStreamsTest")
-public class StreamsTest extends P4JavaTestCase {
+public class StreamsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
-
 	IOptionsServer superServer = null;
+	String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", StreamsTest.class.getSimpleName());
 
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
+	
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
@@ -74,15 +53,12 @@ public class StreamsTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = getClient(server);
+			createStreamsDepot(streamsDepotName, server, streamDepth);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 
 	/**
@@ -205,7 +181,7 @@ public class StreamsTest extends P4JavaTestCase {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
 			try {
-				superServer = getServerAsSuper();
+			    superServer = getSuperConnection(p4d.getRSHURL());
 				assertNotNull(superServer);
 				String serverMessage = superServer.deleteStream(newStreamPath2,
 						new StreamOptions().setForceUpdate(true));

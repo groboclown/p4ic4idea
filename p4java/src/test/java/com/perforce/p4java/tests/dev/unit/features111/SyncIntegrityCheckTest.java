@@ -9,6 +9,9 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -38,6 +41,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 public class SyncIntegrityCheckTest extends P4JavaTestCase {
 
 	public SyncIntegrityCheckTest() {
+	}
+	
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	@Test
@@ -158,7 +171,6 @@ public class SyncIntegrityCheckTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testUnicodeTransfer() {
-		fail("FIXME uses remote p4d server");
 		IOptionsServer server = null;
 		IClient client = null;
 		final String testServer = "p4java://win-qa7.perforce.com:8838";

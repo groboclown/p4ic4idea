@@ -3,21 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -34,10 +19,21 @@ import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.server.SwitchClientViewOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 client -s' command. Switch an existing client spec's view without
@@ -46,36 +42,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046682" })
 @TestId("Dev112_SwitchClientViewTest")
-public class SwitchClientViewTest extends P4JavaTestCase {
+public class SwitchClientViewTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient p4jTestClient = null;
 	IClient testClient1 = null;
 	IClient testClient2 = null;
 	String message = null;
 	IChangelist changelist = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SwitchClientViewTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -84,11 +60,9 @@ public class SwitchClientViewTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -326,7 +300,7 @@ public class SwitchClientViewTest extends P4JavaTestCase {
 			}
 			try {
 				// Delete the test clients
-				server = getServerAsSuper();
+			    server = getSuperConnection(p4d.getRSHURL());
 				if (server != null) {
 					if (testClient1 != null) {
 						server.deleteClient(testClient1.getName(), true);
@@ -335,11 +309,9 @@ public class SwitchClientViewTest extends P4JavaTestCase {
 						server.deleteClient(testClient2.getName(), true);
 					}
 				}
-			} catch (P4JavaException e) {
+			} catch (Exception e) {
 				// Can't do much here...
-			} catch (URISyntaxException e) {
-				// Can't do much here...
-			}
+			} 
 		}
 	}
 }

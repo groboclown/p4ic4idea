@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -25,23 +12,34 @@ import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test force update of the "Date" field for submitted changelists.
  */
 @Jobs({ "job045050" })
 @TestId("Dev112_UpdateChangelistDateTest")
-@Disabled("Uses external p4d server")
-public class UpdateChangelistDateTest extends P4JavaTestCase {
+public class UpdateChangelistDateTest extends P4JavaRshTestCase {
 	private static IClient client = null;
-	private static MockCommandCallback callback = new MockCommandCallback();
+
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", UpdateChangelistDateTest.class.getSimpleName());
 
 	/**
 	 * @AfterClass annotation to a method to be run after all the tests in a
@@ -59,20 +57,7 @@ public class UpdateChangelistDateTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() throws Exception{
 		// initialization code (before each test).
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
-			assertNotNull(server);
-
-			// Register callback
-			server.registerCallback(callback);
-			// Connect to the server.
-			server.connect();
-
-			// Set the server user
-			server.setUserName(superUserName);
-
-			// Login using the normal method
-			server.login(superUserPassword, new LoginOptions());
-
+	        setupServer(p4d.getRSHURL(), superUserName, superUserPassword, false, props);
 			client = server.getClient("p4TestSuperWS20112");
 			assertNotNull(client);
 			server.setCurrentClient(client);

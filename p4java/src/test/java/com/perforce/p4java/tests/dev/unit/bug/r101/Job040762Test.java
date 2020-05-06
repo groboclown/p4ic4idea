@@ -11,6 +11,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -23,7 +26,6 @@ import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Note that this test is somewhat brittle; for example,
@@ -31,8 +33,16 @@ import org.junit.jupiter.api.Disabled;
  * slightly different in the next release, things will fail...
  */
 @TestId("Bugs101_Job040762Test")
-@Disabled("Uses external p4d server")
 public class Job040762Test extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	public Job040762Test() {
 	}

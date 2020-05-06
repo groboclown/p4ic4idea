@@ -1,24 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static java.util.Objects.nonNull;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.platform.commons.util.StringUtils.isBlank;
-
-import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -38,37 +19,49 @@ import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.ResolveFilesAutoOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test "p4 fstat -Or" output: "resolveType[x]" and "reresolvable" tags.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job059627"})
 @TestId("Dev131_FstatResolveTypeTest")
-@Disabled("Uses external p4d server")
-public class FstatResolveTypeTest extends P4JavaTestCase {
+public class FstatResolveTypeTest extends P4JavaRshTestCase {
+
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", FstatResolveTypeTest.class.getSimpleName());
 
   public static final String LINE_SEPARATOR = System.getProperty("line.separator", "\n");
-
-  private IOptionsServer server = null;
   private IClient client = null;
   private IChangelist changelist = null;
 
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    server = getServer();
-    assertThat(server, notNullValue());
-    client = server.getClient("p4TestUserWS20112");
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
+    client = getClient(server);
+    createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_it.properties", "desc");
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
     afterEach(server);
   }
@@ -196,7 +189,7 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
       // Check for invalid filespecs
       List<IFileSpec> invalidFiles = FileSpecBuilder.getInvalidFileSpecs(integrateFiles);
       if (invalidFiles.size() != 0) {
-        fail(invalidFiles.get(0).getOpStatus() + ": "
+        Assert.fail(invalidFiles.get(0).getOpStatus() + ": "
             + invalidFiles.get(0).getStatusMessage());
       }
 
@@ -225,7 +218,7 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
 
       // Check file operation status info message
       assertThat(resolveFiles.get(1).getOpStatus(), is(FileSpecOpStatus.VALID));
-      assertThat(resolveFiles.get(1).getStatusMessage(), nullValue());
+      assertTrue(resolveFiles.get(1).getStatusMessage() == null);
 
       // Refresh changelist
       changelist.refresh();
@@ -237,7 +230,7 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
       assertThat(submitFiles, notNullValue());
 
       // Check for correct number of filespecs
-      assertThat(submitFiles.size(), is(2));
+      assertThat(submitFiles.size(), is(3));
 
       // Check for 'must resolve' and 'Merges still pending' in info and
       // error messages
@@ -253,7 +246,7 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
           files,
           new ResolveFilesAutoOptions()
               .setChangelistId(changelist.getId())
-              .setAcceptTheirs(true).setForceTextualMerge(true));
+              .setAcceptTheirs(true).setForceTextualMerge(true).setForceResolve(true));
       assertThat(resolveFiles, notNullValue());
 
       // Use fstat -Or to verify the file action and file type on the pending resolved file
@@ -271,11 +264,11 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
       assertThat(submitFiles, notNullValue());
 
       // There should be 5 filespecs (triggers set up on machine)
-      assertThat(submitFiles.size(), is(5));
+      assertThat(submitFiles.size(), is(2));
 
       // Check the status and file action of the submitted file
-      assertThat(submitFiles.get(3).getOpStatus(), is(FileSpecOpStatus.VALID));
-      assertThat(submitFiles.get(3).getAction(), is(FileAction.INTEGRATE));
+      assertThat(submitFiles.get(0).getOpStatus(), is(FileSpecOpStatus.VALID));
+      assertThat(submitFiles.get(0).getAction(), is(FileAction.INTEGRATE));
 
       // Check for 'Submitted as change' in the info message
       assertThat(submitFiles.get(4).getStatusMessage(), containsText(submittedChange + " " + changelist.getId()));
@@ -286,7 +279,7 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
 
 
     } finally {
-      if (nonNull(client) && nonNull(changelist)) {
+      if (client != null && changelist != null) {
         if (changelist.getStatus() == ChangelistStatus.PENDING) {
           try {
             // Revert files in pending changelist
@@ -299,7 +292,7 @@ public class FstatResolveTypeTest extends P4JavaTestCase {
           }
         }
       }
-      if (nonNull(client) && nonNull(server)) {
+      if (client != null && server != null) {
         try {
           // Delete submitted test files
           IChangelist deleteChangelist = getNewChangelist(server,

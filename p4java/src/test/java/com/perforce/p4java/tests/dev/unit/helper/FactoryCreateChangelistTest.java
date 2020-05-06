@@ -8,6 +8,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -17,6 +20,7 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.jupiter.api.BeforeAll;
 
 /**
  * Basic Factory createChangelist tests.
@@ -26,6 +30,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 public class FactoryCreateChangelistTest extends P4JavaTestCase {
 
 	public FactoryCreateChangelistTest() {
+	}
+
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	@Test

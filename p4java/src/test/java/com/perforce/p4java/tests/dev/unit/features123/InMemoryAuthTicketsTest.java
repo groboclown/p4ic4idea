@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,6 +54,9 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
      */
     @BeforeClass
     public static void beforeAll() {
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+
         // initialization code (before each test).
 
         try {
@@ -89,6 +93,9 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
         // cleanup code (after each test).
         afterEach(server);
         afterEach(superServer);
+
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.endTestClass();
     }
 
     /**

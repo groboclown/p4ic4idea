@@ -3,22 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r112;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Iterator;
-import java.util.List;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IDepot;
 import com.perforce.p4java.core.IUser;
@@ -27,11 +11,23 @@ import com.perforce.p4java.core.IUserSummary.UserType;
 import com.perforce.p4java.impl.generic.core.User;
 import com.perforce.p4java.option.server.UpdateUserGroupOptions;
 import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Iterator;
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 passwd'. Specifying a username as an argument to 'p4 passwd'
@@ -39,36 +35,15 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job044472", "job044417" })
 @TestId("Dev112_ChangePasswordTest")
-@Disabled("Uses external p4d server")
-public class ChangePasswordTest extends P4JavaTestCase {
+public class ChangePasswordTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
-	MockCommandCallback callback = new MockCommandCallback();
-
 	IOptionsServer superServer = null;
 	IClient superClient = null;
-	MockCommandCallback superCallback = new MockCommandCallback();
-
 	IUser newUser = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangePasswordTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -78,23 +53,14 @@ public class ChangePasswordTest extends P4JavaTestCase {
 		// initialization code (before each test).
 
 		try {
-			server = getServer(getServerUrlString(), props, getUserName(),
-					getPassword());
-			assertNotNull(server);
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
 			client = server.getClient("p4TestUserWS20112");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-			// Register callback
-			server.registerCallback(callback);
-
-			superServer = getServer(getServerUrlString(), props,
-					getSuperUserName(), getSuperUserPassword());
+			superServer = getSuperConnection(p4d.getRSHURL());
 			assertNotNull(superServer);
 			superClient = superServer.getClient("p4TestSuperWS20112");
 			superServer.setCurrentClient(superClient);
-			// Register callback
-			superServer.registerCallback(superCallback);
-
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		}
@@ -118,7 +84,7 @@ public class ChangePasswordTest extends P4JavaTestCase {
 	 * Test 'p4 passwd'.
 	 */
 	@Test
-	public void testChangPassword() {
+	public void testChangePassword() {
 		try {
 			// Create a new user, password not set.
 			int randNum = getRandomInt();
@@ -147,8 +113,8 @@ public class ChangePasswordTest extends P4JavaTestCase {
 			
 			// Login with a empty password.
 			server.login("");
-			assertNotNull(callback.getMessage());
-			assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
+			assertNotNull(serverMessage);
+			assertThat(serverMessage, containsText("'login' not necessary, no password set for this user."));
 			
 			// Change password
 			String password1 = "abc ' \" # @ 12' \" \" 3";
@@ -175,8 +141,8 @@ public class ChangePasswordTest extends P4JavaTestCase {
 			
 			// Login with the new password
 			server.login(password1);
-			assertNotNull(callback.getMessage());
-			assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+			assertNotNull(serverMessage);
+			assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
 			// Should get a list of depots
 			depots = server.getDepots();
@@ -190,8 +156,8 @@ public class ChangePasswordTest extends P4JavaTestCase {
 
 			// Login again
 			server.login(password2);
-			assertNotNull(callback.getMessage());
-			assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+			assertNotNull(serverMessage);
+			assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
 			// Delete the password
 			String password3 = null;
@@ -201,15 +167,10 @@ public class ChangePasswordTest extends P4JavaTestCase {
 			
 			// Login again
 			server.login(password3);
-			assertNotNull(callback.getMessage());
-			assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
+			assertNotNull(serverMessage);
+			assertThat(serverMessage, containsText("'login' not necessary, no password set for this user."));
 
 			// Use the super user to change the password to something else
-			superServer = getServer(getServerUrlString(), props,
-					"p4jtestsuper", "p4jtestsuper");
-			assertNotNull(superServer);
-			superClient = superServer.getClient("p4TestSuperWS20112");
-			superServer.setCurrentClient(superClient);
 			String password4 = "abcd1234";
 			message = superServer.changePassword(null, password4, newUserName);
 			assertNotNull(message);
@@ -225,8 +186,8 @@ public class ChangePasswordTest extends P4JavaTestCase {
 
 			// Login using the new password
 			server.login(password4);
-			assertNotNull(callback.getMessage());
-			assertThat(callback.getMessage(), containsText("User " + newUserName + " logged in."));
+			assertNotNull(serverMessage);
+			assertThat(serverMessage, containsText("User " + newUserName + " logged in."));
 
 			// Get a list of depots
 			depots = server.getDepots();

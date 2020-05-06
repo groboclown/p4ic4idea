@@ -1,16 +1,15 @@
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
+import com.perforce.p4java.core.file.IntegrationOptions;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
-import com.perforce.p4java.core.file.IntegrationOptions;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 
 /**
@@ -19,7 +18,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * IntegrationOptions. This will be added to as we run across opportunities to add tests.
  */
 @TestId("ClientIntegrationTest01")
-public class ClientIntegrationTest extends P4JavaTestCase {
+public class ClientIntegrationTest extends P4JavaRshTestCase {
 
 	/**
 	 * IntegrationOptions default constructor. Ensures all values

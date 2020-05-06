@@ -22,22 +22,22 @@ public class RequestExceptionTest extends BaseThrowableTestHelper {
     }
 
     /**
-     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.String)
      */
     protected Throwable createThrowable(String message) {
 	return new RequestException(message);
     }
 
     /**
-     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(Throwable)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.Throwable)
      */
     protected Throwable createThrowable(Throwable cause) {
 	return new RequestException(cause);
     }
 
     /**
-     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(String,
-     *      Throwable)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.String,
+     *      java.lang.Throwable)
      */
     protected Throwable createThrowable(String message, Throwable cause) {
 	return new RequestException(message, cause);

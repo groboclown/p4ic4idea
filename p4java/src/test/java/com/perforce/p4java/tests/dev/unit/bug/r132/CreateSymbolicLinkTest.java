@@ -1,24 +1,21 @@
 package com.perforce.p4java.tests.dev.unit.bug.r132;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SymbolicLinkHelper;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SymbolicLinkHelper;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test create symbolic link with non-existing target.
  */
-@RunWith(JUnitPlatform.class)
-public class CreateSymbolicLinkTest extends P4JavaTestCase {
+
+public class CreateSymbolicLinkTest extends P4JavaRshTestCase {
     /**
      * Test create symbolic link with non-existing target.
      */

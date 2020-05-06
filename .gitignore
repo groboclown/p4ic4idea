@@ -38,3 +38,5 @@ local.properties.*
 /*/target/pacts/
 
 /p4java/.p4tickets
+/p4java/tmp/
+/p4java/p4d.d-*/

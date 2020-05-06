@@ -1,15 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.feature.server;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.common.base.OSUtils;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConfigException;
@@ -25,8 +15,20 @@ import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.IServerImplMetadata;
 import com.perforce.p4java.server.ServerFactory;
 import com.perforce.p4java.server.ZeroconfServerInfo;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simple server factory tests. Not a lot is actually tested here
@@ -37,12 +39,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("Server_ServerFactoryTest01")
-public class ServerFactoryTest extends P4JavaTestCase {
+public class ServerFactoryTest extends P4JavaRshTestCase {
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ServerFactoryTest.class.getSimpleName());
 
 	@Test
-	public void testGetServerDefaultProtocol() {
+	public void testGetServerDefaultProtocol()
+			throws IOException {
 		try {
-			IServer server = ServerFactory.getServer(getServerUrlString(), null);
+			IServer server = ServerFactory.getServer(p4d.getRSHURL(), null);
 			assertNotNull("Null server returned", server);
 			// Not much else we can say at this point...
 		} catch (ConnectionException e) {

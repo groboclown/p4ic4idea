@@ -11,17 +11,14 @@ import static org.junit.matchers.JUnitMatchers.containsString;
 import java.io.File;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.core.IUserSummary;
-import com.perforce.p4java.core.IUserSummary.UserType;
 import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.test.TestServer;

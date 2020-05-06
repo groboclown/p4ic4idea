@@ -42,7 +42,6 @@ public class ChangeDelegatorTest {
     private static final String MESSAGE_CODE_NOT_IN_INFO_RANGE = "168435456";
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "285219021";
 
-
     /** The mock changelist options. */
     private ChangelistOptions mockChangelistOptions;
 

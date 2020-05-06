@@ -3,21 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -33,10 +18,22 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.ResolveFilesAutoOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test Resolve files with new "contentResolveType" tagged field.
@@ -55,69 +52,48 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046677" })
 @TestId("Dev112_ContentResolveTypeTest")
-public class ContentResolveTypeTest extends P4JavaTestCase {
+public class ContentResolveTypeTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
+    IClient client = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ContentResolveTypeTest.class.getSimpleName());
 
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
 
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-		try {
-			server = getServer();
-			assertNotNull(server);
-            client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
-	}
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() throws Exception {
+        // initialization code (before each test).
+        try {
+            Properties properties = new Properties();
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+            client = createClient(server, "ContentResolveTypeTestClient");
+            assertNotNull(client);
+            server.setCurrentClient(client);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
+    }
 
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-		if (server != null) {
-			this.endServerSession(server);
-		}
-	}
-	
+    /**
+     * @After annotation to a method to be run after each test in a class.
+     */
+    @After
+    public void tearDown() {
+        // cleanup code (after each test).
+        if (server != null) {
+            this.endServerSession(server);
+        }
+    }
+    
     /**
      * Test content resolve type field
      */
     @Test
-    public void testResolveFileContentChanges() throws Exception {
-		int randNum = getRandomInt();
+    public void testResolveFileContentChanges() {
+        int randNum = getRandomInt();
         String lineSep = System.getProperty("line.separator", "\n");
         String testdir = "testdir" + randNum;
         String testfile = "testfile.txt";
@@ -231,9 +207,8 @@ public class ContentResolveTypeTest extends P4JavaTestCase {
             assertTrue(fileSpecs.get(0).getOpStatus() == FileSpecOpStatus.VALID);
             assertEquals(fileSpecs.get(0).getContentResolveType(), "3waytext");
 
-        // p4ic4idea: just throw the exception
-        //} catch (Exception exc) {
-        //    fail("Unexpected exception: " + exc.getLocalizedMessage());
+        } catch (Exception exc) {
+            fail("Unexpected exception: " + exc.getLocalizedMessage());
         } finally {
             if (client != null) {
                 if (changelist != null) {

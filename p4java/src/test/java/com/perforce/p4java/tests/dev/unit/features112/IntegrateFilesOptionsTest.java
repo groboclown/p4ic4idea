@@ -7,11 +7,7 @@ import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.Test;
 
 import java.util.List;
@@ -27,41 +23,7 @@ import static org.junit.Assert.fail;
  */
 @Jobs({ "job046102" })
 @TestId("Dev112_IntegrateFilesOptionsTest")
-public class IntegrateFilesOptionsTest extends P4JavaTestCase {
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-	}
+public class IntegrateFilesOptionsTest extends P4JavaRshTestCase {
 
 	@Test
     public void testDefaultIntegrateFilesOptionsValues() {

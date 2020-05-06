@@ -3,17 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileSpecBuilder;
@@ -22,33 +11,61 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.ShelveFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.List;
+import java.util.Properties;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Some simple-minded shelve/ unshelve tests. Not intended to
  * be a comprehensive test setup.
  */
 @TestId("Client_ShelveUnshelveTest")
-public class ShelveUnshelveTest extends P4JavaTestCase {
+public class ShelveUnshelveTest extends P4JavaRshTestCase {
 	
 	public static final String TEST_ROOT = "//depot/client/ShelveUnshelveTest/...";
 
 	public ShelveUnshelveTest() {
 	}
 
+	IClient client = null;
+	
+	@Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ShelveUnshelveTest.class.getSimpleName());
+
+	 /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), userName, password, true, properties);
+        client = getClient(server);
+     }
+
 	@Test
 	public void testSimpleShelveUnshelve() {
-		IOptionsServer server = null;
-		IClient client = null;
+		
 		IChangelist changelist = null;
 		IChangelist targetChangelist = null;
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			forceSyncFiles(client, TEST_ROOT);
 			changelist = client.createChangelist(this.createChangelist(client));
 			assertNotNull(changelist);

@@ -3,24 +3,29 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
+import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IBranchMapping;
 import com.perforce.p4java.core.IBranchSpec;
 import com.perforce.p4java.core.IBranchSpecSummary;
 import com.perforce.p4java.core.ViewMap;
 import com.perforce.p4java.impl.generic.core.BranchSpec;
-import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test to ensure that branches work properly when there are
@@ -32,7 +37,25 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @Jobs({"Job035374"})
 @TestId("BranchPathSpacesTest01")
-public class BranchPathSpacesTest extends P4JavaTestCase {
+public class BranchPathSpacesTest extends P4JavaRshTestCase {
+
+    private IClient client = null;
+
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", BranchPathSpacesTest.class.getSimpleName());
+
+    /**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void beforeEach() throws Exception{
+        Properties properties = new Properties();
+        setupServer(p4d.getRSHURL(), userName, password, true, properties);
+        client = getClient(server);
+     }
 
 	@Test
 	public void testSpacedPathNames() {
@@ -40,8 +63,8 @@ public class BranchPathSpacesTest extends P4JavaTestCase {
 		final String testLeft01 = "\"//depot/ratna/Java9.2 TimeLapse View test/...\"";
 		final String testRight01 = "\"//depot/ratna/Java9.2 TimeLapse View test2/...\"";
 		try {
-			IServer server = getServer();
-			assertNotNull("Null server returned", server);
+		    
+		    
 			String newBranchName = getRandomName("Branch");
 			
 			List<IBranchSpecSummary> branchList = null;

@@ -1,36 +1,29 @@
 package com.perforce.p4java.impl.mapbased.rpc.sys;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * RpcOutputStream Tester.
- *
- * @author Sean
- * @version 1.0
- * @since <pre>Jul 20, 2016</pre>
  */
-@RunWith(JUnitPlatform.class)
 public class RpcOutputStreamTest {
 
-  @BeforeAll
+  @BeforeClass
   public static void beforeAll() {
   }
 
-  @AfterAll
+  @AfterClass
   public static void afterAll() {
   }
 
-  @BeforeEach
+  @Before
   public void beforeEach() {
   }
 
-  @AfterEach
+  @After
   public void afterEach() throws Exception {
   }
 

@@ -38,10 +38,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/**
- * @author Sean Shou
- * @since 15/09/2016
- */
 @SuppressWarnings("unchecked")
 public class ClientDelegatorTest {
     @Rule

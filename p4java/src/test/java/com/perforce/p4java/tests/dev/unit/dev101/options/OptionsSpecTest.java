@@ -3,15 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.exception.OptionsException;
 import com.perforce.p4java.option.Options;
@@ -19,7 +10,15 @@ import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.Standalone;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Simple standalone test for Options.processFields and associated
@@ -29,7 +28,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Standalone
 @Jobs({"job039408"})
 @TestId("Dev101_OptionsSpecTest")
-public class OptionsSpecTest extends P4JavaTestCase {
+public class OptionsSpecTest extends P4JavaRshTestCase {
 	
 	static public class TestOptions extends Options {
 
@@ -68,17 +67,17 @@ public class OptionsSpecTest extends P4JavaTestCase {
 			try {
 				optsList = testOpts.processFields("b:d", 89);
 				fail("expected options exception for boolean opt / arg type mismatch");
-			} catch (OptionsException exc) {
+			} catch (OptionsException exc) {	
 			}
 			try {
 				optsList = testOpts.processFields("i:d", "hello");
 				fail("expected options exception for integer opt / arg type mismatch");
-			} catch (OptionsException exc) {
+			} catch (OptionsException exc) {	
 			}
 			try {
 				optsList = testOpts.processFields("s:d", 56);
 				fail("expected options exception for string opt / arg type mismatch");
-			} catch (OptionsException exc) {
+			} catch (OptionsException exc) {	
 			}
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());

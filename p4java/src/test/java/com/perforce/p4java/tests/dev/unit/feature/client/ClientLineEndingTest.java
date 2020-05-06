@@ -1,24 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.feature.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Scanner;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.common.base.OSUtils;
@@ -34,8 +15,30 @@ import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.rpc.sys.RpcLineEndFilterOutputStream;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Scanner;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /*
@@ -44,7 +47,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 
 @TestId("ClientLineEndingTest01")
-public class ClientLineEndingTest extends P4JavaTestCase {
+public class ClientLineEndingTest extends P4JavaRshTestCase {
 
     private static String clientDir = defaultTestClientName + "_Dir" + File.separator + testId;
 
@@ -71,9 +74,15 @@ public class ClientLineEndingTest extends P4JavaTestCase {
     private static String clientRoot;
     private static String clientFilePath;
 
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ClientLineEndingTest.class.getSimpleName());
+
     @BeforeClass
     public static void beforeAll() throws Exception {
-        server = getServer(getServerUrlString(), null, userName, "");
+        setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, props);
         client = server.getClient(getPlatformClientName(defaultTestClientName));
         clientRoot = client.getRoot();
         clientFilePath = clientRoot + File.separator + clientDir;
@@ -181,8 +190,6 @@ public class ClientLineEndingTest extends P4JavaTestCase {
         boolean fileCreated = false;
 
         try {
-
-            IServer server = getServer(getServerUrlString(), null, userName, "");
             IClient client = server.getClient(getPlatformClientName(defaultTestClientName));
             server.setCurrentClient(client);
             String clientRoot = client.getRoot();
@@ -816,7 +823,7 @@ public class ClientLineEndingTest extends P4JavaTestCase {
      * with the specified name
      */
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = java.lang.IllegalArgumentException.class)
     public void testCLEValueOfIllegalArgException() {
 
         @SuppressWarnings("unused")
@@ -881,7 +888,7 @@ public class ClientLineEndingTest extends P4JavaTestCase {
     /**
      * This test should throw an NullPointerException
      */
-    @Test(expected = NullPointerException.class)
+    @Test(expected = java.lang.NullPointerException.class)
     public void testCLEValueOfNullPtrException() {
 
         @SuppressWarnings("unused")
@@ -1211,15 +1218,11 @@ public class ClientLineEndingTest extends P4JavaTestCase {
     public List<IFileSpec> taskAddSubmitSyncTestFiles(String[] fNameList,
                                                       IClientSummary.ClientLineEnd newLineEnd) {
 
-        IServer server = null;
         IClient client = null;
         IClientSummary.ClientLineEnd currLineEnd = null;
         List<IFileSpec> syncFiles = null;
 
         try {
-            server = getServer(getServerUrlString(), null, userName, "");
-            assertNotNull("Null Server Returned!!", server);
-
             server.setUserName(userName);
             server.login(password);
 

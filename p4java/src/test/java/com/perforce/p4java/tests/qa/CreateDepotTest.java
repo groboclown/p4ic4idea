@@ -67,7 +67,10 @@ public class CreateDepotTest {
         }
     }
 
-    @DisplayName("attempt to create a local depot")
+    /**
+     * attempt to create a local depot
+     * @throws Exception
+     */
     @Test
     public void basicUsage() throws Exception {
         int depotSize = getDepotSize();
@@ -91,7 +94,10 @@ public class CreateDepotTest {
         assertThat(depots.size(), is(depotSize + 1));
     }
 
-    @DisplayName("create remote depot")
+    /**
+     * create remote depot
+     * @throws Exception
+     */
     @Test
     public void remoteDepot() throws Exception {
         int depotSize = getDepotSize();
@@ -134,7 +140,10 @@ public class CreateDepotTest {
         return server.getDepots().size();
     }
 
-    @DisplayName("create spec depot")
+    /**
+     * create spec depot
+     * @throws Exception
+     */
     @Test
     public void specDepot() throws Exception {
         int depotSize = getDepotSize();
@@ -172,7 +181,10 @@ public class CreateDepotTest {
         assertThat(depotSeen, is(true));
     }
 
-    @DisplayName("create depot with illegal name - overlapping name")
+    /**
+     * create depot with illegal name - overlapping name
+     * @throws Exception
+     */
     @Test
     public void overlappingName() throws Exception {
         try {
@@ -194,7 +206,10 @@ public class CreateDepotTest {
         }
     }
 
-    @DisplayName("create depot with illegal name - purely numeric name")
+    /**
+     * create depot with illegal name - purely numeric name
+     * @throws Exception
+     */
     @Test
     public void pureNumericName() throws Exception {
         try {
@@ -217,7 +232,10 @@ public class CreateDepotTest {
         }
     }
 
-    @DisplayName("create depot with illegal name - Revision chars (@, #)")
+    /**
+     * create depot with illegal name - Revision chars (@, #)
+     * @throws Exception
+     */
     @Test
     public void symbolName() throws Exception {
         try {

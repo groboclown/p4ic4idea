@@ -13,6 +13,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -38,7 +41,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({"job059485"})
 @TestId("Dev123_PasswordTest")
-@Disabled("Uses external p4d server")
+//@Disabled("Uses external p4d server")
 public class PasswordTest extends P4JavaTestCase {
 
   private static IOptionsServer superServer = null;
@@ -46,10 +49,19 @@ public class PasswordTest extends P4JavaTestCase {
   private static IUser newUser = null;
   private static MockCommandCallback callback = new MockCommandCallback();
 
+  // p4ic4idea: use local server
+  @BeforeClass
+  public static void oneTimeSetUp() {
+    UnitTestDevServerManager.INSTANCE.startTestClass();
+  }
+  @AfterClass
+  public static void oneTimeTearDown() {
+    UnitTestDevServerManager.INSTANCE.endTestClass();
+  }
+
   @BeforeAll
   public static void setUp() throws Exception {
     server = getServer(
-        getServerUrlString(),
         props,
         getUserName(),
         getPassword());
@@ -60,7 +72,6 @@ public class PasswordTest extends P4JavaTestCase {
     // Register callback
     server.registerCallback(callback);
     superServer = getServer(
-        getServerUrlString(),
         props,
         getSuperUserName(),
         getSuperUserPassword());
@@ -198,7 +209,7 @@ public class PasswordTest extends P4JavaTestCase {
       assertThat(depots, notNullValue());
       assertThat(depots.size() > 0, is(true));
     } finally {
-      if (nonNull(superServer) && nonNull(newUser)) {
+      if (superServer != null && newUser != null) {
         String message = superServer.deleteUser(
             newUser.getLoginName(), true);
         assertThat(message, notNullValue());

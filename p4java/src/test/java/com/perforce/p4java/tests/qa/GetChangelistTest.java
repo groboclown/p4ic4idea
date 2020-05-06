@@ -22,7 +22,6 @@ import static com.perforce.p4java.core.IChangelistSummary.Visibility.RESTRICTED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.StringContains.containsString;
 
 @RunWith(JUnitPlatform.class)
 public class GetChangelistTest {

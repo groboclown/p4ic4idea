@@ -11,14 +11,11 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Properties;
 
 @Jobs({ "job093734" })
-@RunWith(JUnitPlatform.class)
 public class Job093734Test extends P4JavaRshTestCase {
 
 	private static final String userName = "p4jtestsuper";

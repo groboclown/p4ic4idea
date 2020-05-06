@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+
 @RunWith(JUnitPlatform.class)
 public class GetBranchspecsTest {
 
@@ -54,7 +55,10 @@ public class GetBranchspecsTest {
 	}
 
 
-	@DisplayName("verify job046825: case-insensitive name matching")
+	/**
+	 * verify job046825: case-insensitive name matching
+	 * @throws Throwable
+	 */
 	@Test
 	public void caseInsensitiveListing() throws Throwable {
 		GetBranchSpecsOptions opts = new GetBranchSpecsOptions();
@@ -66,7 +70,10 @@ public class GetBranchspecsTest {
 	}
 
 
-	@DisplayName("verify case-sensitive name matching")
+	/**
+	 * verify case-sensitive name matching
+	 * @throws Throwable
+	 */
 	@Test
 	public void caseSensitiveListing() throws Throwable {
 		GetBranchSpecsOptions opts = new GetBranchSpecsOptions();
@@ -82,7 +89,10 @@ public class GetBranchspecsTest {
 	}
 
 
-	@DisplayName("verify setting the -t flag doesn't break anything")
+	/**
+	 * verify setting the -t flag doesn't break anything
+	 * @throws Throwable
+	 */
 	@Test
 	public void getTime() throws Throwable {
 		GetBranchSpecsOptions opts = new GetBranchSpecsOptions();

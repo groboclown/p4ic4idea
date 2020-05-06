@@ -13,14 +13,14 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 public class FileSpecOpStatusTest extends BaseEnumTestHelper {
 
     /**
-     * @see BaseEnumTestHelper#getEnum()
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#getEnum()
      */
     protected FileSpecOpStatus[] getEnum() {
 	return FileSpecOpStatus.values();
     }
 
     /**
-     * @see BaseEnumTestHelper#valueOf(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(java.lang.String)
      */
     protected FileSpecOpStatus valueOf(String name) {
 	return FileSpecOpStatus.valueOf(name);

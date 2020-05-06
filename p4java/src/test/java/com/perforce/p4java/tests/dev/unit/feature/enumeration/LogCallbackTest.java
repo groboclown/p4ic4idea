@@ -17,13 +17,13 @@ public class LogCallbackTest extends BaseEnumTestHelper {
      * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#getEnum()
      */
     protected LogTraceLevel[] getEnum() {
-	return LogTraceLevel.values();
+	return ILogCallback.LogTraceLevel.values();
     }
 
     /**
-     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(java.lang.String)
      */
     protected LogTraceLevel valueOf(String name) {
-	return LogTraceLevel.valueOf(name);
+	return ILogCallback.LogTraceLevel.valueOf(name);
     }
 }

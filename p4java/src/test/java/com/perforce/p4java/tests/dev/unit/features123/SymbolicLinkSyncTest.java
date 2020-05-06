@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -57,6 +58,9 @@ public class SymbolicLinkSyncTest extends P4JavaTestCase {
      */
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.startTestClass("unicode");
+
         superServer = getServerAsSuper();
         superClient = superServer.getClient("p4TestSuperWS20112");
         assertNotNull(superClient);
@@ -76,6 +80,9 @@ public class SymbolicLinkSyncTest extends P4JavaTestCase {
     public static void oneTimeTearDown() {
         afterEach(superServer);
         afterEach(server);
+
+        // p4ic4idea: use local server
+        UnitTestDevServerManager.INSTANCE.endTestClass("unicode");
     }
 
     /**

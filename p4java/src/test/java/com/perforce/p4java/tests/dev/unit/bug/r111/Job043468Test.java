@@ -3,36 +3,36 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r111;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IUser;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.core.User;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.option.server.UpdateUserOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test for successful logins with very long passwords.
  */
 @TestId("Bugs111_Job043468Test")
-@Disabled("Uses external p4d server")
-public class Job043468Test extends P4JavaTestCase {
+public class Job043468Test extends P4JavaRshTestCase {
 
 	public Job043468Test() {
 	}
 
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job043468Test.class.getSimpleName());
+	
 	@Test
 	public void testLongPasswords() {
-		IOptionsServer server = null;
-		IOptionsServer server2 = null;
 		IUser user = null;
 		final String userName = "p4jtestjob043468";
 		final String fullName = "Test user created by junit test " + this.getTestId();
@@ -40,14 +40,14 @@ public class Job043468Test extends P4JavaTestCase {
 		final String expectedStatus = "User " + userName + " saved.";
 		
 		try {
-			server = this.getServerAsSuper();
+			server = getSuperConnection(p4d.getRSHURL());
 			user = User.newUser(userName, "invalid@invalid.invalid", fullName, userPassword);
 			assertNotNull(user);
 			String createStr = server.createUser(user, new UpdateUserOptions().setForceUpdate(true));
 			assertNotNull("null status string from createUser", createStr);
 			assertEquals("user not created on server: " + createStr, expectedStatus, createStr);
 			
-			server2 = getServer(getServerUrlString(), null, null, null);
+			IOptionsServer server2 = getServer(p4d.getRSHURL(), null, null, null);
 			assertNotNull(server2);
 			server2.setUserName(userName);
 			server2.login(userPassword, new LoginOptions());

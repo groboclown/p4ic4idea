@@ -1,27 +1,23 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-
-import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.option.client.SyncOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test sync 'apple' type (AppleSingle) file. This apple file will be unpacked
@@ -31,26 +27,28 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * 2. Resource fork
  * </pre>
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job061056"})
 @TestId("Dev13.1_SyncAppleFileTypeTest")
-@Disabled("Uses external p4d server")
-public class SyncAppleFileTypeTest extends P4JavaTestCase {
-  private IOptionsServer server = null;
+public class SyncAppleFileTypeTest extends P4JavaRshTestCase {
+  
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SyncAppleFileTypeTest.class.getSimpleName());
+
   private IClient client = null;
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    server = getServer();
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
     assertThat(server, notNullValue());
     client = getDefaultClient(server);
     assertThat(client, notNullValue());
     server.setCurrentClient(client);
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
   }

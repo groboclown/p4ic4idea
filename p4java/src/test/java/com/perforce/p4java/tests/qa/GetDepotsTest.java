@@ -24,6 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+
 @RunWith(JUnitPlatform.class)
 public class GetDepotsTest {
 
@@ -82,7 +83,10 @@ public class GetDepotsTest {
         server.createDepot(nd);
     }
 
-    @DisplayName("attempt to delete a depot")
+    /**
+     * attempt to delete a depot
+     * @throws Throwable
+     */
     @Test
     public void basicUsage() throws Throwable {
         List<IDepot> depots = server.getDepots();

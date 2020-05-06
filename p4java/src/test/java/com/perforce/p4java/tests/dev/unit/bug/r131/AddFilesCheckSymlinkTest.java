@@ -1,18 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r131;
 
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.notNullValue;
-
-import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -23,44 +10,54 @@ import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test problem with text file identified as a symlink during an add operation.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job061935"})
 @TestId("Bug131_AddFilesCheckSymlinkTest")
-@Disabled("Uses external p4d server")
-public class AddFilesCheckSymlinkTest extends P4JavaTestCase {
+public class AddFilesCheckSymlinkTest extends P4JavaRshTestCase {
+
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", AddFilesCheckSymlinkTest.class.getSimpleName());
 
   private IOptionsServer superServer = null;
-  private IOptionsServer server = null;
   private IClient client = null;
   private IChangelist changelist = null;
 
-  @BeforeEach
+  @Before
   public void setUp() throws Exception {
-    superServer = getServerAsSuper();
+    superServer = getSuperConnection(p4d.getRSHURL());
     IClient superClient = superServer.getClient("p4TestSuperWS20112");
     assertThat(superClient, notNullValue());
     superServer.setCurrentClient(superClient);
 
-    server = getServer();
-    assertThat(server, notNullValue());
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
     client = server.getClient(SystemInfo.isWindows() ? "p4TestUserWS20112Windows" : "p4TestUserWS20112");
     assertThat(client, notNullValue());
     server.setCurrentClient(client);
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
-    if (nonNull(superServer)) {
+    if (superServer != null) {
       endServerSession(superServer);
     }
-    if (nonNull(server)) {
+    if (server != null) {
       endServerSession(server);
     }
   }
@@ -100,15 +97,15 @@ public class AddFilesCheckSymlinkTest extends P4JavaTestCase {
 
       assertThat(files, notNullValue());
     } finally {
-      if (nonNull(client)
-          && nonNull(changelist)
+      if (client != null
+          && changelist != null
           && (changelist.getStatus() == ChangelistStatus.PENDING)) {
 
         client.revertFiles(
             changelist.getFiles(true),
             new RevertFilesOptions().setChangelistId(changelist.getId()));
         // Delete changelist
-        if (nonNull(superServer)) {
+        if (superServer != null) {
           server.deletePendingChangelist(changelist.getId());
         }
       }

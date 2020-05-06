@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 
+
 /**
  * Test diff2 of unicode file revisions using a stream cmd method
  */
@@ -30,9 +31,7 @@ import java.nio.charset.Charset;
 @TestId("Dev132_StreamCmdDiff2UnicodeTest")
 public class StreamCmdDiff2UnicodeTest extends P4JavaRshTestCase {
   // Unicode server
-  private static final String serverURL = "p4java://localhost:30132";
   private static final String p4Charset = "utf16";
-  
   
   @ClassRule
   public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", StreamCmdDiff2UnicodeTest.class.getSimpleName());

@@ -1,5 +1,24 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.exception.TrustException;
+import com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper;
+import com.perforce.p4java.option.server.TrustOptions;
+import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SSLServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaLocalServerTestCase;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import static com.perforce.p4java.PropertyDefs.TRUST_PATH_KEY_SHORT_FORM;
 import static com.perforce.p4java.exception.TrustException.Type.NEW_CONNECTION;
 import static com.perforce.p4java.exception.TrustException.Type.NEW_KEY;
@@ -11,28 +30,6 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.jupiter.api.Disabled;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.TrustException;
-import com.perforce.p4java.impl.generic.sys.ISystemFileCommandsHelper;
-import com.perforce.p4java.option.server.TrustOptions;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test fingerprint and 'p4 trust' exception message.
@@ -46,11 +43,13 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * with file from new jce package.
  * </pre>
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job056729"})
 @TestId("Dev121_TrustExceptionTest")
-@Disabled("Uses external p4d server")
-public class TrustExceptionTest extends P4JavaTestCase {
+public class TrustExceptionTest extends P4JavaLocalServerTestCase {
+
+    @ClassRule
+    public static SSLServerRule p4d = new SSLServerRule("r16.1", TrustExceptionTest.class.getSimpleName(), "ssl:localhost:10673");
 
     @Before
     public void beforeEach() throws Exception {
@@ -61,18 +60,17 @@ public class TrustExceptionTest extends P4JavaTestCase {
      */
     @Test
     public void testAddTrust() throws Exception {
-        fail("FIXME uses an external p4d server");
 
         String result;
-        String serverUri = "p4javassl://eng-p4java-vm.perforce.com:30121";
         String trustFilePath = System.getProperty("user.dir") + "/" + ".testP4trust_" + System.currentTimeMillis();
         props.setProperty(TRUST_PATH_KEY_SHORT_FORM, trustFilePath);
-        server = ServerFactory.getOptionsServer(serverUri, props);
+        server = ServerFactory.getOptionsServer(p4d.getP4JavaUri(), props);
         assertThat(server, notNullValue());
 
         try {
+//            setupSSLServer(p4d.getP4JavaUri(), userName, password, false, props);
             // Register callback
-            server.registerCallback(new MockCommandCallback());
+            server.registerCallback(createCommandCallback());
 
             // Run remove trust first
             result = server.removeTrust();

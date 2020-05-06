@@ -7,7 +7,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import org.junit.Ignore;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -24,11 +26,20 @@ import org.junit.jupiter.api.Disabled;
  * underlying class-specific factory methods as well.
  */
 @TestId("Commons_FactoryCreateClientTest")
-@Disabled("Uses external p4d server")
-@Ignore("Uses external p4d server")
+//@Disabled("Uses external p4d server")
 public class FactoryCreateClientTest extends P4JavaTestCase {
 
 	public FactoryCreateClientTest() {
+	}
+
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	@Test

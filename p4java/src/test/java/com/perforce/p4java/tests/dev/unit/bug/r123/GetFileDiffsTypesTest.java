@@ -1,20 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-import static java.util.Objects.nonNull;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-
-import java.util.List;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -29,37 +14,47 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetFileDiffsOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test diff2 with two identical files differ only by filetype.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job057913"})
 @TestId("Dev123_GetFileDiffsTypesTest")
-@Disabled("Uses external p4d server")
-public class GetFileDiffsTypesTest extends P4JavaTestCase {
-  private IOptionsServer server = null;
+public class GetFileDiffsTypesTest extends P4JavaRshTestCase {
+  
   private IClient client = null;
   private IChangelist changelist = null;
 
-  @BeforeEach
+  @ClassRule
+  public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetFileDiffsTypesTest.class.getSimpleName());
+
+  @Before
   public void setUp() throws Exception {
-    server = getServer();
-    assertThat(server, notNullValue());
-    client = getDefaultClient(server);
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
+    setupServer(p4d.getRSHURL(), userName, password, true, props);
+    client = getClient(server);
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
     // cleanup code (after each test).
     if (server != null) {
-      this.endServerSession(server);
+      endServerSession(server);
     }
   }
 
@@ -143,8 +138,8 @@ public class GetFileDiffsTypesTest extends P4JavaTestCase {
       assertThat(status, notNullValue());
       assertThat(status, is(IFileDiff.Status.TYPES));
     } finally {
-      if (nonNull(client)) {
-        if (nonNull(changelist) && (changelist.getStatus() == ChangelistStatus.PENDING)) {
+      if (client != null) {
+        if (changelist != null && (changelist.getStatus() == ChangelistStatus.PENDING)) {
           // Revert files in pending changelist
           client.revertFiles(
               changelist.getFiles(true),
@@ -153,7 +148,7 @@ public class GetFileDiffsTypesTest extends P4JavaTestCase {
         }
       }
 
-      if (nonNull(client) && nonNull(server)) {
+      if (client != null && server != null) {
         if (isNotBlank(depotFile)) {
           // Delete submitted test files
           IChangelist deleteChangelist = getNewChangelist(

@@ -52,21 +52,21 @@ public class ProxyAuthTest extends P4JavaTestCase {
                     !serverInfo.getClientAddress().equals(ipaddr));
             
             server = getServer();
-            server.setUserName(getSuperUserName());
-            server.login(getSuperUserPassword());
+            server.setUserName(this.superUserName);
+            server.login(this.superUserPassword);
             this.endServerSession(server);
             
             
 		    Properties props = new Properties();
-		    props.put( "svrname", getSuperUserName() );
+		    props.put( "svrname", this.superUserName );
             props.put( "port", "10.1.1.0:443" );
             props.put( "ipaddr", ipaddr );
 			server = getOptionsServer(getServerUrlString(), props);
-			server.setUserName(getUserName());
+			server.setUserName(this.userName);
 			server.setAuthTicket(ticket.toString());
 			
 			String statusString = server.getLoginStatus();
-			String expectedValue = "User " + getUserName() + " ticket expires in";
+			String expectedValue = "User " + this.userName + " ticket expires in";
 			assertNotNull("null login status string returned from IServer.getLoginStatus",
 						statusString);
 			assertTrue("returned status string '" + statusString + "' wrong for logged-in user;"
@@ -81,7 +81,7 @@ public class ProxyAuthTest extends P4JavaTestCase {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		} finally {
 			if (server != null) {
-				endServerSession(server);
+				this.endServerSession(server);
 			}
 		}
 	}

@@ -1,76 +1,48 @@
 package com.perforce.p4java.tests.dev.unit.bug.r123;
 
-import static com.perforce.p4java.common.base.StringHelper.format;
-import static java.util.Objects.nonNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.option.server.LoginOptions;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
  * Test P4Java sync is around 50% slower than Process.exec("p4 sync")
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({ "job038737" })
 @TestId("Dev123_DescribeChangelistTest")
-@Disabled("Uses external p4d server")
-public class SyncPerformanceTest extends P4JavaTestCase {
-    private IOptionsServer server = null;
+public class SyncPerformanceTest extends P4JavaRshTestCase {
+    
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SyncPerformanceTest.class.getSimpleName());
 
-    @BeforeEach
+    IClient client = null;
+    
+    @Before
     public void setUp() throws Exception {
         Properties props = new Properties();
-
         props.put("sockPerfPrefs", "3, 2, 1");
-        // props.put("tcpNoDelay", "false");
-        // props.put("enableProgress", "true");
-        // props.put("defByteRecvBufSize", "40960");
-
-        server = ServerFactory.getOptionsServer(getServerUrlString(), props);
-        assertThat(server, notNullValue());
-
-        // Register callback
-        server.registerCallback(new MockCommandCallback());
-        // Connect to the server.
-        server.connect();
-        setUtf8CharsetIfServerSupportUnicode(server);
-
-        // Set the server user
-        server.setUserName(getUserName());
-
-        // Login using the normal method
-        server.login(getPassword(), new LoginOptions());
-
-        IClient client = getDefaultClient(server);
-        assertThat(client, notNullValue());
-        server.setCurrentClient(client);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        client = getClient(server);
     }
 
-    @AfterEach
+    @After
     public void tearDown() {
-        if (nonNull(server)) {
+        if (server != null) {
             endServerSession(server);
         }
     }

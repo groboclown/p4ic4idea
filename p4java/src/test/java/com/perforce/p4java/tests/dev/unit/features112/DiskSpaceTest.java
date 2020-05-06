@@ -3,29 +3,25 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import com.perforce.p4java.admin.IDiskSpace;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.admin.IDiskSpace;
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test 'p4 diskspace' command. Shows summary information about the current
@@ -37,51 +33,28 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046668" })
 @TestId("Dev112_DiskSpaceTest")
-public class DiskSpaceTest extends P4JavaTestCase {
+public class DiskSpaceTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", DiskSpaceTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		// initialization code (before each test).
-		// p4ic4idea: just throw the exception
-		//try {
-			server = getServerAsSuper();
+		try {
+			server = getSuperConnection(p4d.getRSHURL());
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		//} catch (P4JavaException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//} catch (URISyntaxException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//}
+		} catch (Exception e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		} 
 	}
 
 	/**

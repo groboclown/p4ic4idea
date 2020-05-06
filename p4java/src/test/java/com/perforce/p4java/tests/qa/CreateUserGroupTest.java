@@ -11,7 +11,6 @@ import com.perforce.test.TestServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -20,7 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
@@ -55,7 +53,10 @@ public class CreateUserGroupTest {
         h.addFile(server, user, client, testFile.getAbsolutePath(), "EditFilesTest", "text");
     }
 
-    @DisplayName("attempt to create a group")
+    /**
+     * attempt to create a group
+     * @throws Exception
+     */
     @Test
     public void basicUsage() throws Exception {
         IUserGroup userGroup = createUserGroup(new UserGroup());
@@ -70,7 +71,7 @@ public class CreateUserGroupTest {
     }
 
     private IUserGroup createUserGroup(IUserGroup group) throws P4JavaException {
-        ArrayList<String> users = newArrayList();
+        ArrayList<String> users = new ArrayList<String>();
         users.add(ts.getUser());
         group.setUsers(users);
         group.setName(groupName);
@@ -83,7 +84,10 @@ public class CreateUserGroupTest {
         return groups.get(0);
     }
 
-    @DisplayName("verify that the password timeout is properly set")
+    /**
+     * verify that the password timeout is properly set
+     * @throws Exception
+     */
     @Test
     public void passwordTimeout() throws Exception {
         IUserGroup userGroup = createUserGroup(1234);

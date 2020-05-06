@@ -3,27 +3,25 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.callback.IStreamingCallback;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 export' streaming command.
@@ -34,100 +32,6 @@ public class GetStreamingExportRecordsTest extends P4JavaTestCase {
 
     private static IClient client = null;
     private Integer journal = 0;
-
-    public static class SimpleCallbackHandler implements IStreamingCallback {
-        int expectedKey = 0;
-        GetStreamingExportRecordsTest testCase = null;
-
-        public SimpleCallbackHandler(GetStreamingExportRecordsTest testCase,
-                                     int key) {
-            if (testCase == null) {
-                throw new NullPointerException(
-                        "null testCase passed to CallbackHandler constructor");
-            }
-            this.expectedKey = key;
-            this.testCase = testCase;
-        }
-
-        public boolean startResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                fail("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean endResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                fail("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean handleResult(Map<String, Object> resultMap, int key)
-                throws P4JavaException {
-            if (key != this.expectedKey) {
-                fail("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            if (resultMap == null) {
-                fail("null result map in handleResult");
-            }
-            return true;
-        }
-    }
-
-    ;
-
-    public static class ListCallbackHandler implements IStreamingCallback {
-
-        int expectedKey = 0;
-        GetStreamingExportRecordsTest testCase = null;
-        List<Map<String, Object>> resultsList = null;
-
-        public ListCallbackHandler(GetStreamingExportRecordsTest testCase,
-                                   int key, List<Map<String, Object>> resultsList) {
-            this.expectedKey = key;
-            this.testCase = testCase;
-            this.resultsList = resultsList;
-        }
-
-        public boolean startResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                fail("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean endResults(int key) throws P4JavaException {
-            if (key != this.expectedKey) {
-                fail("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            return true;
-        }
-
-        public boolean handleResult(Map<String, Object> resultMap, int key)
-                throws P4JavaException {
-            if (key != this.expectedKey) {
-                fail("key mismatch; expected: " + this.expectedKey
-                        + "; observed: " + key);
-            }
-            if (resultMap == null) {
-                fail("null resultMap passed to handleResult callback");
-            }
-            this.resultsList.add(resultMap);
-            return true;
-        }
-
-        public List<Map<String, Object>> getResultsList() {
-            return this.resultsList;
-        }
-    }
-
-    ;
 
     /**
      * @Before annotation to a method to be run before each test in a class.

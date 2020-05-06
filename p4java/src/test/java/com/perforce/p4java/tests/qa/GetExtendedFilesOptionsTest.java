@@ -24,12 +24,12 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.google.common.collect.Maps.newHashMap;
 import static com.perforce.p4java.core.file.FileSpecBuilder.makeFileSpecList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+
 
 @RunWith(JUnitPlatform.class)
 public class GetExtendedFilesOptionsTest {
@@ -84,7 +84,7 @@ public class GetExtendedFilesOptionsTest {
         opts.setChangelistId(pendingChange.getId());
 
         client.editFiles(fileSpec, opts);
-        HashMap<String, String> hm = newHashMap();
+        HashMap<String, String> hm =new HashMap<String, String>();
         hm.put("bazFiles", "1");
         server.setFileAttributes(fileSpec, hm, null);
 
@@ -97,7 +97,7 @@ public class GetExtendedFilesOptionsTest {
         opts.setChangelistId(pendingChange.getId());
 
         client.editFiles(fileSpec, opts);
-        hm = newHashMap();
+        hm = new HashMap<String, String>();
         hm.put("fooFiles", "1");
         server.setFileAttributes(fileSpec, hm, null);
 
@@ -110,7 +110,7 @@ public class GetExtendedFilesOptionsTest {
         opts.setChangelistId(pendingChange.getId());
 
         client.editFiles(fileSpec, opts);
-        hm = newHashMap();
+        hm = new HashMap<String, String>();
         hm.put("fooFiles", "2");
         server.setFileAttributes(fileSpec, hm, null);
 
@@ -123,7 +123,7 @@ public class GetExtendedFilesOptionsTest {
         opts.setChangelistId(pendingChange.getId());
 
         client.editFiles(fileSpec, opts);
-        hm = newHashMap();
+        hm = new HashMap<String, String>();
         hm.put("barFiles", "1");
         server.setFileAttributes(fileSpec, hm, null);
 
@@ -136,7 +136,7 @@ public class GetExtendedFilesOptionsTest {
         opts.setChangelistId(pendingChange.getId());
 
         client.editFiles(fileSpec, opts);
-        hm = newHashMap();
+        hm = new HashMap<String, String>();
         hm.put("binFiles", "57656c636f6d6520746f2050344a61766120696e2068657821");
         SetFileAttributesOptions aOpts = new SetFileAttributesOptions();
         aOpts.setHexValue(true);
@@ -156,7 +156,9 @@ public class GetExtendedFilesOptionsTest {
         client.sync(fileSpec, null);
     }
 
-    @DisplayName("make sure something is fetched even with a null value")
+    /**
+     * make sure something is fetched even with a null value
+     */
     @Test
     public void nullGetExtendedFilesOptions() throws Throwable {
         List<IFileSpec> fileSpec = makeFileSpecList(smallFile.getAbsolutePath());
@@ -175,7 +177,9 @@ public class GetExtendedFilesOptionsTest {
         assertThat(extendedFileSpec.getHaveRev(), is(3));
     }
 
-    @DisplayName("make sure something is fetched even with the default options object and that default objects have correct values")
+    /**
+     * make sure something is fetched even with the default options object and that default objects have correct values
+     */
     @Test
     public void defaultGetExtendedFilesOptions() throws Throwable {
         List<IFileSpec> fileSpec = makeFileSpecList(smallFile.getAbsolutePath());
@@ -206,7 +210,10 @@ public class GetExtendedFilesOptionsTest {
         assertThat(extendedFileSpec.getHaveRev(), is(3));
     }
 
-    @DisplayName("make sure something is fetched even with all default objects")
+    /**
+     * make sure something is fetched even with all default objects
+     * @throws Throwable
+     */
     @Test
     public void defaultHelpers() throws Throwable {
         List<IFileSpec> fileSpec = makeFileSpecList(smallFile.getAbsolutePath());
@@ -256,7 +263,10 @@ public class GetExtendedFilesOptionsTest {
         assertThat(extendedFileSpec.getHaveRev(), is(3));
     }
 
-    @DisplayName("verify mutually exclusive options behave/override correctly ( mostly sort )")
+    /**
+     * verify mutually exclusive options behave/override correctly ( mostly sort )
+     * @throws Throwable
+     */
     @Test
     public void sortBySize() throws Throwable {
         List<IFileSpec> fileSpec = makeFileSpecList("//depot/...");

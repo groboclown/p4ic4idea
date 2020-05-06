@@ -1,7 +1,5 @@
 package com.perforce.p4java.tests.qa;
 
-import com.google.common.io.Files;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IBranchMapping;
 import com.perforce.p4java.core.IBranchSpec;
@@ -23,6 +21,7 @@ import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.FileStatOutputOptions;
 import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
+import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.generic.client.ClientView;
 import com.perforce.p4java.impl.generic.client.ClientView.ClientViewMapping;
 import com.perforce.p4java.impl.generic.core.BranchSpec;
@@ -43,24 +42,25 @@ import com.perforce.test.P4ExtFileUtils;
 import com.perforce.test.TestServer;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
-import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class Helper {
@@ -114,7 +114,7 @@ public class Helper {
         user.setFullName(loginName);
         user.setEmail(loginName + "@email.com");
 
-        if (nonNull(password)) {
+        if (password != null) {
             user.setPassword(password);
         }
 
@@ -122,7 +122,7 @@ public class Helper {
         server.connect();
         server.createUser(user, false);
 
-        if (nonNull(password)) {
+        if (password != null) {
             server.login(password);
         }
         assertThat(server.getUser(loginName), notNullValue());
@@ -143,7 +143,7 @@ public class Helper {
         IClient client = new Client();
         client.setName(name);
         String mapping;
-        if (nonNull(user)) {
+        if (user != null) {
             client.setOwnerName(user.getLoginName());
         }
         if (isBlank(path)) {
@@ -158,7 +158,7 @@ public class Helper {
         } else {
             clientRoot = new File(clientRootPath);
         }
-        assertThat(clientRoot.exists() || clientRoot.mkdir(), is(true));
+        assertThat(clientRoot.mkdir(), is(true));
         client.setRoot(clientRoot.getAbsolutePath());
 
         ClientView clientView = new ClientView();
@@ -205,13 +205,13 @@ public class Helper {
             IClient client) throws Throwable {
         List<IFileSpec> fileSpec = FileSpecBuilder.makeFileSpecList(expandASCII(path));
         EditFilesOptions editFilesOptions = new EditFilesOptions();
-        if (nonNull(changelist)) {
+        if (changelist != null) {
             editFilesOptions.setChangelistId(changelist.getId());
         }
 
         List<IFileSpec> editedFiles = client.editFiles(fileSpec, editFilesOptions);
         validateFileSpecs(editedFiles);
-        if (nonNull(changelist)) {
+        if (changelist != null) {
             changelist.update();
         }
 
@@ -346,8 +346,8 @@ public class Helper {
 
     }
 
-    public IJob addJob(IOptionsServer server, IUser user, String desc) throws Throwable {
-        Map<String, Object> fieldMap = newHashMap();
+    public IJob addJob(IOptionsServer server, IUser user, String desc) throws P4JavaException {
+        Map<String, Object> fieldMap = new HashMap<String, Object>();
         fieldMap.put("Job", "new");
         fieldMap.put("Status", "open");
         fieldMap.put("User", server.getUserName());
@@ -361,21 +361,12 @@ public class Helper {
 
     }
 
-    public void validateFileSpecs(List<IFileSpec> fileSpecs) throws Throwable {
+    public void validateFileSpecs(List<IFileSpec> fileSpecs) {
         assertThat(fileSpecs, notNullValue());
         for (IFileSpec fileSpec : fileSpecs) {
             if (fileSpec.getOpStatus() != FileSpecOpStatus.INFO) {
                 assertThat(fileSpec.getStatusString(), fileSpec.getOpStatus(),
                         is(FileSpecOpStatus.VALID));
-            }
-        }
-    }
-
-    public void assertFileSpecError(List<IFileSpec> fileSpecs) {
-        assertThat(fileSpecs, notNullValue());
-        for (IFileSpec fileSpec : fileSpecs) {
-            if (fileSpec.getOpStatus() == FileSpecOpStatus.ERROR) {
-                assertEquals(fileSpec.getStatusString(), FileSpecOpStatus.ERROR, fileSpec.getOpStatus());
             }
         }
     }
@@ -392,11 +383,13 @@ public class Helper {
     }
 
     public void after(TestServer ts) {
-        if (nonNull(ts)) {
+        if (ts != null) {
             try {
                 ts.delete();
             } catch (Exception e) {
-                throw new AssertionError(e.getMessage(), e);
+                System.err.println(e.getMessage());
+                e.printStackTrace();
+                fail();
             }
         }
     }
@@ -412,9 +405,9 @@ public class Helper {
         FileStatOutputOptions fileStatOutputOptions = new FileStatOutputOptions();
         GetExtendedFilesOptions getExtendedFilesOptions = new GetExtendedFilesOptions();
         getExtendedFilesOptions.setOutputOptions(fileStatOutputOptions);
-        List<IExtendedFileSpec> extendedFileSpecs = newArrayList();
+        List<IExtendedFileSpec> extendedFileSpecs = new ArrayList<IExtendedFileSpec>();
         for (IFileSpec sourceFile : sourceFiles) {
-            List<IFileSpec> sourceFileList = newArrayList();
+            List<IFileSpec> sourceFileList = new ArrayList<IFileSpec>();
             sourceFileList.add(sourceFile);
             fileStatOutputOptions.setShelvedFiles(true);
             getExtendedFilesOptions.setAffectedByChangelist(changelistId);
@@ -447,7 +440,7 @@ public class Helper {
 
     public String fileToString(String file) {
         try {
-            return Files.toString(new File(file), StandardCharsets.UTF_8);
+            return new String(Files.readAllBytes(Paths.get(file)), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("IO problem in fileToString", e);
         }

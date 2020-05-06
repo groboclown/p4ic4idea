@@ -119,6 +119,7 @@ public class ReconcileFilesWhitespacePathTest extends P4JavaRshTestCase {
 				if (f.getOpStatus() == FileSpecOpStatus.INFO) {
 					assertNotNull(f.getStatusMessage());
 					System.out.println("INFO: " + f.getStatusMessage());
+					// p4ic4idea: IServerMessage
 					if (doesMessageContainText(f.getStatusMessage(), "ignored file can't be added")) {
 						ignoreCount++;
 					}

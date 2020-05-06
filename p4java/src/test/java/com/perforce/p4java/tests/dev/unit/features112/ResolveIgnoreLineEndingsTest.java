@@ -3,23 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.core.ChangelistStatus;
@@ -40,60 +23,49 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.client.ResolveFilesAutoOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test resolve file -dl: Ignore differences in line-ending convention
  */
 @Jobs({ "job046102" })
 @TestId("Dev112_ResolveIgnoreLineEndingsTest")
-public class ResolveIgnoreLineEndingsTest extends P4JavaTestCase {
+public class ResolveIgnoreLineEndingsTest extends P4JavaRshTestCase {
 
-    IOptionsServer server = null;
     IClient client = null;
     IChangelist changelist = null;
     List<IFileSpec> files = null;
 
-    /**
-     * @BeforeClass annotation to a method to be run before all the tests in a
-     *              class.
-     */
-    @BeforeClass
-    public static void oneTimeSetUp() {
-        // one-time initialization code (before all the tests).
-        // p4ic4idea: special setup
-        UnitTestDevServerManager.INSTANCE.startTestClass();
-    }
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ResolveIgnoreLineEndingsTest.class.getSimpleName());
 
-    /**
-     * @AfterClass annotation to a method to be run after all the tests in a
-     *             class.
-     */
-    @AfterClass
-    public static void oneTimeTearDown() {
-        // one-time cleanup code (after all the tests).
-        // p4ic4idea: special setup
-        UnitTestDevServerManager.INSTANCE.endTestClass();
-    }
-
-    /**
+     /**
      * @Before annotation to a method to be run before each test in a class.
      */
     @Before
     public void setUp() {
         // initialization code (before each test).
         try {
-            server = getServer();
-            assertNotNull(server);
-            client = server.getClient(getPlatformClientName("p4TestUserWS20112"));
-            assertNotNull(client);
-            server.setCurrentClient(client);
-        } catch (P4JavaException e) {
-            fail("Unexpected exception: " + e.getLocalizedMessage());
-        } catch (URISyntaxException e) {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = createClient(server, "p4TestUserWS20112");
+            createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_it.properties", "desc");
+        } catch (Exception e) {
             fail("Unexpected exception: " + e.getLocalizedMessage());
         }
     }
@@ -163,8 +135,7 @@ public class ResolveIgnoreLineEndingsTest extends P4JavaTestCase {
             // resolve otherwise CRLF vs LF change on the same line in Windows will not be
             // seen as a conflict. Keep the old line end so we can restore it at the end of
             // the test.
-            oldLineEnd =
-                    saveNewClientLineEndInSpec(client, IClientSummary.ClientLineEnd.SHARE);
+            oldLineEnd = saveNewClientLineEndInSpec(client, IClientSummary.ClientLineEnd.SHARE);
             // Copy a file to be used as a target for integrate content changes
             changelist = getNewChangelist(server, client,
                     "Dev112_ResolveIgnoreLineEndingsTest copy files changelist");
@@ -284,15 +255,15 @@ public class ResolveIgnoreLineEndingsTest extends P4JavaTestCase {
             // Submit should succeed as 'shared' line-ending client should have filtered out \r
             List<IFileSpec> submitFiles = changelist.submit(new SubmitOptions());
 
-            // There should be 5 filespecs (triggers)
-            assertEquals(5, submitFiles.size());
+            // There should be 2 filespecs
+            assertEquals(2, submitFiles.size());
 
             // Check the status and file action of the submitted file
-            assertEquals(FileSpecOpStatus.VALID, submitFiles.get(3).getOpStatus());
-            assertEquals(FileAction.INTEGRATE, submitFiles.get(3).getAction());
+            assertEquals(FileSpecOpStatus.VALID, submitFiles.get(0).getOpStatus());
+            assertEquals(FileAction.INTEGRATE, submitFiles.get(0).getAction());
 
             // Check for 'Submitted as change' in the info message
-            assertThat(submitFiles.get(4).getStatusMessage(),
+            assertThat(submitFiles.get(1).getStatusMessage(),
                     containsText(submittedChange + " " + changelist.getId()));
 
             // Make sure the changelist is submitted

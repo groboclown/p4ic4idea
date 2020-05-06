@@ -3,79 +3,71 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.core.IStream;
+import com.perforce.p4java.core.IStreamSummary;
+import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.generic.core.Stream;
+import com.perforce.p4java.option.server.GetStreamsOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
-import com.perforce.p4java.core.IStreamSummary;
-import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.option.server.GetStreamsOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * Test 'p4 streams' command.
  */
 @Jobs({ "job050292" })
 @TestId("Dev112_GetStreamsTest")
-public class GetStreamsTest extends P4JavaTestCase {
+public class GetStreamsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+	private static IClient client = null;
+	private static String streamPathDev = "//p4java_stream/dev";
+	private static String streamPathMain = "//p4java_stream/main";
+	private static String streamsDepotName = "p4java_stream";
+	private static String streamDepth = "//" + streamsDepotName + "/1";
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetStreamsTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
-	@Before
-	public void setUp() {
+	@BeforeClass
+	public static void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
 			assertNotNull(server);
 			client = server.getClient("p4TestUserWS");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			createStreamsDepot(streamsDepotName, server, streamDepth);
+			// Create test streams
+			IStream streamMain = Stream.newStream(server, streamPathMain,
+					"mainline", null, null, null, null, null, null, null);
+			String retVal1 = server.createStream(streamMain);
+			assertNotNull(retVal1);
+			assertEquals(retVal1, "Stream " + streamPathMain + " saved.");
+			IStream streamDev = Stream.newStream(server, streamPathDev,
+					"development", streamPathMain, null, null, null, null, null, null);
+			String retVal = server.createStream(streamDev);
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + streamPathDev + " saved.");
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -83,11 +75,11 @@ public class GetStreamsTest extends P4JavaTestCase {
 	/**
 	 * @After annotation to a method to be run after each test in a class.
 	 */
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void tearDown() {
 		// cleanup code (after each test).
 		if (server != null) {
-			this.endServerSession(server);
+			endServerSession(server);
 		}
 	}
 
@@ -96,7 +88,6 @@ public class GetStreamsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetStreamsError() {
-
 		try {
 			List<String> streamPaths = new ArrayList<String>();
 			streamPaths.add("//depot_abc*");
@@ -139,12 +130,11 @@ public class GetStreamsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetStreamsNotExist() {
-
 		try {
 			List<String> streamPaths = new ArrayList<String>();
-			streamPaths.add("//p4java_stream/testmain6989");
+			streamPaths.add(streamPathMain);
 			streamPaths.add("//depot/*");
-			streamPaths.add("//p4java_stream/testdev2088");
+			streamPaths.add(streamPathDev);
 
 			List<IStreamSummary> streams = server.getStreams(streamPaths, null);
 			assertNotNull(streams);
@@ -160,13 +150,12 @@ public class GetStreamsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetStreams() {
-
-		String streamPath = "//p4java_stream/*";
+		String streamsPath = "//p4java_stream/*";
 
 		try {
 			List<String> streamPaths = new ArrayList<String>();
-			streamPaths.add(streamPath);
-
+			streamPaths.add(streamsPath);
+			
 			List<IStreamSummary> streams = server.getStreams(streamPaths, null);
 			assertNotNull(streams);
 			assertTrue(streams.size() > 1);
@@ -182,7 +171,6 @@ public class GetStreamsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testGetStreamsNoTypes() {
-
 		String streamPath = "//p4java_stream/main";
 
 		try {

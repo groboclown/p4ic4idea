@@ -1,41 +1,41 @@
 package com.perforce.p4java.tests.dev.unit.bug.r121;
 
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Calendar;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.junit.jupiter.api.Disabled;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.Calendar;
+import java.util.List;
+
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test getting changelists from a date range.
  */
 @Jobs({"job053580"})
 @TestId("Dev121_GetChangelistsDateRangeTest")
-@Disabled("Uses external p4d server")
-public class GetChangelistsDateRangeTest extends P4JavaTestCase {
+public class GetChangelistsDateRangeTest extends P4JavaRshTestCase {
+    
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetChangelistsDateRangeTest.class.getSimpleName());
+
     /**
      * @Before annotation to a method to be run before each test in a class.
      */
     @Before
     public void setUp() throws Exception {
-        server = getServer();
-        assertNotNull(server);
-        client = getDefaultClient(server);
-        assertNotNull(client);
-        server.setCurrentClient(client);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
+        client = getClient(server);
     }
 
     /**

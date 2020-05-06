@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -41,14 +42,12 @@ import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Test file types with executable bit set.
  */
 @Jobs({ "job051617" })
 @TestId("Dev112_FiletypesTest")
-@Disabled("Uses external p4d server")
 public class FiletypesTest extends P4JavaTestCase {
 
 	/** The Constant highSecurityLevelServerURL. */
@@ -77,6 +76,8 @@ public class FiletypesTest extends P4JavaTestCase {
 		// one-time initialization code (before all the tests).
 	    filesHelper = OSUtils.isWindows()
 	            ? new WindowsRpcSystemFileCommandsHelper() : new RpcSystemFileCommandsHelper();
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -88,6 +89,8 @@ public class FiletypesTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**

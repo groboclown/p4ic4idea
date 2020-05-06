@@ -34,20 +34,17 @@ import static org.junit.Assert.assertTrue;
 @TestId("Features111_IntegrationsAnnotationsTest")
 public class IntegrationsAnnotationsTest extends P4JavaRshTestCase {
     private static final int TIME_OUT_IN_SECONDS = 60;
-
+    private static IClient client = null;
+    
 	@ClassRule
 	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", IntegrationsAnnotationsTest.class.getSimpleName());
 
 	@BeforeClass
 	public static void beforeAll() throws Exception {
-		setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, null);
+	    Properties rpcTimeOutProperties = configRpcTimeOut("IntegrationsAnnotationsTest", TIME_OUT_IN_SECONDS);
+		setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, rpcTimeOutProperties);
+	    client = getClient(server);
 	}
-
-
-	@Before
-    public void beforeEach() throws Exception {
-        Properties rpcTimeOutProperties = configRpcTimeOut("IntegrationsAnnotationsTest", TIME_OUT_IN_SECONDS);
-    }
 
     @Test
     public void testIntegrationsAnnotations() throws Exception {
@@ -55,9 +52,7 @@ public class IntegrationsAnnotationsTest extends P4JavaRshTestCase {
         final String testFile = testRoot + "/" + "...";
         final List<IFileSpec> testFiles = FileSpecBuilder.makeFileSpecList(testFile);
 
-        IClient client = getDefaultClient(server);
-        assertNotNull("null client returned", client);
-        server.setCurrentClient(client);
+        
         List<IFileSpec> syncFiles = this.forceSyncFiles(client, testRoot + "/...");
         assertNotNull("null sync files list", syncFiles);
         assertEquals("bad forced sync", 0, FileSpecBuilder.getInvalidFileSpecs(syncFiles).size());

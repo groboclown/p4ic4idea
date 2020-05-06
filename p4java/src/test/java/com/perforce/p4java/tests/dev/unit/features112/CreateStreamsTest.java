@@ -3,19 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.IStreamIgnoredMapping;
@@ -29,63 +16,55 @@ import com.perforce.p4java.impl.generic.core.Stream;
 import com.perforce.p4java.impl.generic.core.Stream.StreamIgnoredMapping;
 import com.perforce.p4java.impl.generic.core.Stream.StreamRemappedMapping;
 import com.perforce.p4java.impl.generic.core.Stream.StreamViewMapping;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test 'p4 stream' command.
  */
 @Jobs({ "job050690" })
 @TestId("Dev112_CreateStreamsTest")
-@Disabled("Uses external p4d server")
-public class CreateStreamsTest extends P4JavaTestCase {
+public class CreateStreamsTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
+	String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
+	String parentStreamPath = "//p4java_stream/main";
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", CreateStreamsTest.class.getSimpleName());
 
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
+   
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		// initialization code (before each test).
-		// p4ic4idea: just throw the exception
-		//try {
-			server = getServer();
-			assertNotNull(server);
+		try {
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
 			client = server.getClient("p4TestUserWS");
 			assertNotNull(client);
 			server.setCurrentClient(client);
-		//} catch (P4JavaException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//} catch (URISyntaxException e) {
-		//	fail("Unexpected exception: " + e.getLocalizedMessage());
-		//}
+			createStreamsDepot(streamsDepotName, server, streamDepth);
+			// Creating parent stream for the test
+			IStream stream = Stream.newStream(server, parentStreamPath,
+					"mainline", null, null, null, null, null, null, null);
+			String retVal = server.createStream(stream);
+			// The stream should be created
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + parentStreamPath + " saved.");
+		} catch (Exception e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		}
 	}
 
 	/**
@@ -105,7 +84,12 @@ public class CreateStreamsTest extends P4JavaTestCase {
 	@Test
 	public void testCreateStreams() {
 
-		try {
+	    int randNum = getRandomInt();
+        String streamPath = "//p4java_stream/simple" + randNum;
+
+        
+	    try {
+	     	// Create a stream
 			ViewMap<IStreamRemappedMapping> remappedView = new ViewMap<IStreamRemappedMapping>();
 			StreamRemappedMapping entry = new StreamRemappedMapping();
 			entry.setLeftRemapPath("y/*");
@@ -124,21 +108,23 @@ public class CreateStreamsTest extends P4JavaTestCase {
 			sEntry.setPathType(PathType.SHARE);
 			sEntry.setViewPath("...");
 			sEntry.setOrder(0);
-			view.addEntry(sEntry);	
+			view.addEntry(sEntry);
 
-			IStream stream = new Stream();	
+			IStream stream = new Stream();
 			stream.setDescription("A simple stream");
 			stream.setName("Simple dev stream");
-			stream.setParent("//p4java_stream/main");
-			stream.setStream("//p4java_stream/simple");
+			stream.setParent(parentStreamPath);
+			stream.setStream(streamPath);
 			stream.setOwnerName(server.getUserName());
 			stream.setType(Type.DEVELOPMENT);
 			stream.setRemappedView(remappedView);
 			stream.setIgnoredView(ignoredView);
-			stream.setStreamView(view);		
-			server.createStream(stream);
+			stream.setStreamView(view);
 
-			stream = server.getStream("//p4java_stream/simple");
+			String retVal = server.createStream(stream);
+			assertNotNull(retVal);
+			assertEquals(retVal, "Stream " + streamPath + " saved.");
+			
 			assertTrue(stream.getDescription().contains("A simple stream"));
 
 		} catch (P4JavaException e) {

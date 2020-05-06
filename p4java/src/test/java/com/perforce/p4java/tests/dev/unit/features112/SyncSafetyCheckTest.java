@@ -3,25 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -37,9 +18,25 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.doesMessageContainText;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the sync with safety check.
@@ -61,35 +58,13 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046091" })
 @TestId("Dev112_SyncSafetyCheckTest")
-public class SyncSafetyCheckTest extends P4JavaTestCase {
-
-	IOptionsServer server = null;
-	IClient client = null;
+public class SyncSafetyCheckTest extends P4JavaRshTestCase {
 
 	IOptionsServer server2 = null;
 	IClient client2 = null;
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+	
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", SyncSafetyCheckTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -98,21 +73,18 @@ public class SyncSafetyCheckTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
+		    setupServer(p4d.getRSHURL(), userName, password, true, props);
+			client = getClient(server);
+			createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/bin/gnu/getopt/branch/MessagesBundle_es.properties", "desc");
 
-			server2 = getServer(null, "p4jtestuser2",
-					"p4jtestuser2");
+		    IOptionsServer superServer = getSuperConnection(p4d.getRSHURL());
+		    createUser(superServer, "p4jtestuser2", "p4jtestuser2");
+			server2 = getServer(p4d.getRSHURL(), null, "p4jtestuser2", "p4jtestuser2");
 			assertNotNull(server2);
-			client2 = server2.getClient("p4TestUserWS2");
+			client2 = createClient(server2, "p4TestUserWS2");
 			assertNotNull(client2);
 			server2.setCurrentClient(client2);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}

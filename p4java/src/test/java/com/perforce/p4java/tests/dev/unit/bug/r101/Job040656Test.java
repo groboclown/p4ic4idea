@@ -3,16 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r101;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -27,41 +17,59 @@ import com.perforce.p4java.option.client.EditFilesOptions;
 import com.perforce.p4java.option.client.RevertFilesOptions;
 import com.perforce.p4java.option.client.ShelveFilesOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
  */
 @TestId("Bugs101_Job040656Test")
-@Disabled("Uses external p4d server")
-public class Job040656Test extends P4JavaTestCase {
+public class Job040656Test extends P4JavaRshTestCase {
 
 	public Job040656Test() {
 	}
 
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job040656Test.class.getSimpleName());
+	IClient client = null;
+	/**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
 	@Test
 	public void testJob040656Shelving() {
 		final String testRoot = "//depot/101Bugs/Bugs101_Job040656Test";
 		final String testFile = testRoot + "/" + "test01.txt";
-		IOptionsServer server = null;
-		IClient client = null;
 		IChangelist changelist = null;
 		FileStatOutputOptions outputOptions = null;
 
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
 			List<IFileSpec> syncList = this.forceSyncFiles(client, testRoot + "/...");
 			assertNull(this.reportInvalidSpecs(syncList));
 			changelist = client.createChangelist(new Changelist(
 										IChangelist.UNKNOWN,
 										client.getName(),
-										this.getUserName(),
+										userName,
 										ChangelistStatus.NEW,
 										null,
 										"Bugs101_Job040656Test test integration changelist",

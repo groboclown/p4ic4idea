@@ -1,20 +1,5 @@
 package com.perforce.p4java.tests.dev.unit.endtoend;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.FileAction;
@@ -24,9 +9,26 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.server.IServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.VerifyFileSpec;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -38,7 +40,10 @@ import com.perforce.p4java.tests.dev.unit.VerifyFileSpec;
 
 
 @TestId("IFileSpecE2ETest01")
-public class IFileSpecE2ETest extends P4JavaTestCase {
+public class IFileSpecE2ETest extends P4JavaRshTestCase {
+
+	@ClassRule
+	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ChangelistE2ETest.class.getSimpleName());
 
 	private static IClient client = null;
 	private static String sourceFile;
@@ -46,7 +51,9 @@ public class IFileSpecE2ETest extends P4JavaTestCase {
 	
 	@BeforeClass
 	public static void beforeAll() throws Exception {
-		server = getServer();
+		Properties properties = new Properties();
+		setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, properties);
+
 		client = getDefaultClient(server);
 		clientDir = defaultTestClientName + File.separator + testId;
 		server.setCurrentClient(client);

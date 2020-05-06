@@ -3,19 +3,17 @@
  */
 package com.perforce.p4java.tests.dev.unit.feature.enumeration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import junit.framework.Assert;
 import org.junit.Test;
 
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
-import junit.framework.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Kevin Sawicki (ksawicki@perforce.com)
  */
-public abstract class BaseEnumTestHelper extends P4JavaTestCase {
+public abstract class BaseEnumTestHelper extends P4JavaRshTestCase {
 
     /**
      * Test enum

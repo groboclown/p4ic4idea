@@ -5,49 +5,40 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import com.perforce.p4java.tests.UnicodeServerRule;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSize;
 import com.perforce.p4java.option.server.GetFileSizesOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 /**
  * Test getting information about the size of the files in the depot.
  */
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job067365"})
 @TestId("Dev132_GetFileSizesTest")
-@Disabled("Uses external p4d server")
-public class GetFileSizesTest extends P4JavaTestCase {
-  private IOptionsServer server = null;
-  private IOptionsServer superServer = null;
+public class GetFileSizesTest extends P4JavaRshTestCase {
 
-  @BeforeEach
+  @ClassRule
+  public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", GetFileSizesTest.class.getSimpleName());
+
+  IOptionsServer superServer;
+
+  @Before
   public void setUp() throws Exception {
-    server = getServer();
-    assertThat(server, notNullValue());
-    IClient client = getDefaultClient(server);
-    assertThat(client, notNullValue());
-    server.setCurrentClient(client);
-
-    superServer = getServerAsSuper();
-    assertThat(superServer, notNullValue());
-    IClient superClient = getDefaultClient(superServer);
-    assertThat(superClient, notNullValue());
-    superServer.setCurrentClient(superClient);
+    setupServer(p4d.getRSHURL(), userName, password, true, null);
+    superServer = getSuperConnection(p4d.getRSHURL());
   }
 
-  @AfterEach
+  @After
   public void tearDown() {
     afterEach(server, superServer);
   }

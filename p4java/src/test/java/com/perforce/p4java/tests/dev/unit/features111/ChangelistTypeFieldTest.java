@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -31,6 +34,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 public class ChangelistTypeFieldTest extends P4JavaTestCase {
 
 	public ChangelistTypeFieldTest() {
+	}
+
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -68,7 +81,7 @@ public class ChangelistTypeFieldTest extends P4JavaTestCase {
 		final String expectedDescription = "<description: restricted, no permission to view>\n";
 		
 		try {
-			server = getServer(getServerUrlString(), null, this.getSuperUserName(),
+			server = getServer(null, this.getSuperUserName(),
 											this.getSuperUserPassword());
 			assertNotNull("null super-user server", server);
 			client = getDefaultClient(server);

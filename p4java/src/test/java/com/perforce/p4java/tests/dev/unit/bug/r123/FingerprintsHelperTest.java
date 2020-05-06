@@ -6,16 +6,14 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 import java.io.File;
 
-import org.junit.jupiter.api.Test;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
+import org.junit.Test;
 
 import com.perforce.p4java.server.FingerprintsHelper;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
-@RunWith(JUnitPlatform.class)
+
 @Jobs({"job057797"})
 @TestId("Dev123_FingerprintsHelperTest")
 public class FingerprintsHelperTest extends P4JavaTestCase {

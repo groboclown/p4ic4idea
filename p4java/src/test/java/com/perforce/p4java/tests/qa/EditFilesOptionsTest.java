@@ -9,7 +9,6 @@ NOT TESTING:
 
 package com.perforce.p4java.tests.qa;
 
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IUser;
@@ -396,7 +395,6 @@ public class EditFilesOptionsTest {
         testMethod(testFileSpecs, false);
     }
 
-
     @Test
     public void setImmutableTrueChangelist() throws Throwable {
         editFilesOptions = new EditFilesOptions();
@@ -424,7 +422,6 @@ public class EditFilesOptionsTest {
         testMethod(testFileSpecs, false);
     }
 
-
     @Test
     public void setImmutableTrueFileType() throws Throwable {
         editFilesOptions = new EditFilesOptions();
@@ -451,7 +448,6 @@ public class EditFilesOptionsTest {
         valids.bypassClientUpdate = true;
         testMethod(testFileSpecs, false);
     }
-
 
     @Test
     public void setImmutableTrueBypassClientUpdate() throws Throwable {

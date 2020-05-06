@@ -24,8 +24,8 @@ public class SSLServerRule extends LocalServerRule {
 
 	@Override
 	public void prepareServer() throws Exception {
-		extract(new File(RESOURCES + "data/nonunicode/depot.tar.gz"));
-		restore(new File(RESOURCES + "data/nonunicode/checkpoint.gz"));
+		extract("data/nonunicode/depot.tar.gz");
+		restore("data/nonunicode/checkpoint.gz");
 		upgrade();
 		createSSLCert();
 	}

@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
-import static com.perforce.p4java.tests.qa.Helper.FILE_SEP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -73,7 +72,7 @@ public class IntegrationOutputTest extends P4JavaRshTestCase {
 			change.setDescription("Add foo.txt");
 			change = client.createChangelist(change);
 
-			File testFile = new File(client.getRoot() + FILE_SEP + "foo.txt");
+			File testFile = new File(client.getRoot() + File.separator + "foo.txt");
 			try (FileWriter writer = new FileWriter(testFile)) {
 				writer.write("ADD");
 				writer.close();

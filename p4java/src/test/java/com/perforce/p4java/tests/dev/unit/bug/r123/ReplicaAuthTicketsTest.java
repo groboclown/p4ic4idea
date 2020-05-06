@@ -127,7 +127,7 @@ public class ReplicaAuthTicketsTest extends P4JavaTestCase {
       userName = getRandomName(false, "user");
       assertThat(userName, notNullValue());
       user = server.getUser(userName);
-      if (isNull(user)) {
+      if (user == null) {
         break;
       }
     }

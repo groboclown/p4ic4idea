@@ -13,28 +13,28 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 public class ConnectionExceptionTest extends BaseThrowableTestHelper {
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable()
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable()
      */
     protected Throwable createThrowable() {
 	return new ConnectionException();
     }
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.String)
      */
     protected Throwable createThrowable(String message) {
 	return new ConnectionException(message);
     }
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable(Throwable)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.Throwable)
      */
     protected Throwable createThrowable(Throwable cause) {
 	return new ConnectionException(cause);
     }
 
     /**
-     * @see BaseThrowableTestHelper#createThrowable(String, Throwable)
+     * @see com.perforce.p4java.tests.dev.unit.feature.error.BaseThrowableTestHelper#createThrowable(java.lang.String, java.lang.Throwable)
      */
     protected Throwable createThrowable(String message, Throwable cause) {
 	return new ConnectionException(message, cause);

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.zip.ZipException;
 
 import com.perforce.p4java.tests.MockCommandCallback;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -44,7 +45,7 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job077476" })
 @TestId("Dev151_ReconcileWorkspaceFilesTest")
-@Disabled("Uses external p4d server")
+//@Disabled("Uses external p4d server")
 public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 
 	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20141";
@@ -60,6 +61,8 @@ public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 		// one-time initialization code (before all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.startTestClass();
 	}
 
 	/**
@@ -69,6 +72,8 @@ public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 	@AfterClass
 	public static void oneTimeTearDown() {
 		// one-time cleanup code (after all the tests).
+		// p4ic4idea: use local server
+		UnitTestDevServerManager.INSTANCE.endTestClass();
 	}
 
 	/**
@@ -189,4 +194,82 @@ public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 			}
 		}
 	}
+
+	/**
+	 * Test 'p4 reconcile -w -f' (p4 clean)
+	 */
+	@Test
+	public void testReconcileWorkspaceFilesAndWildcards() {
+
+		IChangelist changelist = null;
+		List<IFileSpec> files = null;
+
+		int randNum = getRandomInt();
+		String testDirStr = client.getRoot() + "/reconcile/test/" + randNum;
+		String testZipFileStr = client.getRoot() + "/reconcile/TestFramework.zip";
+
+		File testZipFile = new File(testZipFileStr);
+		File testDir = new File(testDirStr);
+
+		try {
+			files = client.sync(FileSpecBuilder.makeFileSpecList(new String[] {testZipFileStr}), new SyncOptions().setForceUpdate(true));
+			assertNotNull(files);
+
+			// The file should exist
+			assertTrue(testZipFile.exists());
+
+			// Unzip
+			unpack(testZipFile, testDir);
+
+			// The directory should exist
+			assertTrue(testDir.exists());
+
+			changelist = getNewChangelist(server, client, "Dev151_ReconcileWorkspaceFilesTest files");
+			assertNotNull(changelist);
+			changelist = client.createChangelist(changelist);
+			assertNotNull(changelist);
+
+			// Reconcile files
+			files = client.reconcileFiles(FileSpecBuilder.makeFileSpecList(new String[]{testDirStr + "/..."}),
+					new ReconcileFilesOptions().setUpdateWorkspace(true).setChangelistId(changelist.getId()).setUseWildcards(true));
+			assertNotNull(files);
+			assertTrue(files.size() > 0);
+
+			changelist.refresh();
+			files = changelist.getFiles(true);
+			assertNotNull(files);
+			assertEquals(0, files.size());
+
+			// After 'reconcile -w -f', the directory should be gone.
+			assertFalse((new File(testDirStr)).exists());
+
+		} catch (P4JavaException e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		} catch (ZipException e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		} catch (IOException e) {
+			fail("Unexpected exception: " + e.getLocalizedMessage());
+		} finally {
+			if (client != null) {
+				if (changelist != null) {
+					if (changelist.getStatus() == ChangelistStatus.PENDING) {
+						try {
+							// Revert files in pending changelist
+							client.revertFiles(
+									changelist.getFiles(true),
+									new RevertFilesOptions()
+											.setChangelistId(changelist.getId()));
+						} catch (P4JavaException e) {
+							// Can't do much here...
+						}
+					}
+				}
+			}
+			// Recursively delete the local test files
+			if (testDir.exists()) {
+				deleteDir(testDir);
+			}
+		}
+	}
+
 }

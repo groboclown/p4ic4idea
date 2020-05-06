@@ -1,7 +1,5 @@
 package com.perforce.p4java.tests.qa;
 
-import com.google.common.io.Closeables;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelistSummary;
 import com.perforce.p4java.core.IUser;
@@ -23,10 +21,10 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -64,7 +62,7 @@ public class Authentication102Test {
         helper.addFile(server, user, client, test2File.getAbsolutePath(), "FileSpecTest", "text");
 
         IUserGroup group = new UserGroup();
-        List<String> users = newArrayList();
+		List<String> users = new ArrayList<String>();
         // create a group and add some other user
         users.add("secondUser");
         group.setName("timeoutnow");
@@ -86,9 +84,12 @@ public class Authentication102Test {
         server.login("banana");
     }
 
-    // verify that we get an access exception if we log out or our ticket expires
-    // streaming commands in particular displayed this issue
-    // we should get an exception if everything is working correctly
+	/**
+	 * verify that we get an access exception if we log out or our ticket expires
+	 * 	streaming commands in particular displayed this issue
+	 * 	we should get an exception if everything is working correctly
+	 * @throws Exception
+	 */
     @Test
     public void exceptionAfterLoggingOut() throws Exception {
         InputStream diffStream = null;
@@ -110,11 +111,17 @@ public class Authentication102Test {
         } catch (AccessException a) {
             assertThat("Should have been unset", a.getMessage(), startsWith("Perforce password (P4PASSWD) invalid or unset."));
         } finally {
-            Closeables.closeQuietly(diffStream);
+			try {
+				diffStream.close();
+			} catch (Throwable e) {
+			}
         }
     }
 
-    // make sure a timed out connection works
+	/**
+	 * make sure a timed out connection works
+	 * @throws Exception
+	 */
     @Test
     public void exceptionAfterTimeout() throws Exception {
         InputStream diffStream = null;
@@ -138,12 +145,17 @@ public class Authentication102Test {
         } catch (AccessException a) {
             assertThat("Should have expired.", a.getMessage(), startsWith("Your session has expired, please login again."));
         } finally {
-            Closeables.closeQuietly(diffStream);
+			if (diffStream != null) {
+				diffStream.close();
+			}
         }
     }
 
-    // verify that we can still get a valid ticket for all machines
-    // there's no great way to verify that it is a global ticket; I had to do that by hand
+	/**
+	 * verify that we can still get a valid ticket for all machines
+	 * there's no great way to verify that it is a global ticket; I had to do that by hand
+	 * @throws Throwable
+	 */
     @Test
     public void globalLogin() throws Throwable {
         server.logout();

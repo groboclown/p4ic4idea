@@ -20,6 +20,7 @@ import static com.perforce.p4java.core.IStreamSummary.Type.MAINLINE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
+
 @RunWith(JUnitPlatform.class)
 public class GetClientsTest {
 
@@ -57,7 +58,10 @@ public class GetClientsTest {
     }
 
 
-    @DisplayName("verify job046825: case-insensitive name matching")
+    /**
+     * *verify job046825: case-insensitive name matching
+     * @throws Throwable
+     */
     @Test
     public void caseInsensitiveListing() throws Throwable {
         GetClientsOptions opts = new GetClientsOptions();
@@ -69,7 +73,10 @@ public class GetClientsTest {
     }
 
 
-    @DisplayName("verify case-sensitive name matching")
+    /**
+     * verify case-sensitive name matching
+     * @throws Throwable
+     */
     @Test
     public void caseSensitiveListing() throws Throwable {
         GetClientsOptions opts = new GetClientsOptions();
@@ -85,7 +92,10 @@ public class GetClientsTest {
     }
 
 
-    @DisplayName("verify we still get clients; the -t flag is a no-op for p4java")
+    /**
+     * verify we still get clients; the -t flag is a no-op for p4java
+     * @throws Throwable
+     */
     @Test
     public void getTime() throws Throwable {
         GetClientsOptions opts = new GetClientsOptions();
@@ -97,7 +107,10 @@ public class GetClientsTest {
     }
 
 
-    @DisplayName("verify we can get stream bound clients")
+    /**
+     * verify we can get stream bound clients
+     * @throws Throwable
+     */
     @Test
     public void streamBoundClients() throws Throwable {
         GetClientsOptions opts = new GetClientsOptions();

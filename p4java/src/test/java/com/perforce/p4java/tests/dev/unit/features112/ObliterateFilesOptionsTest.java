@@ -3,64 +3,25 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
+import com.perforce.p4java.exception.OptionsException;
+import com.perforce.p4java.option.server.ObliterateFilesOptions;
+import com.perforce.p4java.tests.dev.annotations.Jobs;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.perforce.p4java.exception.OptionsException;
-import com.perforce.p4java.option.server.ObliterateFilesOptions;
-import com.perforce.p4java.tests.dev.annotations.Jobs;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * Test the Options and ObliterateFilesOptions functionality.
  */
 @Jobs({ "job041780", "job041824" })
 @TestId("Dev112_ObliterateFilesOptionsTest")
-public class ObliterateFilesOptionsTest extends P4JavaTestCase {
-
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
-
-	/**
-	 * @Before annotation to a method to be run before each test in a class.
-	 */
-	@Before
-	public void setUp() {
-		// initialization code (before each test).
-	}
-
-	/**
-	 * @After annotation to a method to be run after each test in a class.
-	 */
-	@After
-	public void tearDown() {
-		// cleanup code (after each test).
-	}
+public class ObliterateFilesOptionsTest extends P4JavaRshTestCase {
 
 	/**
 	 * Test the ObliterateFilesOptions constructors

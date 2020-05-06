@@ -3,31 +3,27 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
+import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.option.client.IntegrateFilesOptions;
+import com.perforce.p4java.tests.dev.annotations.Standalone;
+import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Test;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.List;
-
-import org.junit.Test;
-
-import com.perforce.p4java.core.IChangelist;
-import com.perforce.p4java.option.client.IntegrateFilesOptions;
-import com.perforce.p4java.tests.dev.annotations.Standalone;
-import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-
 /**
  * Standalone test for the various IntegrateFilesOptions options.
  */
 @Standalone
 @TestId("Dev101_IntegrateFilesOptionsTest")
-public class IntegrateFilesOptionsTest extends P4JavaTestCase {
-
-	public IntegrateFilesOptionsTest() {
-	}
+public class IntegrateFilesOptionsTest extends P4JavaRshTestCase {
 
 	@Test
 	public void testDefaultIntegrateFilesOptionsValues() {

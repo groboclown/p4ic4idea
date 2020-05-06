@@ -1,8 +1,13 @@
 package com.perforce.p4java.option.client;
 
-import java.util.Arrays;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Test;
+
+import com.perforce.p4java.option.Options;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.server.ChangelistOptions;
 import com.perforce.p4java.option.server.CounterOptions;
@@ -13,6 +18,7 @@ import com.perforce.p4java.option.server.DescribeOptions;
 import com.perforce.p4java.option.server.DuplicateRevisionsOptions;
 import com.perforce.p4java.option.server.ExportRecordsOptions;
 import com.perforce.p4java.option.server.FixJobsOptions;
+import com.perforce.p4java.option.server.GetBranchSpecOptions;
 import com.perforce.p4java.option.server.GetBranchSpecsOptions;
 import com.perforce.p4java.option.server.GetChangelistDiffsOptions;
 import com.perforce.p4java.option.server.GetChangelistsOptions;
@@ -42,15 +48,9 @@ import com.perforce.p4java.option.server.GetStreamsOptions;
 import com.perforce.p4java.option.server.GetSubmittedIntegrationsOptions;
 import com.perforce.p4java.option.server.GetUserGroupsOptions;
 import com.perforce.p4java.option.server.GetUsersOptions;
-import com.perforce.p4java.option.server.GraphCommitLogOptions;
-import com.perforce.p4java.option.server.GraphReceivePackOptions;
-import com.perforce.p4java.option.server.GraphRevListOptions;
-import com.perforce.p4java.option.server.GraphShowRefOptions;
 import com.perforce.p4java.option.server.JournalWaitOptions;
 import com.perforce.p4java.option.server.KeyOptions;
-import com.perforce.p4java.option.server.ListOptions;
 import com.perforce.p4java.option.server.LogTailOptions;
-import com.perforce.p4java.option.server.Login2Options;
 import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.option.server.MatchingLinesOptions;
 import com.perforce.p4java.option.server.MoveFileOptions;
@@ -58,7 +58,6 @@ import com.perforce.p4java.option.server.ObliterateFilesOptions;
 import com.perforce.p4java.option.server.OpenedFilesOptions;
 import com.perforce.p4java.option.server.PropertyOptions;
 import com.perforce.p4java.option.server.ReloadOptions;
-import com.perforce.p4java.option.server.ReposOptions;
 import com.perforce.p4java.option.server.SearchJobsOptions;
 import com.perforce.p4java.option.server.SetFileAttributesOptions;
 import com.perforce.p4java.option.server.StreamIntegrationStatusOptions;
@@ -71,132 +70,119 @@ import com.perforce.p4java.option.server.UpdateClientOptions;
 import com.perforce.p4java.option.server.UpdateUserGroupOptions;
 import com.perforce.p4java.option.server.UpdateUserOptions;
 import com.perforce.p4java.option.server.VerifyFilesOptions;
-import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import com.perforce.p4java.option.Options;
 
 /**
- * Class to test a default options constructor and then
- * setting options..
+ * Class to test a default options constructor and then setting options..
  */
 public class OptionsDefaultConstructorsTest {
-	// The original class had a class dependency error.  Rather than hunt that down, we're just
-	// using the list of known Option instances.  This also keeps the reflection tools from
-	// finding test versions of the options.
-	private static List<Class<? extends Options>> OPTION_CLASSES = Arrays.asList(
-			AddFilesOptions.class,
-			ChangelistOptions.class,
-			CopyFilesOptions.class,
-			CounterOptions.class,
-			DeleteBranchSpecOptions.class,
-			DeleteClientOptions.class,
-			DeleteFilesOptions.class,
-			DeleteLabelOptions.class,
-			DescribeOptions.class,
-			DuplicateRevisionsOptions.class,
-			EditFilesOptions.class,
-			ExportRecordsOptions.class,
-			FixJobsOptions.class,
-			GetBranchSpecsOptions.class,
-			GetChangelistDiffsOptions.class,
-			GetChangelistsOptions.class,
-			GetClientTemplateOptions.class,
-			GetClientsOptions.class,
-			GetCountersOptions.class,
-			GetDepotFilesOptions.class,
-			GetDiffFilesOptions.class,
-			GetDirectoriesOptions.class,
-			GetExtendedFilesOptions.class,
-			GetFileAnnotationsOptions.class,
-			GetFileContentsOptions.class,
-			GetFileDiffsOptions.class,
-			GetFileSizesOptions.class,
-			GetFixesOptions.class,
-			GetInterchangesOptions.class,
-			GetJobsOptions.class,
-			GetKeysOptions.class,
-			GetLabelsOptions.class,
-			GetPropertyOptions.class,
-			GetProtectionEntriesOptions.class,
-			GetReviewChangelistsOptions.class,
-			GetReviewsOptions.class,
-			GetRevisionHistoryOptions.class,
-			GetServerProcessesOptions.class,
-			GetStreamOptions.class,
-			GetStreamsOptions.class,
-			GetSubmittedIntegrationsOptions.class,
-			GetUserGroupsOptions.class,
-			GetUsersOptions.class,
-			GraphCommitLogOptions.class,
-			GraphReceivePackOptions.class,
-			GraphRevListOptions.class,
-			GraphShowRefOptions.class,
-			IntegrateFilesOptions.class,
-			JournalWaitOptions.class,
-			KeyOptions.class,
-			LabelSyncOptions.class,
-			ListOptions.class,
-			LockFilesOptions.class,
-			LogTailOptions.class,
-			Login2Options.class,
-			LoginOptions.class,
-			MatchingLinesOptions.class,
-			MergeFilesOptions.class,
-			MoveFileOptions.class,
-			ObliterateFilesOptions.class,
-			OpenedFilesOptions.class,
-			PopulateFilesOptions.class,
-			PropertyOptions.class,
-			ReconcileFilesOptions.class,
-			ReloadOptions.class,
-			ReposOptions.class,
-			ResolveFilesAutoOptions.class,
-			ResolvedFilesOptions.class,
-			RevertFilesOptions.class,
-			SearchJobsOptions.class,
-			SetFileAttributesOptions.class,
-			ShelveFilesOptions.class,
-			StreamIntegrationStatusOptions.class,
-			StreamOptions.class,
-			SubmitOptions.class,
-			SwitchClientViewOptions.class,
-			SyncOptions.class,
-			TagFilesOptions.class,
-			TrustOptions.class,
-			UnloadOptions.class,
-			UnlockFilesOptions.class,
-			UnshelveFilesOptions.class,
-			UpdateClientOptions.class,
-			UpdateUserGroupOptions.class,
-			UpdateUserOptions.class,
-			VerifyFilesOptions.class
-	);
 
+    /**
+     * Test default constructors and set options.
+     * 
+     * @throws InstantiationException
+     *             the instantiation exception
+     * @throws IllegalAccessException
+     *             the illegal access exception
+     * @throws IllegalArgumentException
+     * @throws SecurityException
+     * @throws NoSuchFieldException
+     * @throws ClassNotFoundException
+     */
+    @Test
+    public void testDefaultConstructorsAndSetOptions() throws InstantiationException, IllegalAccessException {
 
-	/**
-	 * Test default constructors and set options.
-	 * @throws InstantiationException the instantiation exception
-	 * @throws IllegalAccessException the illegal access exception
-	 */
-	@Test
-	public void testDefaultConstructorsAndSetOptions()
-			throws InstantiationException, IllegalAccessException {
-		for (Class<? extends Options> subtype : OPTION_CLASSES) {
-			if (!subtype.getName().contains("Test")) {
-				Options options;
-				try {
-					options = subtype.newInstance();
-				} catch (InstantiationException e) {
-					fail("No default constructor for " + subtype);
-					continue;
-				}
-				options.setOptions("one");
-				assertTrue(options.getOptions() != null);
-				assertTrue(options.getOptions().size() == 1);
-				assertTrue(options.getOptions().contains("one"));
-			}
-		}
-	}
+        List<Class<? extends Options>> subTypes = new ArrayList<Class<? extends Options>>();
+        subTypes.add(SubmitOptions.class);
+        subTypes.add(AddFilesOptions.class);
+        subTypes.add(CopyFilesOptions.class);
+        subTypes.add(DeleteFilesOptions.class);
+        subTypes.add(EditFilesOptions.class);
+        subTypes.add(GetDiffFilesOptions.class);
+        subTypes.add(IntegrateFilesOptions.class);
+        subTypes.add(LabelSyncOptions.class);
+        subTypes.add(LockFilesOptions.class);
+        subTypes.add(MergeFilesOptions.class);
+        subTypes.add(PopulateFilesOptions.class);
+        subTypes.add(ReconcileFilesOptions.class);
+        subTypes.add(ReopenFilesOptions.class);
+        subTypes.add(ResolvedFilesOptions.class);
+        subTypes.add(ResolveFilesAutoOptions.class);
+        subTypes.add(RevertFilesOptions.class);
+        subTypes.add(ShelveFilesOptions.class);
+        subTypes.add(SyncOptions.class);
+        subTypes.add(UnlockFilesOptions.class);
+        subTypes.add(UnshelveFilesOptions.class);
+        subTypes.add(ChangelistOptions.class);
+        subTypes.add(CounterOptions.class);
+        subTypes.add(DeleteBranchSpecOptions.class);
+        subTypes.add(DeleteClientOptions.class);
+        subTypes.add(DeleteLabelOptions.class);
+        subTypes.add(DescribeOptions.class);
+        subTypes.add(DuplicateRevisionsOptions.class);
+        subTypes.add(ExportRecordsOptions.class);
+        subTypes.add(FixJobsOptions.class);
+        subTypes.add(GetBranchSpecOptions.class);
+        subTypes.add(GetBranchSpecsOptions.class);
+        subTypes.add(GetChangelistDiffsOptions.class);
+        subTypes.add(GetChangelistsOptions.class);
+        subTypes.add(GetClientsOptions.class);
+        subTypes.add(GetClientTemplateOptions.class);
+        subTypes.add(GetCountersOptions.class);
+        subTypes.add(GetDepotFilesOptions.class);
+        subTypes.add(GetDirectoriesOptions.class);
+        subTypes.add(GetExtendedFilesOptions.class);
+        subTypes.add(GetFileAnnotationsOptions.class);
+        subTypes.add(GetFileContentsOptions.class);
+        subTypes.add(GetFileDiffsOptions.class);
+        subTypes.add(GetFileSizesOptions.class);
+        subTypes.add(GetFixesOptions.class);
+        subTypes.add(GetInterchangesOptions.class);
+        subTypes.add(GetJobsOptions.class);
+        subTypes.add(GetKeysOptions.class);
+        subTypes.add(GetLabelsOptions.class);
+        subTypes.add(GetPropertyOptions.class);
+        subTypes.add(GetProtectionEntriesOptions.class);
+        subTypes.add(GetReviewChangelistsOptions.class);
+        subTypes.add(GetReviewsOptions.class);
+        subTypes.add(GetRevisionHistoryOptions.class);
+        subTypes.add(GetServerProcessesOptions.class);
+        subTypes.add(GetStreamOptions.class);
+        subTypes.add(GetStreamsOptions.class);
+        subTypes.add(GetSubmittedIntegrationsOptions.class);
+        subTypes.add(GetUserGroupsOptions.class);
+        subTypes.add(GetUsersOptions.class);
+        subTypes.add(JournalWaitOptions.class);
+        subTypes.add(KeyOptions.class);
+        subTypes.add(LoginOptions.class);
+        subTypes.add(LogTailOptions.class);
+        subTypes.add(MatchingLinesOptions.class);
+        subTypes.add(MoveFileOptions.class);
+        subTypes.add(ObliterateFilesOptions.class);
+        subTypes.add(OpenedFilesOptions.class);
+        subTypes.add(PropertyOptions.class);
+        subTypes.add(ReloadOptions.class);
+        subTypes.add(SearchJobsOptions.class);
+        subTypes.add(SetFileAttributesOptions.class);
+        subTypes.add(StreamIntegrationStatusOptions.class);
+        subTypes.add(StreamOptions.class);
+        subTypes.add(SwitchClientViewOptions.class);
+        subTypes.add(TagFilesOptions.class);
+        subTypes.add(TrustOptions.class);
+        subTypes.add(UnloadOptions.class);
+        subTypes.add(UpdateClientOptions.class);
+        subTypes.add(UpdateUserGroupOptions.class);
+        subTypes.add(UpdateUserOptions.class);
+        subTypes.add(VerifyFilesOptions.class);
+
+        for (Class<? extends Options> subtype : subTypes) {
+            if (!subtype.getName().contains("Test")) {
+                Options options = subtype.newInstance();
+                options.setOptions("one");
+                assertTrue(options.getOptions() != null);
+                assertTrue(options.getOptions().size() == 1);
+                assertTrue(options.getOptions().contains("one"));
+            }
+        }
+
+    }
 }

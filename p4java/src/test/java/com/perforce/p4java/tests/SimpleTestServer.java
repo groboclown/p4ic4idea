@@ -1,6 +1,7 @@
 package com.perforce.p4java.tests;
 
 import com.perforce.p4java.server.IServerAddress;
+import com.perforce.test.P4ExtFileUtils;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -29,36 +30,25 @@ public class SimpleTestServer {
 
 	private static Logger logger = LoggerFactory.getLogger(SimpleTestServer.class);
 
-	// p4ic4idea: should use "resources" instead of file paths...
-	public static final String RESOURCES = "src/test/resources/";
 	private String p4d;
 	private final File p4root;
 
 	public SimpleTestServer(String p4dVersion, String testId) {
-
-		init(p4dVersion);
-		this.p4root = new File("tmp/" + testId).getAbsoluteFile();
-	}
-
-	private void init(String p4dVersion) {
-		String rootPath = RESOURCES + "bin/" + p4dVersion;
-		String p4d = new File(rootPath).getAbsolutePath().toString();
-		String os = System.getProperty("os.name").toLowerCase();
-		if (os.contains("win")) {
-			p4d += "/bin.ntx64/p4d.exe";
+		final File baseDir = new File("tmp/" + testId);
+		this.p4root = new File(baseDir, "root").getAbsoluteFile();
+		try {
+			this.p4d = P4ExtFileUtils.extractP4d(baseDir, p4dVersion).getAbsolutePath();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
-		if (os.contains("mac")) {
-			p4d += "/bin.darwin90x86_64/p4d";
+		if (!new File(p4d).isFile()) {
+			throw new RuntimeException("Does not exist: " + p4d);
 		}
-		if (os.contains("nix") || os.contains("nux")) {
-			p4d += "/bin.linux26x86_64/p4d";
-		}
-		this.p4d = p4d;
 	}
 
 	public void prepareServer() throws Exception {
-		extract(new File(RESOURCES + "data/nonunicode/depot.tar.gz"));
-		restore(new File(RESOURCES + "data/nonunicode/checkpoint.gz"));
+		extract("data/nonunicode/depot.tar.gz");
+		restore("data/nonunicode/checkpoint.gz");
 		upgrade();
 	}
 
@@ -78,10 +68,6 @@ public class SimpleTestServer {
 		return p4d;
 	}
 
-	public String getResources() {
-		return RESOURCES;
-	}
-
 	public String getRshPort() {
 		String rsh = "rsh:" + p4d;
 		rsh += " -r " + p4root;
@@ -99,41 +85,15 @@ public class SimpleTestServer {
 		exec(new String[]{"-jj"}, true);
 	}
 
-	protected void restore(File ckp) throws Exception {
-		exec(new String[]{"-z", "-jr", formatPath(ckp.getAbsolutePath())}, true);
+	protected void restore(String checkpointResource) throws Exception {
+		File outfile = new File(p4root, "checkpoint.gz");
+		P4ExtFileUtils.extractResource(getClass().getClassLoader(), checkpointResource, outfile, false);
+		exec(new String[]{"-z", "-jr", formatPath(outfile.getAbsolutePath())}, true);
 	}
 
-	public void extract(File archive) throws Exception {
-		TarArchiveInputStream tarIn = null;
-		tarIn = new TarArchiveInputStream(
-				new GzipCompressorInputStream(new BufferedInputStream(new FileInputStream(archive))));
-
-		TarArchiveEntry tarEntry = tarIn.getNextTarEntry();
-		while (tarEntry != null) {
-			File node = new File(p4root, tarEntry.getName());
-
-			if (tarEntry.isDirectory()) {
-				node.mkdirs();
-			} else {
-				try {
-					node.createNewFile();
-				} catch (IOException e) {
-					logger.warn("Could not extract file: ", e);
-					tarEntry = tarIn.getNextTarEntry();
-					continue;
-				}
-				byte[] buf = new byte[1024];
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(node));
-
-				int len = 0;
-				while ((len = tarIn.read(buf)) != -1) {
-					bout.write(buf, 0, len);
-				}
-				bout.close();
-			}
-			tarEntry = tarIn.getNextTarEntry();
-		}
-		tarIn.close();
+	public void extract(String archiveResource) throws Exception {
+		// p4ic4idea: reuse other extraction
+		P4ExtFileUtils.extractResource(getClass().getClassLoader(), archiveResource, p4root, true);
 	}
 
 	protected void clean() {
@@ -144,7 +104,9 @@ public class SimpleTestServer {
 				logger.warn("Unable to clean p4root: ", e);
 			}
 		} else {
-			p4root.mkdir();
+			if (!p4root.mkdir()) {
+				throw new RuntimeException("unable to create " + p4root);
+			}
 		}
 	}
 
@@ -156,6 +118,12 @@ public class SimpleTestServer {
 				if (!retryDestroy()) {
 					logger.warn("Unable to delete p4root.");
 				}
+			}
+		}
+		final File p4dFile = new File(p4d);
+		if (p4dFile.isFile()) {
+			if (! p4dFile.delete()) {
+				logger.warn("Unable to delete " + p4dFile);
 			}
 		}
 	}

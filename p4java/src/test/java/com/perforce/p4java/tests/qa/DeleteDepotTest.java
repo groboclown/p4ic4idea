@@ -78,7 +78,10 @@ public class DeleteDepotTest {
         }
     }
 
-    @DisplayName("Given depot should be deleted")
+    /**
+     * Given depot should be deleted
+     * @throws Exception
+     */
     @Test
     public void basicUsage() throws Exception {
         String result = server.deleteDepot(depotName);
@@ -88,7 +91,10 @@ public class DeleteDepotTest {
         assertThat(depots.size(), is(1));
     }
 
-    @DisplayName("failed delete depot as deopt isn't empty")
+    /**
+     * failed delete depot as deopt isn't empty
+     * @throws Exception
+     */
     @Test
     public void depotWithFiles() throws Exception {
         try {
@@ -101,7 +107,9 @@ public class DeleteDepotTest {
         }
     }
 
-    @DisplayName("failed delete depot as depot doesn't exist")
+    /**
+     * failed delete depot as depot doesn't exist
+     */
     @Test
     public void phantomDepot() {
         try {

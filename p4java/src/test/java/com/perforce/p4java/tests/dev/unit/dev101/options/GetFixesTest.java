@@ -3,23 +3,23 @@
  */
 package com.perforce.p4java.tests.dev.unit.dev101.options;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.IFix;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.option.server.GetFixesOptions;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * A testbed for Options and FixListOptions development. Not intended
@@ -31,23 +31,23 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @Jobs({"job039408"})
 @TestId("Dev101_GetFixesTest")
-public class GetFixesTest extends P4JavaTestCase {
+public class GetFixesTest extends P4JavaRshTestCase {
 	
 	public static final String DEPOT_PATH = "//depot/...";
-	public static final String SERVER_URL = "p4java://eng-p4java-vm.perforce.com:20101";
 	public static final Integer MAX_CHANGELISTS = 10;
 
-	public GetFixesTest() {
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetFixesTest.class.getSimpleName());
+
+	@Before
+	public void setUp() throws Exception {
+		setupServer(p4d.getRSHURL(), userName, password, true, props);
 	}
 
 	@Test
 	public void testOldVsNew() {
-		fail("FIXME connects to remote p4d server");
-		IOptionsServer server = null;
 		
 		try {
-			server = ServerFactory.getOptionsServer(SERVER_URL, null);
-			assertNotNull(server);
 			server.setUserName(P4JTEST_NOLOGINNAME_DEFAULT);
 			server.connect();
 			

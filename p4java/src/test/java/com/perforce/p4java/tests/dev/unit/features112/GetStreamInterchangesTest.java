@@ -3,83 +3,90 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.IChangelist;
+import com.perforce.p4java.core.IStream;
 import com.perforce.p4java.core.file.FileSpecBuilder;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
+import com.perforce.p4java.impl.generic.core.Stream;
 import com.perforce.p4java.impl.generic.core.file.FileSpec;
 import com.perforce.p4java.option.changelist.SubmitOptions;
 import com.perforce.p4java.option.client.CopyFilesOptions;
 import com.perforce.p4java.option.client.DeleteFilesOptions;
 import com.perforce.p4java.option.client.IntegrateFilesOptions;
 import com.perforce.p4java.option.server.GetInterchangesOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test "p4 interchanges -S stream -P parent".
  */
 @Jobs({ "job046697" })
 @TestId("Dev112_GetStreamInterchangesTest")
-public class GetStreamInterchangesTest extends P4JavaTestCase {
+public class GetStreamInterchangesTest extends P4JavaRshTestCase{
 
-	IOptionsServer server = null;
+    String streamsDepotName = "p4java_stream";
+    String streamDepth = "//" + streamsDepotName + "/1";
+	String devStream = "//p4java_stream/dev";
+	String mainStream = "//p4java_stream/main";
+	IClient devStreamClient = null;
+	IClient mainStreamClient = null;
+    
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", GetStreamInterchangesTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
-
-	/**
+ 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
-		// initialization code (before each test).
-		try {
-			server = getServer();
-			assertNotNull(server);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+	    try {
+	        setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+            createStreamsDepot(streamsDepotName, server, streamDepth);
+			// Create a main stream
+			IStream mainStreamObject = Stream.newStream(server, mainStream,
+					"mainline", null, null, null, null, null, null, null);
+			String retVal1 = server.createStream(mainStreamObject);
+			// The main stream should be created
+			assertNotNull(retVal1);
+			assertEquals(retVal1, "Stream " + mainStream + " saved.");
+			// Create a dev stream
+			IStream devStreamObject = Stream.newStream(server, devStream,
+					"development", mainStream, null, null, null, null, null, null);
+			String retVal2 = server.createStream(devStreamObject);
+			// The stream should be created
+			assertNotNull(retVal2);
+			assertEquals(retVal2, "Stream " + devStream + " saved.");
+			devStreamObject.setParent(mainStream);
+			// Get the newly created stream
+			IStream returnedStream = server.getStream(devStream);
+			assertNotNull(returnedStream);
+			// Get the newly created main stream
+			returnedStream = server.getStream(mainStream);
+			assertNotNull(returnedStream);
+			// Get the test stream clients
+			createStreamsClient(server, "p4java_stream_main", mainStream);
+			createStreamsClient(server, "p4java_stream_dev", devStream);
+	    }catch (Exception e) {
+	        fail("Unexpected exception: " + e.getLocalizedMessage());
+	    }
 	}
 
 	/**
@@ -95,18 +102,13 @@ public class GetStreamInterchangesTest extends P4JavaTestCase {
 
 	/**
 	 * Test "p4 interchanges -S stream -P parent".
+	 * @throws Exception 
 	 */
 	@Test
 	public void testStreamInterchanges() {
 
-		IClient devStreamClient = null;
-		IClient mainStreamClient = null;
-
-		IChangelist changelist = null;
+    	IChangelist changelist = null;
 		List<IFileSpec> files = null;
-
-		String devStream = "//p4java_stream/dev";
-		String mainStream = "//p4java_stream/main";
 
 		int randNum = getRandomInt();
 		String dir = "interchanges" + randNum;
@@ -133,17 +135,18 @@ public class GetStreamInterchangesTest extends P4JavaTestCase {
 				+ "/Getopt3.java";
 
 		try {
-			// Get the test main stream client
-			mainStreamClient = server.getClient("p4java_stream_main");
-			assertNotNull(mainStreamClient);
+            // Get the test main stream client
+            mainStreamClient = server.getClient("p4java_stream_main");
+            assertNotNull(mainStreamClient);
 
-			// Get the test dev stream client
-			devStreamClient = server.getClient("p4java_stream_dev");
-			assertNotNull(devStreamClient);
+            // Get the test dev stream client
+            devStreamClient = server.getClient("p4java_stream_dev");
+            assertNotNull(devStreamClient);
 
 			// Set the main stream client to the server.
 			server.setCurrentClient(mainStreamClient);
-
+			server.setUserName(getUserName());
+			createTextFileOnServer(mainStreamClient, "core/GetOpenedFilesTest/src/gnu/getopt/Getopt.java", "desc");
 			List<IChangelist> expectedChangelists = new ArrayList<IChangelist>();
 
 			// Copy the main source file to main target
@@ -248,7 +251,7 @@ public class GetStreamInterchangesTest extends P4JavaTestCase {
 				assertFalse(found);
 			}
 
-		} catch (P4JavaException e) {
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} finally {
 			if (server != null) {
@@ -287,7 +290,7 @@ public class GetStreamInterchangesTest extends P4JavaTestCase {
 										.setChangelistId(changelist.getId()));
 						changelist.refresh();
 						changelist.submit(null);
-					} catch (P4JavaException e) {
+					} catch (Exception e) {
 						// Can't do much here...
 					}
 				}

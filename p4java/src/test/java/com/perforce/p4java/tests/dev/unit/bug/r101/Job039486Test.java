@@ -3,25 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.bug.r101;
 
-import static com.google.common.collect.Range.all;
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-
-import com.perforce.p4java.server.IServerMessage;
-import com.perforce.p4java.tests.ServerMessageMatcher;
-import org.hamcrest.CoreMatchers;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -31,11 +12,29 @@ import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.impl.generic.core.Changelist;
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SysFileHelperBridge;
 import com.perforce.p4java.impl.mapbased.server.Server;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.PlatformType;
+import org.hamcrest.CoreMatchers;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test for job039486 -- false submission success with client-side
@@ -49,26 +48,36 @@ import com.perforce.p4java.tests.dev.unit.PlatformType;
  */
 @Jobs({"job039486"})
 @TestId("Bugs101_Job039486Test")
-public class Job039486Test extends P4JavaTestCase {
+public class Job039486Test extends P4JavaRshTestCase {
 
 	public Job039486Test() {
 	}
 
+	@ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", Job039486Test.class.getSimpleName());
+
+	IClient client = null;
+	/**
+     * @Before annotation to a method to be run before each test in a class.
+     */
+    @Before
+    public void setUp() {
+        try {
+            setupServer(p4d.getRSHURL(), userName, password, true, props);
+            client = getClient(server);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        } 
+    }
+    
 	@Test
 	public void testSubmit() {
 		final String testRoot = "//depot/101Bugs/tmp/" + this.testId;
-		
-		IOptionsServer server = null;
-		IClient client = null;
 
 		if (this.getHostPlatformType() == PlatformType.WINDOWS) {
 			return; // success by fiat only, I'm afraid... (HR).
 		}
 		try {
-			server = getServer();
-			client = getDefaultClient(server);
-			assertNotNull("null test client returned", client);
-			server.setCurrentClient(client);
 			String systemTestRoot = this.getSystemPath(client, testRoot);
 			assertNotNull(systemTestRoot);
 			File dirFile = new File(systemTestRoot);

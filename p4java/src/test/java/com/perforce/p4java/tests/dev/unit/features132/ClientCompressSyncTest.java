@@ -3,115 +3,66 @@
  */
 package com.perforce.p4java.tests.dev.unit.features132;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import com.perforce.p4java.tests.MockCommandCallback;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.option.server.LoginOptions;
 import com.perforce.p4java.server.CmdSpec;
-import com.perforce.p4java.server.IOptionsServer;
-import com.perforce.p4java.server.ServerFactory;
-import com.perforce.p4java.server.callback.ICommandCallback;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
-import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
-import org.junit.jupiter.api.Disabled;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test P4Java sync using JZlib with client compression mode.
  */
 @Jobs({ "job066779" })
 @TestId("Dev132_ClientCompressSyncTest")
-@Disabled("Uses external p4d server")
-@Ignore("Uses external p4d server")
-public class ClientCompressSyncTest extends P4JavaTestCase {
+public class ClientCompressSyncTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
-	IClient client = null;
+	@ClassRule
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", ClientCompressSyncTest.class.getSimpleName());
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-	}
+	String serverMessage = null;
+	long completedTime = 0;
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
 	 */
 	@Before
 	public void setUp() {
-		// initialization code (before each test).
 		try {
+			final String depotName = this.getRandomName(false, "p4TestUserWSCompress-depot");
+			final String clientName = "p4TestUserWSCompress";
+			final String clientDescription = "temp stream client for test";
+			final String clientRoot = Paths.get("").toAbsolutePath().toString();
+			final String[] clientViews = {"//" + depotName + "/... //" + clientName + "/..."};
+
 			Properties props = new Properties();
-
 			props.put("sockPerfPrefs", "3, 2, 1");
-			//props.put("tcpNoDelay", "false");
-			//props.put("enableProgress", "true");
-			//props.put("defByteRecvBufSize", "40960");
-
-			// Unlimited socket so timeout
 			props.put("sockSoTimeout", 0);
 
-			server = ServerFactory
-					.getOptionsServer(getServerUrlString(), props);
-			assertNotNull(server);
+			setupServer(p4d.getRSHURL(), userName, password,true, props);
+			setupUtf8(server);
+			createLocalDepot(depotName, server);
 
-			// Register callback
-			server.registerCallback(new MockCommandCallback());
-			// Connect to the server.
-			server.connect();
-			if (server.isConnected()) {
-				if (server.supportsUnicode()) {
-					server.setCharsetName("utf8");
-				}
-			}
-
-			// Set the server user
-			server.setUserName(this.userName);
-
-			// Login using the normal method
-			server.login(this.password, new LoginOptions());
-
-			client = server.getClient("p4TestUserWSCompress");
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
+			client = createClient(server, clientName, clientDescription, clientRoot, clientViews);
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		}
 	}
@@ -123,7 +74,7 @@ public class ClientCompressSyncTest extends P4JavaTestCase {
 	public void tearDown() {
 		// cleanup code (after each test).
 		if (server != null) {
-			this.endServerSession(server);
+			endServerSession(server);
 		}
 	}
 
@@ -137,20 +88,13 @@ public class ClientCompressSyncTest extends P4JavaTestCase {
 		try {
 			String[] command = new String[] {"/bin/sh", "-c", "/opt/perforce/p4/p4 -p"
 					+ server.getServerInfo().getServerAddress() + " -u"
-					+ this.userName + " -P" + server.getAuthTicket() + " -c"
+					+ userName + " -P" + server.getAuthTicket() + " -c"
 					+ client.getName() + " sync -f //depot/..."};
 			
 		   ProcessBuilder builder = new ProcessBuilder(command);
-		    Map<String, String> env = builder.environment();
 
 		    final Process process = builder.start();
-		    InputStream is = process.getInputStream();
-		    InputStreamReader isr = new InputStreamReader(is);
-		    BufferedReader br = new BufferedReader(isr);
-		    String line;
-		    while ((line = br.readLine()) != null) {
-		      //System.out.println(line);
-		    }
+		    process.waitFor();
 		    System.out.println("Program terminated!");
 			    
 		} catch (IOException e) {
@@ -161,7 +105,9 @@ public class ClientCompressSyncTest extends P4JavaTestCase {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} catch (AccessException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} catch (InterruptedException e) {
+            fail("Unexpected exception: " + e.getLocalizedMessage());
+        }
 	}
 
 	/**

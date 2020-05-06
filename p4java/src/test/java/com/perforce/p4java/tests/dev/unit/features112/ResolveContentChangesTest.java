@@ -3,26 +3,6 @@
  */
 package com.perforce.p4java.tests.dev.unit.features112;
 
-import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import com.perforce.p4java.server.IServerMessage;
-import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -47,10 +27,27 @@ import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.option.server.GetExtendedFilesOptions;
 import com.perforce.p4java.option.server.GetFileDiffsOptions;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
-import com.perforce.p4java.server.IOptionsServer;
+import com.perforce.p4java.server.IServerMessage;
+import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
+import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static com.perforce.p4java.tests.ServerMessageMatcher.containsText;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test Resolve files with content changes.
@@ -73,32 +70,12 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job046102" })
 @TestId("Dev112_ResolveContentChangesTest")
-public class ResolveContentChangesTest extends P4JavaTestCase {
+public class ResolveContentChangesTest extends P4JavaRshTestCase {
 
-	IOptionsServer server = null;
 	IClient client = null;
 
-	/**
-	 * @BeforeClass annotation to a method to be run before all the tests in a
-	 *              class.
-	 */
-	@BeforeClass
-	public static void oneTimeSetUp() {
-		// one-time initialization code (before all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.startTestClass();
-	}
-
-	/**
-	 * @AfterClass annotation to a method to be run after all the tests in a
-	 *             class.
-	 */
-	@AfterClass
-	public static void oneTimeTearDown() {
-		// one-time cleanup code (after all the tests).
-		// p4ic4idea: special setup
-		UnitTestDevServerManager.INSTANCE.endTestClass();
-	}
+    @ClassRule
+    public static SimpleServerRule p4d = new SimpleServerRule("r16.1", ResolveContentChangesTest.class.getSimpleName());
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -107,16 +84,12 @@ public class ResolveContentChangesTest extends P4JavaTestCase {
 	public void setUp() {
 		// initialization code (before each test).
 		try {
-			server = getServer();
-			assertNotNull(server);
-			client = getDefaultClient(server);
-			assertNotNull(client);
-			server.setCurrentClient(client);
-		} catch (P4JavaException e) {
+            setupServer(p4d.getRSHURL(), "p4jtestuser", "p4jtestuser", true, null);
+			client = getClient(server);
+			createTextFileOnServer(client, "112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_it.properties", "desc");
+		} catch (Exception e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
-		} catch (URISyntaxException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
-		}
+		} 
 	}
 
 	/**
@@ -321,194 +294,194 @@ public class ResolveContentChangesTest extends P4JavaTestCase {
 			assertNotNull(submitFiles);
 
 			// Check for correct number of filespecs
-			assertEquals(2, submitFiles.size());
+			assertEquals(3, submitFiles.size());
 
-			// Check for 'must resolve' and 'Merges still pending' in info and
-			// error messages
-			assertEquals(FileSpecOpStatus.INFO, submitFiles.get(0)
-					.getOpStatus());
+            // Check for 'must resolve' and 'Merges still pending' in info and
+            // error messages
+            assertEquals(FileSpecOpStatus.INFO, submitFiles.get(0)
+                    .getOpStatus());
 			assertThat(submitFiles.get(0).getStatusMessage(),
 					containsText(" - must resolve " + sourceFile));
 			assertEquals(FileSpecOpStatus.ERROR, submitFiles.get(1)
-					.getOpStatus());
+                    .getOpStatus());
 			assertThat(submitFiles.get(1).getStatusMessage(),
 					containsText(mergesPending));
 
-			// Finally, try resolving all the files and do a successful submit
-			List<IFileSpec> resolveFiles2 = client.resolveFilesAuto(allFiles,
-					new ResolveFilesAutoOptions().setChangelistId(changelist
-							.getId()));
-			assertNotNull(resolveFiles2);
-			changelist.refresh();
-			List<IFileSpec> submitFiles2 = changelist
-					.submit(new SubmitOptions());
-			assertNotNull(submitFiles2);
+            // Finally, try resolving all the files and do a successful submit
+            List<IFileSpec> resolveFiles2 = client.resolveFilesAuto(allFiles,
+                    new ResolveFilesAutoOptions().setChangelistId(changelist
+                            .getId()));
+            assertNotNull(resolveFiles2);
+            changelist.refresh();
+            List<IFileSpec> submitFiles2 = changelist
+                    .submit(new SubmitOptions());
+            assertNotNull(submitFiles2);
 
-			// There should be 6 filespecs (triggers)
-			assertEquals(6, submitFiles2.size());
+            // There should be 3 filespecs
+            assertEquals(3, submitFiles2.size());
 
-			// Check the statuses and file actions of the two submitted files
-			assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(3)
-					.getOpStatus());
-			assertEquals(FileAction.BRANCH, submitFiles2.get(3).getAction());
-			assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(4)
-					.getOpStatus());
-			assertEquals(FileAction.INTEGRATE, submitFiles2.get(4).getAction());
+            // Check the statuses and file actions of the two submitted files
+            assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(0)
+                    .getOpStatus());
+            assertEquals(FileAction.BRANCH, submitFiles2.get(0).getAction());
+            assertEquals(FileSpecOpStatus.VALID, submitFiles2.get(1)
+                    .getOpStatus());
+            assertEquals(FileAction.INTEGRATE, submitFiles2.get(1).getAction());
 
-			// Check for 'Submitted as change' in the info message
+            // Check for 'Submitted as change' in the info message
 			assertThat(submitFiles2.get(5).getStatusMessage(),
 					containsText(submittedChange + " " + changelist.getId()));
 
-			// Make sure the changelist is submitted
-			changelist.refresh();
-			assertTrue(changelist.getStatus() == ChangelistStatus.SUBMITTED);
+            // Make sure the changelist is submitted
+            changelist.refresh();
+            assertTrue(changelist.getStatus() == ChangelistStatus.SUBMITTED);
 
-			// The following validates the submitted resolved file using the
-			// info provided by the file's revision history ('filelog')
+            // The following validates the submitted resolved file using the
+            // info provided by the file's revision history ('filelog')
 
-			// Retrieve the revision history ('filelog') of the submitted
-			// resolved file
-			Map<IFileSpec, List<IFileRevisionData>> fileRevisionHisotryMap = server
-					.getRevisionHistory(
-							FileSpecBuilder.makeFileSpecList(targetFile3),
-							new GetRevisionHistoryOptions().setChangelistId(
-									changelist.getId()).setMaxRevs(10));
+            // Retrieve the revision history ('filelog') of the submitted
+            // resolved file
+            Map<IFileSpec, List<IFileRevisionData>> fileRevisionHisotryMap = server
+                    .getRevisionHistory(
+                            FileSpecBuilder.makeFileSpecList(targetFile3),
+                            new GetRevisionHistoryOptions().setChangelistId(
+                                    changelist.getId()).setMaxRevs(10));
 
-			// Check for null
-			assertNotNull(fileRevisionHisotryMap);
+            // Check for null
+            assertNotNull(fileRevisionHisotryMap);
 
-			// There should be only one entry
-			assertEquals(1, fileRevisionHisotryMap.size());
+            // There should be only one entry
+            assertEquals(1, fileRevisionHisotryMap.size());
 
-			// Get the filespec and revision data
-			Map.Entry<IFileSpec, List<IFileRevisionData>> entry = fileRevisionHisotryMap
-					.entrySet().iterator().next();
+            // Get the filespec and revision data
+            Map.Entry<IFileSpec, List<IFileRevisionData>> entry = fileRevisionHisotryMap
+                    .entrySet().iterator().next();
 
-			// Check for null
-			assertNotNull(entry);
+            // Check for null
+            assertNotNull(entry);
 
-			// Make sure we have the correct filespec
-			IFileSpec fileSpec = entry.getKey();
-			assertNotNull(fileSpec);
-			assertNotNull(fileSpec.getDepotPathString());
-			assertEquals(targetFile3, fileSpec.getDepotPathString());
+            // Make sure we have the correct filespec
+            IFileSpec fileSpec = entry.getKey();
+            assertNotNull(fileSpec);
+            assertNotNull(fileSpec.getDepotPathString());
+            assertEquals(targetFile3, fileSpec.getDepotPathString());
 
-			// Make sure we have the revision data
-			List<IFileRevisionData> fileRevisionDataList = entry.getValue();
-			assertNotNull(fileRevisionDataList);
+            // Make sure we have the revision data
+            List<IFileRevisionData> fileRevisionDataList = entry.getValue();
+            assertNotNull(fileRevisionDataList);
 
-			// There should be two revision data
-			assertEquals(2, fileRevisionDataList.size());
+            // There should be two revision data
+            assertEquals(2, fileRevisionDataList.size());
 
-			// LATEST REVISION DATA
+            // LATEST REVISION DATA
 
-			// Verify this revision actually did the correct resolve action
-			IFileRevisionData fileRevisionData = fileRevisionDataList.get(0);
-			assertNotNull(fileRevisionData);
-			assertNotNull(fileRevisionData.getAction());
-			assertEquals(FileAction.INTEGRATE, fileRevisionData.getAction());
+            // Verify this revision actually did the correct resolve action
+            IFileRevisionData fileRevisionData = fileRevisionDataList.get(0);
+            assertNotNull(fileRevisionData);
+            assertNotNull(fileRevisionData.getAction());
+            assertEquals(FileAction.INTEGRATE, fileRevisionData.getAction());
 
-			// There should be one revision integration data for this revision
-			List<IRevisionIntegrationData> revisionIntegrationDataList = fileRevisionData
-					.getRevisionIntegrationDataList();
-			assertNotNull(revisionIntegrationDataList);
-			assertEquals(1, revisionIntegrationDataList.size());
+            // There should be one revision integration data for this revision
+            List<IRevisionIntegrationData> revisionIntegrationDataList = fileRevisionData
+                    .getRevisionIntegrationDataList();
+            assertNotNull(revisionIntegrationDataList);
+            assertEquals(1, revisionIntegrationDataList.size());
 
-			// Verify this revision integration data contains correct resolve
-			// action info for this revision
-			IRevisionIntegrationData revisionIntegrationData = revisionIntegrationDataList
-					.get(0);
-			assertNotNull(revisionIntegrationData);
-			assertNotNull(revisionIntegrationData.getFromFile());
-			assertEquals(targetFile2, revisionIntegrationData.getFromFile());
-			assertNotNull(revisionIntegrationData.getHowFrom());
-			assertEquals("copy from", revisionIntegrationData.getHowFrom());
+            // Verify this revision integration data contains correct resolve
+            // action info for this revision
+            IRevisionIntegrationData revisionIntegrationData = revisionIntegrationDataList
+                    .get(0);
+            assertNotNull(revisionIntegrationData);
+            assertNotNull(revisionIntegrationData.getFromFile());
+            assertEquals(targetFile2, revisionIntegrationData.getFromFile());
+            assertNotNull(revisionIntegrationData.getHowFrom());
+            assertEquals("copy from", revisionIntegrationData.getHowFrom());
 
-			// PREVIOUS REVISION DATA
+            // PREVIOUS REVISION DATA
 
-			// Verify this revision actually did the correct resolve action.
-			IFileRevisionData fileRevisionData2 = fileRevisionDataList.get(1);
-			assertNotNull(fileRevisionData2);
-			assertNotNull(fileRevisionData2.getAction());
-			assertEquals(FileAction.BRANCH, fileRevisionData2.getAction());
+            // Verify this revision actually did the correct resolve action.
+            IFileRevisionData fileRevisionData2 = fileRevisionDataList.get(1);
+            assertNotNull(fileRevisionData2);
+            assertNotNull(fileRevisionData2.getAction());
+            assertEquals(FileAction.BRANCH, fileRevisionData2.getAction());
 
-			// There should be one revision integration data for this revision
-			List<IRevisionIntegrationData> revisionIntegrationDataList2 = fileRevisionData2
-					.getRevisionIntegrationDataList();
-			assertNotNull(revisionIntegrationDataList2);
-			assertEquals(1, revisionIntegrationDataList2.size());
+            // There should be one revision integration data for this revision
+            List<IRevisionIntegrationData> revisionIntegrationDataList2 = fileRevisionData2
+                    .getRevisionIntegrationDataList();
+            assertNotNull(revisionIntegrationDataList2);
+            assertEquals(1, revisionIntegrationDataList2.size());
 
-			// Verify the revision integration data contains correct resolve
-			// action info for this revision
-			IRevisionIntegrationData revisionIntegrationData2 = revisionIntegrationDataList2
-					.get(0);
-			assertNotNull(revisionIntegrationData2);
-			assertNotNull(revisionIntegrationData2.getFromFile());
-			assertEquals(targetFile2, revisionIntegrationData2.getFromFile());
-			assertNotNull(revisionIntegrationData2.getHowFrom());
-			assertEquals("branch from", revisionIntegrationData2.getHowFrom());
+            // Verify the revision integration data contains correct resolve
+            // action info for this revision
+            IRevisionIntegrationData revisionIntegrationData2 = revisionIntegrationDataList2
+                    .get(0);
+            assertNotNull(revisionIntegrationData2);
+            assertNotNull(revisionIntegrationData2.getFromFile());
+            assertEquals(targetFile2, revisionIntegrationData2.getFromFile());
+            assertNotNull(revisionIntegrationData2.getHowFrom());
+            assertEquals("branch from", revisionIntegrationData2.getHowFrom());
 
-			// Use fstat to verify the file action and file type on the revision
-			// of the submitted resolved file
-			List<IExtendedFileSpec> extendedFiles = server.getExtendedFiles(
-					FileSpecBuilder.makeFileSpecList(targetFile3),
-					new GetExtendedFilesOptions().setSinceChangelist(changelist
-							.getId()));
-			assertNotNull(extendedFiles);
-			assertTrue(FileAction.INTEGRATE == extendedFiles.get(0)
-					.getHeadAction());
-			assertTrue(2 == extendedFiles.get(0).getHeadRev());
-			assertTrue(extendedFiles.get(0).getHeadType().contentEquals("text"));
+            // Use fstat to verify the file action and file type on the revision
+            // of the submitted resolved file
+            List<IExtendedFileSpec> extendedFiles = server.getExtendedFiles(
+                    FileSpecBuilder.makeFileSpecList(targetFile3),
+                    new GetExtendedFilesOptions().setSinceChangelist(changelist
+                            .getId()));
+            assertNotNull(extendedFiles);
+            assertTrue(FileAction.INTEGRATE == extendedFiles.get(0)
+                    .getHeadAction());
+            assertTrue(2 == extendedFiles.get(0).getHeadRev());
+            assertTrue(extendedFiles.get(0).getHeadType().contentEquals("text"));
 
-			// Use diff2 to verify the revision is a content change
-			FileSpec currentRev = new FileSpec(extendedFiles.get(0)
-					.getDepotPathString()
-					+ "#"
-					+ extendedFiles.get(0).getHeadRev());
-			FileSpec previousRev = new FileSpec(extendedFiles.get(0)
-					.getDepotPathString()
-					+ "#"
-					+ (extendedFiles.get(0).getHeadRev() - 1));
-			List<IFileDiff> fileDiffs = server.getFileDiffs(previousRev,
-					currentRev, null, new GetFileDiffsOptions());
-			assertNotNull(fileDiffs);
-			assertTrue(IFileDiff.Status.CONTENT == fileDiffs.get(0).getStatus());
+            // Use diff2 to verify the revision is a content change
+            FileSpec currentRev = new FileSpec(extendedFiles.get(0)
+                    .getDepotPathString()
+                    + "#"
+                    + extendedFiles.get(0).getHeadRev());
+            FileSpec previousRev = new FileSpec(extendedFiles.get(0)
+                    .getDepotPathString()
+                    + "#"
+                    + (extendedFiles.get(0).getHeadRev() - 1));
+            List<IFileDiff> fileDiffs = server.getFileDiffs(previousRev,
+                    currentRev, null, new GetFileDiffsOptions());
+            assertNotNull(fileDiffs);
+            assertTrue(IFileDiff.Status.CONTENT == fileDiffs.get(0).getStatus());
 
-		} catch (Exception exc) {
-			fail("Unexpected exception: " + exc.getLocalizedMessage());
-		} finally {
-			if (client != null) {
-				if (changelist != null) {
-					if (changelist.getStatus() == ChangelistStatus.PENDING) {
-						try {
-							// Revert files in pending changelist
-							client.revertFiles(
-									changelist.getFiles(true),
-									new RevertFilesOptions()
-											.setChangelistId(changelist.getId()));
-						} catch (P4JavaException e) {
-							// Can't do much here...
-						}
-					}
-				}
-			}
-			if (client != null && server != null) {
-				try {
-					// Delete submitted test files
-					IChangelist deleteChangelist = getNewChangelist(server,
-							client,
-							"Dev112_IntegrateDeleteActionTest delete submitted test files changelist");
-					deleteChangelist = client
-							.createChangelist(deleteChangelist);
-					client.deleteFiles(FileSpecBuilder
-							.makeFileSpecList(new String[] { targetFile,
-									targetFile2, targetFile3 }),
-							new DeleteFilesOptions()
-									.setChangelistId(deleteChangelist.getId()));
-					deleteChangelist.refresh();
-					deleteChangelist.submit(null);
-				} catch (P4JavaException e) {
-					// Can't do much here...
+        } catch (Exception exc) {
+            fail("Unexpected exception: " + exc.getLocalizedMessage());
+        } finally {
+            if (client != null) {
+                if (changelist != null) {
+                    if (changelist.getStatus() == ChangelistStatus.PENDING) {
+                        try {
+                            // Revert files in pending changelist
+                            client.revertFiles(
+                                    changelist.getFiles(true),
+                                    new RevertFilesOptions()
+                                            .setChangelistId(changelist.getId()));
+                        } catch (P4JavaException e) {
+                            // Can't do much here...
+                        }
+                    }
+                }
+            }
+            if (client != null && server != null) {
+                try {
+                    // Delete submitted test files
+                    IChangelist deleteChangelist = getNewChangelist(server,
+                            client,
+                            "Dev112_IntegrateDeleteActionTest delete submitted test files changelist");
+                    deleteChangelist = client
+                            .createChangelist(deleteChangelist);
+                    client.deleteFiles(FileSpecBuilder
+                            .makeFileSpecList(new String[] { targetFile,
+                                    targetFile2, targetFile3 }),
+                            new DeleteFilesOptions()
+                                    .setChangelistId(deleteChangelist.getId()));
+                    deleteChangelist.refresh();
+                    deleteChangelist.submit(null);
+                } catch (P4JavaException e) {
+                    // Can't do much here...
 				}
 			}
 		}

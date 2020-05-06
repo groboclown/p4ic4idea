@@ -5,7 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
+import com.perforce.p4java.PropertyDefs;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,22 +34,23 @@ public class SubmitAndSyncUtf8FileTypeUnderServer20132Test extends P4JavaRshTest
     private List<IFileSpec> submittedOrPendingFileSpecs = null;
 
     @ClassRule
-	public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", SubmitAndSyncUtf8FileTypeUnderServer20132Test.class.getSimpleName());
+	public static UnicodeServerRule p4d = new UnicodeServerRule("r16.1", SubmitAndSyncUtf8FileTypeUnderServer20132Test.class.getSimpleName());
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-    	setupServer(p4d.getRSHURL(), null, null, true, null);
+        Properties properties = new Properties();
+        properties.put(PropertyDefs.FILESYS_UTF8BOM_SHORT_FORM, "1");
+    	setupServer(p4d.getRSHURL(), null, null, true, properties);
     }
 
     @Test
-    @Ignore("issue with data in file")
-    public void testSubmitFileHasUtf8BomButHasBytesBetween7FTo9FAndItShouldDetectAsText_Server_before_2015x() throws Exception {
+    public void testSubmitFileHasUtf8BomButHasBytesBetween7FTo9FAndItShouldDetectAsUtf8() throws Exception {
         File testResourceFile = loadFileFromClassPath(CLASS_PATH_PREFIX + "/aw30_101x_Rev_1_ui_configurations_ja_JP.xml");
         long originalSize = Files.size(testResourceFile.toPath());
         testSubmitFile(
                 "p4TestUnixLineend",
                 testResourceFile,
-                "text",
+                "utf8",
                 originalSize,
                 originalSize
         );
@@ -72,7 +75,8 @@ public class SubmitAndSyncUtf8FileTypeUnderServer20132Test extends P4JavaRshTest
         Path targetLocalFile = submittingSupplier.targetLocalFile();
 
         verifyServerSideFileType(depotPath, expectedFileTypeString);
-        verifyServerSideFileSize(depotPath, expectedServerSideFileSize);
+        //Server strips UTF-8 BOM(3 bytes)
+        verifyServerSideFileSize(depotPath, expectedServerSideFileSize -3);
         verifyFileSizeAfterSyncFromDepot(depotPath, targetLocalFile, expectedSyncedLocalFileSize);
     }
 

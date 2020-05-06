@@ -15,11 +15,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -154,7 +154,6 @@ public class ResolveFilesAutoOptionsTest {
             h.editFile(conflictFile.getAbsolutePath(), conflictContent2, pendingChangelist, client);
             pendingChangelist.submit(null);
             client.sync(makeFileSpecList(conflictFile.getAbsolutePath() + "#1"), null);
-            pendingChangelist = h.createChangelist(server, user, client);
 
             conflictMergedContent = ">>>> ORIGINAL " + conflictFileSpecs.get(0).getOriginalPathString() + "#1\n" +
                     conflictContent + "==== THEIRS " + conflictFileSpecs.get(0).getOriginalPathString() + "#2\n" +
@@ -171,6 +170,7 @@ public class ResolveFilesAutoOptionsTest {
 
     @Before
     public void before() throws Throwable {
+        pendingChangelist = h.createChangelist(server, user, client);
 
         client.revertFiles(makeFileSpecList("//..."), null);
         assertEquals(0, server.getOpenedFiles(targetFileSpecs, null).size());

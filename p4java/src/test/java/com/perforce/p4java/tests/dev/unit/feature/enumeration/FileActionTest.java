@@ -35,7 +35,7 @@ public class FileActionTest extends BaseEnumTestHelper {
     }
 
     /**
-     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(java.lang.String)
      */
     protected FileAction valueOf(String name) {
 	return FileAction.valueOf(name);

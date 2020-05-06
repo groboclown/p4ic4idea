@@ -40,7 +40,7 @@ public class ServerConfigurationTests extends P4JavaTestCase {
             fail("Unexpected exception: " + exc.getLocalizedMessage());
         } finally {
             if (server != null) {
-                this.endServerSession(server);
+                endServerSession(server);
             }
         }
     }
@@ -109,7 +109,7 @@ public class ServerConfigurationTests extends P4JavaTestCase {
             fail("Unexpected exception: " + exc.getLocalizedMessage());
         } finally {
             if (server != null) {
-                this.endServerSession(server);
+                endServerSession(server);
             }
         }
     }
@@ -138,7 +138,7 @@ public class ServerConfigurationTests extends P4JavaTestCase {
             fail("Unexpected exception: " + exc.getLocalizedMessage());
         } finally {
             if (server != null) {
-                this.endServerSession(server);
+                endServerSession(server);
             }
         }
     }

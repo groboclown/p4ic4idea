@@ -20,7 +20,7 @@ public class SsoCallbackTest extends BaseEnumTestHelper {
     }
 
     /**
-     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(String)
+     * @see com.perforce.p4java.tests.dev.unit.feature.enumeration.BaseEnumTestHelper#valueOf(java.lang.String)
      */
     protected ISSOCallback.Status valueOf(String name) {
 	return ISSOCallback.Status.valueOf(name);

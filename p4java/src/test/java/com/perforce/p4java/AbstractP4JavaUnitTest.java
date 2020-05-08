@@ -311,7 +311,7 @@ public abstract class AbstractP4JavaUnitTest {
                 new ServerMessage.SingleServerMessage(
                         results.get("code0").toString(),
                         0, map)));
-        return new FileSpec(status, msg);
+        return new FileSpec(status, msg, results);
     }
 
     public static FileSpec dummyFileSpec(FileSpecOpStatus status, Map<String, Object> results) {
@@ -322,6 +322,6 @@ public abstract class AbstractP4JavaUnitTest {
                 new ServerMessage.SingleServerMessage(
                         results.get("code0").toString(),
                         0, map)));
-        return new FileSpec(status, msg);
+        return new FileSpec(status, msg, results);
     }
 }

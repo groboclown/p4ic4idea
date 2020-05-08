@@ -108,9 +108,9 @@ public class ResultListBuilder {
                 IServerMessage message = ResultMapParser.toServerMessage(map);
                 ResultMapParser.handleFileErrors(message);
                 if (nonNull(message) && message.isError()) {
-                    specList.add(new ExtendedFileSpec(ERROR, message));
+                    specList.add(new ExtendedFileSpec(ERROR, message, map));
                 } else if (nonNull(message) && message.isInfoOrError()) {
-                    specList.add(new ExtendedFileSpec(INFO, message));
+                    specList.add(new ExtendedFileSpec(INFO, message, map));
                 } else {
                     if (isContainsValidRevisionSpecificInformation(map)) {
                         specList.add(new ExtendedFileSpec(map, server, -1));
@@ -135,12 +135,12 @@ public class ResultListBuilder {
         if (nonNull(message)) {
             ResultMapParser.handleFileErrors(message);
             if (message.isError()) {
-                return new FileSpec(FileSpecOpStatus.ERROR, message);
+                return new FileSpec(FileSpecOpStatus.ERROR, message, map);
             } else if (message.isInfoOrError()) {
                 if (ignoreInfo) {
                     return new FileSpec(map, server, -1);
                 } else {
-                    return new FileSpec(FileSpecOpStatus.INFO, message);
+                    return new FileSpec(FileSpecOpStatus.INFO, message, map);
                 }
             } else  {
                 return new FileSpec(map, server, -1);
@@ -160,9 +160,9 @@ public class ResultListBuilder {
         if (nonNull(message)) {
             ResultMapParser.handleFileErrors(message);
             if (message.isError()) {
-                return new FileSpec(FileSpecOpStatus.ERROR, message);
+                return new FileSpec(FileSpecOpStatus.ERROR, message, map);
             } else if (message.isInfoOrError()) {
-                return new FileSpec(FileSpecOpStatus.INFO, message);
+                return new FileSpec(FileSpecOpStatus.INFO, message, map);
             }
         }
         if (nonNull(map)) {

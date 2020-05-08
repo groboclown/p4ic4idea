@@ -516,7 +516,8 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 					SingleServerMessage msg = new SingleServerMessage("Submitted as change " + this.id);
 					fileList.add(new FileSpec(FileSpecOpStatus.INFO,
 							new ServerMessage(
-									Collections.<ISingleServerMessage>singletonList(msg))));
+									Collections.<ISingleServerMessage>singletonList(msg)),
+							map));
 				} else if (map.get("locked") != null) {
 					// disregard this message for now -- FIXME -- HR
 				} else {

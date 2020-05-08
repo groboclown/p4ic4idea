@@ -14,6 +14,8 @@
 
 package com.perforce.p4java.server;
 
+import com.perforce.p4java.impl.generic.core.file.FilePath;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.UnsupportedEncodingException;

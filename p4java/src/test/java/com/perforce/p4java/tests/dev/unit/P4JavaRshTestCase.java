@@ -1,7 +1,9 @@
 package com.perforce.p4java.tests.dev.unit;
 
 import com.perforce.p4java.option.server.LoginOptions;
+import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ServerFactory;
+import com.perforce.p4java.server.callback.ICommandCallback;
 import com.perforce.p4java.tests.MockCommandCallback;
 import org.junit.Assert;
 
@@ -13,7 +15,32 @@ public class P4JavaRshTestCase extends P4JavaTestCase {
 		server = ServerFactory.getOptionsServer(p4dUrl, props);
 		Assert.assertNotNull(server);
 
-		server.registerCallback(new MockCommandCallback());
+		server.registerCallback(new ICommandCallback() {
+			@Override
+			public void issuingServerCommand(int key, String commandString) {
+				serverCommand = commandString;
+			}
+
+			@Override
+			public void completedServerCommand(int key, long millisecsTaken) {
+
+			}
+
+			@Override
+			public void receivedServerInfoLine(int key, IServerMessage infoLine) {
+				serverMessage = infoLine;
+			}
+
+			@Override
+			public void receivedServerErrorLine(int key, IServerMessage errorLine) {
+				serverMessage = errorLine;
+			}
+
+			@Override
+			public void receivedServerMessage(int key, IServerMessage message) {
+				serverMessage = message;
+			}
+		});
 		server.connect();
 
 		setUtf8CharsetIfServerSupportUnicode(server);

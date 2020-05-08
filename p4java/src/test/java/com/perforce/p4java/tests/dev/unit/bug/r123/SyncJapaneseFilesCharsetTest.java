@@ -13,6 +13,7 @@ import com.perforce.p4java.tests.dev.unit.features123.InMemoryAuthTicketsTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
@@ -31,6 +32,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 @Jobs({"job036721"})
 @TestId("Dev112_SyncJapaneseFilesTest")
+@Ignore("Test uses characters for files that are invalid on Windows")
 public class SyncJapaneseFilesCharsetTest extends P4JavaRshTestCase {
 
   @ClassRule

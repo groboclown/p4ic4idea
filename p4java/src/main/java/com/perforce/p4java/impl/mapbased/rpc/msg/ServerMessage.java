@@ -18,6 +18,7 @@ import com.perforce.p4java.Log;
 import com.perforce.p4java.exception.MessageGenericCode;
 import com.perforce.p4java.exception.MessageSeverityCode;
 import com.perforce.p4java.exception.MessageSubsystemCode;
+import com.perforce.p4java.impl.generic.core.file.FilePath;
 import com.perforce.p4java.impl.mapbased.rpc.CommandEnv;
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ISingleServerMessage;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.perforce.p4java.common.base.ObjectUtils.isNull;
 import static com.perforce.p4java.common.base.ObjectUtils.nonNull;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
@@ -42,6 +44,7 @@ public class ServerMessage implements IServerMessage {
     private final ISingleServerMessage[] messages;
     private final ISingleServerMessage highestSeverity;
     private final String str;
+
 
     public ServerMessage(final @Nonnull Iterable<ISingleServerMessage> messages) {
         this(asList(messages));
@@ -301,6 +304,8 @@ public class ServerMessage implements IServerMessage {
 
             format = (String) map.get(RpcMessage.FMT + index);
             localized = RpcMessage.interpolateArgs(format, map);
+
+
         }
 
         /** @deprecated only useful in one place */

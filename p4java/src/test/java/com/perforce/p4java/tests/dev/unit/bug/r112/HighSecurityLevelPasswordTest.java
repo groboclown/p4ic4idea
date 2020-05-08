@@ -84,6 +84,7 @@ public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
+		fail("Uses an external server.  Need to change this.");
 		try {
 			server = ServerFactory.getOptionsServer(highSecurityLevelServerURL,
 					null);

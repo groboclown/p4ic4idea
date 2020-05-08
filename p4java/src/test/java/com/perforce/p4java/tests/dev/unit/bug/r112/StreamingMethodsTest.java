@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.exception.P4JavaException;
@@ -26,6 +29,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Jobs({ "job046042" })
 @TestId("Dev112_StreamingMethodsTest")
 public class StreamingMethodsTest extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	public static class SimpleCallbackHandler implements IStreamingCallback {
 		int expectedKey = 0;

@@ -150,8 +150,8 @@ public class ExtendedFileSpec extends FileSpec implements IExtendedFileSpec {
      *            error / info message string.
      */
     // p4ic4idea: use the IServerMessage instead of a String
-    public ExtendedFileSpec(FileSpecOpStatus status, IServerMessage errStr) {
-        super(status, errStr);
+    public ExtendedFileSpec(FileSpecOpStatus status, IServerMessage errStr, Map<String, Object> map) {
+        super(status, errStr, map);
     }
 
     /**

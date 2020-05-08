@@ -14,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,16 +52,17 @@ public class KeysDelegatorTest {
     public void beforeEach() {
         server = mock(Server.class);
         keysDelegator = new KeysDelegator(server);
-        resultMap = mock(Map.class);
+        // p4ic4idea: just use a hashmap, as it allows the isEmpty and other calls to work as expected.
+        resultMap = new HashMap<>();
         resultMaps = newArrayList(resultMap);
 
         opts = new GetKeysOptions(KEYS_ARGUMENTS);
     }
 
     private void populateResultMap() {
-        when(resultMap.get(CODE0)).thenReturn(MESSAGE_CODE_IN_INFO_RANGE);
-        when(resultMap.get(VALUE)).thenReturn(KEY_VALUE);
-        when(resultMap.get("key")).thenReturn(KEY_NAME);
+        resultMap.put(CODE0, MESSAGE_CODE_IN_INFO_RANGE);
+        resultMap.put(VALUE, KEY_VALUE);
+        resultMap.put("key", KEY_NAME);
     }
 
     /**

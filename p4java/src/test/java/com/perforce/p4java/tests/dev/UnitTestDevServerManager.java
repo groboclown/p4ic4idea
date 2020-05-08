@@ -146,6 +146,7 @@ public class UnitTestDevServerManager {
             } else {
                 System.setProperty(P4JTEST_SERVER_URL_PROPNAME, serverUrl);
             }
+            P4JavaTestCase.serverUrlString = serverUrl;
         }
 
         static String getDefaultServerUrl() {

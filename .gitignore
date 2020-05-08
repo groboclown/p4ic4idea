@@ -17,6 +17,8 @@ p4ic4idea-*.jar
 # p4java needs to be updated to use the build directory instead of these.
 /p4java/tmp/
 /p4java/p4root/
+/p4java/.p4tickets
+/p4java/p4d.d-*/
 /idea-p4server/impl/p4d.d-*/
 
 # specific user properties
@@ -36,7 +38,3 @@ local.properties.*
 
 # Don't check-in generated pact files.
 /*/target/pacts/
-
-/p4java/.p4tickets
-/p4java/tmp/
-/p4java/p4d.d-*/

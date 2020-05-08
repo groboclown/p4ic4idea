@@ -15,6 +15,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +72,8 @@ public class MoveDelegatorTest {
     public void beforeEach() {
         server = mock(Server.class);
         moveDelegator = new MoveDelegator(server);
-        resultMap = mock(Map.class);
+        // p4ic4idea: just use a hashmap, to make debugging easier and allow for correct API.
+        resultMap = new HashMap<>();
         resultMaps = newArrayList(resultMap);
 
         fromFileSpec = mock(IFileSpec.class);
@@ -400,8 +402,8 @@ public class MoveDelegatorTest {
     }
 
     private void givenInfoMessageCode() {
-        when(resultMap.get(CODE0)).thenReturn(MESSAGE_CODE_IN_INFO_RANGE);
-        when(resultMap.get(FROM_FILE)).thenReturn(FROM_FILE_PATH_STRING);
-        when(resultMap.get(TO_FILE)).thenReturn(TO_FILE_PATH_STRING);
+        resultMap.put(CODE0, MESSAGE_CODE_IN_INFO_RANGE);
+        resultMap.put(FROM_FILE, FROM_FILE_PATH_STRING);
+        resultMap.put(TO_FILE, TO_FILE_PATH_STRING);
     }
 }

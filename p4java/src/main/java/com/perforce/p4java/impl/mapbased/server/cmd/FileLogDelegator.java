@@ -93,7 +93,8 @@ public class FileLogDelegator extends BaseDelegator implements IFileLogDelegator
                 if (nonNull(errStr)) {
                     FileSpec fileSpec = new FileSpec(
                             ERROR,
-                            errStr);
+                            errStr,
+                            resultMap);
                     fileSpec.setDepotPath(depotPath);
                     fileRevisionDataMap.put(fileSpec, null);
                 } else {

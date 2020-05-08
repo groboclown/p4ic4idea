@@ -10,6 +10,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -23,6 +24,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
  * @author Sean Shou
  * @since 18/07/2016
  */
+@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUtf8FileTypeUnderServer20161Test extends P4JavaRshTestCase {
     private static final long UTF_8_BOM_SIZE = 3;
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";

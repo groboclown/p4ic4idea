@@ -148,9 +148,9 @@ public class ObliterateDelegator extends BaseDelegator implements IObliterateDel
             // p4ic4idea: forced to throw RequestException due to apply call.
             throws RequestException {
 
-        FileSpec fs = new FileSpec(ERROR, errStr);
+        FileSpec fs = new FileSpec(ERROR, errStr, map);
         if (infoMessageDetector.apply(map)) {
-            fs = new FileSpec(INFO, errStr);
+            fs = new FileSpec(INFO, errStr, map);
         }
 
         return fs;

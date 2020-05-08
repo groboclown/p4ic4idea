@@ -181,20 +181,24 @@ public class ClientDelegatorTest {
         assertNull(client);
     }
 
+    // p4ic4idea: the original unit test was wrong.  Non-explicit exceptions thrown by the handler should never be
+    // wrapped.
     @Test
     public void getClientOrNullFromHelixResultMap_shouldThrowAccessExceptionThatWasThrownFromHandleErrorStr() throws Exception {
         //given
         when(resultMap.get(E_FAILED)).thenReturn(EMPTY);
 
         //then
-        thrown.expect(RequestException.class);
+        thrown.expect(IllegalStateException.class);
         ClientDelegator.getClientOrNullFromHelixResultMap(
                 resultMaps,
                 mock(GetClientTemplateOptions.class),
                 server,
                 mock(BiPredicate.class),
-                // p4ic4idea: The mock returns a null, which unboxes into a NPE
-                (o) -> true);
+                // p4ic4idea: change handler so it explicitly throws a runtime exception.
+                (o) -> {
+                    throw new IllegalStateException();
+                });
     }
 
     @Test

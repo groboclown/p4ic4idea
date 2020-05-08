@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -35,6 +36,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
  * @since 18/07/2016
  */
 
+@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUtf16FileTypeTest extends P4JavaRshTestCase {
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
     private static final String RELATIVE_DEPOT_PATH = "/152Bugs/job085433/" + System.currentTimeMillis();

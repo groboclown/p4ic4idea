@@ -98,7 +98,7 @@ public abstract class BaseDelegator {
 
                 }
 
-                return new FileSpec(specOpStatus, err);
+                return new FileSpec(specOpStatus, err, map);
 
             }
 

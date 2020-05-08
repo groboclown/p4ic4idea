@@ -150,7 +150,7 @@ public class SubmitBigFileProgressIndicatorTest extends P4JavaRshTestCase {
 						int id = new Integer((String) resultmap.get("submittedChange"));
 						ChangelistStatus status = ChangelistStatus.SUBMITTED;
 						fileList.add(new FileSpec(FileSpecOpStatus.INFO,
-								dummyServerInfoMessage("Submitted as change " + id)));
+								dummyServerInfoMessage("Submitted as change " + id), resultmap));
 					} else if (resultmap.get("locked") != null) {
 						// disregard this message for now
 					} else {

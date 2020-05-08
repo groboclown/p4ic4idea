@@ -14,8 +14,6 @@ import java.util.List;
 
 import com.perforce.p4java.tests.MockCommandCallback;
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -49,22 +47,12 @@ public class PasswordTest extends P4JavaTestCase {
   private static IUser newUser = null;
   private static MockCommandCallback callback = new MockCommandCallback();
 
-  // p4ic4idea: use local server
-  @BeforeClass
-  public static void oneTimeSetUp() {
-    UnitTestDevServerManager.INSTANCE.startTestClass();
-  }
-  @AfterClass
-  public static void oneTimeTearDown() {
-    UnitTestDevServerManager.INSTANCE.endTestClass();
-  }
-
   @BeforeAll
   public static void setUp() throws Exception {
-    server = getServer(
-        props,
-        getUserName(),
-        getPassword());
+    // p4ic4idea: use local server
+    UnitTestDevServerManager.INSTANCE.startTestClass();
+
+    server = getServer();
     assertThat(server, notNullValue());
     IClient client = server.getClient("p4TestUserWS20112");
     assertThat(client, notNullValue());
@@ -86,6 +74,7 @@ public class PasswordTest extends P4JavaTestCase {
   public static void tearDown() {
     afterEach(server);
     afterEach(superServer);
+    UnitTestDevServerManager.INSTANCE.endTestClass();
   }
 
   /**
@@ -181,8 +170,7 @@ public class PasswordTest extends P4JavaTestCase {
       assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
 
       // Use the super user to change the password to something else
-      superServer = getServer(getServerUrlString(), props,
-          "p4jtestsuper", "p4jtestsuper");
+      superServer = getServerAsSuper();
       assertThat(superServer, notNullValue());
       superClient = superServer.getClient("p4TestSuperWS20112");
       superServer.setCurrentClient(superClient);
@@ -236,7 +224,7 @@ public class PasswordTest extends P4JavaTestCase {
     // User's password has space and tab characters at the start and end
     server.setUserName("testuser-job059485");
     // Password with 2 tabs at the start and 2 spaces at the end
-    server.login("		abc123  ");
+    server.login("\t\tabc123  ");
     assertThat(callback.getMessage(), notNullValue());
     assertThat(callback.getMessage(), containsText("User testuser-job059485 logged in."));
   }

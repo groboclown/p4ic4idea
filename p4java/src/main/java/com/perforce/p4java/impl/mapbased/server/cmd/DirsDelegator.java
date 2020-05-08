@@ -101,11 +101,11 @@ public class DirsDelegator extends BaseDelegator implements IDirsDelegator {
                             // specList.add();
                         } else {
                             if (ResultMapParser.isInfoMessage(map)) {
-                                specList.add(new FileSpec(INFO, errStr));
+                                specList.add(new FileSpec(INFO, errStr, map));
                             }
                         }
                     } else {
-                        specList.add(new FileSpec(ERROR, errStr));
+                        specList.add(new FileSpec(ERROR, errStr, map));
                     }
                 }
             }

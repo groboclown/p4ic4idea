@@ -83,7 +83,10 @@ public class ServerConfigurationTest extends P4JavaRshTestCase {
 			// Get an error message about the variable did not have a value
 			retVal = server.setOrUnsetServerConfigurationValue(SERVER_NAME + "#"
 					+ CONFIG_NAME, null);
-			assertTrue(retVal.equals("Configuration variable '" + CONFIG_NAME + "' did not have a value.\n") || retVal.equals(""));
+			assertTrue(retVal.equals("Configuration variable '" + CONFIG_NAME + "' did not have a value.\n") || retVal.equals("")
+					// p4ic4idea: it may not have an EOL
+					|| retVal.equals("Configuration variable '" + CONFIG_NAME + "' did not have a value.")
+			);
 
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());

@@ -496,12 +496,14 @@ public abstract class ResultMapParser {
 	 * @throws RequestException the request exception
 	 * @throws AccessException  the access exception
 	 */
+	// p4ic4idea: this raises an exception ONLY on errors.  Unit tests show that this is the expected behavior
+	// from the rest of the codebase.
 	public static boolean handleErrorOrInfoStr(final Map<String, Object> map)
 			throws RequestException, AccessException {
 		// p4ic4idea: use IServerMessage
         IServerMessage err = getErrorOrInfoStr(map);
 
-		if (nonNull(err)) {
+		if (nonNull(err) && err.isError()) {
             AuthenticationFailedException.ErrorType authFailType = getAuthFailType(err);
 			if (nonNull(authFailType)) {
 				throw new AuthenticationFailedException(authFailType, err);

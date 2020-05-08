@@ -83,8 +83,8 @@ public class TrustExceptionTest extends P4JavaLocalServerTestCase {
                 fail("should get 'new connection' trust exception");
             } catch (P4JavaException e) {
                 assertThat(e, notNullValue());
-                assertThat(e.getCause(), instanceOf(TrustException.class));
-                TrustException trustException = (TrustException) e.getCause();
+                assertThat(e, instanceOf(TrustException.class));
+                TrustException trustException = (TrustException) e;
                 assertThat(trustException.getType() == NEW_CONNECTION, is(true));
                 String fingerprint = trustException.getFingerprint();
                 assertThat(fingerprint, notNullValue());
@@ -152,12 +152,12 @@ public class TrustExceptionTest extends P4JavaLocalServerTestCase {
                 StringWriter stringWriter = new StringWriter(100);
                 e.printStackTrace(new PrintWriter(stringWriter));
 
-                assertThat(stringWriter.toString(), e.getCause(), instanceOf(TrustException.class));
-                assertThat(((TrustException) e.getCause()).getType(), is(NEW_CONNECTION));
-                assertNotNull(((TrustException) e.getCause()).getFingerprint());
+                assertThat(stringWriter.toString(), e, instanceOf(TrustException.class));
+                assertThat(((TrustException) e).getType(), is(NEW_CONNECTION));
+                assertNotNull(((TrustException) e).getFingerprint());
 
                 // Add the key (new connection)
-                result = server.addTrust(((TrustException) e.getCause()).getFingerprint());
+                result = server.addTrust(((TrustException) e).getFingerprint());
                 assertNotNull(result);
                 assertThat(result, containsString("not known"));
                 assertThat(result, containsString("Added trust for Perforce server"));

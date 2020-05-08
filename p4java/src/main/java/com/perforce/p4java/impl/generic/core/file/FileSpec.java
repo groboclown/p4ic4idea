@@ -227,7 +227,7 @@ public class FileSpec extends ServerResource implements IFileSpec {
 	 * Construct a filespec from an opstatus and error message.
 	 */
 	// p4ic4idea: full support of formal server messages
-	public FileSpec(FileSpecOpStatus status, IServerMessage err) {
+	public FileSpec(FileSpecOpStatus status, IServerMessage err, Map<String, Object> map) {
 		super(false, false);
 		this.opStatus = status;
 		this.statusMessage = err;
@@ -237,6 +237,44 @@ public class FileSpec extends ServerResource implements IFileSpec {
 		this.uniqueCode = err.getUniqueCode();
 		this.subCode = err.getSubCode();
 		this.subSystem = err.getSubSystem();
+
+		// TODO use constants for lookups, not direct strings.
+        {
+            final Object depotFile = map.get("depotFile");
+            if (depotFile instanceof String && isNotBlank((String) depotFile)) {
+                setDepotPath((String) depotFile);
+            }
+        }
+        {
+            final Object clientFile = map.get("clientFile");
+            if (clientFile instanceof String && isNotBlank((String) clientFile)) {
+                setClientPath((String) clientFile);
+            }
+        }
+        {
+            final Object localFile = map.get("localFile");
+            if (localFile instanceof String && isNotBlank((String) localFile)) {
+                setLocalPath((String) localFile);
+            }
+        }
+        {
+            final Object originalFile = map.get("originalFile");
+            if (originalFile instanceof String && isNotBlank((String) originalFile)) {
+                setOriginalPath((String) originalFile);
+            }
+        }
+        {
+            final Object fromFile = map.get("fromFile");
+            if (fromFile instanceof String && isNotBlank((String) fromFile)) {
+                setFromFile((String) fromFile);
+            }
+        }
+        {
+            final Object toFile = map.get("toFile");
+            if (toFile instanceof String && isNotBlank((String) toFile)) {
+                setToFile((String) toFile);
+            }
+        }
 	}
 
 	// p4ic4idea: remove error strings in favor of server messages.

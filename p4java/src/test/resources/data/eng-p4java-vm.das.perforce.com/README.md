@@ -2,6 +2,8 @@
 
 A locally hosted depot version of what the integration tests run against.  These are intended to run against the Perforce servers internal to the Perforce company, but as we don't have access to those servers, this is the placeholder. 
 
+The depot is constructed through the `construction` directory.
+
 ## Double Check
 
 When you work on creating this, follow this checklist:
@@ -18,7 +20,7 @@ If this depot needs updates, follow these steps.
 First, create a docker server (or run locally, you know, if you want).  For tests, we need an audit log and a log.
 
 ```bash
-docker run -it --rm --name p4d -p 11666:1666 -v /tmp/p4d-depot:/opt/p4d/depot ubuntu
+docker run -it --rm --name p4d -p 11666:1666 -v /tmp/p4d-depot:/opt/p4d  ubuntu
 (now inside the docker container)
 apt-get update && apt-get -y upgrade && apt-get -y install wget
 cd /tmp/p4d-depot

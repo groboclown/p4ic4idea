@@ -13,6 +13,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@Ignore("This test creates files that cannot be created in Windows")
 public class Job094474Test extends P4JavaRshTestCase {
 
 	public static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";

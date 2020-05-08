@@ -87,4 +87,5 @@ public interface ISingleServerMessage {
      * @return string version of the status code
      */
     String getCode();
+
 }

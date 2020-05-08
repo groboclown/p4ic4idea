@@ -25,6 +25,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
  * @since 18/07/2016
  */
 
+@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUtf8FileTypeTest extends P4JavaRshTestCase {
     private static final long UTF_8_BOM_SIZE = 3;
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";

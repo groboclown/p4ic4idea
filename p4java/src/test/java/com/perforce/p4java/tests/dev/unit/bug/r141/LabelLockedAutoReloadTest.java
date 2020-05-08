@@ -97,14 +97,14 @@ public class LabelLockedAutoReloadTest extends P4JavaRshTestCase {
 		} finally {
 			try {
 				// Delete the test label
-				server = getServerAsSuper();
+				//server = getServerAsSuper();
 				if (server != null) {
 					String message = server.deleteLabel(labelName, true);
 					assertNotNull(message);
 				}
 			} catch (P4JavaException e) {
 				// Can't do much here...
-			} catch (URISyntaxException e) {
+			//} catch (URISyntaxException e) {
 				// Can't do much here...
 			}
 		}

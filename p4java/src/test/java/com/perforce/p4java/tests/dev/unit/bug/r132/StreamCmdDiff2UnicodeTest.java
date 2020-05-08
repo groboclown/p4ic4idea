@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -29,6 +30,7 @@ import java.nio.charset.Charset;
 
 @Jobs({"job066294"})
 @TestId("Dev132_StreamCmdDiff2UnicodeTest")
+@Ignore("Server contains files that can't be created on Windows")
 public class StreamCmdDiff2UnicodeTest extends P4JavaRshTestCase {
   // Unicode server
   private static final String p4Charset = "utf16";

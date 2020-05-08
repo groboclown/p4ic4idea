@@ -17,6 +17,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+@Ignore("This test creates files that cannot be created in Windows")
 public class Job092308 extends P4JavaRshTestCase {
 
 	private static final String clientName = "filesysUtf8bom-unicode";

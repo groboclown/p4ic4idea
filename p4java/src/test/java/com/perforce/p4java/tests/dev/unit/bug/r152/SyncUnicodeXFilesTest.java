@@ -15,6 +15,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -35,6 +36,7 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job085473" })
 @TestId("Dev151_SyncUnicodeXFilesTest")
+@Ignore("This test creates files that cannot be created in Windows")
 public class SyncUnicodeXFilesTest extends P4JavaRshTestCase {
 	
 	

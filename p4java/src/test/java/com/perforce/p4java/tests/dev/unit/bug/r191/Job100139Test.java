@@ -132,7 +132,11 @@ public class Job100139Test extends P4JavaRshTestCase {
 		//Check the fileSpecs are not null and valid.
 		assertNotNull(fileSpecs);
 		assertEquals(1, fileSpecs.size());
-		assertEquals(FileSpecOpStatus.ERROR, fileSpecs.get(0).getOpStatus());
 
+		// p4ic4idea: Based on the above comment, I don't know why this would be expected to be an error...
+		// If it was, it should also check the error text.
+		// assertEquals(FileSpecOpStatus.ERROR, fileSpecs.get(0).getOpStatus());
+		assertEquals(FileSpecOpStatus.INFO, fileSpecs.get(0).getOpStatus());
+		assertTrue(fileSpecs.get(0).getStatusMessage().hasMessageFragment(" - file(s) up-to-date."));
 	}
 }

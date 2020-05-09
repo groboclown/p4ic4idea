@@ -138,7 +138,7 @@ public class ShelveChangelistClientTest extends P4JavaRshTestCase {
 			assertTrue(files.size() > 0);
 			assertNotNull(files.get(0) != null);
 			assertTrue(files.get(0).getOpStatus() == FileSpecOpStatus.INFO);
-			assertEquals("Shelved change " + changelist.getId() + " deleted.", files.get(0).getStatusMessage());
+			assertEquals("Shelved change " + changelist.getId() + " deleted.", files.get(0).getStatusString());
 		} catch (P4JavaException e) {
 			fail("Unexpected exception: " + e.getLocalizedMessage());
 		} catch (IOException e) {

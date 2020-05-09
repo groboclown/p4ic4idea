@@ -173,3 +173,10 @@ mkdir -p 101Bugs/Bugs101_Job040877Test
 cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040877Test/test01.txt
 p4 add 101Bugs/Bugs101_Job040877Test/test01.txt
 p4 submit -d "Job040877Test: required files"
+
+
+# ReconcileWorkspaceFilesTest
+mkdir -p reconcile
+( cd "${SOURCE_ROOT}/text" && zip -9r /tmp/client/p4TestUserWS/reconcile/TestFramework.zip * )
+p4 add reconcile/TestFramework.zip
+p4 submit -d "ReconcileWorkspaceFilesTest: add zip file for tests"

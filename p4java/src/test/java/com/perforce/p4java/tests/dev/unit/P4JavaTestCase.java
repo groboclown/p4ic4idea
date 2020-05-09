@@ -100,6 +100,7 @@ import static org.junit.Assert.fail;
 // p4ic4idea: IServerMessage
 import com.perforce.p4java.server.IServerMessage;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Superclass for all normal p4jtest junit tests; should be subclassed further
@@ -1001,11 +1002,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 		} else {
 			props.put(RpcPropertyDefs.RPC_SOCKET_SO_TIMEOUT_NICK, "300000");
 		}
-		if (uriString == null) {
-			server = ServerFactory.getOptionsServer(serverUrlString, props);
-		} else {
-			server = ServerFactory.getOptionsServer(uriString, props);
-		}
+		server = getRawOptionsServer(uriString, props);
 		if (server != null) {
 			server.connect();
 			if (server.isConnected()) {
@@ -1020,8 +1017,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	protected IOptionsServer getOptionsServer(String uriString, Properties props)
 			throws P4JavaException, URISyntaxException {
 		// p4ic4idea: ensure this is done in a non-Perforce server...
-		assertFalse("Invalid server: " + uriString, uriString.contains(".perforce.com"));
-		IOptionsServer server = ServerFactory.getOptionsServer(uriString, props);
+		IOptionsServer server = getRawOptionsServer(uriString, props);
 		if (server != null) {
 			server.connect();
 			if (server.isConnected()) {
@@ -1031,6 +1027,15 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 			}
 		}
 		return server;
+	}
+
+	protected static IOptionsServer getRawOptionsServer(@Nullable String uriString, @Nullable Properties props)
+			throws ConnectionException, ConfigException, NoSuchObjectException, ResourceException, URISyntaxException {
+		if (uriString == null) {
+			uriString = serverUrlString;
+		}
+		assertFalse("Invalid server: " + uriString, uriString.contains(".perforce.com"));
+		return ServerFactory.getOptionsServer(uriString, props);
 	}
 
 	/**

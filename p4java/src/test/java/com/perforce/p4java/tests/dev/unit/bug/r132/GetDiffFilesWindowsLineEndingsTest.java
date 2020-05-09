@@ -106,7 +106,10 @@ public class GetDiffFilesWindowsLineEndingsTest extends P4JavaRshTestCase {
       Assert.assertEquals(false, files.isEmpty());
       IFileSpec actual = files.get(0);
       Assert.assertNotNull(actual);
-      Assert.assertEquals(FileSpecOpStatus.ERROR, actual.getOpStatus());
+      // p4ic4idea: The seems to actually be info, not an error
+      // Assert.assertEquals(FileSpecOpStatus.ERROR, actual.getOpStatus());
+      Assert.assertEquals(FileSpecOpStatus.INFO, actual.getOpStatus());
+      Assert.assertTrue(actual.getStatusMessage().hasMessageFragment(" - file(s) not opened on this client."));
     } finally {
       if (client != null) {
         if (changelist != null) {

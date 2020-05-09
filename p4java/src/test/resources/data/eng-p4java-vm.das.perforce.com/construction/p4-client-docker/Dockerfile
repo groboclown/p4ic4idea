@@ -3,7 +3,7 @@ FROM ubuntu:latest
 RUN echo "Start install" \
     && apt-get update \
     && apt-get -y upgrade \
-    && apt-get -y install wget \
+    && apt-get -y install wget zip \
     && mkdir -p /opt/p4d-base \
     && cd /tmp \
     && wget http://ftp.perforce.com/perforce/r17.1/bin.linux26x86_64/p4 \

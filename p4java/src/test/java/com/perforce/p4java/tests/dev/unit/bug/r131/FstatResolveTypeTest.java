@@ -36,6 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -234,11 +236,31 @@ public class FstatResolveTypeTest extends P4JavaRshTestCase {
 
       // Check for 'must resolve' and 'Merges still pending' in info and
       // error messages
-      assertThat(submitFiles.get(0).getOpStatus(), is(FileSpecOpStatus.INFO));
-      assertThat(submitFiles.get(0).getStatusMessage()
+      // p4icidea: The order seems to be non-determinant
+      IFileSpec infoMsg = null;
+      IFileSpec validMsg = null;
+      IFileSpec errMsg = null;
+      for (IFileSpec fs : submitFiles) {
+        if (fs.getOpStatus() == FileSpecOpStatus.ERROR) {
+          assertNull(errMsg);
+          errMsg = fs;
+        } else if (fs.getOpStatus() == FileSpecOpStatus.INFO) {
+          assertNull(infoMsg);
+          infoMsg = fs;
+        } else if (fs.getOpStatus() == FileSpecOpStatus.VALID) {
+          assertNull(validMsg);
+          validMsg = fs;
+        } else {
+          Assert.fail("Unknown status message for spec " + fs);
+        }
+      }
+      assertNotNull(infoMsg);
+      assertNotNull(errMsg);
+      assertNotNull(validMsg);
+
+      assertThat(infoMsg.getStatusMessage()
           , containsText(" - must resolve " + targetFile));
-      assertThat(submitFiles.get(1).getOpStatus(), is(FileSpecOpStatus.ERROR));
-      assertThat(submitFiles.get(1).getStatusMessage()
+      assertThat(errMsg.getStatusMessage()
           , containsText(mergesPending));
 
       // Resolving the file with the forceTextualMerge option
@@ -271,7 +293,7 @@ public class FstatResolveTypeTest extends P4JavaRshTestCase {
       assertThat(submitFiles.get(0).getAction(), is(FileAction.INTEGRATE));
 
       // Check for 'Submitted as change' in the info message
-      assertThat(submitFiles.get(4).getStatusMessage(), containsText(submittedChange + " " + changelist.getId()));
+      assertThat(submitFiles.get(1).getStatusMessage(), containsText(submittedChange + " " + changelist.getId()));
 
       // Make sure the changelist is submitted
       changelist.refresh();

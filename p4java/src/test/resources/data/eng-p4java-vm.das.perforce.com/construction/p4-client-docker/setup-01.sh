@@ -160,19 +160,46 @@ p4 add 111bugs/Bugs111_Job043500Test/src/test01.txt 111bugs/Bugs111_Job043500Tes
 p4 submit -d "Job043500Test: new files"
 
 
+# Job040703Test - needs at least changes with jobs
+echo 'Change: new
+Client: '$P4CLIENT'
+User: '$P4USER'
+Status: new
+Jobs:
+    job000001
+Description:
+    test Job040703Test jobs; Job040649: required files
+' > /tmp/ch1.spec
+job040703_change1=$( p4 change -i < /tmp/ch1.spec | cut -f 2 -d ' ' )
+
+
 # Job040649
 mkdir -p 101Bugs/Bugs101_Job040649Test
 cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040649Test/test01.txt
 cp "$SOURCE_ROOT/text/text02.txt" 101Bugs/Bugs101_Job040649Test/test02.txt
-p4 add 101Bugs/Bugs101_Job040649Test/test01.txt 101Bugs/Bugs101_Job040649Test/test02.txt
-p4 submit -d "Job040649: required files"
+p4 add -c "${job040703_change1}" 101Bugs/Bugs101_Job040649Test/test01.txt 101Bugs/Bugs101_Job040649Test/test02.txt
+p4 submit -c "${job040703_change1}"
+
+
+
+# Job040703Test - needs at least changes with jobs
+echo 'Change: new
+Client: '$P4CLIENT'
+User: '$P4USER'
+Status: new
+Jobs:
+    job000002
+Description:
+    test Job040703Test jobs; Job040877Test: required files
+' > /tmp/ch2.spec
+job040703_change2=$( p4 change -i < /tmp/ch2.spec | cut -f 2 -d ' ' )
 
 
 # Job040877Test
 mkdir -p 101Bugs/Bugs101_Job040877Test
 cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040877Test/test01.txt
-p4 add 101Bugs/Bugs101_Job040877Test/test01.txt
-p4 submit -d "Job040877Test: required files"
+p4 add -c "${job040703_change2}" 101Bugs/Bugs101_Job040877Test/test01.txt
+p4 submit -c "${job040703_change2}"
 
 
 # ReconcileWorkspaceFilesTest
@@ -180,3 +207,25 @@ mkdir -p reconcile
 ( cd "${SOURCE_ROOT}/text" && zip -9r /tmp/client/p4TestUserWS/reconcile/TestFramework.zip * )
 p4 add reconcile/TestFramework.zip
 p4 submit -d "ReconcileWorkspaceFilesTest: add zip file for tests"
+
+
+# Job040762Test - requires an exact changelist for the edit.  Original number is 6421.
+mkdir -p 101Bugs/Bugs101_Job040762Test
+cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040762Test/test01.txt
+p4 add 101Bugs/Bugs101_Job040762Test/test01.txt
+p4 submit -d "Job040762Test: add file"
+p4 edit 101Bugs/Bugs101_Job040762Test/test01.txt
+cp "$SOURCE_ROOT/text/text02.txt" 101Bugs/Bugs101_Job040762Test/test01.txt
+res=$( p4 submit -d "Job040762Test: add file at exact changelist 33" )
+res_cl=$( echo "${res}" | sed -E '{ N; s/Change ([0-9]+) submitted\./\1/ ; D }' )
+test "${res_cl}" = "33"
+
+
+# FileActionReplacedTest
+mkdir -p 112Dev/testreplacing1
+cp "$SOURCE_ROOT/text/text00.txt" 112Dev/testreplacing1/testfile1.txt
+mkdir -p 112Dev/testreplacing2
+cp "$SOURCE_ROOT/text/text01.txt" 112Dev/testreplacing2/testfile1.txt
+p4 add 112Dev/testreplacing1/testfile1.txt 112Dev/testreplacing2/testfile1.txt
+p4 submit -d "FileActionReplacedTest: add files"
+

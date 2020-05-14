@@ -45,7 +45,6 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job077476" })
 @TestId("Dev151_ReconcileWorkspaceFilesTest")
-//@Disabled("Uses external p4d server")
 public class ReconcileWorkspaceFilesTest extends P4JavaTestCase {
 
 	final static String serverURL = "p4java://eng-p4java-vm.perforce.com:20141";

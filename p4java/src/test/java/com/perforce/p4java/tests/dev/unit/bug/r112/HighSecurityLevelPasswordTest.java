@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job044472", "job044417" })
 @TestId("Dev112_ChangePasswordTest")
-//@Disabled("Uses external p4d server")
+@Ignore("Uses external p4d server")
 public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 
 	final static String highSecurityLevelServerURL = "p4java://eng-p4java-vm.perforce.com:30111";
@@ -84,7 +85,6 @@ public class HighSecurityLevelPasswordTest extends P4JavaTestCase {
 	@Before
 	public void setUp() {
 		// initialization code (before each test).
-		fail("Uses an external server.  Need to change this.");
 		try {
 			server = ServerFactory.getOptionsServer(highSecurityLevelServerURL,
 					null);

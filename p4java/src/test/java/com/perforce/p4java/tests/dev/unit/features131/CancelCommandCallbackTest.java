@@ -16,6 +16,7 @@ import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -34,6 +35,7 @@ import static org.junit.Assert.fail;
  */
 @Jobs({ "job059658" })
 @TestId("Dev131_CancelCommandCallbackTest")
+@Ignore("Can't run on windows because of filesystem character set")
 public class CancelCommandCallbackTest extends P4JavaRshTestCase {
 
 	@ClassRule

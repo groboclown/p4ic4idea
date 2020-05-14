@@ -46,7 +46,8 @@ public class Job040703Test extends P4JavaTestCase {
 
 	@Test
 	public void testJob040703TestFixlistBehaviour() {
-		final int fixedChangelist = 830; // Will need to change if we change servers -- HR.
+		// p4ic4idea: using changelist for the mock setup.  Was 830.
+		final int fixedChangelist = 29; // Will need to change if we change servers -- HR.
 		final String testRoot = null;
 		IOptionsServer server = null;
 		IClient client = null;
@@ -66,7 +67,8 @@ public class Job040703Test extends P4JavaTestCase {
 			assertNotNull(fixes);
 			assertEquals("fix list size differs with changelist == 0 and changelist missing",
 								allFixes, fixes.size());
-			fixes = server.getFixList(null, 830, null, false, 0);
+			// p4ic4idea: use variable instead of hard-coded number
+			fixes = server.getFixList(null, fixedChangelist, null, false, 0);
 			assertNotNull("null fix list returned", fixes);
 			assertTrue("test changelist #'" + fixedChangelist + "' has no fixes associated with it",
 										fixes.size() > 0);

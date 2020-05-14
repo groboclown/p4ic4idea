@@ -39,12 +39,12 @@ import org.junit.jupiter.api.Disabled;
  */
 @Jobs({ "job078145" })
 @TestId("Dev151_ServerClusterAuthTicketsTest")
-//@Disabled("Uses external p4d server")
+//@Ignore("Tries to connect to llam-ds1.das.perforce.com that does not exist")
 public class ServerClusterAuthTicketsTest extends P4JavaTestCase {
 
 	static final String faketicket = "88888888888ZZZZZZZZZZ88888888888";
 	
-	static final String p4duri = "p4java://llam-ds1.das.perforce.com:1667";
+	//static final String p4duri = "p4java://llam-ds1.das.perforce.com:1667";
 	static final String p4testuser = "p4jtestuser";
 	static final String p4testpasswd = "p4jtestuser";
 	static final String p4testclient = "p4TestUserWS20112";
@@ -98,10 +98,8 @@ public class ServerClusterAuthTicketsTest extends P4JavaTestCase {
 	 */
 	@Test
 	public void testAuthTickets() {
-		fail("Tries to connect to llam-ds1.das.perforce.com that does not exist");
-
 		try {
-			server = ServerFactory.getOptionsServer(p4duri, null);
+			server = getRawOptionsServer(null, null);
 			assertNotNull(server);
 
 			// Register callback

@@ -26,6 +26,7 @@ import static org.junit.Assert.assertFalse;
 import com.perforce.p4java.server.IServerMessage;
 
 
+// p4ic4idea: this test is very flaky
 public class Job100498Test extends P4JavaRshTestCase {
 
 	@Rule

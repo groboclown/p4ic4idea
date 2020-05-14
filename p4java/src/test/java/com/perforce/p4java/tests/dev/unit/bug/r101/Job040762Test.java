@@ -50,7 +50,8 @@ public class Job040762Test extends P4JavaTestCase {
 	@Test
 	public void testMethodTemplate() {
 		final String testRoot = "//depot/101Bugs/Bugs101_Job040762Test";
-		final int changelistId = 6421; // Will need to change over time -- HR.
+		// p4ic4idea: using mock repo changelist number; original code uses 6421
+		final int changelistId = 33; // Will need to change over time -- HR.
 		IOptionsServer server = null;
 		IClient client = null;
 		IChangelist changelist = null;

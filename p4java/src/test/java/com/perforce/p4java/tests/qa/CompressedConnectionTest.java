@@ -31,6 +31,7 @@ public class CompressedConnectionTest {
      */
     @BeforeClass
     public static void beforeClass() throws Throwable {
+        org.junit.Assert.fail("This class seems to hang.");
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());

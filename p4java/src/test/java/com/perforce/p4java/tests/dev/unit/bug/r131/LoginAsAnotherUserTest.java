@@ -41,7 +41,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @RunWith(JUnitPlatform.class)
 @Jobs({ "job059845" })
 @TestId("Dev131_LoginAsAnotherUserTest")
-//@Disabled("Uses external p4d server")
 public class LoginAsAnotherUserTest extends P4JavaTestCase {
 	private IOptionsServer server = null;
 	private String defaultTicketFile = null;
@@ -84,7 +83,8 @@ public class LoginAsAnotherUserTest extends P4JavaTestCase {
 		String userName = "p4jtestuser2";
 		String password = "p4jtestuser2";
 
-		server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
+		// p4ic4idea: use setup.
+		server = getRawOptionsServer(null, serverProps);
 		assertThat(server, notNullValue());
 
 		// Register callback
@@ -119,7 +119,8 @@ public class LoginAsAnotherUserTest extends P4JavaTestCase {
 		// super user is not logged in.
 		results = server.execMapCmd("login", new String[] { userName }, null);
 		assertThat(results, notNullValue());
-		assertThat(results[0].toString(), containsString("Perforce password (P4PASSWD) invalid or unset"));
+		// p4ic4idea: changes to the library keeps the format / code intact
+		assertThat((String) results[0].get("fmt0"), containsString("Perforce password (%'P4PASSWD'%) invalid or unset"));
 
 		// Login the super user
 		server.login(superPassword, new LoginOptions());
@@ -144,7 +145,7 @@ public class LoginAsAnotherUserTest extends P4JavaTestCase {
 		String userName = "p4jtestuser2";
 		String password = "p4jtestuser2";
 
-		server = ServerFactory.getOptionsServer(getServerUrlString(), serverProps);
+		server = getRawOptionsServer(null, serverProps);
 		assertThat(server, notNullValue());
 
 		// Register callback

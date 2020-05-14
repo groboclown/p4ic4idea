@@ -35,8 +35,8 @@ public class CompressedRshConnectionTest {
     // simple setup with one file and a fix
     @BeforeAll
     public static void beforeClass() throws Throwable {
-        helper = new Helper();
         fail("This test hangs forever.");
+        helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
 

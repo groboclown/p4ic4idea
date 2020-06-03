@@ -27,7 +27,6 @@ import static org.junit.Assert.fail;
  * at all to 'streams'.
  */
 @TestId("Features102_StreamingMethodsTest")
-//@Disabled("Uses external p4d server")
 public class StreamingMethodsTest extends P4JavaTestCase {
     private static final int TIME_OUT_IN_SECONDS = 60;
 
@@ -37,7 +36,7 @@ public class StreamingMethodsTest extends P4JavaTestCase {
         UnitTestDevServerManager.INSTANCE.startTestClass();
 
         Properties rpcTimeOutProperties = configRpcTimeOut("StreamingMethodsTest", TIME_OUT_IN_SECONDS);
-        server = getServer(getServerUrlString(), rpcTimeOutProperties, null, null);
+        server = getServer(serverUrlString, rpcTimeOutProperties, null, null);
     }
 
     @AfterClass

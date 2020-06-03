@@ -280,27 +280,44 @@ public class TestServer {
     // Stop the server and delete the directory.
     public void delete()
             throws IOException {
+        delete(true);
+    }
+    public void delete(boolean failIfCantDelete)
+            throws IOException {
         stopServer();
         if (outDir.exists()) {
             Files.walkFileTree(outDir.toPath(), new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                         throws IOException {
-                    boolean removed = file.toFile().delete();
-                    //int attemptCount = 4;
-                    int attemptCount = 1000;
-                    while (! removed && --attemptCount >= 0) {
-                        System.err.println("Failed to remove " + file.toFile().getAbsolutePath() + "; trying again");
-                        try {
-                            Thread.sleep(1000L);
-                        } catch (InterruptedException e) {
-                            throw new IOException("interrupted by another thread", e);
+                    final File basicFile = file.toFile();
+                    boolean removed = basicFile.delete();
+                    // int attemptCount = 4;
+                    int attemptCount = 10; // 10 seconds.  Still a very, very long wait, but much shorter than before.
+                    while (basicFile.exists() && --attemptCount >= 0) {
+                        if (! file.toFile().canWrite()) {
+                            boolean setState = basicFile.setWritable(true);
+                            if (!setState) {
+                                System.err.println("Temporary test file is read-only and could not make it writable: " +
+                                        file.toAbsolutePath());
+                                if (failIfCantDelete) {
+                                    throw new IOException("could not make file writable: " + file.toAbsolutePath());
+                                }
+                                return FileVisitResult.CONTINUE;
+                            }
+                        } else {
+                            System.err.println("Failed to remove " + file.toAbsolutePath() + "; trying again");
+                            try {
+                                Thread.sleep(1000L);
+                            } catch (InterruptedException e) {
+                                throw new IOException("interrupted by another thread", e);
+                            }
                         }
-                        removed = file.toFile().delete();
+                        removed = basicFile.delete();
                     }
 
-                    if (!removed) {
-                        throw new IOException("could not delete " + file.toFile().getAbsolutePath());
+                    if (!removed && failIfCantDelete) {
+                        throw new IOException("could not delete " + file.toAbsolutePath());
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -309,12 +326,15 @@ public class TestServer {
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc)
                         throws IOException {
                     if (!dir.toFile().delete()) {
-                        throw new IOException("Could not delete " + dir);
+                        if (failIfCantDelete) {
+                            throw new IOException("Could not delete " + dir.toAbsolutePath());
+                        }
+                        System.err.println("Failed to delete test directory " + dir.toAbsolutePath());
                     }
                     return FileVisitResult.CONTINUE;
                 }
             });
-            if (outDir.exists() && !outDir.delete()) {
+            if (outDir.exists() && !outDir.delete() && failIfCantDelete) {
                 throw new IOException("Could not delete " + outDir);
             }
         }

@@ -188,6 +188,7 @@ public class CopyFilesTest extends P4JavaTestCase {
 			assertNotNull(fileRevisionDataList);
 
 			// Should have 2 revision data
+			// p4ic4idea: this fails.
 			assertEquals(2, fileRevisionDataList.size());
 
 			// First revision data

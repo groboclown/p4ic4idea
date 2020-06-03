@@ -7,6 +7,8 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.exception.AccessException;
+import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -28,8 +30,10 @@ import junit.framework.Assert;
 
 @TestId("SimpleUserTest01")
 public class SimpleUserTest extends P4JavaTestCase {
-	
-	final static String testUserName = "p4jtestSimpleUserTest"; // user doesn't have a password
+
+	// p4ic4idea: reuse a user that doesn't have a password set
+	// final static String testUserName = "p4jtestSimpleUserTest"; // user doesn't have a password
+	final static String testUserName = "p4jtestdummy"; // user doesn't have a password
 	final static String testUserPassword = "p4jtestSimpleUserTest";
 
 	public SimpleUserTest() {
@@ -103,11 +107,15 @@ public class SimpleUserTest extends P4JavaTestCase {
 	}
 	
     @Test
-    public void testLoginNotRequired() {
+    public void testLoginNotRequired() throws Exception {
+		// p4ic4idea: other tests have work-around for password-not-needed error.
+		IOptionsServer server = getServer(serverUrlString, null);
+		assertNotNull(server);
+		server.setUserName(testUserName);
         try {
-            getServer(null, testUserName, testUserPassword);
+			server.login(testUserPassword);
             fail("Expected exception!");
-        } catch (Exception exc) {
+        } catch (AccessException exc) {
             Assert.assertEquals("'login' not necessary, no password set for this user.",
                     exc.getMessage());
         }

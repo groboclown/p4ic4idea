@@ -59,7 +59,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
+			server = getRawOptionsServer(null, null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(getUserName());
@@ -96,7 +96,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
+			server = getRawOptionsServer(null, null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(getSuperUserName());
@@ -133,7 +133,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
+			server = getRawOptionsServer(null, null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(getUserName());
@@ -170,7 +170,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
+			server = getRawOptionsServer(null, null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(getUserName());
@@ -208,7 +208,7 @@ public class NewAuthTicketTest extends P4JavaTestCase {
 		final String depotPath = "//depot/dev/...";
 		
 		try {
-			server = ServerFactory.getOptionsServer(getServerUrlString(), null);
+			server = getRawOptionsServer(null, null);
 			assertNotNull("null server returned from server factory", server);
 			server.connect();
 			server.setUserName(getSuperUserName());

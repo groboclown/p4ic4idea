@@ -7,6 +7,7 @@ import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.Log;
 import com.perforce.p4java.PropertyDefs;
 import com.perforce.p4java.client.IClient;
+import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.client.IClientSummary.ClientLineEnd;
 import com.perforce.p4java.core.ChangelistStatus;
 import com.perforce.p4java.core.IChangelist;
@@ -994,6 +995,7 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 			throws ConnectionException, NoSuchObjectException, ConfigException, ResourceException,
 			URISyntaxException, AccessException, RequestException {
 		// p4ic4idea: ensure this is done in a non-Perforce server...
+		assertNotNull(uriString);
 		assertFalse("Invalid server: " + uriString, uriString.contains(".perforce.com"));
 		IOptionsServer server = null;
 		if (props == null) {
@@ -1154,6 +1156,18 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 		// p4ic4idea: report the real client used.
 		String clientName = getPlatformClientName(defaultTestClientName);
 		IClient ret = server.getClient(clientName);
+		// Also - some server stuff don't use the default test client name (it doesn't exist), so
+		// report what is available on the failures.
+		if (ret == null) {
+			List<IClientSummary> clients = server.getClients(null, null, 100000);
+			StringBuilder message = new StringBuilder("could not find client named ");
+			message.append(clientName).append(" (default client ").append(defaultTestClientName)
+					.append(").  Existing clients are: ");
+			for (IClientSummary client : clients) {
+				message.append(client.getName()).append(", ");
+			}
+			assertNotNull(message.toString(), ret);
+		}
 		assertNotNull(
 				"could not find client named " + clientName + " (default client " + defaultTestClientName + ")",
 				ret);
@@ -2508,26 +2522,37 @@ public class P4JavaTestCase extends AbstractP4JavaUnitTest {
 	 */
 	public static void unpack(File zipFile, File destDir) throws IOException {
 		ZipFile zip = new ZipFile(zipFile);
-		Enumeration<? extends ZipEntry> entries = zip.entries();
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
-			File f = new File(destDir, entry.getName());
-			if (entry.isDirectory()) {
-				continue;
+		try {
+			Enumeration<? extends ZipEntry> entries = zip.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				File f = new File(destDir, entry.getName());
+				if (entry.isDirectory()) {
+					continue;
+				}
+				if (!f.exists()) {
+					f.getParentFile().mkdirs();
+					f.createNewFile();
+				}
+				InputStream is = zip.getInputStream(entry);
+				try {
+					OutputStream os = new FileOutputStream(f);
+					try {
+						byte[] buf = new byte[4096];
+						int r;
+						while ((r = is.read(buf)) != -1) {
+							os.write(buf, 0, r);
+						}
+		// p4ic4idea: properly close all our streams; this was causing cannot-delete errors all over the place.
+					} finally {
+						os.close();
+					}
+				} finally {
+					is.close();
+				}
 			}
-			if (!f.exists()) {
-				f.getParentFile().mkdirs();
-				f.createNewFile();
-			}
-			InputStream is = zip.getInputStream(entry);
-			OutputStream os = new FileOutputStream(f);
-			byte[] buf = new byte[4096];
-			int r;
-			while ((r = is.read(buf)) != -1) {
-				os.write(buf, 0, r);
-			}
-			os.close();
-			is.close();
+		} finally {
+			zip.close();
 		}
 	}
 

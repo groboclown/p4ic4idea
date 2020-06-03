@@ -10,11 +10,11 @@ import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -30,17 +30,22 @@ import java.nio.charset.Charset;
 
 @Jobs({"job066294"})
 @TestId("Dev132_StreamCmdDiff2UnicodeTest")
-@Ignore("Server contains files that can't be created on Windows")
 public class StreamCmdDiff2UnicodeTest extends P4JavaRshTestCase {
   // Unicode server
   private static final String p4Charset = "utf16";
-  
-  @ClassRule
+
   public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", StreamCmdDiff2UnicodeTest.class.getSimpleName());
+
+  @ClassRule
+  public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+          "This test creates files that cannot be created in Windows",
+
+          // p4d should only be initialized if the rule is not ignored.
+          p4d);
 
   @BeforeClass
   public static void beforeAll() throws Exception {
-  	setupServer(p4d.getRSHURL(), null, null, true, null);
+    setupServer(p4d.getRSHURL(), null, null, true, null);
   }
 
   

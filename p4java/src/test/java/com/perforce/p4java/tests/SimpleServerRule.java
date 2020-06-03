@@ -65,7 +65,7 @@ public class SimpleServerRule implements TestRule {
 				statement.evaluate();
 				testServer.stopServer();
 			} finally {
-				testServer.delete();
+				testServer.delete(false);
 			}
 		}
 	}

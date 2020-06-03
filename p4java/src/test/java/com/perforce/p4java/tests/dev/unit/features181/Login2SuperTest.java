@@ -30,7 +30,7 @@ public class Login2SuperTest extends P4JavaRshTestCase {
 	@BeforeClass
 	public static void beforeAll() throws Exception {
 		Properties properties = new Properties();
-		setupServer(p4d.getRSHURL(), "p4jtestsuper", "p4jtestsuper", true, properties);
+		setupServer(p4d.getRSHURL(), "p4jtestsuper", "p4jtestsuper", true, properties, false);
 	}
 
 	@Test

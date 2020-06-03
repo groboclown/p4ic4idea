@@ -48,11 +48,7 @@ public class CountersTest extends P4JavaTestCase {
 		IOptionsServer server = null;
 
 		try {
-			server = this.getOptionsServer(
-							getServerUrlString(),
-							null,
-							this.superUserName,
-							this.superUserPassword);
+			server = getServerAsSuper();
 			Map<String, String> counters = server.getCounters();
 			assertNotNull(counters);
 			assertTrue(counters.containsKey("change"));

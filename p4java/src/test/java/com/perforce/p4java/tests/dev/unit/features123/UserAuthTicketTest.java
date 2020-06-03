@@ -13,10 +13,12 @@ import java.net.URISyntaxException;
 
 import com.perforce.p4java.tests.MockCommandCallback;
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.exception.P4JavaException;
@@ -36,6 +38,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Jobs({ "job050343" })
 @TestId("Dev123_UserAuthTicketTest")
 public class UserAuthTicketTest extends P4JavaTestCase {
+
+	@ClassRule
+	public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+			"Creates paths that can't be used on Windows");
 
 	IOptionsServer server = null;
 	String defaultTicketFile = null;

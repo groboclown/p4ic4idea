@@ -188,7 +188,8 @@ public class ResolveChangelistTest extends P4JavaRshTestCase {
 
             // There should be an error since the "MessagesBundle_ro.properties"
             // is in the second changelist
-            assertEquals(FileSpecOpStatus.ERROR, resolveFiles.get(2)
+            // p4ic4idea: this is now returned as an INFO message.
+            assertEquals(FileSpecOpStatus.INFO, resolveFiles.get(2)
                     .getOpStatus());
             assertThat(resolveFiles.get(2).getStatusMessage(),
                     isText(targetFile2 + " - no file(s) to resolve."));

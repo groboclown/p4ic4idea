@@ -12,11 +12,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.perforce.p4java.common.base.OSUtils;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -36,7 +38,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
  * @since 18/07/2016
  */
 
-@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUtf16FileTypeTest extends P4JavaRshTestCase {
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
     private static final String RELATIVE_DEPOT_PATH = "/152Bugs/job085433/" + System.currentTimeMillis();
@@ -49,7 +50,12 @@ public class SubmitAndSyncUtf16FileTypeTest extends P4JavaRshTestCase {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-    	setupServer(p4d.getRSHURL(), null, null, true, null);
+        Assume.assumeFalse(
+                "This test creates files that cannot be created in Windows",
+                OSUtils.isWindows()
+        );
+
+        setupServer(p4d.getRSHURL(), null, null, true, null);
     }
     
     

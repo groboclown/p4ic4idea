@@ -15,9 +15,11 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -48,6 +50,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @Jobs({"job038013", "job034097"})
 @TestId("Dev123_SymbolicLinkSyncTest")
 public class SymbolicLinkSyncTest extends P4JavaTestCase {
+
+    @ClassRule
+    public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+            "Creates paths that can't be used on Windows");
 
     private static IOptionsServer superServer = null;
     private static IClient superClient = null;

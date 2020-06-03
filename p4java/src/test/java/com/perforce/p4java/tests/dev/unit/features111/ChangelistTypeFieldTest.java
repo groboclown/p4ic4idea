@@ -53,7 +53,8 @@ public class ChangelistTypeFieldTest extends P4JavaTestCase {
 	@Test
 	public void testChangelistTypeFieldUsageBasics() {
 		IOptionsServer server = null;
-		final int restrictedChangelistId = 20910;
+		// p4ic4idea: mock server setup has different changelist number (was: 20910)
+		final int restrictedChangelistId = 1;
 		final String expectedDescription = "<description: restricted, no permission to view>\n";
 		
 		try {

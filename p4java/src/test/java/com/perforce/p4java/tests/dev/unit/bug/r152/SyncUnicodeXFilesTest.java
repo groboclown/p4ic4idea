@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -36,12 +37,17 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @Jobs({ "job085473" })
 @TestId("Dev151_SyncUnicodeXFilesTest")
-@Ignore("This test creates files that cannot be created in Windows")
 public class SyncUnicodeXFilesTest extends P4JavaRshTestCase {
 	
 	
-	@ClassRule
 	public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", SyncUnicodeXFilesTest.class.getSimpleName());
+
+	@ClassRule
+	public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+			"This test creates files that cannot be created in Windows",
+
+			// p4d should only be initialized if the rule is not ignored.
+			p4d);
 
     @BeforeClass
     public static void beforeAll() throws Exception {

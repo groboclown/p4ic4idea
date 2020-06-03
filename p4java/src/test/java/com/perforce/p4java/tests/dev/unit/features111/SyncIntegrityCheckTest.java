@@ -12,6 +12,7 @@ import java.util.List;
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.perforce.p4java.client.IClient;
@@ -170,6 +171,7 @@ public class SyncIntegrityCheckTest extends P4JavaTestCase {
 	 * more as well.
 	 */
 	@Test
+	@Ignore("uses an external server")
 	public void testUnicodeTransfer() {
 		IOptionsServer server = null;
 		IClient client = null;

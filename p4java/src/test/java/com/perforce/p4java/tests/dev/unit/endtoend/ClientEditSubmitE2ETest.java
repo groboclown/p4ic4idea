@@ -46,6 +46,7 @@ import static org.junit.Assert.fail;
 /**
  * Tests Edit->Submit scenarios from end-to-end.
  */
+// p4ic4idea: run from gradle, this fails because the server stops having files; stand-alone, it works fine.  What?
 @TestId("ClientEditSubmitE2ETest01")
 public class ClientEditSubmitE2ETest extends P4JavaRshTestCase {
 
@@ -420,7 +421,8 @@ public class ClientEditSubmitE2ETest extends P4JavaRshTestCase {
         boolean filesMatch = localSystemFileCompare(sourceFile, fileLocalPaths[0]);
         assertFalse("Source file and submitted file should differ.", filesMatch);
         List<IFileSpec> revertedFiles = revertTestFiles(client, fList, -999, FileAction.EDIT, 0);
-        verifyFileSpecInfo(revertedFiles, FileSpecOpStatus.ERROR, "file(s) not opened on this client");
+        // p4ic4idea: this now reports an INFO message.
+        verifyFileSpecInfo(revertedFiles, FileSpecOpStatus.INFO, "file(s) not opened on this client");
     }
 
     /**

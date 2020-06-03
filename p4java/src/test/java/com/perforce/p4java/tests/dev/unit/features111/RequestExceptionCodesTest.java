@@ -134,7 +134,8 @@ public class RequestExceptionCodesTest extends P4JavaRshTestCase {
 			assertEquals("list size mismatch", 1, files.size());
 			IFileSpec fSpec = files.get(0);
 			assertNotNull("null file spec in returned files list", fSpec);
-			assertEquals("wrong op status", FileSpecOpStatus.ERROR, fSpec.getOpStatus());
+			// p4ic4idea: this is now an info status.
+			assertEquals("wrong op status", FileSpecOpStatus.INFO, fSpec.getOpStatus());
 			assertThat("mismatched error message",
 					fSpec.getStatusMessage(),
 					isText(msg01));

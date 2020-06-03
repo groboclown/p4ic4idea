@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -24,7 +25,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
  * @author Sean Shou
  * @since 18/07/2016
  */
-@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUtf8FileTypeUnderServer20161Test extends P4JavaRshTestCase {
     private static final long UTF_8_BOM_SIZE = 3;
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
@@ -33,8 +33,14 @@ public class SubmitAndSyncUtf8FileTypeUnderServer20161Test extends P4JavaRshTest
     private IChangelist changelist = null;
     private List<IFileSpec> submittedOrPendingFileSpecs = null;
     
-    @ClassRule
 	public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", SubmitAndSyncUtf8FileTypeUnderServer20161Test.class.getSimpleName());
+
+    @ClassRule
+    public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+            "This test creates files that cannot be created in Windows",
+
+            // p4d should only be initialized if the rule is not ignored.
+            p4d);
 
     @BeforeClass
     public static void beforeAll() throws Exception {

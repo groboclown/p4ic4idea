@@ -26,7 +26,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
  * @author Sean Shou
  * @since 18/07/2016
  */
-@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUtf8FileTypeUnderServer20132Test extends P4JavaRshTestCase {
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
     private static final String RELATIVE_DEPOT_PATH = "/152Bugs/job086058/" + System.currentTimeMillis();

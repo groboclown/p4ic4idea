@@ -11,6 +11,9 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.IUserGroup;
@@ -31,6 +34,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 @TestId("CreatDeleteUserGroupTest")
 @Jobs({"job037102"})
 public class CreatDeleteUserGroupTest extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	@Test
 	public void testCreatDelete() {

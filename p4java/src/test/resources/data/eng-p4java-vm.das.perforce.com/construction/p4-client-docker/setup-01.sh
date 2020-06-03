@@ -2,6 +2,25 @@
 
 set -e
 
+# Hard-coded changelist numbers...
+export P4USER=p4jtestsuper
+export P4PASSWD=p4jtestsuper
+export P4CLIENT=superWS
+
+# ChangelistTypeFieldTest
+#   create a restricted changelist; it must have an exact changelist number
+echo 'Change: new
+Client: '$P4CLIENT'
+User: '$P4USER'
+Status: new
+Type: restricted
+Description:
+    test ChangelistTypeFieldTest
+' > /tmp/ch3.spec
+ChangelistTypeFieldTest_change=$( p4 change -i < /tmp/ch3.spec | cut -f 2 -d ' ' )
+test "${ChangelistTypeFieldTest_change}" = "1"
+
+
 # Basic files.
 
 export P4USER=p4jtestuser
@@ -51,8 +70,18 @@ p4 add 112Dev/GetOpenedFilesTest/*
 p4 submit -d "feature 112 GetOpenedFilesTest 1"
 
 mkdir -p 112Dev/GetOpenedFilesTest/bin/gnu/getopt
+mkdir -p 112Dev/GetOpenedFilesTest/src/gnu/getopt
 cp "$SOURCE_ROOT/text/text00.txt" 112Dev/GetOpenedFilesTest/bin/gnu/getopt/MessagesBundle_es.properties
-p4 add 112Dev/GetOpenedFilesTest/bin/gnu/getopt/MessagesBundle_es.properties
+# MergeFilesTest uses the src files.
+cp "$SOURCE_ROOT/text/text00.txt" 112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_es.properties
+cp "$SOURCE_ROOT/text/text01.txt" 112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_it.properties
+# MessagesBundle_ro.properties uses the ro file
+cp "$SOURCE_ROOT/text/text02.txt" 112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_ro.properties
+p4 add \
+  112Dev/GetOpenedFilesTest/bin/gnu/getopt/MessagesBundle_es.properties \
+  112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_es.properties \
+  112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_it.properties \
+  112Dev/GetOpenedFilesTest/src/gnu/getopt/MessagesBundle_ro.properties
 p4 submit -d "feature 112 GetOpenedFilesTest 2"
 
 p4 integrate 112Dev/GetOpenedFilesTest/bin/gnu/getopt/MessagesBundle_es.properties#1 112Dev/GetOpenedFilesTest/bin/gnu/getopt/main303385669/MessagesBundle_es.properties
@@ -176,8 +205,8 @@ job040703_change1=$( p4 change -i < /tmp/ch1.spec | cut -f 2 -d ' ' )
 # Job040649
 mkdir -p 101Bugs/Bugs101_Job040649Test
 cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040649Test/test01.txt
-cp "$SOURCE_ROOT/text/text02.txt" 101Bugs/Bugs101_Job040649Test/test02.txt
-p4 add -c "${job040703_change1}" 101Bugs/Bugs101_Job040649Test/test01.txt 101Bugs/Bugs101_Job040649Test/test02.txt
+# test02 is the destination, so it should not be added.
+p4 add -c "${job040703_change1}" 101Bugs/Bugs101_Job040649Test/test01.txt
 p4 submit -c "${job040703_change1}"
 
 
@@ -218,7 +247,7 @@ p4 edit 101Bugs/Bugs101_Job040762Test/test01.txt
 cp "$SOURCE_ROOT/text/text02.txt" 101Bugs/Bugs101_Job040762Test/test01.txt
 res=$( p4 submit -d "Job040762Test: add file at exact changelist 33" )
 res_cl=$( echo "${res}" | sed -E '{ N; s/Change ([0-9]+) submitted\./\1/ ; D }' )
-test "${res_cl}" = "33"
+test "${res_cl}" = "34"
 
 
 # FileActionReplacedTest
@@ -229,3 +258,110 @@ cp "$SOURCE_ROOT/text/text01.txt" 112Dev/testreplacing2/testfile1.txt
 p4 add 112Dev/testreplacing1/testfile1.txt 112Dev/testreplacing2/testfile1.txt
 p4 submit -d "FileActionReplacedTest: add files"
 
+
+# Job040346Test
+mkdir -p 101Bugs/Bugs101_Job040346Test
+cp "$SOURCE_ROOT/text/text00.txt" 101Bugs/Bugs101_Job040346Test/test01.txt
+#cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040346Test/test02.txt
+#p4 add 101Bugs/Bugs101_Job040346Test/test01.txt 101Bugs/Bugs101_Job040346Test/test02.txt
+p4 add 101Bugs/Bugs101_Job040346Test/test01.txt
+p4 submit -d "Job040346Test: add file"
+p4 integrate 101Bugs/Bugs101_Job040346Test/test01.txt 101Bugs/Bugs101_Job040346Test/test02.txt
+p4 submit -d "Job040346Test: integrate file"
+p4 edit 101Bugs/Bugs101_Job040346Test/test01.txt
+cp "$SOURCE_ROOT/text/text01.txt" 101Bugs/Bugs101_Job040346Test/test01.txt
+p4 submit -d "Job040346Test: revise file"
+
+
+# LabelSyncTest
+mkdir -p basic/readonly/labelsync
+# Need at least 11 files, each with a different revision...
+i=1
+while [ $i -le 11 ] ; do
+  cp "$SOURCE_ROOT/text/text00.txt" basic/readonly/labelsync/test-${i}.txt
+  p4 add basic/readonly/labelsync/test-${i}.txt
+  p4 submit -d "LabelSyncTest: label file ${i} add"
+  p4 edit basic/readonly/labelsync/test-${i}.txt
+  cp "$SOURCE_ROOT/text/text01.txt" basic/readonly/labelsync/test-${i}.txt
+  p4 submit -d "LabelSyncTest: label file ${i} edit"
+  i=$(( $i + 1 ))
+done
+p4 labelsync -a -l LabelSyncTestLabel //depot/basic/readonly/labelsync/...
+
+
+# SimpleSyncTest
+mkdir -p basic/readonly/sync
+cp "$SOURCE_ROOT/text/text00.txt" basic/readonly/sync/test00.txt
+p4 add basic/readonly/sync/test00.txt
+p4 submit -d "SimpleSyncTest: add file"
+
+
+# GetMatchingLinesTest
+#   Requires 8 lines that match,
+mkdir -p basic/readonly/grep
+cp "$SOURCE_ROOT/text/text00.txt" basic/readonly/grep/test00.txt
+cp "$SOURCE_ROOT/text/grep-text-P4Java.txt" basic/readonly/grep/test-match-01.txt
+cp "$SOURCE_ROOT/text/grep-text-P4Java-x2.txt" basic/readonly/grep/test-match-02.txt
+cp "$SOURCE_ROOT/text/grep-text-P4Java.txt" basic/readonly/grep/test-match-03.txt
+cp "$SOURCE_ROOT/text/grep-text-P4Java-x2.txt" basic/readonly/grep/test-match-04.txt
+cp "$SOURCE_ROOT/text/grep-text-P4Java-x2.txt" basic/readonly/grep/test-match-05.txt
+cp "$SOURCE_ROOT/text/grep-text-P4Java-lower.txt" basic/readonly/grep/test-match-06.txt
+p4 add basic/readonly/grep/*
+p4 submit -d "GetMatchingLinesTest: add files"
+
+
+# SyncIntegrityCheckTest
+mkdir -p 102Dev/SyncIntegrityCheckTest
+cp "$SOURCE_ROOT/text/text00.txt" 102Dev/SyncIntegrityCheckTest/test01.txt
+p4 add 102Dev/SyncIntegrityCheckTest/test01.txt
+cp "$SOURCE_ROOT/bin/bin00.bin" 102Dev/SyncIntegrityCheckTest/test02.jpg
+# called "UBinary" in the source ... what type is required?
+p4 add -t binary+SC  102Dev/SyncIntegrityCheckTest/test02.jpg
+cp "$SOURCE_ROOT/bin/bin01.bin" 102Dev/SyncIntegrityCheckTest/test03.bin
+p4 add -t binary  102Dev/SyncIntegrityCheckTest/test03.bin
+p4 submit -d "SyncIntegrityCheckTest: add files"
+
+
+# ClientIntegrationE2ETest
+mkdir -p Dev/rteam/HBOP/admin
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HBOP/admin/displayTool.pl
+mkdir -p Dev/rteam/HBOP/src
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HBOP/src/hbop1.html
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HBOP/src/hbop4.java
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HBOP/src/hbop5.txt
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HBOP/src/hbop6.txt
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HBOP/src/hbop7.txt
+p4 add Dev/rteam/HBOP/src/* Dev/rteam/HBOP/admin/*
+p4 submit -d "ClientIntegrationE2ETest: add hbop files"
+
+p4 integrate Dev/rteam/HBOP/... Dev/rteam/TLCP/...
+cp "$SOURCE_ROOT/bin/bin00.bin" Dev/rteam/TLCP/src/p4merge_help.png
+cp "$SOURCE_ROOT/bin/bin00.bin" Dev/rteam/TLCP/src/bindetmi2.dll
+# Do not add the binary files as explicitly binary; this will mess up the test's integration resolution results.
+# The resolve results will include an extra set of records for file type (along with content) integration.
+p4 add Dev/rteam/TLCP/src/bindetmi2.dll Dev/rteam/TLCP/src/p4merge_help.png
+p4 submit -d "ClientIntegrationE2ETest: add tlcp files"
+
+mkdir -p Dev/rteam/HOLD
+cp "$SOURCE_ROOT/bin/bin00.bin" Dev/rteam/HOLD/old_p4java.jar
+p4 add Dev/rteam/HOLD/old_p4java.jar
+p4 submit -d "ClientIntegrationE2ETest: add hold files"
+
+p4 integrate Dev/rteam/TLCP/... Dev/rteam/SHOW/...
+p4 submit -d "ClientIntegrationE2ETest: create show branch"
+
+mkdir -p Dev/rteam/HGTV/src
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HGTV/src/homePlan.txt
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HGTV/src/homeWorks.html
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HGTV/src/hProj.java
+cp "$SOURCE_ROOT/text/text00.txt" Dev/rteam/HGTV/src/lProj.java
+cp "$SOURCE_ROOT/bin/bin00.bin" Dev/rteam/HGTV/src/proj1.dll
+p4 add Dev/rteam/HGTV/src/*
+p4 integrate Dev/rteam/TLCP/admin/... Dev/rteam/HGTV/admin/...
+p4 submit -d "ClientIntegrationE2ETest: create hgtv branch"
+
+p4 integrate Dev/rteam/HGTV/src/lProj.java Dev/rteam/HOLD/src/lProj.java
+p4 submit -d "ClientIntegrationE2ETest: make another branch"
+p4 edit Dev/rteam/HOLD/src/lProj.java
+cp "$SOURCE_ROOT/text/text01.txt" Dev/rteam/HOLD/src/lProj.java
+p4 submit -d "ClientIntegrationE2ETest: make a change in the branch"

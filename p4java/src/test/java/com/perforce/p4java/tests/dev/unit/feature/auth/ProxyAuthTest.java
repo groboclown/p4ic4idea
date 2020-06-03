@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 
 import java.util.Properties;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.option.server.LoginOptions;
@@ -24,6 +27,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("FeaturesAuth_ProxyAuthTest")
 public class ProxyAuthTest extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	public ProxyAuthTest() {
 		super();
@@ -61,7 +73,7 @@ public class ProxyAuthTest extends P4JavaTestCase {
 		    props.put( "svrname", this.superUserName );
             props.put( "port", "10.1.1.0:443" );
             props.put( "ipaddr", ipaddr );
-			server = getOptionsServer(getServerUrlString(), props);
+			server = getOptionsServer(null, props);
 			server.setUserName(this.userName);
 			server.setAuthTicket(ticket.toString());
 			

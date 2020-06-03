@@ -19,10 +19,12 @@ import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreTestRule;
+import com.perforce.p4java.tests.ignoreRule.OSCondition;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
@@ -51,6 +53,9 @@ public class IgnoreFilesTest extends P4JavaRshTestCase {
 
 	@ClassRule
 	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", IgnoreFilesTest.class.getSimpleName());
+
+	@Rule
+	public ConditionallyIgnoreTestRule ignoreRule = new ConditionallyIgnoreTestRule();
 
 	/**
 	 * @Before annotation to a method to be run before each test in a class.
@@ -87,9 +92,10 @@ public class IgnoreFilesTest extends P4JavaRshTestCase {
 	 * Test 'p4 add' ignore files
 	 */
 	@Test
-	@Ignore("Skip until Windows unicode paths are resolved")
+	@ConditionallyIgnoreTestRule.ConditionalIgnore(
+			condition = OSCondition.IsWindows.class,
+			why = "Skip until Windows unicode paths are resolved")
 	public void testIgnoreUnicodeFiles() {
-
 		IChangelist changelist = null;
 		List<IFileSpec> files = null;
 

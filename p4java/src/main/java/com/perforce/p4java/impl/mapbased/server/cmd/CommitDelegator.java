@@ -113,25 +113,22 @@ public class CommitDelegator extends BaseDelegator implements ICommitDelegator {
 		for (Map<String, Object> map : resultMaps) {
 			// p4ic4idea: use IServerMessage
 			IServerMessage message = ResultMapParser.toServerMessage(map);
-			if (nonNull(message)) {
+			// Check for errors
+			ResultMapParser.handleErrors(message);
+			// p4ic4idea: this line wasn't doing anything that the above checks weren't doing.
+			//throwRequestExceptionIfConditionFails(!message.isError(), message);
 
-				// Check for errors
-				ResultMapParser.handleErrors(message);
-
-				// p4ic4idea: this line wasn't doing anything that the above checks weren't doing.
-				//throwRequestExceptionIfConditionFails(!message.isError(), message);
-				try {
-					if (map.containsKey(SHA)) {
-						rsha = parseString(map, SHA);
-					}
-					if (map.containsKey(TYPE)) {
-						type = parseString(map, TYPE);
-					}
-				// p4ic4idea: do not handle Throwable unless you're really, really careful.
-				//} catch (Throwable thr) {
-				} catch (Exception thr) {
-					Log.exception(thr);
+			try {
+				if (map.containsKey(SHA)) {
+					rsha = parseString(map, SHA);
 				}
+				if (map.containsKey(TYPE)) {
+					type = parseString(map, TYPE);
+				}
+			// p4ic4idea: do not handle Throwable unless you're really, really careful.
+			//} catch (Throwable thr) {
+			} catch (Exception thr) {
+				Log.exception(thr);
 			}
 		}
 

@@ -6,6 +6,7 @@ package com.perforce.p4java.tests.dev.unit.features112;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.server.CmdSpec;
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
 import com.perforce.p4java.tests.dev.annotations.Jobs;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
@@ -29,6 +30,15 @@ import static org.junit.Assert.fail;
 @Jobs({"job037798"})
 @TestId("Dev112_GetStreamingExportRecordsTest")
 public class GetStreamingExportRecordsTest extends P4JavaTestCase {
+    // p4ic4idea: use local server
+    @BeforeClass
+    public static void oneTimeSetUp() {
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+    }
+    @AfterClass
+    public static void oneTimeTearDown() {
+        UnitTestDevServerManager.INSTANCE.endTestClass();
+    }
 
     private static IClient client = null;
     private Integer journal = 0;

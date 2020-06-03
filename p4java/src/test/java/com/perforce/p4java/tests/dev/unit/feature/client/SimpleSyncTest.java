@@ -34,7 +34,7 @@ public class SimpleSyncTest extends P4JavaTestCase {
     public static void beforeAll() throws Exception {
         // p4ic4idea: use local server
         UnitTestDevServerManager.INSTANCE.startTestClass();
-        server = getServer("p4java://eng-p4java-vm.das.perforce.com:20121", null, null, null);
+        server = getServer();
         assertNotNull(server);
         client = getDefaultClient(server);
         server.setCurrentClient(client);
@@ -52,7 +52,9 @@ public class SimpleSyncTest extends P4JavaTestCase {
         // Nuke any existing local files:
         client.revertFiles(targetFiles, null);
 
-        FileUtils.deleteDirectory(new File("/tmp/p4javatest/basic/readonly/sync"));
+        // p4ic4idea: make path match client.
+        // FileUtils.deleteDirectory(new File("/tmp/p4javatest/basic/readonly/sync"));
+        FileUtils.deleteDirectory(new File(new File(client.getRoot()), "basic/readonly/sync"));
 
         List<IFileSpec> haveFileSpecs = FileSpecBuilder.makeFileSpecList(SYNCTEST_ROOT + "#0");
         List<IFileSpec> files = client.sync(

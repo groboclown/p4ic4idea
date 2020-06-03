@@ -9,10 +9,12 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import com.perforce.p4java.impl.mapbased.rpc.sys.helper.SymbolicLinkHelper;
@@ -22,6 +24,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * Test symbolic link helper (JDK 7 or above)
  */
 public class SymbolicLinkHelperTest extends P4JavaTestCase {
+
+	@ClassRule
+	public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+			"Creates paths that can't be used on Windows");
 
 	/**
 	 * @BeforeClass annotation to a method to be run before all the tests in a

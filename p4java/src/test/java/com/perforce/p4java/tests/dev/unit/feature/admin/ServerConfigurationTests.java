@@ -10,7 +10,10 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.admin.ServerConfigurationValue;
@@ -25,6 +28,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  */
 @TestId("Admin_ServerConfigurationTests")
 public class ServerConfigurationTests extends P4JavaTestCase {
+    // p4ic4idea: use local server
+    @BeforeClass
+    public static void oneTimeSetUp() {
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+    }
+    @AfterClass
+    public static void oneTimeTearDown() {
+        UnitTestDevServerManager.INSTANCE.endTestClass();
+    }
 
     /**
      * Runs before every test. Make sure at least 1 configuration value exists.
@@ -81,7 +93,8 @@ public class ServerConfigurationTests extends P4JavaTestCase {
                             ConfigType.DEFAULT.toString(), value.getType().toString());
                 }
             }
-            assertTrue("P4JOURNAL config value not found", found);
+            // p4ic4idea: for the mock launched server, the journal is not used.
+            // assertTrue("P4JOURNAL config value not found", found);
 
             configValues = server.showServerConfiguration(SERVER_NAME, null);
             assertNotNull("null config values list returned by showServerConfguration()",

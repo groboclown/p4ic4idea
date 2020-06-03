@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.admin.IDbSchema;
@@ -25,6 +28,16 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("DBSchemaTest01")
 public class DBSchemaTest extends P4JavaTestCase {
+    // p4ic4idea: use local server
+    @BeforeClass
+    public static void oneTimeSetUp() {
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+    }
+    @AfterClass
+    public static void oneTimeTearDown() {
+        UnitTestDevServerManager.INSTANCE.endTestClass();
+    }
+
     /**
      * Simple dbschema test. Not intended to be extensive or anything more
      * than basic sanity checks at the moment (dbschema is not a front-line

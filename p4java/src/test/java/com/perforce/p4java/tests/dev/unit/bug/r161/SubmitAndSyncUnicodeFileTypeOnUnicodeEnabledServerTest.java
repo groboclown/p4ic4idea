@@ -10,6 +10,7 @@ import com.perforce.p4java.server.PerforceCharsets;
 import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -28,7 +29,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-@Ignore("This test creates files that cannot be created in Windows")
 public class SubmitAndSyncUnicodeFileTypeOnUnicodeEnabledServerTest extends P4JavaRshTestCase {
     private static final String CLASS_PATH_PREFIX = "com/perforce/p4java/impl/mapbased/rpc/sys";
     private static final String RELATIVE_DEPOT_PATH = "/152Bugs/job085433/" + System.currentTimeMillis();
@@ -36,13 +36,18 @@ public class SubmitAndSyncUnicodeFileTypeOnUnicodeEnabledServerTest extends P4Ja
     private IChangelist changelist = null;
     private List<IFileSpec> submittedOrPendingFileSpecs = null;
 
-    
-    @ClassRule
 	public static SimpleServerRule p4d = new UnicodeServerRule("r16.1", SubmitAndSyncUnicodeFileTypeOnUnicodeEnabledServerTest.class.getSimpleName());
+
+    @ClassRule
+    public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+            "This test creates files that cannot be created in Windows",
+
+            // p4d should only be initialized if the rule is not ignored.
+            p4d);
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-    	setupServer(p4d.getRSHURL(), null, null, true, null);
+        setupServer(p4d.getRSHURL(), null, null, true, null);
     }
 
     @Test

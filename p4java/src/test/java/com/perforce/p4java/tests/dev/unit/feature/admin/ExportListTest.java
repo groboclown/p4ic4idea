@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Map;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.server.IServer;
@@ -21,6 +24,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
  * method (at least for the 9.2 release).
  */
 public class ExportListTest extends P4JavaTestCase {
+    // p4ic4idea: use local server
+    @BeforeClass
+    public static void oneTimeSetUp() {
+        UnitTestDevServerManager.INSTANCE.startTestClass();
+    }
+    @AfterClass
+    public static void oneTimeTearDown() {
+        UnitTestDevServerManager.INSTANCE.endTestClass();
+    }
 
     public ExportListTest() {
     }

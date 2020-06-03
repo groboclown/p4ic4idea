@@ -56,14 +56,15 @@ docker run --rm \
   --network "p4-net-${basen}" \
   "p4client-${basen}" || clean_up 1
 
+# ExportListTest - leave checkpoint file in depot directory.
 test -f "${output_dir}/checkpoint.1" || clean_up 1
-mv "${output_dir}/checkpoint.1" "${checkpoint_dir}/checkpoint" || clean_up 1
+cp "${output_dir}/checkpoint.1" "${checkpoint_dir}/checkpoint" || clean_up 1
 test -f "${checkpoint_dir}/checkpoint.gz" && rm -f "${checkpoint_dir}/checkpoint.gz"
 ( cd "${checkpoint_dir}" && gzip -9 checkpoint)
 
 test -d "${output_dir}/depot" || clean_up 1
 test -d "${output_dir}/p4java_stream" || clean_up 1
 test -f "${checkpoint_dir}/depot.tar.gz" && rm -f "${checkpoint_dir}/depot.tar.gz"
-( cd "${output_dir}" && tar zcf "${checkpoint_dir}/depot.tar.gz" depot p4java_stream )
+( cd "${output_dir}" && tar zcf "${checkpoint_dir}/depot.tar.gz" depot p4java_stream checkpoint.1 )
 
 chmod +w "${checkpoint_dir}/checkpoint.gz" "${checkpoint_dir}/depot.tar.gz"

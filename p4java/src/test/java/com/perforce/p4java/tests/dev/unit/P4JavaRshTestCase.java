@@ -10,8 +10,12 @@ import org.junit.Assert;
 import java.util.Properties;
 
 public class P4JavaRshTestCase extends P4JavaTestCase {
-
 	public static void setupServer(String p4dUrl, String user, String password, boolean login, Properties props) throws Exception {
+		setupServer(p4dUrl, user, password, login, props, true);
+	}
+
+	public static void setupServer(String p4dUrl, String user, String password, boolean login, Properties props,
+			boolean requireClient) throws Exception {
 		server = ServerFactory.getOptionsServer(p4dUrl, props);
 		Assert.assertNotNull(server);
 
@@ -49,6 +53,8 @@ public class P4JavaRshTestCase extends P4JavaTestCase {
 			server.login((password == null || password.isEmpty()) ? getPassword() : password,
 					new LoginOptions());
 		}
-		server.setCurrentClient(getDefaultClient(server));
+		if (requireClient) {
+			server.setCurrentClient(getDefaultClient(server));
+		}
 	}
 }

@@ -63,7 +63,7 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
             // Tell the server to use memory to store auth tickets
             serverProps.put("useAuthMemoryStore", "true");
 
-            server = getServer(getServerUrlString(), serverProps, getUserName(),
+            server = getServer(serverProps, getUserName(),
                     getPassword());
             assertNotNull(server);
             client = server.getClient("p4TestUserWS20112");
@@ -72,7 +72,7 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
             // Register callback
             server.registerCallback(callback);
 
-            superServer = getServer(getServerUrlString(), serverProps,
+            superServer = getServer(serverProps,
                     getSuperUserName(), getSuperUserPassword());
             assertNotNull(superServer);
             superClient = superServer.getClient("p4TestSuperWS20112");
@@ -121,7 +121,7 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
      * Test in-memory tickets - change password.
      */
     @Test
-    public void testInMemoryChangePassword() {
+    public void testInMemoryChangePassword() throws Exception {
         try {
             // Create a new user, password not set.
             int randNum = getRandomInt();
@@ -210,7 +210,7 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
             assertThat(callback.getMessage(), containsText("'login' not necessary, no password set for this user."));
 
             // Use the super user to change the password to something else
-            superServer = getServer(getServerUrlString(), serverProps,
+            superServer = getServer(serverProps,
                     "p4jtestsuper", "p4jtestsuper");
             assertNotNull(superServer);
             superClient = superServer.getClient("p4TestSuperWS20112");
@@ -238,8 +238,6 @@ public class InMemoryAuthTicketsTest extends P4JavaTestCase {
             assertNotNull(depots);
             assertTrue(depots.size() > 0);
 
-        } catch (Exception exc) {
-            fail("Unexpected exception: " + exc.getLocalizedMessage());
         } finally {
             try {
                 if (superServer != null) {

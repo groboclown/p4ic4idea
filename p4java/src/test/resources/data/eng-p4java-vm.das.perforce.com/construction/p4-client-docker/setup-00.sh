@@ -12,7 +12,14 @@ p4 protect -i protect-specs/protect.spec
 for i in user-specs/*.spec ; do
   username=$( basename "${i}" .spec )
   p4 user -f -i < "${i}"
-  p4 passwd -P "${username}" "${username}"
+  # the root user may have been added before this.  Explicitly
+  # remove it inside the user loop, in case we go over the free server limit.
+  p4 user -f -d root || true
+
+  # CreateDeleteUser: dummy user does not set its password
+  if [ "${username}" != "p4jtestdummy" ] ; then
+    p4 passwd -P "${username}" "${username}"
+  fi
 done
 
 for i in depot-specs/*.spec ; do
@@ -37,6 +44,10 @@ done
 
 for i in group-specs/*.spec ; do
   p4 group -i < "${i}"
+done
+
+for i in label-specs/*.spec ; do
+  p4 label -i < "${i}"
 done
 
 # explicit counters at initialization time.

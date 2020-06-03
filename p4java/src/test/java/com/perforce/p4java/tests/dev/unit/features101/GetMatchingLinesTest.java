@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.IFileLineMatch;
@@ -32,6 +35,16 @@ public class GetMatchingLinesTest extends P4JavaTestCase {
 	
 	public static final String DEPOT_PATH_ROOT = "//depot/basic/readonly/grep/...";
 	public static final String DEPOT_PATH_ROOT_PREFIX = "//depot/basic/readonly/grep";
+
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	public GetMatchingLinesTest() {
 	}
@@ -70,17 +83,20 @@ public class GetMatchingLinesTest extends P4JavaTestCase {
 							0,
 							0,
 							false));
-			checkBasics(matches, 5331, true);
+			// p4ic4idea: expected size different for mock setup (was: 5331)
+			checkBasics(matches, 33, true);
 			matches = server.getMatchingLines(
 					FileSpecBuilder.makeFileSpecList(DEPOT_PATH_ROOT),
 					"P4Java",
 					new MatchingLinesOptions().setCaseInsensitive(true));
-			checkBasics(matches, 117, false);
+			// p4ic4idea: expected size different for mock setup (was: 117)
+			checkBasics(matches, 9, false);
 			matches = server.getMatchingLines(
 					FileSpecBuilder.makeFileSpecList(DEPOT_PATH_ROOT),
 					"P4Java",
 					new MatchingLinesOptions().setCaseInsensitive(true).setNonMatchingLines(true));
-			checkBasics(matches, 5222, false);
+			// p4ic4idea: expected size different for mock setup (was: 5222)
+			checkBasics(matches, 32, false);
 		} catch (Exception exc) {
 			fail("Unexpected exception: " + exc.getLocalizedMessage());
 		} finally {

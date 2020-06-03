@@ -10,9 +10,13 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.common.base.OSUtils;
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import com.perforce.p4java.tests.ignoreRule.ConditionallyIgnoreClassRule;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -36,8 +40,10 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("Job036721Test")
 @Jobs({"job036721"})
-@Ignore("windows fails with this test, because the `unicode` file system can't be created by the os.")
 public class Job036721Test extends P4JavaTestCase {
+	@ClassRule
+	public static ConditionallyIgnoreClassRule ignoreWindows = ConditionallyIgnoreClassRule.ifWindows(
+			"windows fails with this test, because the `unicode` file system can't be created by the os.");
 	// p4ic4idea: use local server
 	@BeforeClass
 	public static void oneTimeSetUp() {

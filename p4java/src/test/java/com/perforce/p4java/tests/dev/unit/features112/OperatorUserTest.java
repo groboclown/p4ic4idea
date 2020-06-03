@@ -137,7 +137,8 @@ public class OperatorUserTest extends P4JavaTestCase {
 
     @Test
     public void testRetrieveOperatorUser() {
-        final String serviceUserName = "p4jtestoperatoruser";
+        // p4ic4idea: use p4jtestoperator instead of p4jtestoperatoruser
+        final String serviceUserName = "p4jtestoperator";
 
         try {
             List<IUserSummary> users = server.getUsers(null,

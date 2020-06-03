@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -756,6 +757,8 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
         dumpFileSpecInfo(fSpecs, "fSpecs after client.integrateFiles()");
         verifyFileAction(fSpecs, expNumFilesIntegrated, FileAction.INTEGRATE);
 
+        // p4ic4idea: submit fails on Windows with "(to file) tampered with after resolve - edit or revert."
+
         //resolve by accepting theirs and submitting
         client.resolveFilesAuto(fSpecs, true, false, false, false, true);
         List<IFileSpec> submittedFiles = changelist.submit(false);
@@ -991,7 +994,8 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
         List<IFileSpec> fSpecs = client.integrateFiles(changelistId, false, null, null,
                 fromFile.get(0), toFile.get(0));
         dumpFileSpecInfo(fSpecs);
-        verifyFileSpecInfo(fSpecs, FileSpecOpStatus.ERROR, "all revision(s) already integrated.");
+        // p4ic4idea: this is now an INFO response.
+        verifyFileSpecInfo(fSpecs, FileSpecOpStatus.INFO, "all revision(s) already integrated.");
     }
 
 
@@ -1216,7 +1220,6 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
 
 
     private String[] prepareTestDir(String fromPath, String toPath) throws Exception {
-
         String fromPathStr = null;
         String toPathStr = null;
         String[] fileList = null;
@@ -1233,6 +1236,12 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
         } else {
             toPathStr = toPath;
         }
+
+        // p4ic4idea: clean out topath first.
+        FileUtils.deleteDirectory(new File(toPathStr));
+
+        // p4ic4idea: Note about implementation: this seems to want to perform native copy command to allow for
+        //   proper file permission and ownership copy.
         String osName = getCurrentOsName();
         if (osName.toLowerCase().contains("windows")) {
             P4ExtFileUtils.createDirectory(toPath);
@@ -1300,7 +1309,7 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
     private String[] localSystemCmd(String cmdStr) throws Exception {
 
         String line = null;
-        String errLine = null;
+        String errLine = ""; // p4ic4idea: originally null; can cause bad += later.
         String[] tmp = new String[100];
         int i = 0;
         debugPrint("** localSystemCmd **");
@@ -1317,14 +1326,14 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
         while ((line = stdError.readLine()) != null) {
             errLine += line;
         }
-        if (errLine != null) {
+        //if (errLine != null) {
             if (errLine.length() > 0) {
                 debugPrint("The following error was returned: " + errLine);
                 fail("Unexpected Error: " + errLine);
             } else {
                 debugPrint("Copy succeeded.");
             }
-        }
+        //}
 
         line = "";
         i = 0;

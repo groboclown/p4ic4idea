@@ -70,7 +70,7 @@ public class RshTest extends P4JavaTestCase {
 	 * Test 'rsh' hack.
 	 */
 	@Test
-	public void testRsh() {
+	public void testRsh() throws Exception {
 
 		try {
 			File p4root = new File("p4root");
@@ -83,7 +83,11 @@ public class RshTest extends P4JavaTestCase {
 			debugPrint("Info from RSH connection " + info);
 			p4.disconnect();
 		} catch (P4JavaException e) {
-			fail("Unexpected exception: " + e.getLocalizedMessage());
+			// p4ic4idea: just let this throw the exception, so we get the complete stack trace.
+			// p4ic4idea: this is flaky; it can fail with a "RPC disconnection error: The pipe is being closed"
+			throw e;
+			//fail("Unexpected exception: " + e.getLocalizedMessage());
+
 		}
 	}
 }

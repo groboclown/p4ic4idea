@@ -4,6 +4,7 @@ set -e
 
 export P4USER=p4jtestsuper
 export P4PASSWD=p4jtestsuper
+export P4CLIENT=p4TestUserWS
 
 # PasswordTest ...
 echo 'User: testuser-job059485
@@ -19,3 +20,8 @@ export P4USER=testuser-job059485
 P4PASSWD=$( echo -e '\t\tabc123  ' )
 export P4PASSWD
 p4 users > /dev/null
+
+
+
+# CountersTest
+p4 counter p4jtestCounter 10

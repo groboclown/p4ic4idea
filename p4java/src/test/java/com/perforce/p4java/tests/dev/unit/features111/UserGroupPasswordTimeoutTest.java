@@ -10,6 +10,9 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import com.perforce.p4java.tests.dev.UnitTestDevServerManager;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.perforce.p4java.core.IUserGroup;
@@ -27,6 +30,15 @@ import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 
 @TestId("Features111_UserGroupPasswordTimeoutTest")
 public class UserGroupPasswordTimeoutTest extends P4JavaTestCase {
+	// p4ic4idea: use local server
+	@BeforeClass
+	public static void oneTimeSetUp() {
+		UnitTestDevServerManager.INSTANCE.startTestClass();
+	}
+	@AfterClass
+	public static void oneTimeTearDown() {
+		UnitTestDevServerManager.INSTANCE.endTestClass();
+	}
 
 	public UserGroupPasswordTimeoutTest() {
 	}

@@ -1,0 +1,7 @@
+Text file for tests that require explicit text.
+start text:
+
+line 1: -- P4Java --
+line 2: -- P4Java --
+
+:end text

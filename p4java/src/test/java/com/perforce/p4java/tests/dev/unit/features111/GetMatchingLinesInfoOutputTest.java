@@ -58,9 +58,10 @@ public class GetMatchingLinesInfoOutputTest extends P4JavaRshTestCase {
 		final List<IFileSpec> searchFiles =
 			FileSpecBuilder.makeFileSpecList("//depot/client/ShelveUnshelveTest/p4java/...");
 		MatchingLinesOptions opts = new MatchingLinesOptions();
+		// p4ic4idea: EOL was there, but is now trimmed.
 		final String knownInfoLine =
 							"//depot/client/ShelveUnshelveTest/p4java/overview-tree.html#1"
-							+ " - line 232: maximum line length of 4096 exceeded\n";
+							+ " - line 232: maximum line length of 4096 exceeded";
 		
 		try {
 			List<IFileLineMatch> matches = server.getMatchingLines(searchFiles,

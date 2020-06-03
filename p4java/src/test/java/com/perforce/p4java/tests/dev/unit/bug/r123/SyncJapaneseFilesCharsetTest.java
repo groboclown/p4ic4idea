@@ -32,7 +32,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 
 @Jobs({"job036721"})
 @TestId("Dev112_SyncJapaneseFilesTest")
-@Ignore("Test uses characters for files that are invalid on Windows")
 public class SyncJapaneseFilesCharsetTest extends P4JavaRshTestCase {
 
   @ClassRule

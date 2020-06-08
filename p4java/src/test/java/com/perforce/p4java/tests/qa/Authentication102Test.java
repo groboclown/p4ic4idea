@@ -31,12 +31,14 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.jupiter.api.Assertions.fail;
 
+// This test is flaky; it can fail on the secondUser creation with a timeout if the computer is slow.
 @RunWith(JUnitPlatform.class)
 public class Authentication102Test {
 
     private static TestServer ts = null;
     private static Helper helper = null;
     private static IOptionsServer server = null;
+    private static final int TIMEOUT = 2;
 
     @BeforeAll
     public static void beforeClass() throws Throwable {
@@ -66,7 +68,7 @@ public class Authentication102Test {
         // create a group and add some other user
         users.add("secondUser");
         group.setName("timeoutnow");
-        group.setTimeout(1);
+        group.setTimeout(TIMEOUT);
         group.setUsers(users);
 
         UpdateUserGroupOptions opt = new UpdateUserGroupOptions();
@@ -129,7 +131,7 @@ public class Authentication102Test {
             server.setUserName("secondUser");
             server.login("thispasswordisoversixteencharacterslong");
             assertThat("Was not secondUser", server.getUserName(), is("secondUser"));
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(TIMEOUT * 3);
             diffStream = server.getServerFileDiffs(
                     new FileSpec("//depot/foo.txt"),
                     new FileSpec("//depot/bar.txt"),

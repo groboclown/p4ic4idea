@@ -106,7 +106,7 @@ public class P4ExtFileUtils {
             while (entry != null) {
                 File node = new File(outputDir, entry.getName());
                 if (entry.isDirectory()) {
-                    if (!node.mkdirs()) {
+                    if (!node.mkdirs() && !node.isDirectory()) {
                         throw new IOException("Could not create directory " + node);
                     }
                 } else {

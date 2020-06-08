@@ -19,6 +19,7 @@ p4ic4idea-*.jar
 /p4java/p4root/
 /p4java/.p4tickets
 /p4java/p4d.d-*/
+/p4java/unpacked/
 /idea-p4server/impl/p4d.d-*/
 
 # specific user properties

@@ -10,6 +10,7 @@ import com.perforce.p4java.exception.RequestException;
 import com.perforce.p4java.option.server.ReposOptions;
 import com.perforce.p4java.tests.GraphServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -31,11 +32,20 @@ public class GraphDepotsTest extends P4JavaRshTestCase {
 	@ClassRule
 	public static GraphServerRule p4d = new GraphServerRule("r17.1", GraphHaveTest.class.getSimpleName());
 
+	private static String originalDefaultClientName;
+
 	@BeforeClass
 	public static void beforeAll() throws Exception {
 		Properties properties = new Properties();
 		properties.put(PropertyDefs.ENABLE_GRAPH_SHORT_FORM, "true");
+		originalDefaultClientName = defaultTestClientName;
+		defaultTestClientName = "GraphCatFile.ws";
 		setupServer(p4d.getRSHURL(), userName, userName, true, properties);
+	}
+	@AfterClass
+	public static void afterAll() throws Exception {
+		defaultTestClientName = originalDefaultClientName;
+		originalDefaultClientName = null;
 	}
 
 	@Before

@@ -5,6 +5,7 @@ import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.graph.IGraphListTree;
 import com.perforce.p4java.tests.GraphServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -21,12 +22,21 @@ public class GraphLsTree extends P4JavaRshTestCase {
 	@ClassRule
 	public static GraphServerRule p4d = new GraphServerRule("r17.1", GraphCatFileTest.class.getSimpleName());
 
+	private static String originalDefaultClientName;
+
 	@BeforeClass
 	public static void beforeAll() throws Exception {
 		Properties properties = new Properties();
 		properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM, ".p4ignore");
 		properties.put(PropertyDefs.ENABLE_GRAPH_SHORT_FORM, "true");
+		originalDefaultClientName = defaultTestClientName;
+		defaultTestClientName = "p4jtestsuper.ws";
 		setupServer(p4d.getRSHURL(), "p4jtestsuper", "p4jtestsuper", true, properties);
+	}
+	@AfterClass
+	public static void afterAll() throws Exception {
+		defaultTestClientName = originalDefaultClientName;
+		originalDefaultClientName = null;
 	}
 
 	@Test

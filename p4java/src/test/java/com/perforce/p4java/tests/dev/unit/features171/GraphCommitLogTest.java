@@ -9,6 +9,7 @@ import com.perforce.p4java.option.server.GraphCommitLogOptions;
 import com.perforce.p4java.tests.GraphServerRule;
 import com.perforce.p4java.tests.dev.annotations.TestId;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -34,12 +35,21 @@ public class GraphCommitLogTest extends P4JavaRshTestCase {
 	@ClassRule
 	public static GraphServerRule p4d = new GraphServerRule("r17.1", GraphCommitLogTest.class.getSimpleName());
 
+	private static String originalDefaultClientName;
+
 	@BeforeClass
 	public static void beforeAll() throws Exception {
 		Properties properties = new Properties();
 		properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM, ".p4ignore");
 		properties.put(PropertyDefs.ENABLE_GRAPH_SHORT_FORM, "true");
+		originalDefaultClientName = defaultTestClientName;
+		defaultTestClientName = "p4jtestsuper.ws";
 		setupServer(p4d.getRSHURL(), "p4jtestsuper", "p4jtestsuper", true, properties);
+	}
+	@AfterClass
+	public static void afterAll() throws Exception {
+		defaultTestClientName = originalDefaultClientName;
+		originalDefaultClientName = null;
 	}
 
 	@Before

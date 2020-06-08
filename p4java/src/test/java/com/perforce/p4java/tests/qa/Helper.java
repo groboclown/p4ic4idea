@@ -154,7 +154,8 @@ public class Helper {
 
         File clientRoot;
         if (clientRootPath == null) {
-            clientRoot = new File(server.getServerInfo().getServerRoot(), name + "-root");
+            // No - this is wrong.
+            clientRoot = new File("tmp/" + name + "-root");
         } else {
             clientRoot = new File(clientRootPath);
         }

@@ -18,6 +18,9 @@ import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.test.TestServer;
 
 
+/**
+ * Compressed connection, without RSH.
+ */
 public class CompressedConnectionTest {
 
     private static TestServer ts = null;
@@ -31,13 +34,12 @@ public class CompressedConnectionTest {
      */
     @BeforeClass
     public static void beforeClass() throws Throwable {
-        org.junit.Assert.fail("This class seems to hang.");
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
         ts.startAsync();
 
-        IOptionsServer server = helper.getServer(ts);
+        IOptionsServer server = helper.getServerWithLocalUrl(ts);
         server.setUserName(ts.getUser());
         server.connect();
 

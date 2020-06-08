@@ -46,22 +46,32 @@ public class GraphReceivePackTest extends P4JavaRshTestCase {
 
 	// p4ic4idea: use correct resource access
 	private static final String PACK_FILE_PATH = "com/perforce/p4java/scm-api-plugin.git/";
+	private static final String UNPACKED_FILE_PATH = "tmp/GraphReceivePackTest/";
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
 
 	@ClassRule
 	public static GraphServerRule p4d = new GraphServerRule("r17.1", GraphReceivePackTest.class.getSimpleName());
 
+	private static String originalDefaultClientName;
+
 	@BeforeClass
 	public static void beforeAll() throws Exception {
 		Properties properties = new Properties();
 		properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM, ".p4ignore");
 		properties.put(PropertyDefs.ENABLE_GRAPH_SHORT_FORM, "true");
+		originalDefaultClientName = defaultTestClientName;
+		defaultTestClientName = "p4jtestsuper.ws";
 		setupServer(p4d.getRSHURL(), "p4jtestsuper", "p4jtestsuper", true, properties);
 		P4ExtFileUtils.extractResource(GraphReceivePackTest.class,
 				PACK_FILE_PATH + "scm-api-plugin.git.tar.gz",
-				new File("unpacked"),
+				new File(UNPACKED_FILE_PATH + "unpacked"),
 				true);
+	}
+	@AfterClass
+	public static void afterAll() throws Exception {
+		defaultTestClientName = originalDefaultClientName;
+		originalDefaultClientName = null;
 	}
 
 	@Before
@@ -83,7 +93,14 @@ public class GraphReceivePackTest extends P4JavaRshTestCase {
 	 */
 	@AfterClass
 	public static void afterClass() throws IOException {
-		FileUtils.cleanDirectory(new File(PACK_FILE_PATH + "unpacked/scm-api-plugin.git"));
+		File toRemove = new File(PACK_FILE_PATH + "unpacked/scm-api-plugin.git");
+		if (toRemove.exists()) {
+			FileUtils.cleanDirectory(toRemove);
+		}
+		toRemove = new File(UNPACKED_FILE_PATH + "unpacked/scm-api-plugin.git");
+		if (toRemove.exists()) {
+			FileUtils.cleanDirectory(toRemove);
+		}
 	}
 
 	/**
@@ -128,8 +145,8 @@ public class GraphReceivePackTest extends P4JavaRshTestCase {
 	@Test
 	public void receivePackOnExistingPack() throws P4JavaException {
 		String repo = "//graph/pack-receive";
-		String packFile = PACK_FILE_PATH + "unpacked/scm-api-plugin.git/objects/pack/pack-956185b99350673698b9dbbeb6fd45b906e47436.pack";
-		String packedRefs = PACK_FILE_PATH + "unpacked/scm-api-plugin.git/packed-refs";
+		String packFile = UNPACKED_FILE_PATH + "unpacked/scm-api-plugin.git/objects/pack/pack-956185b99350673698b9dbbeb6fd45b906e47436.pack";
+		String packedRefs = UNPACKED_FILE_PATH + "unpacked/scm-api-plugin.git/packed-refs";
 		String masterCommit = "master=5631932f5cdf6c3b829911b6fe5ab42d436d74da";
 
 		GraphReceivePackOptions graphRecvPackOptions = new GraphReceivePackOptions();

@@ -18,6 +18,7 @@ import com.perforce.p4java.option.client.ResolveFilesAutoOptions;
 import com.perforce.p4java.tests.GraphServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -50,7 +51,8 @@ public class IntegrationOutputTest extends P4JavaRshTestCase {
 		Properties properties = new Properties();
 		properties.put(PropertyDefs.IGNORE_FILE_NAME_KEY_SHORT_FORM, ".p4ignore");
 		properties.put(PropertyDefs.ENABLE_GRAPH_SHORT_FORM, "true");
-		setupServer(p4d.getRSHURL(), userName, userName, true, properties);
+		defaultTestClientName = "p4jtestsuper.ws";
+		setupServer(p4d.getRSHURL(), userName, userName, true, properties, false);
 
 		// initialization code (before each test).
 		try {

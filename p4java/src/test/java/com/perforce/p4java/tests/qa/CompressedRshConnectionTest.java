@@ -35,7 +35,7 @@ public class CompressedRshConnectionTest {
     // simple setup with one file and a fix
     @BeforeAll
     public static void beforeClass() throws Throwable {
-        fail("This test hangs forever.");
+        // fail("This test hangs forever.");
         helper = new Helper();
         ts = new TestServer();
         ts.getServerExecutableSpecification().setCodeline(helper.getServerVersion());
@@ -48,7 +48,6 @@ public class CompressedRshConnectionTest {
 
         IUser user = server.getUser(ts.getUser());
 
-        // FIXME test hangs here.  See BUGS.md
         client = helper.createClient(server, "client1");
         IClientOptions opts = new ClientOptions();
         opts.setCompress(true);

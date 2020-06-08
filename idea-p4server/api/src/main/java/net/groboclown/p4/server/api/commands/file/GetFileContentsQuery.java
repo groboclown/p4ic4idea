@@ -39,6 +39,15 @@ public class GetFileContentsQuery implements P4CommandRunner.ClientQuery<GetFile
         this.rev = rev;
     }
 
+    @Override
+    public String toString() {
+        if (depotPath != null) {
+            return "GetFileContents(" + depotPath + ")";
+        } else {
+            return "GetFileContents(" + localPath + "#" + rev + ")";
+        }
+    }
+
     @NotNull
     @Override
     public Class<? extends GetFileContentsResult> getResultType() {

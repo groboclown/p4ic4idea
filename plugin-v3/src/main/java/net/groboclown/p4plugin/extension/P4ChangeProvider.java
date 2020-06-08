@@ -76,6 +76,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -457,8 +458,27 @@ public class P4ChangeProvider
     }
 
 
+    // #213: the files passed in can be in multiple clients; however, this needs to filter out the files
+    // to instead be only in the requested client.  Without this, all kinds of weird things happen with the
+    // changelist mapping.
     private void updateLocalFileCache(ClientConfig config, List<P4LocalFile> files,
             IdeChangelistMap changes, ChangelistBuilder builder) {
+        // Collect only the files that are in the client.
+        updateLocalFileCacheForClient(
+                config,
+                changes,
+                builder,
+                files.stream().filter((f) ->
+                    f != null &&
+                    f.getChangelistId() != null &&
+                    Objects.equals(config.getClientname(), f.getChangelistId().getClientname())
+                ).collect(Collectors.toList())
+        );
+    }
+
+    private void updateLocalFileCacheForClient(ClientConfig config,
+            IdeChangelistMap changes, ChangelistBuilder builder,
+            List<P4LocalFile> files) {
         final Map<P4LocalFile, P4LocalFile> moved = findMovedFiles(files);
         final Set<P4LocalFile> unprocessedDeletedMovedFiles = new HashSet<>(moved.values());
 

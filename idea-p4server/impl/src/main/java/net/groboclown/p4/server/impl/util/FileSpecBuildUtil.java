@@ -142,7 +142,7 @@ public class FileSpecBuildUtil {
                 if (path == null) {
                     path = file.getOriginalPathString();
                     if (path == null) {
-                        throw new IllegalArgumentException("null file spec in arguments");
+                        throw new IllegalArgumentException("null file spec (" + file + ") in arguments: " + files);
                     }
                 }
             }

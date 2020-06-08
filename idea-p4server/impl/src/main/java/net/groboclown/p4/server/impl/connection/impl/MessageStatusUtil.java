@@ -19,6 +19,7 @@ import com.perforce.p4java.core.file.IExtendedFileSpec;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.exception.RequestException;
+import com.perforce.p4java.server.IServer;
 import com.perforce.p4java.server.IServerMessage;
 
 import java.util.ArrayList;
@@ -64,6 +65,39 @@ public class MessageStatusUtil {
             throw new P4JavaException("Unexpected error when performing " + operation +
                     " on file: " + ret.get(0));
         }
+    }
+
+    public static List<IServerMessage> getAllMessages(Collection<IFileSpec> specs) {
+        return getMessages(specs, true, true, true);
+    }
+
+    public static List<IServerMessage> getMessages(Collection<IFileSpec> specs,
+            boolean errors, boolean warnings, boolean infos) {
+        List<IServerMessage> messages = new ArrayList<>(specs.size());
+        for (IFileSpec spec : specs) {
+            IServerMessage msg = spec.getStatusMessage();
+            if (
+                    msg != null && (
+                        (errors && msg.isError()) ||
+                        (infos && msg.isInfo()) ||
+                        (warnings && msg.isWarning())
+                    )
+            ) {
+                messages.add(msg);
+            }
+        }
+        return messages;
+    }
+
+    public static List<IFileSpec> filterOutMessages(Collection<IFileSpec> specs) {
+        List<IFileSpec> ret = new ArrayList<>(specs.size());
+        for (IFileSpec spec : specs) {
+            IServerMessage msg = spec.getStatusMessage();
+            if (msg == null) {
+                ret.add(spec);
+            }
+        }
+        return ret;
     }
 
     public static StringBuilder getMessages(StringBuilder sb, Collection<IFileSpec> specs, String separator) {

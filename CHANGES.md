@@ -10,7 +10,7 @@
 ### Details
 
 * Bug fixes
-    * Fix for Local Changed Diff View for Edited File Generates "null file spec in arguments" (#213).
+    * Fix for Local Changed Diff View for Edited File Generates "null file spec in arguments" (#213).  This same bug seems to be also the source of many issues around 
 
 
 ## ::v0.10.16::

@@ -418,6 +418,7 @@ public class ConnectCommandRunner
                                 locations = FileSpecBuildUtil.escapedForFilePathRev(localFile, rev);
                             } else {
                                 // #213 - replaceDepotRevisions can discover a null if the depot path is null.
+                                // So this is switched to replaceBestPathRevisions to avoid that null.
                                 locations = FileSpecBuildUtil.replaceBestPathRevisions(locations, "#" + rev);
                             }
                             if (LOG.isDebugEnabled()) {

@@ -9,6 +9,7 @@
     <ul>
       <li><em>0.10.17</em><ul>
         <li>Fix "null file spec in arguments" from diff view, which may also fix issues around the changelist mapping</li>
+        <li>Upgrade p4java depedency to version 19.1</li>
       </ul></li>
       <li><em>0.10.16</em><ul
         <li>Removed a duplicate event registration, which on Android Studio causes the plugin not to load.</li>

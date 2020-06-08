@@ -6,11 +6,14 @@
 ### Overview
 
 * Bug fixes
+* Upgraded to P4Java v19.1
 
 ### Details
 
 * Bug fixes
-    * Fix for Local Changed Diff View for Edited File Generates "null file spec in arguments" (#213).  This same bug seems to be also the source of many issues around 
+    * Fix for Local Changed Diff View for Edited File Generates "null file spec in arguments" (#213).  This same bug seems to be also the source of many issues around
+* Upgraded to P4Java v19.1 
+    * The plugin uses a modified version of official Perforce P4Java library.  The modified version has been upgraded to reflect updates in the official 19.1 release.
 
 
 ## ::v0.10.16::

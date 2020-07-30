@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Loads the plugin version from the plugin.xml file.
@@ -26,6 +28,7 @@ import java.io.InputStream;
 public class P4PluginVersion {
     private static final Logger LOG = Logger.getInstance(P4PluginVersion.class);
 
+    private static final Charset VERSION_FILE_ENCODING = StandardCharsets.UTF_8;
     private static volatile String version;
 
     public static String getPluginVersion() {
@@ -58,8 +61,7 @@ public class P4PluginVersion {
                 byte[] buff = new byte[4096];
                 int len;
                 while ((len = res.read(buff)) > 0) {
-                    // TODO encoding
-                    sb.append(new String(buff, 0, len));
+                    sb.append(new String(buff, 0, len, VERSION_FILE_ENCODING));
                 }
                 return sb.toString().trim();
             } finally {

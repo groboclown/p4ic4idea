@@ -38,15 +38,15 @@ dependencies {
             project(':p4java'),
             project(':swarm'),
 
-            'net.java.dev.jna:jna:5.2.0',
-            'net.java.dev.jna:jna-platform:5.2.0',
+            'net.java.dev.jna:jna:5.5.0',
+            'net.java.dev.jna:jna-platform:5.5.0',
     )
     compatTest(
             project(':idea-test-core'),
             project(path: ':idea-p4server:api', configuration: 'testArtifacts'),
             project(':p4d-test-core'),
 
-            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
+            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
     )
 }
 
@@ -56,18 +56,17 @@ jacoco {
 }
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.enabled = true
         csv.enabled = true
         html.enabled = true
     }
-    classDirectories = sourceSets.mainIdea173.output
+    // classDirectories = sourceSets.mainIdea173.output
 }
 
 test {
-    jacoco {
-        append = false
-    }
+    finalizedBy jacocoTestReport
     useJUnitPlatform()
 }
 
@@ -75,13 +74,7 @@ project.tasks.check.dependsOn 'jacocoTestReport'
 
 
 repositories {
-    ivy {
-        url "$rootDir/lib"
-        layout "pattern", {
-            artifact "main/[artifact]-[revision].[ext]"
-            artifact "test/[artifact]-[revision].[ext]"
-        }
-    }
+    flatDir { dirs "$rootDir/lib/main", "$rootDir/lib/test" }
 }
 
 

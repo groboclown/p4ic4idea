@@ -34,12 +34,12 @@ public class AddEditAction extends AbstractAction implements P4CommandRunner.Cli
     private final String charset;
 
     public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
-            @NotNull P4ChangelistId changelistId, @Nullable String charset) {
+            @Nullable P4ChangelistId changelistId, @Nullable String charset) {
         this(createActionId(AddEditAction.class), file, type, changelistId, charset);
     }
 
     public AddEditAction(@NotNull String actionId, @NotNull FilePath file, @Nullable P4FileType type,
-            P4ChangelistId changelistId, String charset) {
+            @Nullable P4ChangelistId changelistId, @Nullable String charset) {
         this.actionId = actionId;
         this.file = file;
         this.type = type;
@@ -48,8 +48,8 @@ public class AddEditAction extends AbstractAction implements P4CommandRunner.Cli
     }
 
     public AddEditAction(@NotNull FilePath file, @Nullable P4FileType type,
-            @Nullable P4ChangelistId changelistId, @Nullable Charset charset) {
-        this(file, type, changelistId, charset == null ? null : charset.name());
+            @Nullable P4ChangelistId changelistId, @NotNull Charset charset) {
+        this(file, type, changelistId, charset.name());
     }
 
     @NotNull

@@ -42,6 +42,7 @@ import net.groboclown.p4.server.api.commands.file.AddEditResult;
 import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.DeleteFileResult;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
+import net.groboclown.p4.server.api.util.CharsetUtil;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -201,7 +202,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
                 }
                 P4CommandRunner.ActionAnswer<AddEditResult> answer =
                         P4ServerComponent
-                                .perform(project, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id, (String) null))
+                                .perform(project, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id,
+                                        // See #217
+                                        CharsetUtil.getBestCharSet(project, fp, root.getClientConfig(),
+                                                UserProjectPreferences.getCharsetPreference(project))))
                                 .whenCompleted((res) -> ChangeListManager.getInstance(project).scheduleUpdate())
                                 ;
                 if (ApplicationManager.getApplication().isDispatchThread()) {

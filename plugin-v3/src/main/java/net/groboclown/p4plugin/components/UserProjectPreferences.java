@@ -18,10 +18,12 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.project.Project;
+import net.groboclown.p4.server.api.util.CharsetUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
+
 
 @SuppressWarnings("WeakerAccess")
 @State(name = "p4-UserProjectPreferences")
@@ -65,6 +67,7 @@ public class UserProjectPreferences
     public static final int MAX_RETRY_ACTION_COUNT = 5;
     public static final boolean DEFAULT_NOTIFY_ON_REVERT = false;
     public static final boolean DEFAULT_ONLY_EXPLICIT_REVERT = false;
+    public static final int DEFAULT_CHARSET_PREFERENCE = CharsetUtil.CharsetPreference.SERVER.getValue();
 
     @NotNull
     private State state = new State();
@@ -125,6 +128,8 @@ public class UserProjectPreferences
         public boolean notifyOnRevert = DEFAULT_NOTIFY_ON_REVERT;
 
         public boolean onlyExplicitRevert = DEFAULT_ONLY_EXPLICIT_REVERT;
+
+        public int charsetPreference = DEFAULT_CHARSET_PREFERENCE;
     }
 
     @Nullable
@@ -414,6 +419,22 @@ public class UserProjectPreferences
 
     public void setNotifyOnRevert(boolean v) {
         state.notifyOnRevert = v;
+    }
+
+
+    // ====================================
+    // Used by CharsetUtil
+    public static CharsetUtil.CharsetPreference getCharsetPreference(@Nullable final Project project) {
+        return getValue(project, CharsetUtil.CharsetPreference.fromValue(DEFAULT_CHARSET_PREFERENCE),
+                (prefs) -> prefs.getCharsetPreference());
+    }
+
+    public CharsetUtil.CharsetPreference getCharsetPreference() {
+        return CharsetUtil.CharsetPreference.fromValue(state.charsetPreference);
+    }
+
+    public void setCharsetPreference(CharsetUtil.CharsetPreference v) {
+        state.charsetPreference = v.getValue();
     }
 
 

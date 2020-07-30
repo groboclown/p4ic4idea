@@ -16,6 +16,7 @@ package net.groboclown.p4.simpleswarm
 
 import au.com.dius.pact.consumer.PactVerificationResult
 import au.com.dius.pact.consumer.groovy.PactBuilder
+import au.com.dius.pact.consumer.groovy.Matchers
 import groovy.json.JsonOutput
 import net.groboclown.p4.simpleswarm.impl.ReviewActions
 import spock.lang.Specification
@@ -31,17 +32,15 @@ class ReviewPactSpec extends Specification {
         def ticket = 'ticket1'
         SwarmConfig config = new SwarmConfig()
                 .withLogger(new MockLogger())
-                .withUri("http://localhost:59911")
+                .withUri("http://localhost:65001")
                 .withUsername(username)
                 .withTicket(ticket)
                 .withVersion(6.0)
         client = new ReviewActions(config)
         provider = new PactBuilder()
-        provider {
-            serviceConsumer 'net.groboclown.p4.swarm'
-            hasPactWith 'Swarm-v6'
-            port 59911
-        }
+        provider.serviceConsumer 'net.groboclown.p4.swarm'
+        provider.hasPactWith 'Swarm-v6'
+        provider.port 65001
     }
 
 
@@ -62,47 +61,45 @@ class ReviewPactSpec extends Specification {
         // The request path is to make requests across pages until no more pages are
         // available.  In this setup, there are 2 pages returned.
 
-        provider {
-            given('review exists for changelist 2')
-            uponReceiving('a request for reviews associated with changelist 2')
-            withAttributes(
+        provider.given('review exists for changelist 2')
+            .uponReceiving('a request for reviews associated with changelist 2')
+            .withAttributes(
                     method: 'GET',
                     path: '/api/v6/reviews',
                     query: ['change[]': '2', 'fields': 'id'],
                     // Including headers means matching all the headers...
                     headers: [
                             // This is the key header we care about.
-                            Authorization: regexp(
+                            Authorization: Matchers.regexp(
                                     '^Basic\\s+[A-Za-z0-9+/]+=*$',
-                                    'Basic Ymdl89fds='
-                            )
+                                    'Basic Ymdl89fds=',
+                            ),
                     ])
-            willRespondWith(
+            .willRespondWith(
                     status: 200,
                     body: JsonOutput.toJson(jsonFirst),
                     headers: ['Content-Type': 'application/json']
             )
 
-            given('no more reviews')
-            uponReceiving('a request for reviews associated with changelist 2, next page')
-            withAttributes(
+        provider.given('no more reviews')
+            .uponReceiving('a request for reviews associated with changelist 2, next page')
+            .withAttributes(
                     method: 'GET',
                     path: '/api/v6/reviews',
                     query: ['change[]': '2', fields: 'id', after: '3'],
                     // Including headers means matching all the headers...
                     headers: [
                             // This is the key header we care about.
-                            Authorization: regexp(
+                            Authorization: Matchers.regexp(
                                     '^Basic\\s+[A-Za-z0-9+/]+=*$',
-                                    'Basic Ymdl89fds='
+                                    'Basic Ymdl89fds=',
                             )
                     ])
-            willRespondWith(
+            .willRespondWith(
                     status: 200,
                     body: JsonOutput.toJson(jsonSecond),
                     headers: ['Content-Type': 'application/json']
             )
-        }
 
         when:
         def result = null

@@ -1,12 +1,12 @@
 group 'net.groboclown.p4ic4idea'
-version '0.10.0-SNAPSHOT'
+version '0.11.0-SNAPSHOT'
 
 allprojects {
-    version '0.10.0'
+    version '0.11.0'
 
     wrapper {
         description 'Modifies the gradle binary distribution location used by gradle wrapper'
-        distributionUrl = uri('http://services.gradle.org/distributions/gradle-4.10-bin.zip')
+        distributionUrl = uri('http://services.gradle.org/distributions/gradle-6.5-bin.zip')
     }
 
     tasks.withType(JavaCompile) {

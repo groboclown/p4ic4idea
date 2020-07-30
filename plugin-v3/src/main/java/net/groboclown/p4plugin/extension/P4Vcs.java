@@ -13,6 +13,7 @@
  */
 package net.groboclown.p4plugin.extension;
 
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
@@ -53,6 +54,7 @@ import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
 import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
+import net.groboclown.p4plugin.messages.CompatibilityCheck;
 import net.groboclown.p4plugin.ui.ColorUtil;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
 import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
@@ -282,6 +284,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
 
         projectMessageBusConnection = myProject.getMessageBus().connect();
         appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+
+        CompatibilityCheck.checkCompatibility(myProject,
+                ApplicationInfo.getInstance().getMajorVersion(), ApplicationInfo.getInstance().getMinorVersion());
 
         // If additional actions need to happen at plugin startup time, add them here to execute in
         // a background thread.

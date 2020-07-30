@@ -213,7 +213,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                    runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                    runner.perform(
+                            clientConfig,
+                            new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                         .whenCompleted(sink::resolve)
                         .whenServerError(sink::reject)
                 )
@@ -257,7 +259,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -302,7 +306,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -338,13 +344,16 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 Collections.singletonList(newFile), null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                        clientConfig,
+                                        new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName())))
                                 .whenCompleted(sink::resolve)
                                 .whenServerError(sink::reject)
                 )
@@ -390,7 +399,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
@@ -741,7 +752,9 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                                runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                                runner.perform(
+                                            clientConfig,
+                                            new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                         .mapActionAsync((res) -> runner.perform(clientConfig,
                                                 new CreateChangelistAction(clientConfig.getClientServerRef(),
                                                         "Destination change", "local-id")))
@@ -835,13 +848,16 @@ class ConnectCommandRunnerTest {
         setupClient(clientConfig, tmpDir, clientRoot, errorHandler)
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
                                                 Collections.singletonList(newFile), null, "add file", null)))
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                        clientConfig,
+                                        new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName())))
                                 .mapQueryAsync((res) ->
                                         runner.getFileAnnotation(clientConfig,
                                             new AnnotateFileQuery(newFile, 1)))
@@ -1037,7 +1053,9 @@ class ConnectCommandRunnerTest {
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Add the file and submit, so that head == have.
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
                                                 new P4ChangelistIdImpl(0, clientConfig.getClientServerRef()),
@@ -1103,7 +1121,9 @@ class ConnectCommandRunnerTest {
                 .futureMap((runner, sink) ->
                         // Add the file, create a second revision, and fetch the first, so that
                         // have is different than head.
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 // Submit the add
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
@@ -1112,7 +1132,8 @@ class ConnectCommandRunnerTest {
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 // Open for edit
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                        clientConfig,
+                                        new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName())))
                                 // Submit the open file
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
@@ -1184,7 +1205,9 @@ class ConnectCommandRunnerTest {
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Open for Add
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 // Submit the add
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
@@ -1193,7 +1216,8 @@ class ConnectCommandRunnerTest {
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 // Open for edit
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                        clientConfig,
+                                        new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName())))
                                 // Submit the open file
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
@@ -1260,7 +1284,9 @@ class ConnectCommandRunnerTest {
                 .map((cm) -> new ConnectCommandRunner(idea.getMockProject(), cm))
                 .futureMap((runner, sink) ->
                         // Open for Add
-                        runner.perform(clientConfig, new AddEditAction(newFile, null, defaultId, (String) null))
+                        runner.perform(
+                                    clientConfig,
+                                    new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName()))
                                 // Submit the add
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(
@@ -1269,7 +1295,8 @@ class ConnectCommandRunnerTest {
                                 .whenCompleted(res -> committedChangelistId[0] = res.getChangelistId().getChangelistId())
                                 // Open for edit
                                 .mapActionAsync((res) -> runner.perform(
-                                        clientConfig, new AddEditAction(newFile, null, defaultId, (String) null)))
+                                        clientConfig,
+                                        new AddEditAction(newFile, null, defaultId, clientConfig.getCharSetName())))
                                 // Submit the open file
                                 .mapActionAsync((res) -> runner.perform(
                                         clientConfig, new SubmitChangelistAction(

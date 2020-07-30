@@ -203,7 +203,7 @@ class PendingActionCuratorTest {
         P4ChangelistIdImpl cl = new P4ChangelistIdImpl(100, REF_A1);
 
         ActionStore.PendingAction addFile = ActionStore.createPendingAction(REF_A1, new AddEditAction(
-                f1.asFilePath(), null, cl, (String) null));
+                f1.asFilePath(), null, cl, "UTF-8"));
         actions.add(addFile);
         ActionStore.PendingAction deleteFile =
                 ActionStore.createPendingAction(REF_A1, new DeleteFileAction(f1.asFilePath(), cl));
@@ -316,7 +316,7 @@ class PendingActionCuratorTest {
                 new RevertFileAction(file.asFilePath(), false));
         actions.add(revertFile);
         ActionStore.PendingAction addFile = ActionStore.createPendingAction(REF_A1,
-                new AddEditAction(file.asFilePath(), null, cl, (String) null));
+                new AddEditAction(file.asFilePath(), null, cl, "UTF-8"));
 
         curator.curateActionList(addFile, actions);
 
@@ -339,7 +339,7 @@ class PendingActionCuratorTest {
                 new DeleteFileAction(file.asFilePath(), cl));
         actions.add(deleteFile);
         ActionStore.PendingAction addFile = ActionStore.createPendingAction(REF_A1,
-                new AddEditAction(file.asFilePath(), null, cl, (String) null));
+                new AddEditAction(file.asFilePath(), null, cl, "UTF-8"));
         actions.add(addFile);
 
         // Reuse the delete request
@@ -365,7 +365,7 @@ class PendingActionCuratorTest {
         P4ChangelistIdImpl cl2 = new P4ChangelistIdImpl(100, REF_A1);
 
         ActionStore.PendingAction addFile = ActionStore.createPendingAction(REF_A1,
-                new AddEditAction(tgt.asFilePath(), null, cl1, (String) null));
+                new AddEditAction(tgt.asFilePath(), null, cl1, "UTF-8"));
         actions.add(addFile);
         ActionStore.PendingAction moveFile = ActionStore.createPendingAction(REF_A1,
                 new MoveFileAction(src.asFilePath(), tgt.asFilePath(), cl1));
@@ -395,7 +395,7 @@ class PendingActionCuratorTest {
         P4ChangelistIdImpl cl2 = new P4ChangelistIdImpl(100, REF_A1);
 
         ActionStore.PendingAction addFile = ActionStore.createPendingAction(REF_A1,
-                new AddEditAction(tgt.asFilePath(), null, cl1, (String) null));
+                new AddEditAction(tgt.asFilePath(), null, cl1, "UTF-8"));
         actions.add(addFile);
         ActionStore.PendingAction moveFile = ActionStore.createPendingAction(REF_A1,
                 new MoveFileAction(src.asFilePath(), tgt.asFilePath(), cl1));

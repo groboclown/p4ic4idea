@@ -150,6 +150,11 @@ public final class ClientConfig {
         return defaultCharSet;
     }
 
+    @Nullable
+    public String getCharSetName() {
+        return defaultCharSet;
+    }
+
     @NotNull
     public ClientServerRef getClientServerRef() {
         return clientServerRef;

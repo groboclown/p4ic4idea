@@ -105,8 +105,10 @@ class P4ChangeProviderTest {
         FilePath addedFile = VcsUtil.getFilePath(addedVirtualFile);
         // Inline threading, so no need to block.
         vcs.server.getCommandRunner()
-                .perform(root.getClientConfig(), new AddEditAction(addedFile, null, defaultChangeId, (String) null));
+                .perform(root.getClientConfig(),
+                        new AddEditAction(addedFile, null, defaultChangeId, root.getClientConfig().getCharSetName()));
         assertSize(0, errors);
+        assertNotNull(vcs.cacheComponent.getState());
         assertSize(1, vcs.cacheComponent.getState().pendingActions);
         assertEquals(ADD_EDIT_FILE, vcs.cacheComponent.getState().pendingActions.get(0).clientActionCmd);
 

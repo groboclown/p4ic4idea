@@ -29,10 +29,12 @@ import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4FileType;
+import net.groboclown.p4.server.api.util.CharsetUtil;
 import net.groboclown.p4.server.impl.util.DispatchActions;
 import net.groboclown.p4.server.impl.values.P4ChangelistIdImpl;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.messages.UserMessage;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +58,7 @@ public class P4EditFileProvider implements EditFileProvider {
 
 
     // This method was called with nearly every keystroke, so it must be very, very
-    // performant.  That seems to be the case with older IDE verseions; now, it's called
+    // performant.  That seems to be the case with older IDE versions; now, it's called
     // only on changes from read-only to writable.
     @Override
     public void editFiles(final VirtualFile[] allFiles) throws VcsException {
@@ -67,7 +69,9 @@ public class P4EditFileProvider implements EditFileProvider {
             return;
         }
 
-        // TODO inspect the IgnoreFileSet ignore state.
+        // "ignore" only applies to files that are not yet added.  If something is added,
+        // it isn't ignored.  However, that logic is lost here in the rare occasion that
+        // a file is not added, is read-only, and the user types in the IDE.
 
         // In order to speed up the operation of this call, we will not care who
         // has this open for edit or not.  Make the file writable, then pass on
@@ -90,8 +94,10 @@ public class P4EditFileProvider implements EditFileProvider {
                         LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
                     }
                     P4ServerComponent
-                            .perform(project, root.getClientConfig(),
-                                    new AddEditAction(fp, getFileType(fp), id, (String) null))
+                            .perform(project, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id,
+                                    // See #217
+                                    CharsetUtil.getBestCharSet(project, fp, root.getClientConfig(),
+                                            UserProjectPreferences.getCharsetPreference(project))))
                     .whenCompleted((res) -> {
                         LOG.info("Opened for add/edit: " + fp + ": add? " + res.isAdd() + "; cl: " + res.getChangelistId());
                     })
@@ -99,7 +105,7 @@ public class P4EditFileProvider implements EditFileProvider {
                         LOG.warn("Queued add/edit action for " + fp + "; server offline");
                     })
                     .whenServerError((e) -> {
-                        LOG.warn("Could not open for add", e);
+                        LOG.warn("Could not open for add/edit", e);
                     });
                 } else {
                     LOG.info("Not under Perforce VCS root: " + file);

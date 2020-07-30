@@ -286,7 +286,9 @@ public class ConnectCommandRunner
             P4FileRevision headRevision = P4FileRevisionImpl.getHead(ref, headSpec);
             String content = new String(cmd.loadContents(client, headSpec),
                     headSpec.getHeadCharset() == null
-                        ? Charset.defaultCharset().name()
+                        ? (config.getDefaultCharSet() == null
+                            ? Charset.defaultCharset().name()
+                            : config.getDefaultCharSet())
                         : headSpec.getHeadCharset());
             List<IFileAnnotation> annotations = cmd.getAnnotations(client, specs);
             List<IFileSpec> requiredHistory = FileAnnotationParser.getRequiredHistorySpecs(annotations);
@@ -430,9 +432,8 @@ public class ConnectCommandRunner
                     }
             );
             return query.when(
-                    // TODO find correct charset
                     config,
-                    (depot) -> new GetFileContentsResult(config, depot, contents, null),
+                    (depot) -> new GetFileContentsResult(config, depot, contents, config.getDefaultCharSet()),
                     (clientname, localFile, rev) -> new GetFileContentsResult(config, localFile, contents, null)
             );
         }));

@@ -668,6 +668,8 @@ public class ClientSystemFileCommands {
 
 		ByteBuffer from = ByteBuffer.wrap(sourceBytes);
 		if (length > 0) {
+			// For #217
+			Log.info("Converting from %s", converter.getToCharsetName());
 			ByteBuffer converted = converter.convert(from);
 			if (converted != null) {
 				// Update byte array for converted buffer values

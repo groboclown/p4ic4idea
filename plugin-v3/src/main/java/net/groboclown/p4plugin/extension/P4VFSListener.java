@@ -29,8 +29,11 @@ import net.groboclown.p4.server.api.commands.file.DeleteFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.commands.DoneActionAnswer;
+import net.groboclown.p4.server.api.util.CharsetUtil;
+import net.groboclown.p4.server.impl.ignore.IgnoreFiles;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.P4ServerComponent;
+import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -61,8 +64,6 @@ public class P4VFSListener extends VcsVFSListener {
             @NotNull final Collection<VirtualFile> addedFiles,
             @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
 
-        // TODO all add requests must go through the IgnoreFileSet.
-
         // Copies are handled as add commands, so we don't need to worry about
         // performing integrations - this is the common use case desired by the
         // user - they want to use another file as a template for work.
@@ -82,13 +83,23 @@ public class P4VFSListener extends VcsVFSListener {
             ClientConfigRoot root = getClientFor(file);
             if (root != null) {
                 FilePath fp = VcsUtil.getFilePath(file);
+
+                // See #219
+                IgnoreFiles ignore = IgnoreFiles.forClient(root.getClientConfig());
+                if (ignore.isFileIgnored(fp)) {
+                    LOG.info("Skipping file because it is marked as ignorable: " + fp);
+                    continue;
+                }
+
                 P4ChangelistId id = getActiveChangelistFor(root, activeChangelistIds);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Opening for add/edit: " + fp + " (@" + id + ")");
                 }
                 P4ServerComponent
-                .perform(myProject, root.getClientConfig(),
-                        new AddEditAction(fp, getFileType(fp), id, (String) null))
+                .perform(myProject, root.getClientConfig(), new AddEditAction(fp, getFileType(fp), id,
+                        // See #217
+                        CharsetUtil.getBestCharSet(myProject, fp, root.getClientConfig(),
+                                UserProjectPreferences.getCharsetPreference(myProject))))
                 .whenAnyState(() -> {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Completed call to add " + addedFiles + "; copy " + copyFromMap);
@@ -195,7 +206,10 @@ public class P4VFSListener extends VcsVFSListener {
                     }
                     pending = pending.mapActionAsync((x) ->
                             P4ServerComponent.perform(myProject, tgtRoot.getClientConfig(),
-                                    new AddEditAction(tgt, null, id, (String) null)));
+                                    new AddEditAction(tgt, null, id,
+                                            // See #217
+                                            CharsetUtil.getBestCharSet(myProject, tgt, tgtRoot.getClientConfig(),
+                                                    UserProjectPreferences.getCharsetPreference(myProject)))));
                 }
             }
 

@@ -20,18 +20,16 @@ import net.groboclown.p4.simpleswarm.SwarmConfig;
 import net.groboclown.p4.simpleswarm.SwarmLogger;
 import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 
 
-@EnabledIf({
-        "!!systemEnvironment['SWARM_URL']",
-        "!!systemEnvironment['SWARM_USERNAME']",
-        "!!systemEnvironment['SWARM_TICKET']"
-})
+@EnabledIfSystemProperty(named="SWARM_URL", matches="\\w.*")
+@EnabledIfSystemProperty(named="SWARM_USERNAME", matches="\\w.*")
+@EnabledIfSystemProperty(named="SWARM_TICKET", matches="\\w.*")
 // Swarm URL must be in a "http://..." or "https://.." style format.
 @EnabledIfEnvironmentVariable(named="SWARM_URL", matches="^https?:\\/\\/.+")
 class ReviewActionsIntegrationTest {

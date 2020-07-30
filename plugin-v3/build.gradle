@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'p4ic.compat'
+    id 'org.cyclonedx.bom'
 }
 version '1.6'
 
@@ -40,13 +41,7 @@ configurations {
 }
 
 repositories {
-    ivy {
-        url "$rootDir/lib"
-        layout "pattern", {
-            artifact "main/[artifact]-[revision].[ext]"
-            artifact "test/[artifact]-[revision].[ext]"
-        }
-    }
+    flatDir { dirs '../lib/main', '../lib/test' }
 }
 
 // Required in order to have the source set build output be discovered.
@@ -62,13 +57,13 @@ dependencies {
             project(':swarm')
     )
     compatTest(
-            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
-            'org.junit.platform:junit-platform-runner:1.1.0',
-            'org.junit.platform:junit-platform-commons:1.1.0',
-            'org.junit.platform:junit-platform-engine:1.1.0',
-            'org.junit.platform:junit-platform-launcher:1.1.0',
-            'org.junit.platform:junit-platform-suite-api:1.1.0',
-            'org.junit.vintage:junit-vintage-engine:5.1.0',
+            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
+            'org.junit.platform:junit-platform-runner:1.6.2',
+            'org.junit.platform:junit-platform-commons:1.6.2',
+            'org.junit.platform:junit-platform-engine:1.6.2',
+            'org.junit.platform:junit-platform-launcher:1.6.2',
+            'org.junit.platform:junit-platform-suite-api:1.6.2',
+            'org.junit.vintage:junit-vintage-engine:5.6.2',
             'org.hamcrest:hamcrest-core:1.3',
             'org.mockito:mockito-core:2.0.86-beta',
             project(':p4d-test-core'),
@@ -91,8 +86,8 @@ dependencies {
             ),
 
             // Extra libraries from p4server impl
-            'net.java.dev.jna:jna:5.2.0',
-            'net.java.dev.jna:jna-platform:5.2.0',
+            'net.java.dev.jna:jna:5.5.0',
+            'net.java.dev.jna:jna-platform:5.5.0',
     )
 }
 
@@ -119,7 +114,7 @@ jar.dependsOn packageVersion
 // Without this explicit version set, the jar creates an archive
 // with 1.0, whereas everything else is trying to pull in the
 // top-level version identifier.
-jar.version = version
+jar.archiveVersion = version
 
 task showDeps {
     doFirst {
@@ -136,12 +131,23 @@ task showDeps {
     }
 }
 
+cyclonedxBom {
+    // skipConfigs is a list of configuration names to exclude when generating the BOM.
+    // Because of the distribution of the plugin, we really only care about the
+    // libraries included in the packaging, which are "invisible" to the end-user.
+    skipConfigs += project.configurations.matching {
+        return it.name != 'zip'
+    }.getAsMap().keySet()
+    // println("Skipped configurations: " + skipConfigs)
+}
+
 task assembleDepends {
     dependsOn ':p4java:jar'
     dependsOn ':idea-p4server:api:jar'
     dependsOn ':idea-p4server:impl:jar'
     dependsOn ':swarm:jar'
     dependsOn 'jar'
+    dependsOn 'cyclonedxBom'
 }
 
 
@@ -194,6 +200,7 @@ task assembleZip(type: Zip) {
         from "../README.md"
         from "../LICENSE"
         from "../CHANGES.md"
+        from "$buildDir/reports/bom.xml"
         from "src/main/resources/META-INF/plugin.xml"
     }
 }
@@ -203,7 +210,7 @@ assemble.dependsOn assembleZip
 task assembleUberJar(type: Zip) {
     dependsOn 'assembleDepends'
 
-    extension 'jar'
+    archiveExtension = 'jar'
     classifier 'plugin'
 
     includeEmptyDirs false
@@ -214,6 +221,7 @@ task assembleUberJar(type: Zip) {
         from "../README.md"
         from "../LICENSE"
         from "../CHANGES.md"
+        from "$buildDir/reports/bom.xml"
         from "src/main/resources/META-INF/plugin.xml"
         from "$rootDir/p4java/LICENSE-p4java.txt"
 
@@ -231,7 +239,10 @@ task assembleUberJar(type: Zip) {
                 }
                 p = libname.lastIndexOf('-')
             }
-            return null
+            if (['p4java-1.0.jar', 'api-1.0.jar', 'impl-1.0.jar', 'swarm-1.0.jar'].contains(cfile.name)) {
+                return null
+            }
+            throw new Exception('Could not find license file for ' + libname + " (" + cfile.name + ')')
         }.findAll {
             it != null
         }
@@ -244,6 +255,8 @@ task assembleUberJar(type: Zip) {
                 f.exclude('META-INF/NOTICE.txt')
                 f.exclude('META-INF/LICENSE')
                 f.exclude('META-INF/LICENSE.txt')
+                f.exclude('META-INF/AL2.0')
+                f.exclude('META-INF/LGPL2.1')
             }
         }
     }

@@ -17,6 +17,7 @@ package net.groboclown.p4.server.impl.ignore;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +31,15 @@ public class IgnoreFiles {
     private static final Logger LOG = Logger.getInstance(IgnoreFiles.class);
 
     private final String ignoreFileName;
+
+    @NotNull
+    public static IgnoreFiles forClient(@NotNull final ClientConfig config) {
+        String ignoreFileName = config.getIgnoreFileName();
+        if (ignoreFileName == null || ignoreFileName.isEmpty()) {
+            return new IgnoreFiles(null);
+        }
+        return new IgnoreFiles(ignoreFileName);
+    }
 
     public IgnoreFiles(@Nullable final String ignoreFileName) {
         this.ignoreFileName = ignoreFileName;
@@ -66,6 +76,9 @@ public class IgnoreFiles {
             return true;
         }
         final VirtualFile ignoreFile = getIgnoreFileForPath(file.getVirtualFile());
+        if (ignoreFile == null) {
+            return false;
+        }
         return isMatch(file, ignoreFile);
     }
 

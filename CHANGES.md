@@ -1,6 +1,52 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.11.0::
+
+### Overview
+
+* Warning about IDE 2018 and earlier.
+* Upgraded older libraries.
+* Created a bill of materials.
+* Build improvements
+* Bug fixes
+
+### Details
+
+* Warning about IDE before 2018.2.
+    * Backwards compatibility for these IDE versions will be removed soon.
+* Upgraded older libraries.
+    * Direct dependencies:
+        * commons-compress from v1.16.1 to 1.20
+        * commons-io from v2.5 to v2.7
+        * commons-lang3 from v3.7 to v3.10
+        * gson from v2.8.2 to v2.8.6
+        * httpclient from v4.5.5 to v4.5.12
+        * httpcore from v4.4.5 to v4.4.9
+        * jna and jna-platform from v5.2.0 to v5.5.0
+        * jsr305 from v3.0.1 to v3.0.2
+        * Removed the dependency on guava (it's now strictly a test dependency)
+    * Test dependencies:
+        * guava from v19.0 to 29.0
+        * apiguardian from v1.0.0 to v1.1.0
+        * junit-platform-commons from v1.1.0 to v1.6.2
+        * junit-platform-engine from v1.1.0 to v1.6.2
+        * junit-platform-launcher from v1.1.0 to v1.6.2
+        * junit-platform-runner from v1.1.0 to v1.6.2
+        * junit-platform-suite-api from v1.1.0 to v1.6.2
+        * junit-jupiter-api from v5.1.0 to v5.6.2
+        * junit-jupiter-engine from v5.1.0 to v5.6.2
+        * junit-vintage-engine from v5.1.0 to v5.6.2
+        * TO BE COMPLETED...
+* Created a bill of materials.
+    * Because the plugin is distributed as a "fat jar", it means the end-users have no easy way to understand what libraries are implicitly included.  The new bill of materials (BOM) describes what the end-user receives.
+* Build improvements
+    * Upgraded gradle from 4.10 to 6.5
+* Bug fixes
+    * Added some `p4ignore` compatibility (#219).  Note that the `p4ignore` only applies to files open for add; files already added will not use the ignore. There's a small edge case where, if a file is read-only, not added, ignorable, and the user edits the file through typing, then the file will be added to a changelist.
+    * Improved charset interpretation (#217).  This wasn't consistently handled before.  Now, there's a user preference to select the setting of file encoding - the default is to use whatever the server has.  Other options are to use what the IDE thinks is the file encoding, or use the client configured value (`P4CHARSET`).
+
+
 ## ::v0.10.17::
 
 ### Overview

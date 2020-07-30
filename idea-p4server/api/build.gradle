@@ -34,22 +34,22 @@ dependencies {
     compatImplementation (
             project(':p4java'),
             project(':swarm'),
-            'org.apache.commons:commons-lang3:3.7'
+            'org.apache.commons:commons-lang3:3.10'
     )
     compatTest(
             project(':idea-test-core'),
 
             // TODO pull in the test jars from the test-core as part of the build.
             'junit:junit:4.12',
-            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
-            'org.junit.platform:junit-platform-runner:1.1.0',
-            'org.junit.platform:junit-platform-commons:1.1.0',
-            'org.junit.platform:junit-platform-engine:1.1.0',
-            'org.junit.platform:junit-platform-launcher:1.1.0',
-            'org.junit.platform:junit-platform-suite-api:1.1.0',
-            'org.junit.vintage:junit-vintage-engine:5.1.0',
+            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
+            'org.junit.platform:junit-platform-runner:1.6.2',
+            'org.junit.platform:junit-platform-commons:1.6.2',
+            'org.junit.platform:junit-platform-engine:1.6.2',
+            'org.junit.platform:junit-platform-launcher:1.6.2',
+            'org.junit.platform:junit-platform-suite-api:1.6.2',
+            'org.junit.vintage:junit-vintage-engine:5.6.2',
             'org.opentest4j:opentest4j:1.0.0',
-            'org.apiguardian:apiguardian-api:1.0.0',
+            'org.apiguardian:apiguardian-api:1.1.0',
             'net.bytebuddy:byte-buddy:1.8.0',
             'org.objenesis:objenesis:2.6',
     )
@@ -60,18 +60,18 @@ jacoco {
 }
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.enabled = true
         csv.enabled = true
         html.enabled = true
     }
-    classDirectories = sourceSets.mainIdea173.output
+
+    // classDirectories = sourceSets.mainIdea173.output
 }
 
 test {
-    jacoco {
-        append = false
-    }
+    finalizedBy jacocoTestReport
     useJUnitPlatform()
 }
 
@@ -85,21 +85,15 @@ task testArtifactsJar(type: Jar) {
     group 'build'
 
     from sourceSets.test.output
-    destinationDir = file("$buildDir/libs")
-    classifier = 'test'
+    destinationDirectory = file("$buildDir/libs")
+    archiveClassifier = 'test'
 }
 artifacts {
     testArtifacts testArtifactsJar
 }
 
 repositories {
-    ivy {
-        url "$rootDir/lib"
-        layout "pattern", {
-            artifact "main/[artifact]-[revision].[ext]"
-            artifact "test/[artifact]-[revision].[ext]"
-        }
-    }
+    flatDir { dirs "$rootDir/lib/main", "$rootDir/lib/test" }
 }
 
 

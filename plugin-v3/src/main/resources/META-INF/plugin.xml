@@ -1,18 +1,18 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.10.17</version>
+    <version>0.11.0</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.11.0</em><ul
+        <li></li>
+      </ul></li>
       <li><em>0.10.17</em><ul>
         <li>Fix "null file spec in arguments" from diff view, which may also fix issues around the changelist mapping</li>
         <li>Upgrade p4java depedency to version 19.1</li>
-      </ul></li>
-      <li><em>0.10.16</em><ul
-        <li>Removed a duplicate event registration, which on Android Studio causes the plugin not to load.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

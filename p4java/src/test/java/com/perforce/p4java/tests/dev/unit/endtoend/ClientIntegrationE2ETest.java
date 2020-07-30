@@ -757,10 +757,9 @@ public class ClientIntegrationE2ETest extends P4JavaTestCase {
         dumpFileSpecInfo(fSpecs, "fSpecs after client.integrateFiles()");
         verifyFileAction(fSpecs, expNumFilesIntegrated, FileAction.INTEGRATE);
 
-        // p4ic4idea: submit fails on Windows with "(to file) tampered with after resolve - edit or revert."
-
         //resolve by accepting theirs and submitting
         client.resolveFilesAuto(fSpecs, true, false, false, false, true);
+        // FIXME windows causes an error: "%clientFile% tampered with after resolve - edit or revert."
         List<IFileSpec> submittedFiles = changelist.submit(false);
 
         //final verification

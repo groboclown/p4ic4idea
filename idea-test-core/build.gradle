@@ -30,23 +30,23 @@ ideaImplementation.uses(
 
 dependencies {
     compatApi (
-            'org.junit.jupiter:junit-jupiter-api:5.1.0',
-            'org.junit.platform:junit-platform-suite-api:1.1.0',
+            'org.junit.jupiter:junit-jupiter-api:5.6.2',
+            'org.junit.platform:junit-platform-suite-api:1.6.2',
             'org.hamcrest:hamcrest-core:1.3',
             'org.mockito:mockito-core:2.0.86-beta',
     )
     compatImplementation (
             'junit:junit:4.12',
-            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
-            'org.junit.platform:junit-platform-runner:1.1.0',
-            'org.junit.platform:junit-platform-commons:1.1.0',
-            'org.junit.platform:junit-platform-engine:1.1.0',
-            'org.junit.platform:junit-platform-launcher:1.1.0',
-            'org.junit.platform:junit-platform-suite-api:1.1.0',
-            'org.junit.vintage:junit-vintage-engine:5.1.0',
+            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
+            'org.junit.platform:junit-platform-runner:1.6.2',
+            'org.junit.platform:junit-platform-commons:1.6.2',
+            'org.junit.platform:junit-platform-engine:1.6.2',
+            'org.junit.platform:junit-platform-launcher:1.6.2',
+            'org.junit.platform:junit-platform-suite-api:1.6.2',
+            'org.junit.vintage:junit-vintage-engine:5.6.2',
             'org.opentest4j:opentest4j:1.0.0',
             'net.bytebuddy:byte-buddy:1.8.0',
-            'org.apiguardian:apiguardian-api:1.0.0',
+            'org.apiguardian:apiguardian-api:1.1.0',
             'org.objenesis:objenesis:2.6',
     )
     //compatTest(
@@ -55,13 +55,7 @@ dependencies {
 
 
 repositories {
-    ivy {
-        url "$rootDir/lib"
-        layout "pattern", {
-            artifact "main/[artifact]-[revision].[ext]"
-            artifact "test/[artifact]-[revision].[ext]"
-        }
-    }
+    flatDir { dirs "$rootDir/lib/main", "$rootDir/lib/test" }
 }
 
 

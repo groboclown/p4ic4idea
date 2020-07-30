@@ -31,9 +31,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -180,8 +182,9 @@ public class SubmitPanel {
         createUIComponents();
         myRoot = new JPanel();
         myRoot.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1, true, false));
-        myRoot.setBorder(BorderFactory.createTitledBorder(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("submit.job.title")));
+        myRoot.setBorder(BorderFactory.createTitledBorder(null,
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "submit.job.title"),
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setHorizontalScrollBarPolicy(31);
         myRoot.add(scrollPane1,
@@ -202,42 +205,42 @@ public class SubmitPanel {
                         0, false));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.id"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.id"));
         label1.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.id.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.id.tooltip"));
         CellConstraints cc = new CellConstraints();
         panel1.add(label1, cc.xy(1, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
         myJobIdField = new JTextField();
         myJobIdField.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.id.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.id.tooltip"));
         panel1.add(myJobIdField, cc.xy(3, 3, CellConstraints.FILL, CellConstraints.DEFAULT));
         myAddButton = new JButton();
         this.$$$loadButtonText$$$(myAddButton,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.add"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.add"));
         myAddButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.add.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.add.tooltip"));
         panel1.add(myAddButton, cc.xy(5, 3));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.resolve"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.resolve"));
         label2.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.resolve.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.resolve.tooltip"));
         panel1.add(label2, cc.xy(1, 5));
         myResolveState = new JComboBox();
         myResolveState.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.resolve.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.resolve.tooltip"));
         panel1.add(myResolveState, cc.xy(3, 5));
         myBrowseButton = new JButton();
         this.$$$loadButtonText$$$(myBrowseButton,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.browse"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.browse"));
         myBrowseButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.browse.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.browse.tooltip"));
         panel1.add(myBrowseButton, cc.xy(7, 3));
         myRemoveButton = new JButton();
         this.$$$loadButtonText$$$(myRemoveButton,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.remove"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.remove"));
         myRemoveButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("job.panel.remove.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.remove.tooltip"));
         panel1.add(myRemoveButton, cc.xy(7, 5));
         final Spacer spacer1 = new Spacer();
         myRoot.add(spacer1,
@@ -245,6 +248,23 @@ public class SubmitPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         label1.setLabelFor(myJobIdField);
         label2.setLabelFor(myResolveState);
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**
@@ -311,4 +331,5 @@ public class SubmitPanel {
     public JComponent $$$getRootComponent$$$() {
         return myRoot;
     }
+
 }

@@ -22,7 +22,8 @@ class CompatibilityCheckTest {
     @Test
     void checkAllOldVersionParsing() {
         // pulled from http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html
-        assertTrue(CompatibilityCheck.isIdeaVersionValid("181", "0"));
-        assertFalse(CompatibilityCheck.isIdeaVersionValid("173", "3"));
+        assertTrue(CompatibilityCheck.isIdeaVersionValid("2018", "2"));
+        assertFalse(CompatibilityCheck.isIdeaVersionValid("2017", "3"));
+        assertFalse(CompatibilityCheck.isIdeaVersionValid("2018", "1"));
     }
 }

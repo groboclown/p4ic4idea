@@ -32,7 +32,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -232,7 +234,7 @@ public class ChangelistDetails {
             label1.setFont(label1Font);
         }
         this.$$$loadLabelText$$$(label1,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.title"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.title"));
         panel1.add(label1, cc.xy(1, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
         myDate = new JLabel();
         myDate.setText("Label");
@@ -245,20 +247,20 @@ public class ChangelistDetails {
         panel1.add(myClientname, cc.xy(7, 5));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.author"));
-        label2.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("changelist.details.author.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.author"));
+        label2.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "changelist.details.author.tooltip"));
         panel1.add(label2, cc.xy(5, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.date"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.date"));
         panel1.add(label3, cc.xy(1, 5, CellConstraints.RIGHT, CellConstraints.DEFAULT));
         myAuthor = new JLabel();
         myAuthor.setText("Label");
         panel1.add(myAuthor, cc.xy(7, 3));
         final JLabel label4 = new JLabel();
         this.$$$loadLabelText$$$(label4,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.client"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.client"));
         panel1.add(label4, cc.xy(5, 5, CellConstraints.RIGHT, CellConstraints.DEFAULT));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
@@ -269,7 +271,8 @@ public class ChangelistDetails {
         myFilesPanel.setLayout(new BorderLayout(0, 0));
         root.add(myFilesPanel, cc.xy(1, 5));
         myFilesPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.files")));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.files"),
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JScrollPane scrollPane1 = new JScrollPane();
         myFilesPanel.add(scrollPane1, BorderLayout.CENTER);
         scrollPane1.setViewportView(myFiles);
@@ -277,7 +280,8 @@ public class ChangelistDetails {
         myJobsPanel.setLayout(new BorderLayout(0, 0));
         root.add(myJobsPanel, cc.xy(1, 9));
         myJobsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.jobs")));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.jobs"),
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JScrollPane scrollPane2 = new JScrollPane();
         myJobsPanel.add(scrollPane2, BorderLayout.CENTER);
         scrollPane2.setViewportView(myJobs);
@@ -288,15 +292,15 @@ public class ChangelistDetails {
                 .setLayout(new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
         root.add(myNoFilesPanel, cc.xy(1, 7));
         final JLabel label5 = new JLabel();
-        this.$$$loadLabelText$$$(label5, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("changelist.details.files.none"));
+        this.$$$loadLabelText$$$(label5,
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.files.none"));
         myNoFilesPanel.add(label5, cc.xy(1, 3));
         myNoJobsPanel = new JPanel();
         myNoJobsPanel.setLayout(new FormLayout("fill:d:grow", "center:d:noGrow"));
         root.add(myNoJobsPanel, cc.xy(1, 11));
         final JLabel label6 = new JLabel();
         this.$$$loadLabelText$$$(label6,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("changelist.details.jobs.none"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.jobs.none"));
         myNoJobsPanel.add(label6, cc.xy(1, 1));
     }
 
@@ -320,6 +324,23 @@ public class ChangelistDetails {
         }
         return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
                 size >= 0 ? size : currentFont.getSize());
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**
@@ -357,4 +378,5 @@ public class ChangelistDetails {
     public JComponent $$$getRootComponent$$$() {
         return root;
     }
+
 }

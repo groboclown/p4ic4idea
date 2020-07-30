@@ -53,7 +53,7 @@ public class CompatibilityCheck {
                 // It's a supported version for a while.
                 return true;
             }
-            if (major == DEPRECATED_SUPPORT__MINOR && minor >= DEPRECATED_SUPPORT__MINOR) {
+            if (major == DEPRECATED_SUPPORT__MAJOR && minor >= DEPRECATED_SUPPORT__MINOR) {
                 // It's a supported version for a while
                 return true;
             }

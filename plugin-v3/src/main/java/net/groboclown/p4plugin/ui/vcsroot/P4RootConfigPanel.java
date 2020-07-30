@@ -33,6 +33,7 @@ import net.groboclown.p4plugin.util.PartValidation;
 
 import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -201,8 +202,9 @@ public class P4RootConfigPanel {
         panel2.setLayout(new FormLayout("fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
         panel1.add(panel2, BorderLayout.EAST);
         myCheckConnectionButton = new JButton();
-        this.$$$loadButtonText$$$(myCheckConnectionButton, ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.check-connection.button"));
+        this.$$$loadButtonText$$$(myCheckConnectionButton,
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                        "configuration.check-connection.button"));
         CellConstraints cc = new CellConstraints();
         panel2.add(myCheckConnectionButton, cc.xy(3, 1));
         panel2.add(myCheckConnectionSpinner, cc.xy(1, 1));
@@ -216,23 +218,25 @@ public class P4RootConfigPanel {
         rootPanel.add(myTabbedPane, BorderLayout.CENTER);
         myConfigPanel = new JPanel();
         myConfigPanel.setLayout(new BorderLayout(0, 0));
-        myTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                        .getString("configuration.tab.properties"), null, myConfigPanel,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                        .getString("configuration.tab.properties.tooltip"));
+        myTabbedPane.addTab(this
+                        .$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.tab.properties"), null,
+                myConfigPanel, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                        "configuration.tab.properties.tooltip"));
         myConfigPanel.add(myConfigPartStack.$$$getRootComponent$$$(), BorderLayout.CENTER);
         myProblemsPanel = new JPanel();
         myProblemsPanel.setLayout(new BorderLayout(0, 0));
-        myTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.problems-list.tab"), myProblemsPanel);
+        myTabbedPane.addTab(this
+                        .$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.problems-list.tab"),
+                myProblemsPanel);
         myTabbedPane.setEnabledAt(1, false);
         final JScrollPane scrollPane1 = new JScrollPane();
         myProblemsPanel.add(scrollPane1, BorderLayout.CENTER);
         scrollPane1.setViewportView(myProblemsList);
         myResolvedPropertyPanel = new JPanel();
         myResolvedPropertyPanel.setLayout(new BorderLayout(0, 0));
-        myTabbedPane.addTab(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configurations.resolved-values.tab"), myResolvedPropertyPanel);
+        myTabbedPane.addTab(this
+                        .$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configurations.resolved-values.tab"),
+                myResolvedPropertyPanel);
         myTabbedPane.setEnabledAt(2, false);
         final JScrollPane scrollPane2 = new JScrollPane();
         myResolvedPropertyPanel.add(scrollPane2, BorderLayout.CENTER);
@@ -242,8 +246,8 @@ public class P4RootConfigPanel {
         if (myResolvedPropertiesFont != null) {
             myResolvedProperties.setFont(myResolvedPropertiesFont);
         }
-        myResolvedProperties.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.resolved.tooltip"));
+        myResolvedProperties.setToolTipText(
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.resolved.tooltip"));
         scrollPane2.setViewportView(myResolvedProperties);
     }
 
@@ -267,6 +271,23 @@ public class P4RootConfigPanel {
         }
         return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
                 size >= 0 ? size : currentFont.getSize());
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**
@@ -325,10 +346,10 @@ public class P4RootConfigPanel {
             // > v183 has nice API for this...
             cell.setBackground(
                     isSelected
-                        ? cellHasFocus
-                                ? UIUtil.getListUnfocusedSelectionBackground()
-                                : UIUtil.getListSelectionBackground()
-                        : UIUtil.getListBackground()
+                            ? cellHasFocus
+                            ? UIUtil.getListUnfocusedSelectionBackground()
+                            : UIUtil.getListSelectionBackground()
+                            : UIUtil.getListBackground()
             );
             cell.setText(problem.getMessage());
             return cell;

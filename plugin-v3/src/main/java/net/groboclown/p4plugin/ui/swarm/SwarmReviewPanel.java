@@ -36,9 +36,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -320,15 +322,16 @@ public class SwarmReviewPanel {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new BorderLayout(0, 0));
         root.add(panel1, BorderLayout.SOUTH);
-        panel1.setBorder(BorderFactory.createTitledBorder(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("swarm.create.description")));
+        panel1.setBorder(BorderFactory.createTitledBorder(null,
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "swarm.create.description"),
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JScrollPane scrollPane2 = new JScrollPane();
         panel1.add(scrollPane2, BorderLayout.CENTER);
         descriptionTextArea = new JTextArea();
         descriptionTextArea.setLineWrap(true);
         descriptionTextArea.setRows(4);
-        descriptionTextArea.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("swarm.create.description.tooltip"));
+        descriptionTextArea.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "swarm.create.description.tooltip"));
         descriptionTextArea.setWrapStyleWord(true);
         scrollPane2.setViewportView(descriptionTextArea);
         final JPanel panel2 = new JPanel();
@@ -340,6 +343,23 @@ public class SwarmReviewPanel {
         label1.setText("Swarm Review Creation is in Beta");
         CellConstraints cc = new CellConstraints();
         panel2.add(label1, cc.xy(1, 1));
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**

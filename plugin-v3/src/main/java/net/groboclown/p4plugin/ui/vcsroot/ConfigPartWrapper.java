@@ -21,7 +21,9 @@ import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4plugin.ui.SwingUtil;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.util.ResourceBundle;
 
 public class ConfigPartWrapper {
@@ -124,11 +126,13 @@ public class ConfigPartWrapper {
     private void $$$setupUI$$$() {
         rootPane = new JPanel();
         rootPane.setLayout(new BorderLayout(0, 0));
-        rootPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), null));
+        rootPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black), null,
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         panelContainer = new JPanel();
         panelContainer.setLayout(new BorderLayout(0, 0));
         rootPane.add(panelContainer, BorderLayout.CENTER);
-        panelContainer.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 2, 4), null));
+        panelContainer.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 2, 4), null,
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         headerPanel = new JPanel();
         headerPanel.setLayout(new BorderLayout(0, 0));
         rootPane.add(headerPanel, BorderLayout.NORTH);
@@ -144,7 +148,7 @@ public class ConfigPartWrapper {
         myRemoveButton.setHorizontalTextPosition(0);
         myRemoveButton.setText("");
         myRemoveButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("configuration.stack.remove"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.stack.remove"));
         panel2.add(myRemoveButton);
         myUpButton = new JButton();
         myUpButton.setHideActionText(true);
@@ -152,23 +156,23 @@ public class ConfigPartWrapper {
         myUpButton.setHorizontalTextPosition(0);
         myUpButton.setText("");
         myUpButton.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("configuration.stack.move-up"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.stack.move-up"));
         panel2.add(myUpButton);
         myDownButton = new JButton();
         myDownButton.setHideActionText(true);
         myDownButton.setHorizontalAlignment(0);
         myDownButton.setHorizontalTextPosition(0);
         myDownButton.setText("");
-        myDownButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.stack.move-down"));
+        myDownButton.setToolTipText(
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.stack.move-down"));
         panel2.add(myDownButton);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow", "center:d:grow"));
         panel1.add(panel3, BorderLayout.CENTER);
         myDescriptionToggle = new JButton();
         myDescriptionToggle.setText("");
-        myDescriptionToggle.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.stack.wrapper.description.toggle.tooltip"));
+        myDescriptionToggle.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "configuration.stack.wrapper.description.toggle.tooltip"));
         CellConstraints cc = new CellConstraints();
         panel3.add(myDescriptionToggle, cc.xy(1, 1));
         myPartName = new JLabel();
@@ -184,10 +188,28 @@ public class ConfigPartWrapper {
         myPartDescriptionPanel.add(myPartDescription, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
     }
 
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
+    }
+
     /**
      * @noinspection ALL
      */
     public JComponent $$$getRootComponent$$$() {
         return rootPane;
     }
+
 }

@@ -5,7 +5,7 @@
 
 ### Overview
 
-* Warning about IDE 2018 and earlier.
+* Warning about IDE before 2018.2.
 * Upgraded older libraries.
 * Created a bill of materials.
 * Build improvements

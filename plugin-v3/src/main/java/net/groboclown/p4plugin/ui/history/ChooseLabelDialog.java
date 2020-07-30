@@ -44,6 +44,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -215,9 +216,9 @@ public class ChooseLabelDialog
         panel4.add(mySearchField, cc.xy(1, 3, CellConstraints.FILL, CellConstraints.DEFAULT));
         mySearchButton = new JButton();
         this.$$$loadButtonText$$$(mySearchButton,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("search.label.search-button"));
-        mySearchButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("search.label.search-button.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "search.label.search-button"));
+        mySearchButton.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "search.label.search-button.tooltip"));
         panel4.add(mySearchButton, cc.xy(3, 3));
         panel4.add(mySearchSpinner, cc.xy(5, 3));
         final JPanel panel5 = new JPanel();
@@ -227,6 +228,23 @@ public class ChooseLabelDialog
         panel5.add(scrollPane1, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
         mySearchResults.setAutoCreateRowSorter(false);
         scrollPane1.setViewportView(mySearchResults);
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**
@@ -258,6 +276,9 @@ public class ChooseLabelDialog
         }
     }
 
+    /**
+     * @noinspection ALL
+     */
     public JComponent $$$getRootComponent$$$() {
         return contentPane;
     }

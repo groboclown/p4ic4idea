@@ -33,9 +33,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
+import java.lang.reflect.Method;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -279,29 +281,30 @@ public class SyncPanel {
         panel1.setLayout(new GridLayoutManager(4, 2, new Insets(4, 4, 4, 4), -1, -1));
         myRootPane.add(panel1, BorderLayout.NORTH);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.to.title")));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.to.title"),
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         mySyncHead = new JRadioButton();
         mySyncHead.setSelected(true);
         this.$$$loadButtonText$$$(mySyncHead,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.head"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.head"));
         mySyncHead.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.head.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.head.tooltip"));
         panel1.add(mySyncHead, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySyncRev = new JRadioButton();
         this.$$$loadButtonText$$$(mySyncRev,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.rev"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev"));
         mySyncRev.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.rev.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev.tooltip"));
         panel1.add(mySyncRev, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySyncChangelist = new JRadioButton();
         this.$$$loadButtonText$$$(mySyncChangelist,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.change"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.change"));
         mySyncChangelist.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.other.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.other.tooltip"));
         panel1.add(mySyncChangelist,
                 new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -318,8 +321,8 @@ public class SyncPanel {
                 false));
         myRevision.setColumns(4);
         myRevision.setEnabled(false);
-        myRevision.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("sync.options.rev.value.tooltip"));
+        myRevision.setToolTipText(
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev.value.tooltip"));
         panel2.add(myRevision, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
@@ -327,7 +330,7 @@ public class SyncPanel {
         myRevLabel = new JLabel();
         myRevLabel.setEnabled(false);
         this.$$$loadLabelText$$$(myRevLabel,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.rev.value"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev.value"));
         panel2.add(myRevLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
@@ -340,8 +343,8 @@ public class SyncPanel {
         myOther.setColumns(10);
         myOther.setEditable(true);
         myOther.setEnabled(false);
-        myOther.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("sync.options.other.value.tooltip"));
+        myOther.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "sync.options.other.value.tooltip"));
         panel3.add(myOther, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
@@ -349,7 +352,7 @@ public class SyncPanel {
         myOtherLabel = new JLabel();
         myOtherLabel.setEnabled(false);
         this.$$$loadLabelText$$$(myOtherLabel,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.other.field"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.other.field"));
         panel3.add(myOtherLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
@@ -361,7 +364,7 @@ public class SyncPanel {
         myFindLabelButton = new JButton();
         myFindLabelButton.setEnabled(false);
         this.$$$loadButtonText$$$(myFindLabelButton,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.find-label"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.find-label"));
         CellConstraints cc = new CellConstraints();
         panel4.add(myFindLabelButton, cc.xy(1, 1, CellConstraints.LEFT, CellConstraints.DEFAULT));
         final Spacer spacer2 = new Spacer();
@@ -369,12 +372,13 @@ public class SyncPanel {
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPane.add(panel5, BorderLayout.CENTER);
-        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null));
+        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null,
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         myForce = new JCheckBox();
         this.$$$loadButtonText$$$(myForce,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.force"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.force"));
         myForce.setToolTipText(
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("sync.options.force.tooltip"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.force.tooltip"));
         panel5.add(myForce, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -384,6 +388,23 @@ public class SyncPanel {
                         GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         myRevLabel.setLabelFor(myRevision);
         myOtherLabel.setLabelFor(myOther);
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**
@@ -450,4 +471,5 @@ public class SyncPanel {
     public JComponent $$$getRootComponent$$$() {
         return myRootPane;
     }
+
 }

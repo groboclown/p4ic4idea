@@ -7,8 +7,15 @@
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
-      <li><em>0.11.0</em><ul
-        <li></li>
+      <li><em>0.11.0</em><ul>
+        <li>Added a warning for users with an IDE before 2018.2.  Compatibility with these versions will be removed soon.</li>
+        <li>Upgraded many library dependency versions.</li>
+        <li>Created a bill of materials.</li>
+        <li>Added some <tt>p4ignore</tt> compatibility.</li>
+        <li>Improved charset interpretation.  Now, there's a user preference to select the setting of file encoding -
+        the default is to use whatever the server has.  Other options are to use what the IDE thinks is the file
+        encoding, or use the client configured value (<tt>P4CHARSET</tt>).</li>
+        <li>Various build improvements.</li>
       </ul></li>
       <li><em>0.10.17</em><ul>
         <li>Fix "null file spec in arguments" from diff view, which may also fix issues around the changelist mapping</li>

@@ -38,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -239,13 +240,13 @@ public class ConfigPartStack {
         rootPane.add(panel1, BorderLayout.NORTH);
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
-                ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle").getString("configuration.stack.title"));
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.stack.title"));
         panel1.add(label1, BorderLayout.CENTER);
         myAddItemButton = new JButton();
         myAddItemButton.setHideActionText(true);
         myAddItemButton.setText("");
-        myAddItemButton.setToolTipText(ResourceBundle.getBundle("net/groboclown/p4plugin/P4Bundle")
-                .getString("configuration.connection-choice.picker.tooltip"));
+        myAddItemButton.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "configuration.connection-choice.picker.tooltip"));
         panel1.add(myAddItemButton, BorderLayout.EAST);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
@@ -254,6 +255,23 @@ public class ConfigPartStack {
         CellConstraints cc = new CellConstraints();
         panel2.add(scrollPane1, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
         scrollPane1.setViewportView(partStackPanel);
+    }
+
+    private static Method $$$cachedGetBundleMethod$$$ = null;
+
+    private String $$$getMessageFromBundle$$$(String path, String key) {
+        ResourceBundle bundle;
+        try {
+            Class<?> thisClass = this.getClass();
+            if ($$$cachedGetBundleMethod$$$ == null) {
+                Class<?> dynamicBundleClass = thisClass.getClassLoader().loadClass("com.intellij.DynamicBundle");
+                $$$cachedGetBundleMethod$$$ = dynamicBundleClass.getMethod("getBundle", String.class, Class.class);
+            }
+            bundle = (ResourceBundle) $$$cachedGetBundleMethod$$$.invoke(null, path, thisClass);
+        } catch (Exception e) {
+            bundle = ResourceBundle.getBundle(path);
+        }
+        return bundle.getString(key);
     }
 
     /**

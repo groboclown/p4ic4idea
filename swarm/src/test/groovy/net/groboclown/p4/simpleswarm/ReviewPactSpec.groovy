@@ -32,7 +32,7 @@ class ReviewPactSpec extends Specification {
         def ticket = 'ticket1'
         SwarmConfig config = new SwarmConfig()
                 .withLogger(new MockLogger())
-                .withUri("http://localhost:65001")
+                .withUri("http://localhost:60830")
                 .withUsername(username)
                 .withTicket(ticket)
                 .withVersion(6.0)
@@ -40,7 +40,7 @@ class ReviewPactSpec extends Specification {
         provider = new PactBuilder()
         provider.serviceConsumer 'net.groboclown.p4.swarm'
         provider.hasPactWith 'Swarm-v6'
-        provider.port 65001
+        provider.port 60830
     }
 
 

@@ -169,12 +169,15 @@ public class CacheComponent implements
                             UserProjectPreferences.getMaxFileRetrieveCount(project))
             ).getPromise()
             .whenCompleted((changesResult) -> {
-                // TODO is this a duplicate call for the updateListener's CacheListener?
-                updateListener.setOpenedChanges(
-                        changesResult.getClientConfig().getClientServerRef(),
-                        changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
+                if (updateListener != null) {
+                    // TODO is this a duplicate call for the updateListener's CacheListener?
+                    updateListener.setOpenedChanges(
+                            changesResult.getClientConfig().getClientServerRef(),
+                            changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
+                }
+                // Else - timing issue with dispose and when this ran.
                 sink.resolve(null);
-                if (LOG.isDebugEnabled()) {
+                if (LOG.isDebugEnabled() && changelistMap != null && fileMap != null) {
                     LOG.debug(this + " opened cache refreshed; " + clientRoot.getClientRootDir()
                             + " contains " + changelistMap.getEstimateCount() + " pending changes, "
                             + fileMap.getEstimateSize() + " opened files.");

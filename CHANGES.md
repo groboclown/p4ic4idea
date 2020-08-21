@@ -1,6 +1,14 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.11.1::
+
+### Overview
+
+* Fixed a bug related to an NPE on a cached component.
+* Fixed a bug where the encoding from the Perforce server wasn't supported by Java (specifically, `utf8-bom`).  It now tries to strip the "-bom" off, then will resort to the default enocding of the local computer.  (Bug #220)
+
+
 ## ::v0.11.0::
 
 ### Overview

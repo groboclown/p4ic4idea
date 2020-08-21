@@ -144,7 +144,9 @@ import net.groboclown.p4.simpleswarm.exceptions.InvalidSwarmServerException;
 import net.groboclown.p4.simpleswarm.exceptions.UnauthorizedAccessException;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -284,12 +286,7 @@ public class ConnectCommandRunner
             ClientServerRef ref = config.getClientServerRef();
             IExtendedFileSpec headSpec = cmd.getFileDetails(client, specs);
             P4FileRevision headRevision = P4FileRevisionImpl.getHead(ref, headSpec);
-            String content = new String(cmd.loadContents(client, headSpec),
-                    headSpec.getHeadCharset() == null
-                        ? (config.getDefaultCharSet() == null
-                            ? Charset.defaultCharset().name()
-                            : config.getDefaultCharSet())
-                        : headSpec.getHeadCharset());
+            String content = loadContentAsString(config, client, headSpec);
             List<IFileAnnotation> annotations = cmd.getAnnotations(client, specs);
             List<IFileSpec> requiredHistory = FileAnnotationParser.getRequiredHistorySpecs(annotations);
             List<Pair<IFileSpec, IFileRevisionData>> history = cmd.getExactHistory((IOptionsServer) client.getServer(), requiredHistory);
@@ -298,6 +295,32 @@ public class ConnectCommandRunner
                             ref, client.getServer().getUserName(), headSpec, query.getLocalFile(), annotations, history),
                     headRevision, content);
         }));
+    }
+
+    @Nonnull
+    private String loadContentAsString(@Nonnull ClientConfig config, IClient client, IExtendedFileSpec headSpec)
+            throws P4JavaException, IOException {
+        final byte[] contents = cmd.loadContents(client, headSpec);
+        String requestedCharset = headSpec.getHeadCharset() == null
+                ? (config.getDefaultCharSet() == null
+                ? Charset.defaultCharset().name()
+                : config.getDefaultCharSet())
+                : headSpec.getHeadCharset();
+        String charset = requestedCharset;
+        if (! Charset.isSupported(charset)) {
+            LOG.warn("Perforce requested charset for encoding '" + requestedCharset + "', but Java does not support it.");
+            if (charset.toLowerCase().endsWith("-bom")) {
+                charset = charset.substring(0, charset.length() - 4);
+            }
+            if (Charset.isSupported(charset)) {
+                LOG.warn("Using " + charset + " instead.");
+            } else {
+                charset = Charset.defaultCharset().name();
+                LOG.warn("Using default charset " + charset + " instead.");
+            }
+        }
+        // Could raise an UnsupportedEncodingException.
+        return new String(contents, charset);
     }
 
     @NotNull

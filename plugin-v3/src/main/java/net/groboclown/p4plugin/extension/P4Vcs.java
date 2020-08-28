@@ -286,7 +286,9 @@ public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
         appMessageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
 
         CompatibilityCheck.checkCompatibility(myProject,
-                ApplicationInfo.getInstance().getMajorVersion(), ApplicationInfo.getInstance().getMinorVersion());
+                ApplicationInfo.getInstance().getMajorVersion(),
+                ApplicationInfo.getInstance().getMinorVersion(),
+                ApplicationInfo.getInstance().getBuild());
 
         // If additional actions need to happen at plugin startup time, add them here to execute in
         // a background thread.

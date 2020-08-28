@@ -17,6 +17,7 @@ package net.groboclown.p4plugin.messages;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.BuildNumber;
 import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,39 +29,34 @@ import org.jetbrains.annotations.NotNull;
 public class CompatibilityCheck {
     private static final Logger LOG = Logger.getInstance(CompatibilityCheck.class);
 
-    // These major version / minor version use the "2018.2" format, rather than the "182.0" format.
-    private static final int DEPRECATED_SUPPORT__MAJOR = 2018;
-    private static final int DEPRECATED_SUPPORT__MINOR = 2;
-    private static final String MINIMUM_VERSION = DEPRECATED_SUPPORT__MAJOR + "." + DEPRECATED_SUPPORT__MINOR;
+    // Baseline is the API version, which is compatible across Android Studio and the JetBrains tools.
+    // Android uses a "4.0" style numbering for major / minor, while JetBrains uses "2018.2" format.
+    private static final int DEPRECATED_SUPPORT__BASELINE = 182;
 
 
-    public static void checkCompatibility(@NotNull Project project, String majorVersion, String minorVersion) {
-        if (!isIdeaVersionValid(majorVersion, minorVersion)) {
+    public static void checkCompatibility(@NotNull Project project, String majorVersion, String minorVersion,
+            BuildNumber build) {
+        if (!isIdeaVersionValid(majorVersion, minorVersion, build)) {
             UserMessage.showNotification(project, UserMessage.WARNING,
-                    P4Bundle.message("ide.compatibility.message", majorVersion, minorVersion, MINIMUM_VERSION),
+                    P4Bundle.message("ide.compatibility.message",
+                            majorVersion, minorVersion, build.getProductCode(), build.getBaselineVersion(),
+                            DEPRECATED_SUPPORT__BASELINE),
                     P4Bundle.message("ide.compatibility.title"),
                     NotificationType.WARNING);
         }
     }
 
 
-    static boolean isIdeaVersionValid(String majorStr, String minorStr) {
-        LOG.warn("IDE version: " + majorStr + "." + minorStr);
-        try {
-            int major = Integer.parseInt(majorStr);
-            int minor = Integer.parseInt(minorStr);
-            if (major > DEPRECATED_SUPPORT__MAJOR) {
-                // It's a supported version for a while.
-                return true;
-            }
-            if (major == DEPRECATED_SUPPORT__MAJOR && minor >= DEPRECATED_SUPPORT__MINOR) {
-                // It's a supported version for a while
-                return true;
-            }
-            return false;
-        } catch (NumberFormatException e) {
-            LOG.error("Invalid IDE version numbers: " + majorStr + "." + minorStr);
-            return false;
+    static boolean isIdeaVersionValid(String majorStr, String minorStr, BuildNumber build) {
+        LOG.warn("IDE version: " + majorStr + "." + minorStr + "; product version " +
+                build.getProductCode() + "-" + build.getBaselineVersion());
+        if (build.getBaselineVersion() > DEPRECATED_SUPPORT__BASELINE) {
+            return true;
         }
+
+        // It's been noticed that the minor version can include a patch.  That's probably an IDE bug,
+        // but we still need to account for it.
+        // That said, the baseline version of the build is sufficient to check.
+        return false;
     }
 }

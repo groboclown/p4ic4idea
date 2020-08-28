@@ -1,6 +1,17 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.11.2::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Fixed the version compatibility check to work with IDE 2020.2.1 (minor version was reported as "2.1") and with Android Studio 4.0.  Now, the check instead informs the user about the build number, which should be universal across IDEs.
+
+
 ## ::v0.11.1::
 
 ### Overview

@@ -1,25 +1,18 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.11.1</version>
+    <version>0.11.2</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.11.2</em><ul>
+        <li>Fixed compatiblity check to handle JetBrains 2020.2.1 and Android Studio 4.0.</li>
+      </ul></li>
       <li><em>0.11.1</em><ul>
         <li>Fixed a bug related to an NPE on a cached component.</li>
         <li>Fixed a bug where the encoding from the Perforce server wasn't supported by Java (specifically, `utf8-bom`).  It now tries to strip the "-bom" off, then will resort to the default enocding of the local computer.</li>
-      </ul></li>
-      <li><em>0.11.0</em><ul>
-        <li>Added a warning for users with an IDE before 2018.2.  Compatibility with these versions will be removed soon.</li>
-        <li>Upgraded many library dependency versions.</li>
-        <li>Created a bill of materials.</li>
-        <li>Added some <tt>p4ignore</tt> compatibility.</li>
-        <li>Improved charset interpretation.  Now, there's a user preference to select the setting of file encoding -
-        the default is to use whatever the server has.  Other options are to use what the IDE thinks is the file
-        encoding, or use the client configured value (<tt>P4CHARSET</tt>).</li>
-        <li>Various build improvements.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

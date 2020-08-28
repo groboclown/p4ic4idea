@@ -14,6 +14,7 @@
 
 package net.groboclown.p4plugin.messages;
 
+import com.intellij.openapi.util.BuildNumber;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,8 +23,11 @@ class CompatibilityCheckTest {
     @Test
     void checkAllOldVersionParsing() {
         // pulled from http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html
-        assertTrue(CompatibilityCheck.isIdeaVersionValid("2018", "2"));
-        assertFalse(CompatibilityCheck.isIdeaVersionValid("2017", "3"));
-        assertFalse(CompatibilityCheck.isIdeaVersionValid("2018", "1"));
+        assertTrue(CompatibilityCheck.isIdeaVersionValid("2018", "2",
+                new BuildNumber("CI", 182, 2122)));
+        assertFalse(CompatibilityCheck.isIdeaVersionValid("2017", "3",
+                new BuildNumber("AI", 173, 22331)));
+        assertFalse(CompatibilityCheck.isIdeaVersionValid("2018", "1",
+                new BuildNumber("CI", 181, 22331)));
     }
 }

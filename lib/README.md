@@ -67,6 +67,9 @@ $ cd idea-community
 $ git fetch --all --tags --prune
 $ git checkout -f tags/idea/191.8026.42 -b 191
 $ git clean -f -e android -e tools-base
+$ cd android
+$ git fetch --all --tags --prune
+$ git checkout -f tags/
 ```
 
 That might be paranoid, but it works and keeps you from running into odd compile failures, especially after a fetch in an existing repository.

@@ -1,6 +1,17 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.11.3::
+
+### Overview
+
+* Bug fixes
+
+### Details
+
+* Change provider make an incorrect assumption that the IDE API `getListsCopy` call returned a mutable value (bug #225).
+
+
 ## ::v0.11.2::
 
 ### Overview

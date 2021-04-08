@@ -1,18 +1,17 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.11.2</version>
+    <version>0.11.3</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="171"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
+      <li><em>0.11.3</em><ul>
+        <li>Fixed a bug where a list returned by the IDE API was assumed to be mutable.</li>
+      </ul></li>
       <li><em>0.11.2</em><ul>
         <li>Fixed compatiblity check to handle JetBrains 2020.2.1 and Android Studio 4.0.</li>
-      </ul></li>
-      <li><em>0.11.1</em><ul>
-        <li>Fixed a bug related to an NPE on a cached component.</li>
-        <li>Fixed a bug where the encoding from the Perforce server wasn't supported by Java (specifically, `utf8-bom`).  It now tries to strip the "-bom" off, then will resort to the default enocding of the local computer.</li>
       </ul></li>
     </ul>
     ]]></change-notes>

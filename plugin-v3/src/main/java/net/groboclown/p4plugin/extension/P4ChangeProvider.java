@@ -314,7 +314,9 @@ public class P4ChangeProvider
 
     private P4CommandRunner.ActionAnswer<Object> updateChangelists(IdeChangelistMap changelistMap, ChangeListManagerGate addGate)
             throws InterruptedException {
-        List<LocalChangeList> existingLocalChangeLists = addGate.getListsCopy();
+        // Need to make a copy of the changelists, because it can be immutable.
+        // See bug #226
+        List<LocalChangeList> existingLocalChangeLists = new ArrayList<>(addGate.getListsCopy());
         P4CommandRunner.ActionAnswer<Object> actions = new DoneActionAnswer<>(null);
 
         Collection<ClientConfigRoot> roots = getClientConfigRoots();

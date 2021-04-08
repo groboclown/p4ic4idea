@@ -247,8 +247,7 @@ public class P4ServerComponent implements ProjectComponent, Disposable {
     // For Configuration UI.  Avoids cache hits.
     private P4CommandRunner.QueryAnswer<ListOpenedFilesChangesResult> checkClientConnection(ClientConfig clientConfig) {
         // This is necessary for loading a project from version control when the project isn't setup yet.
-        // Init is happening earlier now
-        // initComponent();
+        // Don't init the component here; it is happening earlier now
         return connectRunner.listOpenedFilesChanges(
                 // Checking the connection doesn't require a root; we don't care about the files returned.
                 clientConfig, new ListOpenedFilesChangesQuery(null, 1, 1));

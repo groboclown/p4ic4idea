@@ -5,6 +5,8 @@
       <root url="jar://$PROJECT_DIR$/lib/test/reflections-0.9.11.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/reflections-0.9.11-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

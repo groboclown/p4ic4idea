@@ -49,7 +49,6 @@ import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.util.ProjectUtil;
-import net.groboclown.p4.server.api.values.P4CommittedChangelist;
 import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
 import net.groboclown.p4.server.impl.util.ChangeListUtil;
@@ -65,7 +64,8 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.io.File;
 
-public class P4Vcs extends AbstractVcs<P4CommittedChangelist> {
+// 193 removed the template parameter for AbstractVcs
+public class P4Vcs extends AbstractVcs {
     private static final Logger LOG = Logger.getInstance(P4Vcs.class);
 
     public static final FileStatus ADDED_OFFLINE =

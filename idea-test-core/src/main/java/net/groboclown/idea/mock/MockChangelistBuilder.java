@@ -87,9 +87,16 @@ public class MockChangelistBuilder implements ChangelistBuilder {
         removedChanges.add(path);
     }
 
+    // Deprecated in 193; use #processUnversionedFile(FilePath) instead
     @Override
     public void processUnversionedFile(VirtualFile file) {
         unversioned.add(file);
+    }
+
+    // Introduced in 193
+    // @Override
+    public void processUnversionedFile(FilePath file) {
+        unversioned.add(file.getVirtualFile());
     }
 
     @Override
@@ -107,9 +114,16 @@ public class MockChangelistBuilder implements ChangelistBuilder {
         modifiedWithoutCheckout.add(file);
     }
 
+    // Deprecated in 193
     @Override
     public void processIgnoredFile(VirtualFile file) {
         ignored.add(file);
+    }
+
+    // Introduced in 193; use instead of processIgnoredFile(VirtualFile file)
+    //@Override
+    public void processIgnoredFile(FilePath filePath) {
+        ignored.add(filePath.getVirtualFile());
     }
 
     @Override

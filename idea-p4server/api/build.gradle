@@ -34,7 +34,7 @@ dependencies {
     compatImplementation (
             project(':p4java'),
             project(':swarm'),
-            'org.apache.commons:commons-lang3:3.10'
+            'org.apache.commons:commons-lang3:3.12.0'
     )
     compatTest(
             project(':idea-test-core'),
@@ -62,12 +62,16 @@ jacoco {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.enabled = true
-        csv.enabled = true
-        html.enabled = true
+        xml.required = true
+        csv.required = true
+        html.required = true
     }
 
     // classDirectories = sourceSets.mainIdea173.output
+}
+
+compileJava {
+    options.deprecation = true
 }
 
 test {

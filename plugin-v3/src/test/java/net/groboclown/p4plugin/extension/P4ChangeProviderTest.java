@@ -37,6 +37,7 @@ import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
+import net.groboclown.p4plugin.IdeConsts;
 import net.groboclown.p4plugin.PluginSetup;
 import net.groboclown.p4plugin.ui.DummyProgressIndicator;
 import org.junit.jupiter.api.Test;
@@ -122,7 +123,7 @@ class P4ChangeProviderTest {
         assertSize(1, changeBuilder.addedChanges.keySet());
         Map.Entry<String, Change> change =
                 changeBuilder.addedChanges.entrySet().iterator().next();
-        assertEquals(LocalChangeList.DEFAULT_NAME, change.getKey());
+        assertEquals(IdeConsts.DEFAULT_LOCAL_CHANGELIST_NAME, change.getKey());
         assertNull(change.getValue().getBeforeRevision());
         assertNotNull(change.getValue().getAfterRevision());
         assertEquals(addedFile, change.getValue().getAfterRevision().getFile());
@@ -267,7 +268,7 @@ class P4ChangeProviderTest {
         vcs.goOnline(root);
 
         // The IDE should have a default changelist.
-        MockLocalChangeList ideDefaultCl = vcs.addIdeChangelist(LocalChangeList.DEFAULT_NAME, null, true);
+        MockLocalChangeList ideDefaultCl = vcs.addIdeChangelist(IdeConsts.DEFAULT_LOCAL_CHANGELIST_NAME, null, true);
 
         // Setup the server: 2 changelists, 1 file in default changelist.
         final File openedFile = tmp.newFile("test.txt");

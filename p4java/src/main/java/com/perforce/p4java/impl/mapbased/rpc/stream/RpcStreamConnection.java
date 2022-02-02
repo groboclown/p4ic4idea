@@ -27,8 +27,10 @@ import org.apache.commons.lang3.Validate;
 import javax.annotation.Nonnull;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -36,6 +38,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -43,6 +46,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
@@ -101,6 +105,10 @@ public class RpcStreamConnection extends RpcConnection {
 
     // 'rsh' mode server launch command
     private String rsh = null;
+
+    // p4ic4idea: keep track of the process for debugging purposes.
+    private Process process = null;
+    private InputStream rshErrorStream = null;
 
     /**
      * Construct a new Perforce RPC connection to the named Perforce server
@@ -170,16 +178,23 @@ public class RpcStreamConnection extends RpcConnection {
     // p4ic4idea: package protected for unit testing
     void initRshModeServer() throws ConnectionException {
         try {
+            // p4ic4idea: Ensure the rsh program is a valid program.
+            validateRsh(rsh);
+
             String[] command = new String[] { Server.isRunningOnWindows() ? "cmd.exe" : "/bin/sh",
                     Server.isRunningOnWindows() ? "/c" : "-c", rsh };
 
             ProcessBuilder builder = new ProcessBuilder(command);
             // builder.redirectErrorStream(true); // redirect error stream to
             // output stream
-            Process process = builder.start();
+
+            // p4ic4idea: change local variable Process process to the instance variable.
+            process = builder.start();
             InputStream in = process.getInputStream();
             OutputStream out = process.getOutputStream();
-            // InputStream err = process.getErrorStream();
+
+            // p4ic4idea: keep the error stream.
+            rshErrorStream = process.getErrorStream();
 
             inputStream = new RpcRshInputStream(in, stats);
             outputStream = new RpcRshOutputStream(out, stats);
@@ -191,6 +206,37 @@ public class RpcStreamConnection extends RpcConnection {
             Log.exception(thr);
             throwConnectionException(thr);
         }
+    }
+
+    // p4ic4idea: new method to allow better debugging of problems with Rsh connections.
+    public String debugRshConnectionState() {
+        if (process == null) {
+            return "not rsh";
+        }
+        final StringBuilder ret = new StringBuilder("rsh");
+        if (process.isAlive()) {
+            ret.append(": alive");
+        } else {
+            ret.append(": command not alive; exit code ").append(process.exitValue());
+        }
+        if (this.rshErrorStream != null) {
+            ret.append("; stderr: ");
+            try {
+                final InputStreamReader reader = new InputStreamReader(this.rshErrorStream, StandardCharsets.UTF_8);
+                try {
+                    char[] buff = new char[4096];
+                    int len;
+                    while ((len = reader.read(buff)) > 0) {
+                        ret.append(buff, 0, len);
+                    }
+                } finally {
+                    reader.close();
+                }
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+        return ret.toString();
     }
 
     // p4ic4idea: package protected for unit tests
@@ -778,5 +824,57 @@ public class RpcStreamConnection extends RpcConnection {
         int sendPos() {
             return sendPos;
         }
+    }
+
+    // p4ic4idea: Ensure the rsh is a valid program.
+    static void validateRsh(String rsh) throws ConnectionException {
+        // p4ic4idea DEBUG
+        int first = rsh.indexOf(' ');
+        if (first < 0) {
+            first = rsh.length();
+        }
+        String rshCmd = rsh.substring(0, first);
+        java.io.File p4dFile = new java.io.File(rshCmd);
+        if (p4dFile.isAbsolute()) {
+            if (!p4dFile.isFile() || !p4dFile.canExecute()) {
+                throw new ConnectionException(
+                        "Not a file or executable: " + p4dFile.getAbsolutePath() + " from RSH " + rsh);
+            }
+            return;
+        }
+        if (p4dFile.exists() && p4dFile.canExecute()) {
+            // This is fine.
+            return;
+        }
+
+        // Check the OS path.
+        String completePath = System.getenv("PATH");
+        if (completePath == null) {
+            // Windows
+            completePath = System.getenv("Path");
+        }
+        int pos;
+        int start = 0;
+        boolean foundFile = false;
+        do {
+            pos = completePath.indexOf(File.pathSeparator, start);
+            if (pos < 0) {
+                pos = completePath.length();
+            }
+            String dir = completePath.substring(start, pos);
+            start = pos + 1;
+            java.io.File cmd = new java.io.File(new java.io.File(dir), rshCmd);
+            if (cmd.isFile()) {
+                foundFile = true;
+                if (cmd.canExecute()) {
+                    return;
+                }
+            }
+        } while (pos < completePath.length());
+
+        if (!foundFile) {
+            throw new ConnectionException("Could not find RSH command in path: " + rshCmd);
+        }
+        throw new ConnectionException("RSH command not executable: " + rshCmd);
     }
 }

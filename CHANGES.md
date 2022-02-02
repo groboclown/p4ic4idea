@@ -1,6 +1,22 @@
 # IDEA Community VCS Integration for Perforce
 
 
+## ::v0.12.0::
+
+### Overview
+
+* Bug fixes
+* Add support for compile and test against additional IDE versions.
+
+
+### Details
+
+* RSH connections would incorrectly add "localhost:" to the command if the command name had no ':' character in it.
+  * This primarily affected tests running on Linux.
+  * The new version includes extra checking before using an RSH connection to ensure the executable file exists and is executable.  However, the logic in place only works if the executable has no spaces in the file name.
+* Updated the build to run against newer versions of the IDE (193 and 201).
+
+
 ## ::v0.11.3::
 
 ### Overview

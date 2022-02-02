@@ -38,8 +38,8 @@ dependencies {
             project(':p4java'),
             project(':swarm'),
 
-            'net.java.dev.jna:jna:5.5.0',
-            'net.java.dev.jna:jna-platform:5.5.0',
+            'net.java.dev.jna:jna:5.10.0',
+            'net.java.dev.jna:jna-platform:5.10.0',
     )
     compatTest(
             project(':idea-test-core'),
@@ -51,6 +51,11 @@ dependencies {
 }
 
 
+compileJava {
+    options.deprecation = true
+}
+
+
 jacoco {
     toolVersion = '0.8.1'
 }
@@ -58,9 +63,9 @@ jacoco {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.enabled = true
-        csv.enabled = true
-        html.enabled = true
+        xml.required = true
+        csv.required = true
+        html.required = true
     }
     // classDirectories = sourceSets.mainIdea173.output
 }

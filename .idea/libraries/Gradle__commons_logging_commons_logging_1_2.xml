@@ -6,7 +6,7 @@
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/commons-logging/commons-logging/1.2/ecf26c7507d67782a3bbd148d170b31dfad001aa/commons-logging-1.2-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/main/commons-logging-1.2-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

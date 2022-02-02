@@ -13,6 +13,7 @@ ideaImplementation.uses(
         'vcs-api',
         'platform-api',
         'util',
+        'util-ui',
         'util-rt',
         'editor-ui-api',
         'extensions',
@@ -86,9 +87,14 @@ dependencies {
             ),
 
             // Extra libraries from p4server impl
-            'net.java.dev.jna:jna:5.5.0',
-            'net.java.dev.jna:jna-platform:5.5.0',
+            'net.java.dev.jna:jna:5.10.0',
+            'net.java.dev.jna:jna-platform:5.10.0',
     )
+}
+
+
+compileJava {
+    options.deprecation = true
 }
 
 
@@ -111,6 +117,10 @@ task packageVersion {
     }
 }
 jar.dependsOn packageVersion
+test.dependsOn packageVersion
+compileTestJava.dependsOn packageVersion
+
+
 // Without this explicit version set, the jar creates an archive
 // with 1.0, whereas everything else is trying to pull in the
 // top-level version identifier.

@@ -83,12 +83,18 @@ public class RpcRshOutputStream extends OutputStream {
 
     @Override
     public void flush() throws IOException {
-        this.rshStream.flush();
+		this.rshStream.flush();
     }
 
     @Override
     public void close() throws IOException {
-        this.rshStream.close();
+		try {
+			this.rshStream.close();
+		} catch (IOException e) {
+			// p4ic4idea: ignore the exception
+			// This can trigger a "flush" which will fail if the connecting program
+			// has already closed the connection.
+		}
     }
 
     @Override

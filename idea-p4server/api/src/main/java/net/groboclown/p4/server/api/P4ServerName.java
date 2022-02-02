@@ -29,9 +29,6 @@ public class P4ServerName {
     private final String protocolName;
     private final IServerAddress.Protocol protocol;
 
-    // TODO look at keeping a cache of these to reduce total memory, similar to String.intern?
-    // Could just end up being a bigger memory hog in the end.
-
     @Nullable
     public static P4ServerName forPort(@Nullable final String portText) {
         if (portText == null) {
@@ -61,14 +58,20 @@ public class P4ServerName {
                 }
             }
         }
+        final IServerAddress.Protocol protocol = parseProtocol(protocolText);
 
-        if (port.indexOf(':') <= 0) {
+        // Note: if the protocol is of the RSH variety, then no port should be
+        // added to it.
+        if (
+                protocol != IServerAddress.Protocol.P4JRSH
+                && protocol != IServerAddress.Protocol.P4JRSHNTS
+                && port.indexOf(':') <= 0) {
             // This is the form "port", which is not supported by the
             // P4 java api.  So we must prepend a localhost to conform
             // to what P4 java supports.
             port = "localhost:" + port;
         }
-        return new P4ServerName(port, parseProtocol(protocolText));
+        return new P4ServerName(port, protocol);
     }
 
     @NotNull

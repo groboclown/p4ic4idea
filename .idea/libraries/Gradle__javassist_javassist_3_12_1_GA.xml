@@ -5,6 +5,8 @@
       <root url="jar://$PROJECT_DIR$/lib/test/javassist-3.12.1.GA.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/javassist-3.12.1.GA-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

@@ -5,6 +5,8 @@
       <root url="jar://$PROJECT_DIR$/lib/test/byte-buddy-1.8.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/byte-buddy-1.8.0-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

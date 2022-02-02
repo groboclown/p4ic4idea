@@ -155,28 +155,28 @@ class P4icCompatPlugin implements Plugin<Project> {
         SourceSet main = javaConvention.sourceSets.create("main" + suffix)
         main.java {
             srcDirs = [child(project.projectDir, "src", "main", "java")]
-            outputDir = project.file(child(project.buildDir, "classes", "java", "main" + suffix))
+            destinationDirectory.fileValue project.file(child(project.buildDir, "classes", "java", "main" + suffix))
         }
         main.resources {
             srcDirs = [child(project.projectDir, "src", "main", "resources")]
-            outputDir = project.file(child(project.buildDir, "resources", "main" + suffix))
+            destinationDirectory.fileValue project.file(child(project.buildDir, "resources", "main" + suffix))
         }
 
         SourceSet test = javaConvention.sourceSets.create("test" + suffix)
         test.java {
             srcDirs = [child(project.projectDir, "src", "test", "java")]
-            outputDir = project.file(child(project.buildDir, "classes", "java", "test" + suffix))
+            destinationDirectory.fileValue project.file(child(project.buildDir, "classes", "java", "test" + suffix))
         }
         test.resources {
             srcDirs = [child(project.projectDir, "src", "main", "resources")]
-            outputDir = project.file(child(project.buildDir, "resources", "test" + suffix))
+            destinationDirectory.fileValue project.file(child(project.buildDir, "resources", "test" + suffix))
         }
 
         project.afterEvaluate {
             // Make sure that the tests include the compiled main output.
             test.compileClasspath = project.files(
                     test.compileClasspath,
-                    main.java.outputDir
+                    main.java.classesDirectory
             )
         }
     }
@@ -192,8 +192,8 @@ class P4icCompatPlugin implements Plugin<Project> {
         test.description = 'Run unit tests against IntelliJ\'s version ' + version.version + ' libraries.'
         test.group = 'verification'
         test.dependsOn "main${suffix}Classes", "test${suffix}Classes"
-        test.testClassesDirs = project.files(javaConvention.sourceSets.getByName("test" + suffix).java.outputDir)
-        test.binResultsDir = project.file(child(project.buildDir, "reports", "tests" + suffix, "binary"))
+        test.testClassesDirs = project.files(javaConvention.sourceSets.getByName("test" + suffix).java.classesDirectory)
+        test.binaryResultsDirectory = project.file(child(project.buildDir, "reports", "tests" + suffix, "binary"))
         test.workingDir = project.file(child(project.buildDir, "test-out", "tests" + suffix))
         test.doFirst {
             if (! test.workingDir.exists()) {
@@ -213,8 +213,8 @@ class P4icCompatPlugin implements Plugin<Project> {
             ideaTest.classpath = project.files(
                     javaConvention.sourceSets.getByName("test" + suffix).compileClasspath,
                     javaConvention.sourceSets.getByName("test" + suffix).runtimeClasspath,
-                    javaConvention.sourceSets.getByName("main" + suffix).java.outputDir,
-                    javaConvention.sourceSets.getByName("main" + suffix).resources.outputDir
+                    javaConvention.sourceSets.getByName("main" + suffix).java.classesDirectory,
+                    javaConvention.sourceSets.getByName("main" + suffix).resources.destinationDirectory
             )
 
             // the jacoco test report task can only run against the primary "test" task.

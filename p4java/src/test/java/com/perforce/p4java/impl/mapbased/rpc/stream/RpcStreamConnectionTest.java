@@ -9,6 +9,7 @@ import com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionSpec;
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacket;
 import com.perforce.p4java.impl.mapbased.rpc.packet.RpcPacketDispatcher;
 import com.perforce.p4java.impl.mapbased.rpc.packet.helper.RpcPacketFieldRule;
+import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.server.P4Charset;
 import com.perforce.p4java.server.callback.IFilterCallback;
 import org.junit.Before;
@@ -376,10 +377,20 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		assertThrows(ConnectionException.class, () -> mockConnection.initRshModeServer());
 	}
 
+	// p4ic4idea: this fails if the rsh is not an executable file.
+	@Test
+	public void initRshModeServer_badFile()
+			throws ConnectionException {
+		mockConnection.rsh("not-a-valid-file");
+
+		assertThrows(ConnectionException.class, () -> mockConnection.initRshModeServer());
+	}
+
 	@Test
 	public void initRshModeServer()
 			throws ConnectionException {
-		mockConnection.rsh("dir");
+		// p4ic4idea: this fails if the rsh is not an executable file.
+		mockConnection.rsh(Server.isRunningOnWindows() ? "cmd.exe" : "/bin/sh");
 
 		mockConnection.initRshModeServer();
 	}

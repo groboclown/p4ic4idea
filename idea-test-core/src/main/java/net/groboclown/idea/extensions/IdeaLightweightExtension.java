@@ -322,7 +322,8 @@ public class IdeaLightweightExtension
             // do nothing
         }
 
-        @Override
+        // IDE 201 removed this method and PicoVisitor
+        // @Override
         public void accept(PicoVisitor picoVisitor) {
             picoVisitor.visitComponentAdapter(this);
         }

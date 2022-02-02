@@ -55,6 +55,8 @@ class IdeaVersion181 implements IdeaVersionLibMatcher {
             new NamedLib("util",
                     "intellij.platform.util.jar"
             ),
+            new NamedLib("util-ui",
+            ),
             new NamedLib("util-rt",
                     "intellij.platform.util.rt.jar"
             ),

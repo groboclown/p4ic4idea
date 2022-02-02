@@ -411,6 +411,14 @@ public class NtsServerImpl extends RpcServer {
 			this.connected = false;
 			this.status = ServerStatus.ERROR;
 			throw cnce;
+		// p4ic4idea: make the RPC execution more robust.
+		} catch (ConnectionException ce) {
+			// This can mean the RPC command has failed.  Pull in debugging information that describes it.
+			if (this.rpcConnection instanceof RpcStreamConnection) {
+				Log.error(((RpcStreamConnection) this.rpcConnection).debugRshConnectionState());
+				// System.err.println(((RpcStreamConnection) this.rpcConnection).debugRshConnectionState());
+			}
+			throw ce;
 		} catch (IOException ioexc) {
 			Log.error("I/O error encountered in stream command: " + ioexc.getLocalizedMessage());
 			Log.exception(ioexc);

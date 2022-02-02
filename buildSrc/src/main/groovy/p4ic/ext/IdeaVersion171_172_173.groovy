@@ -55,6 +55,8 @@ class IdeaVersion171_172_173 implements IdeaVersionLibMatcher {
             new NamedLib("util",
                     "util.jar"
             ),
+            new NamedLib("util-ui",
+            ),
             new NamedLib("util-rt",
                     "util-rt.jar"
             ),

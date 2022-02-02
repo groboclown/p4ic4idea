@@ -1,17 +1,20 @@
 group 'net.groboclown.p4ic4idea'
-version '0.11.0-SNAPSHOT'
+version '0.12.0-SNAPSHOT'
 
 allprojects {
-    version '0.11.0'
+    version '0.12.0'
 
     wrapper {
         description 'Modifies the gradle binary distribution location used by gradle wrapper'
-        distributionUrl = uri('http://services.gradle.org/distributions/gradle-6.5-bin.zip')
+        distributionUrl = uri('https://services.gradle.org/distributions/gradle-7.3.2-bin.zip')
     }
 
     tasks.withType(JavaCompile) {
         // This isn't sufficient.  Need to set the "--release 8" javac argument.
         // Until this is fixed, JDK9+ can't be used to compile the plugin.
+
+        // When the plugin only supports IDE version >= 2020.3, this must be
+        // changed to JDK 11
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
     }

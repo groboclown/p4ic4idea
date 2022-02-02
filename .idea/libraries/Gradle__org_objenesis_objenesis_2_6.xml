@@ -5,6 +5,8 @@
       <root url="jar://$PROJECT_DIR$/lib/test/objenesis-2.6.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/lib/test/objenesis-2.6-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

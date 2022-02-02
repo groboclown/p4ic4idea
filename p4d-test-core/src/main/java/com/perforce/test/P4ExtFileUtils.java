@@ -224,6 +224,9 @@ public class P4ExtFileUtils {
                 throw new IOException("Could not make executable: " + outP4d);
             }
         }
+        if (!outP4d.isFile() || !outP4d.canExecute()) {
+            throw new IOException("Not executable: " + outP4d);
+        }
         return outP4d;
     }
 }

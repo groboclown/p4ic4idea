@@ -224,8 +224,8 @@ public class PluginSetup
     }
 
     public P4ChangelistId addDefaultChangelist(ClientConfigRoot root) {
-        P4ChangelistId p4cl = addNewChangelist(root, 0, LocalChangeList.DEFAULT_NAME);
-        MockLocalChangeList ideCl = addIdeChangelist(LocalChangeList.DEFAULT_NAME, null, true);
+        P4ChangelistId p4cl = addNewChangelist(root, 0, IdeConsts.DEFAULT_LOCAL_CHANGELIST_NAME);
+        MockLocalChangeList ideCl = addIdeChangelist(IdeConsts.DEFAULT_LOCAL_CHANGELIST_NAME, null, true);
         linkP4ChangelistToIdeChangelist(root, p4cl, ideCl);
         return p4cl;
     }
@@ -287,7 +287,7 @@ public class PluginSetup
     }
 
 
-    class CustomP4ServerComponent extends P4ServerComponent {
+    static class CustomP4ServerComponent extends P4ServerComponent {
         private final ConnectionManager mgr;
 
         CustomP4ServerComponent(@NotNull Project project, @NotNull ConnectionManager mgr) {

@@ -15,10 +15,13 @@ Building the dependencies requires pulling the source, running the build, and fi
 
 To build, you will need to have these tools installed:
 
-* JDK 1.8, with `JAVA_HOME` pointing to it.  You will also need JavaFX for this version (sometimes called OpenJFX).
+* JDK 1.8, with environment variable `JAVA_HOME` pointing to it.  You will also need JavaFX for this version (sometimes called OpenJFX).
 * Optionally, if you have JDK 1.6 installed, point `JDK_16_x64` to it.
 * Ant version 1.9 or better, with `ANT_HOME` pointing to it.
 * git
+* For building version 202 or later, you will also need:
+  * Set `JAVA_18_HOME` to the JDK 1.8.
+  * Amazon Corretto's JDK 11, with `JAVA_HOME` pointing to it.
 
 
 ### Pull the Source
@@ -58,7 +61,12 @@ Create a shallow clone for just the tag you care about.
 $ git clone git://git.jetbrains.org/idea/community.git --branch=tags/idea/191.8026.42 idea-community
 $ cd idea-community
 $ git clone git://git.jetbrains.org/idea/android.git --branch=tags/idea/191.8026.42 android
-$ cd tools-base
+```
+
+For building versions at 201 and earlier, you will also need to run:
+
+```bash
+$ cd android
 $ git clone git://git.jetbrains.org/idea/adt-tools-base.git --branch=tags/idea/191.8026.42 tools-base
 ```
 
@@ -75,6 +83,12 @@ $ git clone --bare git://git.jetbrains.org/idea/android.git android
 $ cd android
 $ git fetch --all --tags --prune
 $ git checkout -f tags/idea/191.8026.42 -b 191
+```
+
+For building versions at 201 and earlier, you will also need to run:
+
+```bash
+$ cd android
 $ git clone --bare git://git.jetbrains.org/idea/adt-tools-base.git tools-base
 $ cd tools-base
 $ git fetch --all -tags --prune
@@ -116,11 +130,11 @@ First, get the jars.  This differs from version to version, but for >= 181, this
 ```bash
 $ cd out/idea-ce/classes/production
 $ for i in *; do
-  if [ -d "$i"] ; then
+  if [ -d "$i" ] ; then
     n=$( basename "$i" )
-    ( cd "$i" && zip -9r ../../../../"$n".jar * )
+    ( cd "$i" && zip -9r ../../../../"$n".jar * > /dev/null )
   fi
-done 
+done
 ```
 
 This creates the jar for each package, allowing for a smaller library footprint.  Don't copy these into the library directory just yet.
@@ -186,6 +200,7 @@ Add the files to Git, commit, and push.
   * The debugging tree will fail if you don't have `JAVA_HOME` set.
   * Fails building android.sdktools.lint-api with `Could not find artifact org.jetbrains.kotlin:kotlin-plugin-ij201:jar:1.3.72-release-468 in central (https://cache-redirector.jetbrains.com/maven-central)`.  But that's beyond the point that we care about for the jars necessary for this project.
 * 202 - tag 202.8194.7 (2020.2.4)
+  * Compile fails for jps-builders-6.  A lot of work was needed to get this to pass.  Primarily was opening the project in an IntelliJ, updating the class paths, then building it there (it still fails), then building it again through the ant script.  It will fail in the Android section, but by that point enough was built.
 * 203 - tag 203.8084.24 (2020.3.4)
 * 211 - tag 211.7628.21 (2021.1.3)
 * 212 - tag 212.5457.46 (2021.2.3)

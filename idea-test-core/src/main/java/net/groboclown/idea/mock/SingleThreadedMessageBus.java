@@ -100,6 +100,13 @@ public class SingleThreadedMessageBus
         return connect(connectionDisposable);
     }
 
+    // v202 - introduced new method
+    //@Override
+    @SuppressWarnings("unused")
+    public MessageBusConnection simpleConnect() {
+        return connect();
+    }
+
     @NotNull
     @Override
     public MessageBusConnection connect(@NotNull Disposable parentDisposable) {

@@ -30,6 +30,7 @@ class IdeaVersion {
             new IdeaVersion192(),
             new IdeaVersion193(),
             new IdeaVersion201(),
+            new IdeaVersion202(),
     ]
 
     @Nonnull

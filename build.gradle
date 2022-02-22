@@ -17,5 +17,10 @@ allprojects {
         // changed to JDK 11
         sourceCompatibility = '1.8'
         targetCompatibility = '1.8'
+
+        // Turn on deprecation warnings for all builds.
+        // The only one that this is okay on, at the moment, is "test-core", as that
+        // contains code used for mocking out calls.
+        options.compilerArgs << "-Xlint:deprecation"
     }
 }

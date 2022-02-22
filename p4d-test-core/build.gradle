@@ -36,6 +36,13 @@ repositories {
     flatDir { dirs "$rootDir/lib/main", "$rootDir/lib/test" }
 }
 
+tasks.withType(JavaCompile) {
+    // For this specific build, turn off the deprecation warnings.
+    // This build doesn't care about that, because it's:
+    // 1. Not product, and isn't published.
+    // 2. Used to mock out IDE API, which most likely contains methods marked as deprecated.
+    options.compilerArgs.remove("-Xlint:deprecation")
+}
 
 
 group 'net.groboclown.p4ic4idea'

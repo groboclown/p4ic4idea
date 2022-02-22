@@ -471,6 +471,7 @@ public class TestServer {
         PumpStreamHandler streamHandler = new PumpStreamHandler(status.out, status.log);
         executor.setStreamHandler(streamHandler);
         executor.setProcessDestroyer(processDestroyer);
+        // System.out.println("Running " + cmdLine);
         return executor.execute(cmdLine);
     }
 

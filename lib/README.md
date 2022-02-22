@@ -108,6 +108,11 @@ $ cd android
 $ git fetch --all --tags --prune
 $ git checkout -f tags/idea/191.8026.42 -b 191
 $ git clean -f -e tools-base
+```
+
+And for 201 and earlier versions:
+
+```bash
 $ cd tools-base
 $ git fetch --all --tags --prune
 $ git checkout -f tags/idea/191.8026.42 -b 191

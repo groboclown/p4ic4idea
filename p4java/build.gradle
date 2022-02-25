@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 plugins {
     id 'java-library'
 }
@@ -58,6 +60,22 @@ test {
     exclude 'com/perforce/p4java/tests/dev/unit/**'
     exclude 'com/perforce/p4java/tests/qa/**'
 }
+
+tasks.register('checkSymlinkSupported') {
+    group 'verification'
+    doLast {
+        var srcFile = file("$buildDir/test-symlink-support.txt")
+        var outFile = file("$buildDir/test-symlink-support.sym")
+        srcFile.text = "simple";
+        try {
+            Files.createSymbolicLink(outFile.toPath(), srcFile.toPath());
+        } catch (java.nio.file.FileSystemException e) {
+            logger.warn("WARNING: SymLinks not supported by your operating system; those unit tests will not run.")
+        }
+    }
+}
+
+tasks.getByName('test').dependsOn('checkSymlinkSupported')
 
 
 tasks.getByName('test') {

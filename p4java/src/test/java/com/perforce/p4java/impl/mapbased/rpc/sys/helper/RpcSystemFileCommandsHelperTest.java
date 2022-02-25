@@ -6,12 +6,15 @@ import static org.hamcrest.core.Is.is;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;
 import org.apache.commons.io.FileUtils;
 import org.junit.FixMethodOrder;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,15 +33,23 @@ public class RpcSystemFileCommandsHelperTest {
     private static SymbolicLinkHelper rpcSystemFileCommandsHelper;
     private static Path mockFile;
     private static Path symlinkFile;
-    private static String noExistFileName = "/tmp/notExistFile.data";
+
+    // p4ic4idea: get this to work with Windows better.
+    private static Path tempDir;
+    private static String noExistFileName;
+    private static boolean symlinksSupported = true;
+
 
     @BeforeAll
     static void beforeAll() throws IOException {
         rpcSystemFileCommandsHelper = OSUtils.isWindows()
                 ? new WindowsRpcSystemFileCommandsHelper()
                 : new RpcSystemFileCommandsHelper();
-        Path tempPath = Paths.get(System.getProperty("java.io.tmpdir"));
-        Path mockFilePath = Paths.get(tempPath.toString(), "p4java");
+        // p4ic4idea: get this working with Windows better, and use more
+        //   secure temp file usage.
+        tempDir = Files.createTempDirectory("p4-tests");
+        noExistFileName = Paths.get(tempDir.toString(), "does-not-exist.data").toString();
+        Path mockFilePath = Paths.get(tempDir.toString(), "p4java");
         if (Files.notExists(mockFilePath)) {
             Files.createDirectory(mockFilePath);
         }
@@ -49,7 +60,23 @@ public class RpcSystemFileCommandsHelperTest {
         }   
         symlinkFile = mockFilePath.resolve("symlinkTest");
         Files.deleteIfExists(symlinkFile);
-        Files.createSymbolicLink(symlinkFile, mockFile);
+        try {
+            // Note: this symlinksSupported logic is duplicated in SymlinkUtil.
+            Files.createSymbolicLink(symlinkFile, mockFile);
+            symlinksSupported = true;
+        } catch (FileSystemException e) {
+            System.err.println("WARNING: Symlinks are not supported on your operating system; they will not be tested"
+                    + " properly here: " + e);
+            symlinksSupported = false;
+        }
+    }
+
+    // p4ic4idea: part of getting this working with Windows better
+    @AfterAll
+    static void afterAll() throws IOException {
+        if (!P4JavaTestCase.deleteDir(tempDir.toFile())) {
+            throw new IOException("Could not delete " + tempDir);
+        }
     }
 
     @BeforeEach
@@ -124,11 +151,15 @@ public class RpcSystemFileCommandsHelperTest {
 
     @Test
     public void isSymlink() throws Exception {
-        boolean isSymlink = rpcSystemFileCommandsHelper.isSymlink(mockFile.toString());
-        assertThat(isSymlink, is(false));
+        if (symlinksSupported) {
+            boolean isSymlink = rpcSystemFileCommandsHelper.isSymlink(mockFile.toString());
+            assertThat(isSymlink, is(false));
 
-        isSymlink = rpcSystemFileCommandsHelper.isSymlink(symlinkFile.toString());
-        assertThat(isSymlink, is(true));
+            isSymlink = rpcSystemFileCommandsHelper.isSymlink(symlinkFile.toString());
+            assertThat(isSymlink, is(true));
+        } else {
+            System.err.println("TEST SKIPPED ; SYMLINKS NOT SUPPORTED");
+        }
     }
 
 }

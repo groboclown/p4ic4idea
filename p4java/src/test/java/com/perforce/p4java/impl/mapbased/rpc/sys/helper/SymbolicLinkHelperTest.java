@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.perforce.p4java.SymlinkUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -51,8 +52,10 @@ public class SymbolicLinkHelperTest {
 	 */
 	@Test
 	public void testSymbolicLink() throws IOException {
-		Path tempLink = createTempLink();
-		assertTrue(SymbolicLinkHelper.isSymbolicLink(tempLink.toString()));
+		if (SymlinkUtil.getInstance().isSupported()) {
+			Path tempLink = createTempLink();
+			assertTrue(SymbolicLinkHelper.isSymbolicLink(tempLink.toString()));
+		}
 	}
 	
 	/**
@@ -113,13 +116,15 @@ public class SymbolicLinkHelperTest {
 	 */
 	@Test
 	public void testLastModifiedTime() throws IOException {
-		Path tempLink = createTempLink();
-		// Modified should be the link time not the real
-		// file and we do not follow the link
-		assertTrue("There are more than 5 milliseconds between the last modified times of <"
-				+ tempLink + "> and its target",
-			Files.getLastModifiedTime(tempLink).toMillis()-10 <
-			SymbolicLinkHelper.getLastModifiedTime(tempLink.toString()));
+		if (SymlinkUtil.getInstance().isSupported()) {
+			Path tempLink = createTempLink();
+			// Modified should be the link time not the real
+			// file and we do not follow the link
+			assertTrue("There are more than 5 milliseconds between the last modified times of <"
+							+ tempLink + "> and its target",
+					Files.getLastModifiedTime(tempLink).toMillis() - 10 <
+							SymbolicLinkHelper.getLastModifiedTime(tempLink.toString()));
+		}
 	}
 	
 	/**
@@ -129,10 +134,12 @@ public class SymbolicLinkHelperTest {
 	 */
 	@Test
 	public void testReadSymbolicLink() throws IOException {
-		Path tempLink = createTempLink();
-		assertEquals(
-			tempFile.toString(),
-			SymbolicLinkHelper.readSymbolicLink(tempLink.toString()));
+		if (SymlinkUtil.getInstance().isSupported()) {
+			Path tempLink = createTempLink();
+			assertEquals(
+					tempFile.toString(),
+					SymbolicLinkHelper.readSymbolicLink(tempLink.toString()));
+		}
 	}
 	
 	/**
@@ -204,15 +211,17 @@ public class SymbolicLinkHelperTest {
 	 */
 	@Test
 	public void testExists() throws IOException {
-		Path tempLink = createTempLink();
-		assertTrue(SymbolicLinkHelper.exists(tempLink.toString()));
-		tempFile.toFile().delete();
-		// We don't follow the link so when the file is deleted 
-		// it should still exist
-		assertTrue(SymbolicLinkHelper.exists(tempLink.toString()));
-		// By default the files method does follow links so this
-		// should be false
-		assertFalse(Files.exists(tempLink));
+		if (SymlinkUtil.getInstance().isSupported()) {
+			Path tempLink = createTempLink();
+			assertTrue(SymbolicLinkHelper.exists(tempLink.toString()));
+			tempFile.toFile().delete();
+			// We don't follow the link so when the file is deleted
+			// it should still exist
+			assertTrue(SymbolicLinkHelper.exists(tempLink.toString()));
+			// By default the files method does follow links so this
+			// should be false
+			assertFalse(Files.exists(tempLink));
+		}
 	}
 	
 	/**
@@ -242,15 +251,17 @@ public class SymbolicLinkHelperTest {
 	 */
 	@Test
 	public void testCreate() throws IOException {
-		Path path =
-			Paths.get(
-				tempFile.getParent().toString(), 
-				RandomStringUtils.randomNumeric(10));
-		String linkPath = SymbolicLinkHelper.createSymbolicLink(
-				path.toString(),
-				tempFile.toString());
-		path.toFile().deleteOnExit();
-		assertTrue(SymbolicLinkHelper.isSymbolicLink(linkPath));
+		if (SymlinkUtil.getInstance().isSupported()) {
+			Path path =
+					Paths.get(
+							tempFile.getParent().toString(),
+							RandomStringUtils.randomNumeric(10));
+			String linkPath = SymbolicLinkHelper.createSymbolicLink(
+					path.toString(),
+					tempFile.toString());
+			path.toFile().deleteOnExit();
+			assertTrue(SymbolicLinkHelper.isSymbolicLink(linkPath));
+		}
 	}
 	
 	/**
@@ -261,14 +272,20 @@ public class SymbolicLinkHelperTest {
 	@Test
 	public void testMove() throws IOException {
 		Path path =
-			Paths.get(
-				tempFile.getParent().toString(), 
-				RandomStringUtils.randomNumeric(10));
+				Paths.get(
+						tempFile.getParent().toString(),
+						RandomStringUtils.randomNumeric(10));
 		String linkPath = SymbolicLinkHelper.move(
 				path.toString(),
 				tempFile.toString());
 		path.toFile().deleteOnExit();
-		assertTrue(SymbolicLinkHelper.isSymbolicLink(linkPath));
+
+		// p4ic4idea: NOTE: OS specific test and additionally OS setup specific; not good practice.
+		if (SymlinkUtil.getInstance().isSupported()) {
+			assertTrue(SymbolicLinkHelper.isSymbolicLink(linkPath));
+		} else {
+			assertFalse(SymbolicLinkHelper.isSymbolicLink(linkPath));
+		}
 	}
 	
 	/**
@@ -288,6 +305,10 @@ public class SymbolicLinkHelperTest {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private Path createTempLink() throws IOException {
+		if (!SymlinkUtil.getInstance().isSupported()) {
+			throw new RuntimeException("Invalid usage: called createTempLink without checking if it's supported.");
+		}
+
 		Path tempLink =
 			Files.createSymbolicLink(
 				Paths.get(tempFile.getParent().toString(), 

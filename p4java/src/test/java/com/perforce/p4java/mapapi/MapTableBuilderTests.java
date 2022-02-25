@@ -2,13 +2,16 @@ package com.perforce.p4java.mapapi;
 
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.tests.SimpleServerRule;
+import com.perforce.p4java.tests.UnicodeServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
 
+// @Ignore("p4ic4idea: SimpleServerRule crashes for some Linux setups")
 public class MapTableBuilderTests extends P4JavaRshTestCase {
 
     @ClassRule

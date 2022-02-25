@@ -19,10 +19,10 @@ import java.util.regex.Pattern
 class IdeaVersion203 implements IdeaVersionLibMatcher {
     private static final LibGroup libs = new LibGroup().add(
             new NamedLib("openapi",
-                    //"intellij.platform.util.rt.jar"
+                    "intellij.platform.util.rt.jar"
             ),
             new NamedLib("core-api",
-                    //"intellij.platform.core.jar"
+                    "intellij.platform.core.jar"
             ),
             new NamedLib("core-impl",
                     // Should only be used by tests, but no longer needed.
@@ -31,18 +31,18 @@ class IdeaVersion203 implements IdeaVersionLibMatcher {
                     //"intellij.platform.vcs.core.jar"
             ),
             new NamedLib("vcs-api",
-                    //"intellij.platform.vcs.jar",
+                    "intellij.platform.vcs.jar",
 
                     // Strange that
                     //   com.intellij.openapi.vfs.LocalFileSystem
                     // is now in the analysis jar.
-                    //"intellij.platform.analysis.jar"
+                    "intellij.platform.analysis.jar"
             ),
             new NamedLib("vcs-impl",
                     //"intellij.platform.vcs.impl.jar",
             ),
             new NamedLib("platform-api",
-                    //"intellij.platform.ide.jar"
+                    "intellij.platform.ide.jar"
             ),
             new NamedLib("platform-impl",
                     //"intellij.platform.ide.impl.jar",
@@ -51,10 +51,10 @@ class IdeaVersion203 implements IdeaVersionLibMatcher {
                     // No longer needed
             ),
             new NamedLib("extensions",
-                    //"intellij.platform.extensions.jar"
+                    "intellij.platform.extensions.jar"
             ),
             new NamedLib("util",
-                    //"intellij.platform.util.jar",
+                    "intellij.platform.util.jar",
                     //"intellij.platform.util.classLoader.jar",
             ),
             new NamedLib("util-ui",
@@ -107,6 +107,7 @@ class IdeaVersion203 implements IdeaVersionLibMatcher {
             ),
             new NamedLib("picocontainer",
                     // Note: This is ONLY used by tests.
+                    // Now, this is included in intellij.platform.extensions.jar
                     //"picocontainer-1.2.jar"
             ),
             new NamedLib("trove4j",
@@ -119,7 +120,7 @@ class IdeaVersion203 implements IdeaVersionLibMatcher {
                     //"forms-1.1-preview.jar"
             ),
             new NamedLib("annotations",
-                    //"annotations-java5-20.0.0.jar"
+                    "annotations-java5-20.0.0.jar"
             ),
     )
 

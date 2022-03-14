@@ -36,7 +36,7 @@ public class ErrorCollectors {
 
     public static <R>
     Collector<P4CommandRunner.ActionAnswer<R>, Answer<R>, Answer<R>>
-    collectActionErrors(@NotNull final List<VcsException> errors) {
+    collectActionErrors(@NotNull final List<? super VcsException> errors) {
         return new Collector<P4CommandRunner.ActionAnswer<R>, Answer<R>, Answer<R>>() {
             @Override
             public Supplier<Answer<R>> supplier() {

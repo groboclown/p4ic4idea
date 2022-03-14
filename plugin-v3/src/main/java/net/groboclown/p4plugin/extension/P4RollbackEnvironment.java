@@ -56,13 +56,15 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
         this.project = vcs.getProject();
     }
 
+    @NotNull
     @Override
     public String getRollbackOperationName() {
         return P4Bundle.message("rollback.action.name");
     }
 
     @Override
-    public void rollbackChanges(List<Change> changes, List<VcsException> vcsExceptions, @NotNull RollbackProgressListener listener) {
+    public void rollbackChanges(List<? extends Change> changes, List<VcsException> vcsExceptions,
+            @NotNull RollbackProgressListener listener) {
         if (changes == null || changes.isEmpty() || project.isDisposed()) {
             return;
         }
@@ -132,12 +134,14 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
     }
 
     @Override
-    public void rollbackMissingFileDeletion(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
+    public void rollbackMissingFileDeletion(List<? extends FilePath> files, List<? super VcsException> exceptions,
+            RollbackProgressListener listener) {
         forceSync(files, exceptions, listener);
     }
 
     @Override
-    public void rollbackModifiedWithoutCheckout(List<VirtualFile> files, List<VcsException> exceptions, RollbackProgressListener listener) {
+    public void rollbackModifiedWithoutCheckout(List<? extends VirtualFile> files,
+            List<? super VcsException> exceptions, RollbackProgressListener listener) {
         List<FilePath> paths = new ArrayList<>(files.size());
         for (VirtualFile vf: files) {
             paths.add(VcsUtil.getFilePath(vf));
@@ -182,7 +186,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
      * @param exceptions exceptions encountered
      * @param listener listener on progress
      */
-    private void forceSync(List<FilePath> files, List<VcsException> exceptions, RollbackProgressListener listener) {
+    private void forceSync(List<? extends FilePath> files, List<? super VcsException> exceptions, RollbackProgressListener listener) {
         if (files.isEmpty() || project.isDisposed()) {
             return;
         }
@@ -204,7 +208,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
     }
 
     private Set<Map.Entry<ClientConfigRoot, List<FilePath>>> groupFilesByClient(@NotNull final ProjectConfigRegistry registry,
-            @NotNull final List<FilePath> files) {
+            @NotNull final List<? extends FilePath> files) {
         // Note: can't use files.stream().collect(Collectors.groupingBy(registry::getClientFor))
         // because the root might be null for a file, and the groupingBy doesn't allow for null keys.
         // See #195.

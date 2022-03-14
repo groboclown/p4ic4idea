@@ -15,7 +15,6 @@
 package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -89,7 +88,6 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
                                     new FetchFilesAction(Collections.singletonList(rootPath), null, false))
                             .blockingGet(UserProjectPreferences.getLockWaitTimeoutMillis(project),
                                     TimeUnit.MILLISECONDS);
-                    progressIndicator.finishNonCancelableSection();
                     synchronized (sync) {
                         res = r;
                     }
@@ -98,7 +96,8 @@ public class P4CheckoutProvider extends CheckoutProviderEx {
                             new VcsInterruptedException(e)));
                     onCancel();
                 } catch (P4CommandRunner.ServerResultException e) {
-                    VcsNotifier.getInstance(project).notifyError(P4Bundle.getString("checkout.config.error.title"),
+                    VcsNotifier.getInstance(project).notifyError(null, P4Bundle.getString("checkout.config.error"
+                                    + ".title"),
                             e.getMessage());
                     synchronized (sync) {
                         res = null;

@@ -18,7 +18,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,9 +30,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.common.function.Function;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
@@ -75,9 +73,9 @@ public class AttributeDelegatorTest {
         server = mock(OneShotServerImpl.class);
         attributeDelegator = new AttributeDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        fileSpecs = Lists.newArrayList();
+        fileSpecs = new ArrayList<>();
         mockFileSpec = mock(IFileSpec.class);
         fileSpecs.add(mockFileSpec);
 
@@ -103,7 +101,7 @@ public class AttributeDelegatorTest {
             throws InvocationTargetException, IllegalAccessException, P4JavaException {
         // given
         buildSetFileAttributesFileSpecsFromCommandResultMaps_shouldReturnEmptyList(
-                () -> resultMaps = Lists.newArrayList());
+                () -> resultMaps = new ArrayList<>());
     }
 
     @Test
@@ -234,7 +232,7 @@ public class AttributeDelegatorTest {
     }
 
     private Map<String, String> createTestAttributes() {
-        Map<String, String> attributes = Maps.newHashMap();
+        Map<String, String> attributes = new HashMap<>();
         attributes.put("owner", "seans");
         attributes.put("modifyTime", "2016-09-22 17:00");
         attributes.put("readOnly", "true");

@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.server.CmdSpec.DISKSPACE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -8,6 +7,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -42,9 +43,9 @@ public class DiskspaceDelegatorTest {
         server = mock(Server.class);
         diskspaceDelegator = new DiskspaceDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        mockFileSpecs = newArrayList();
+        mockFileSpecs = new ArrayList<>();
         mockFileSpec = mock(IFileSpec.class);
         mockFileSpecs.add(mockFileSpec);
     }
@@ -58,7 +59,7 @@ public class DiskspaceDelegatorTest {
     public void testGetDiskSpace() throws Exception {
         //given
         String[] cmdArgs = {"-f", "-s"};
-        List<String> filesystems = newArrayList(cmdArgs);
+        List<String> filesystems = Arrays.asList(cmdArgs);
         when(server.execMapCmdList(eq(DISKSPACE.toString()), eq(cmdArgs), eq(null))).thenReturn(
                 resultMaps);
         //when

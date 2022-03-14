@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FMT0;
 import static com.perforce.p4java.server.CmdSpec.PROTECT;
@@ -50,7 +49,7 @@ public class ProtectDelegatorTest {
     public void beforeEach() {
         server = mock(Server.class);
         protectDelegator = new ProtectDelegator(server);
-        entryList = newArrayList();
+        entryList = List.of();
     }
 
     @Test

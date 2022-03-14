@@ -6,35 +6,29 @@ plugins {
 version '1.6'
 
 ideaImplementation.uses(
-        'openapi',
-        'core-api',
-        'annotations',
-        'vcs-api-core',
-        'vcs-api',
-        'platform-api',
+        'core',
+        'core-ui',
+        'vcs-core',
+        'vcs',
+        'ide',
         'util',
         'util-ui',
         'util-rt',
         'editor-ui-api',
         'extensions',
-        'jdom',
-        'forms_rt',
-        'jgoodies-forms',
-        'projectModel-api',
+        'guiforms-rt',
+        'concurrency',
 
         // Look at getting rid of the "impl" dependencies
-        'platform-impl',
         'vcs-impl',
-        'core-impl'
+        'ide-impl',
+
+        'annotations',
+        'jdom',
+        'jgoodies-forms',
 )
 
 ideaTest.uses(
-        'testFramework',
-        'java-psi-impl',
-        'java-runtime',
-        'lang-api',
-        'lang-impl',
-        'trove4j'
 )
 
 configurations {
@@ -58,15 +52,15 @@ dependencies {
             project(':swarm')
     )
     compatTest(
-            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
-            'org.junit.platform:junit-platform-runner:1.6.2',
-            'org.junit.platform:junit-platform-commons:1.6.2',
-            'org.junit.platform:junit-platform-engine:1.6.2',
-            'org.junit.platform:junit-platform-launcher:1.6.2',
-            'org.junit.platform:junit-platform-suite-api:1.6.2',
-            'org.junit.vintage:junit-vintage-engine:5.6.2',
-            'org.hamcrest:hamcrest-core:1.3',
-            'org.mockito:mockito-core:2.0.86-beta',
+            'org.junit.jupiter:junit-jupiter-engine:5.8.2',
+            'org.junit.platform:junit-platform-runner:1.8.2',
+            'org.junit.platform:junit-platform-commons:1.8.2',
+            'org.junit.platform:junit-platform-engine:1.8.2',
+            'org.junit.platform:junit-platform-launcher:1.8.2',
+            'org.junit.platform:junit-platform-suite-api:1.8.2',
+            'org.junit.vintage:junit-vintage-engine:5.8.2',
+            'org.hamcrest:hamcrest-core:2.2',
+            'org.mockito:mockito-core:4.3.1',
             project(':p4d-test-core'),
             project(':idea-test-core'),
             project(path: ':idea-p4server:api', configuration: 'testArtifacts'),

@@ -606,10 +606,7 @@ public class P4ChangeProvider
 
                 // TODO unversioned files should be susceptible to the P4IGNORE settings.
 
-                // This is deprecated in >v193, which introduced the new method
-                // that takes a FilePath.  Earlier versions don't have that
-                // method.
-                builder.processUnversionedFile(dirtyFile.getVirtualFile());
+                builder.processUnversionedFile(dirtyFile);
             }
         }
     }

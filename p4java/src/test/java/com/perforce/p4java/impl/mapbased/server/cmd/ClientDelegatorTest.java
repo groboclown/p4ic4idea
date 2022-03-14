@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.client.IClient;
 import com.perforce.p4java.client.IClientSummary;
 import com.perforce.p4java.common.function.BiPredicate;
@@ -60,7 +59,7 @@ public class ClientDelegatorTest {
         server = mock(Server.class);
         clientDelegator = spy(new ClientDelegator(server));
         resultMap = mock(Map.class);
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
         mockClient = mock(IClient.class);
         when(mockClient.getName()).thenReturn(clientName);
         clientSummary = mock(IClientSummary.class);

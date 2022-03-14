@@ -61,7 +61,7 @@ public abstract class BooleanColumnInfo<Item> extends ColumnInfo<Item, Boolean> 
         if (editable) {
             synchronized (BooleanColumnInfo.class) {
                 if (EDITABLE_CELL_WIDTH == -2) {
-                    BooleanTableCellEditor cell = new BooleanTableCellEditor(false);
+                    BooleanTableCellEditor cell = new BooleanTableCellEditor();
                     Component renderer = cell.getTableCellEditorComponent(table, Boolean.TRUE, true, 0, 0);
                     EDITABLE_CELL_WIDTH = renderer.getWidth();
                     if (EDITABLE_CELL_WIDTH <= 0) {

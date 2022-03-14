@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.VALUE;
@@ -21,9 +20,7 @@ import java.util.Map;
 import com.perforce.p4java.server.IOptionsServer;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import com.nitorcreations.junit.runners.NestedRunner;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.GetKeysOptions;
@@ -32,7 +29,6 @@ import com.perforce.p4java.option.server.GetKeysOptions;
  * @author Sean Shou
  * @since 27/09/2016
  */
-@RunWith(NestedRunner.class)
 public class KeysDelegatorTest {
     private static final String KEY_NAME = "testKey";
     private static final String KEY_VALUE = "testValue";
@@ -54,7 +50,7 @@ public class KeysDelegatorTest {
         keysDelegator = new KeysDelegator(server);
         // p4ic4idea: just use a hashmap, as it allows the isEmpty and other calls to work as expected.
         resultMap = new HashMap<>();
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
         opts = new GetKeysOptions(KEYS_ARGUMENTS);
     }
@@ -66,43 +62,37 @@ public class KeysDelegatorTest {
     }
 
     /**
-     * Test getKeys()
+     * Test getKeys() by <code>GetKeysOptions</code>.
+     * <p>
+     * It's expected thrown <code>ConnectionException</code> when inner call thrown 'any' exception.
      *
-     * @throws Exception
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
      */
-    public class TestGetKeys {
-        /**
-         * Test getKeys() by <code>GetKeysOptions</code>.
-         * <p>
-         * It's expected thrown <code>ConnectionException</code> when inner call thrown 'any' exception.
-         *
-         * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-         */
-        @Test(expected = ConnectionException.class)
-        public void shouldThrowConnectionExceptionWhenInnerMethodCallThrowsIt() throws Exception {
-            doThrow(ConnectionException.class)
-                    .when(server)
-                    .execMapCmdList(eq(KEYS.toString()), eq(KEYS_ARGUMENTS), eq(null));
-            keysDelegator.getKeys(opts);
-            verify(resultMap, never()).get(E_INFO);
-        }
-
-        /**
-         * It's expected return non empty keys map
-         *
-         * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-         */
-        @Test
-        public void shouldReturnNonEmptyKeysMap() throws Exception {
-            //given
-            populateResultMap();
-            when(server.execMapCmdList(eq(KEYS.toString()), eq(KEYS_ARGUMENTS), eq(null)))
-                    .thenReturn(resultMaps);
-            //when
-            Map<String, String> keys = keysDelegator.getKeys(opts);
-            //then
-            assertThat(keys.size(), is(1));
-            assertThat(keys.get(KEY_NAME), is(KEY_VALUE));
-        }
+    @Test(expected = ConnectionException.class)
+    public void shouldThrowConnectionExceptionWhenInnerMethodCallThrowsIt() throws Exception {
+        doThrow(ConnectionException.class)
+                .when(server)
+                .execMapCmdList(eq(KEYS.toString()), eq(KEYS_ARGUMENTS), eq(null));
+        keysDelegator.getKeys(opts);
+        verify(resultMap, never()).get(E_INFO);
     }
+
+    /**
+     * It's expected return non empty keys map
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test
+    public void shouldReturnNonEmptyKeysMap() throws Exception {
+        //given
+        populateResultMap();
+        when(server.execMapCmdList(eq(KEYS.toString()), eq(KEYS_ARGUMENTS), eq(null)))
+                .thenReturn(resultMaps);
+        //when
+        Map<String, String> keys = keysDelegator.getKeys(opts);
+        //then
+        assertThat(keys.size(), is(1));
+        assertThat(keys.get(KEY_NAME), is(KEY_VALUE));
+    }
+
 }

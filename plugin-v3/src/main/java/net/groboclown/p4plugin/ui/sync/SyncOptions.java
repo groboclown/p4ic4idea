@@ -19,6 +19,8 @@ import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public final class SyncOptions {
     private static final int INVALID_REV = Integer.MIN_VALUE;
 
@@ -138,7 +140,7 @@ public final class SyncOptions {
         SyncOptions that = (SyncOptions) obj;
         return this.type == that.type &&
                 Comparing.equal(this.rev, that.rev) &&
-                Comparing.equal(this.other, that.other) &&
+                Objects.equals(this.other, that.other) &&
                 this.force == that.force;
     }
 

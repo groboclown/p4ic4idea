@@ -21,12 +21,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsNotifier;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4plugin.P4Bundle;
@@ -40,8 +38,6 @@ import javax.annotation.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SyncProjectDialog {
     private final Project project;
@@ -171,7 +167,7 @@ public class SyncProjectDialog {
     }
 
     private void notifyError(@Nls(capitalization = Nls.Capitalization.Sentence) String message) {
-        VcsNotifier.getInstance(project).notifyError(P4Bundle.getString("checkout.config.error.title"), message);
+        VcsNotifier.getInstance(project).notifyError(null, P4Bundle.getString("checkout.config.error.title"), message);
     }
 
     @NotNull

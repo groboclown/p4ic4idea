@@ -2,7 +2,6 @@ package com.perforce.p4java.impl.mapbased.server.cmd;
 
 import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.server.CmdSpec.INTERCHANGES;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -24,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IChangelist;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -59,7 +57,7 @@ public class InterchangesDelegatorTest {
         server = mock(IOptionsServer.class);
         interchangesDelegator = new InterchangesDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
         mockFromFile = mock(IFileSpec.class);
         mockToFile = mock(IFileSpec.class);
@@ -213,7 +211,7 @@ public class InterchangesDelegatorTest {
         when(resultMap.get("change")).thenReturn("10");
         // when
         List<IChangelist> changelists = interchangesDelegator.getInterchanges("myBranch",
-                Lists.newArrayList(mockFromFile), Lists.newArrayList(mockToFile), mockOpts);
+                List.of(mockFromFile), List.of(mockToFile), mockOpts);
         // then
         assertEquals(1, changelists.size());
         assertEquals(10, changelists.get(0).getId());
@@ -239,7 +237,7 @@ public class InterchangesDelegatorTest {
                 eq(null))).thenReturn(resultMaps);
         when(resultMap.get("change")).thenReturn("10");
         List<IChangelist> interchanges = interchangesDelegator.getInterchanges("myBranch",
-                Lists.newArrayList(mockFromFile), Lists.newArrayList(mockToFile), true, true, 100,
+                List.of(mockFromFile), List.of(mockToFile), true, true, 100,
                 true, true);
         // then
         assertEquals(1, interchanges.size());
@@ -515,7 +513,7 @@ public class InterchangesDelegatorTest {
         when(server.execMapCmdList(eq(INTERCHANGES.toString()), any(String[].class), eq(null)))
                 .thenThrow(thrownException);
         assertThrows(expectedThrows, () -> interchangesDelegator.getInterchanges("myBranch",
-                Lists.newArrayList(mockFromFile), Lists.newArrayList(mockToFile), true, true, 100,
+                List.of(mockFromFile), List.of(mockToFile), true, true, 100,
                 true, true));
     }
 }

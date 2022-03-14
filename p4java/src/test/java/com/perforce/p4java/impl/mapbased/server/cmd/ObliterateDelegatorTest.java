@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.core.file.FileSpecOpStatus.VALID;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CLIENT_REC_DELETED;
@@ -23,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -73,9 +73,9 @@ public class ObliterateDelegatorTest {
 
         resultMap = mock(Map.class);
         resultMap2 = mock(Map.class);
-        resultMaps = newArrayList(resultMap, resultMap2);
+        resultMaps = List.of(resultMap, resultMap2);
 
-        fileSpecs = newArrayList();
+        fileSpecs = new ArrayList<>();
         IFileSpec fileSpec = mock(IFileSpec.class);
         when(fileSpec.getOpStatus()).thenReturn(VALID);
         when(fileSpec.getAnnotatedPreferredPathString()).thenReturn(FILE_DEPOT_PATH);

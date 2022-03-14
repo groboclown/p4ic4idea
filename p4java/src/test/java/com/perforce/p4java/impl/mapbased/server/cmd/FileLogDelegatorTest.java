@@ -1,7 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
 import static com.perforce.p4java.core.file.FileSpecOpStatus.ERROR;
 import static com.perforce.p4java.core.file.FileSpecOpStatus.VALID;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
@@ -23,17 +21,16 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
-import com.perforce.p4java.AbstractP4JavaUnitTest;
 import com.perforce.p4java.core.file.IFileRevisionData;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.AccessException;
@@ -41,7 +38,7 @@ import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
 import com.perforce.p4java.impl.mapbased.server.Server;
 import com.perforce.p4java.option.server.GetRevisionHistoryOptions;
-import com.perforce.p4java.tests.UnitTestGivenThatWillThrowException;
+
 /**
  * @author Sean Shou
  * @since 23/09/2016
@@ -73,16 +70,16 @@ public class FileLogDelegatorTest {
         //fileLogDelegator = spy(new FileLogDelegator(server));
         fileLogDelegator = new FileLogDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        mockFileSpecs = newArrayList();
+        mockFileSpecs = new ArrayList<>();
         mockFileSpec = mock(IFileSpec.class);
         mockFileSpecs.add(mockFileSpec);
 
         mockOpts = mock(GetRevisionHistoryOptions.class);
 
         mockFileRevisionData = mock(List.class);
-        mockFileRevisionDataMap = newHashMap();
+        mockFileRevisionDataMap = new HashMap<>();
         mockFileRevisionDataMap.put(mockFileSpec, mockFileRevisionData);
     }
 

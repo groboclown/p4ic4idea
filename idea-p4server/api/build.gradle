@@ -6,27 +6,36 @@ plugins {
 
 
 ideaApi.uses(
-        'openapi',
-        'core-api',
-        'annotations',
-        'vcs-api-core',
-        'vcs-api',
+        'core',
+        'vcs-core',
+        'vcs',
+        'ide',
+        'analysis',
+        'project-model',
+        'util-io',
+        'util-classloader',
+        'util-strings',
 
-        'platform-api',
-        'projectModel-api'
+        'annotations',
 )
 ideaImplementation.uses(
         // Look at how to pull in dependent libraries...
         'extensions',
         'util',
         'util-rt',
+        'core-impl',
 
         'jdom',
-        'picocontainer',
+        'fastutil',
         'trove4j',
+        'intellij-util-collections',
+        'kotlin-stdlib',
 )
 ideaTest.uses(
-        'kotlin'
+        'fastutil',
+        'trove4j',
+        'util-collections',
+        'kotlin-stdlib',
 )
 
 dependencies {
@@ -40,23 +49,33 @@ dependencies {
             project(':idea-test-core'),
 
             // TODO pull in the test jars from the test-core as part of the build.
-            'junit:junit:4.12',
-            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
-            'org.junit.platform:junit-platform-runner:1.6.2',
-            'org.junit.platform:junit-platform-commons:1.6.2',
-            'org.junit.platform:junit-platform-engine:1.6.2',
-            'org.junit.platform:junit-platform-launcher:1.6.2',
-            'org.junit.platform:junit-platform-suite-api:1.6.2',
-            'org.junit.vintage:junit-vintage-engine:5.6.2',
-            'org.opentest4j:opentest4j:1.0.0',
-            'org.apiguardian:apiguardian-api:1.1.0',
-            'net.bytebuddy:byte-buddy:1.8.0',
-            'org.objenesis:objenesis:2.6',
+            'junit:junit:4.13.2',
+            'org.junit.jupiter:junit-jupiter-engine:5.8.2',
+            'org.junit.platform:junit-platform-runner:1.8.2',
+            'org.junit.platform:junit-platform-commons:1.8.2',
+            'org.junit.platform:junit-platform-engine:1.8.2',
+            'org.junit.platform:junit-platform-launcher:1.8.2',
+            'org.junit.platform:junit-platform-suite-api:1.8.2',
+            'org.junit.vintage:junit-vintage-engine:5.8.2',
+            'org.opentest4j:opentest4j:1.2.0',
+            'org.apiguardian:apiguardian-api:1.1.2',
+            'net.bytebuddy:byte-buddy:1.12.7',
+            'org.objenesis:objenesis:3.2',
+    )
+
+    jacocoAnt (
+            'org.jacoco:org.jacoco.core:0.8.7',
+            'org.jacoco:org.jacoco.report:0.8.7',
+            'org.jacoco:org.jacoco.agent:0.8.7',
+            'org.jacoco:org.jacoco.ant:0.8.7',
+            'org.ow2.asm:asm:9.2',
+            'org.ow2.asm:asm-commons:9.2',
+            'org.ow2.asm:asm-tree:9.2',
     )
 }
 
 jacoco {
-    toolVersion = '0.8.1'
+    toolVersion = '0.8.7'
 }
 
 jacocoTestReport {

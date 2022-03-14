@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.server.CmdSpec.PROTECTS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -64,7 +63,7 @@ public class ProtectsDelegatorTest {
         protectsDelegator = new ProtectsDelegator(server);
         Map<String, Object> resultMap = mock(Map.class);
         Map<String, Object> resultMap2 = mock(Map.class);
-        resultMaps = newArrayList(resultMap, resultMap2);
+        resultMaps = List.of(resultMap, resultMap2);
 
         fileSpecs = FileSpecBuilder.makeFileSpecList(TEST_FILE_DEPOT_PATH);
 

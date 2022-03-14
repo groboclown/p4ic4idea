@@ -80,6 +80,7 @@ public interface ISingleServerMessage {
      * @return true if the fragment is in the message.
      * @deprecated here until the string matching is eliminated
      */
+    @Deprecated
     boolean hasMessageFragment(String fragment);
 
     /**

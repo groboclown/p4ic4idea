@@ -13,7 +13,7 @@
  */
 package net.groboclown.p4plugin;
 
-import com.intellij.CommonBundle;
+import com.intellij.AbstractBundle;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
@@ -38,7 +38,7 @@ public class P4Bundle {
     public static String message(
             @Nls
             @PropertyKey(resourceBundle = BUNDLE) String key, Object... params) {
-        return CommonBundle.message(getBundle(), key, params);
+        return AbstractBundle.message(getBundle(), key, params);
     }
 
     @NonNls
@@ -58,7 +58,7 @@ public class P4Bundle {
         if (ourBundle != null) bundle = ourBundle.get();
         if (bundle == null) {
             bundle = ResourceBundle.getBundle(BUNDLE);
-            ourBundle = new SoftReference<ResourceBundle>(bundle);
+            ourBundle = new SoftReference<>(bundle);
         }
         return bundle;
     }

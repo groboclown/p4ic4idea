@@ -20,12 +20,14 @@ import com.intellij.openapi.vcs.actions.VcsContext;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.NotNullFunction;
+import net.groboclown.idea.altmock.MockFilePath;
 import org.jetbrains.annotations.NotNull;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 
 import java.io.File;
+import java.nio.file.Path;
+
 
 public class MockVcsContextFactory implements VcsContextFactory {
     @NotNull
@@ -64,15 +66,9 @@ public class MockVcsContextFactory implements VcsContextFactory {
         return new IOFilePath(file, isDirectory);
     }
 
-    // Only declared in 171, so comment out Override
-    @Deprecated
-    @NotNull
-    //@Override
-    public FilePath createFilePathOn(@NotNull File file, @NotNull NotNullFunction<File, Boolean> notNullFunction) {
-        return new IOFilePath(file,
-                file.exists() ? file.isDirectory() :
-                        notNullFunction.fun(file)
-        );
+    @Override
+    public @NotNull FilePath createFilePath(@NotNull Path path, boolean isDirectory) {
+        return new MockFilePath(path.toFile());
     }
 
     @NotNull

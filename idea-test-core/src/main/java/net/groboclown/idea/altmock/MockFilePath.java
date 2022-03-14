@@ -65,9 +65,8 @@ public class MockFilePath implements FilePath {
     }
 
     @Deprecated
-    @Nullable
     @Override
-    public Document getDocument() {
+    public @Nullable Document getDocument() {
         return null;
     }
 

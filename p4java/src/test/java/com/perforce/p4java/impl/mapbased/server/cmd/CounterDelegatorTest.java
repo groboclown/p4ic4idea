@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -56,9 +55,9 @@ public class CounterDelegatorTest {
         mockCounterOptions = mock(CounterOptions.class);
 
         resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        mockFileSpecs = newArrayList();
+        mockFileSpecs = new ArrayList<>();
         mockFileSpec = mock(IFileSpec.class);
         mockFileSpecs.add(mockFileSpec);
     }

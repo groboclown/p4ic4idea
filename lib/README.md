@@ -5,7 +5,7 @@ This project includes all library dependencies under this directory.  Each inclu
 
 # IntelliJ Dependencies
 
-The directories with numbers (e.g. [183](183)) are that version of the IntelliJ jars used by this project to build.
+The directories with numbers (e.g. [183](o183)) are that version of the IntelliJ jars used by this project to build.
 
 These jars were built from source pulled from the IntelliJ community project.
 

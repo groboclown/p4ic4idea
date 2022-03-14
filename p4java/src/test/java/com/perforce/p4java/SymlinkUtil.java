@@ -1,4 +1,3 @@
-// Copyright (C) Zilliant, Inc.
 package com.perforce.p4java;
 
 import com.perforce.p4java.tests.dev.unit.P4JavaTestCase;

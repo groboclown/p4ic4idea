@@ -70,7 +70,7 @@ public class SearchSelectPanel<T> extends JPanel {
             listener.selectionCount(count);
         };
 
-        ColumnInfo[] columnArray = new ColumnInfo[columns.size() + 1];
+        ColumnInfo<?, ?>[] columnArray = new ColumnInfo[columns.size() + 1];
         columnArray[0] = new BooleanColumnInfo<SelectedItem<T>>(P4Bundle.getString("search-select.column.selected"), true) {
             @Override
             protected boolean booleanValue(SelectedItem<T> o) {
@@ -96,7 +96,7 @@ public class SearchSelectPanel<T> extends JPanel {
         tableModel = new ListTableModel<>(columnArray);
 
         final JBTable table = new JBTable(tableModel);
-        table.getColumnModel().getColumn(0).setCellEditor(new BooleanTableCellEditor(false, SwingConstants.CENTER));
+        table.getColumnModel().getColumn(0).setCellEditor(new BooleanTableCellEditor());
         table.getColumnModel().getColumn(0).setCellRenderer(new BooleanTableCellRenderer(SwingConstants.CENTER));
         this.add(new JBScrollPane(table), BorderLayout.CENTER);
         this.add(table.getTableHeader(), BorderLayout.NORTH);
@@ -202,75 +202,91 @@ public class SearchSelectPanel<T> extends JPanel {
             this.listener = listener;
         }
 
+        @Override
         @Nullable
         public Icon getIcon() {
             return proxy.getIcon();
         }
 
+        @Override
         @Nullable
         public Aspect valueOf(SelectedItem<T> o) {
             return proxy.valueOf(o.value);
         }
 
+        @Override
         @Nullable
         public Comparator<SelectedItem<T>> getComparator() {
             return new SelectedOrderComparator<>(proxy.getComparator());
         }
 
+        @Override
         public Class<?> getColumnClass() {
             return proxy.getColumnClass();
         }
 
+        @Override
         public boolean isCellEditable(SelectedItem<T> item) {
             return proxy.isCellEditable(item.value);
         }
 
+        @Override
         public void setValue(SelectedItem<T> item, Aspect value) {
             proxy.setValue(item.value, value);
             listener.run();
         }
 
+        @Override
         @Nullable
         public TableCellRenderer getRenderer(SelectedItem<T> item) {
             return proxy.getRenderer(item.value);
         }
 
+        @Override
         public TableCellRenderer getCustomizedRenderer(SelectedItem<T> o, TableCellRenderer renderer) {
             return proxy.getCustomizedRenderer(o.value, renderer);
         }
 
+        @Override
         @Nullable
         public TableCellEditor getEditor(SelectedItem<T> item) {
             return proxy.getEditor(item.value);
         }
 
+        @Override
         @Nullable
         public String getMaxStringValue() {
             return proxy.getMaxStringValue();
         }
 
+        @Override
         @Nullable
         public String getPreferredStringValue() {
             return proxy.getPreferredStringValue();
         }
 
+        @Override
         public int getAdditionalWidth() {
             return proxy.getAdditionalWidth();
         }
 
+        @Override
         public int getWidth(JTable table) {
             return proxy.getWidth(table);
         }
 
+        @Override
         public void setName(String s) {
             proxy.setName(s);
         }
 
+        @Override
         @Nullable
         public String getTooltipText() {
             return proxy.getTooltipText();
         }
 
+        @Override
         public boolean hasError() {
             return proxy.hasError();
         }

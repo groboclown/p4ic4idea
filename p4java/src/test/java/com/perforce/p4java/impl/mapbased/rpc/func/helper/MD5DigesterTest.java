@@ -69,7 +69,7 @@ public class MD5DigesterTest {
             try (FileWriter winOut = new FileWriter(windowsTestFile)) {
                 normTestFile = File.createTempFile("unix", ".txt");
                 try (FileWriter unixOut = new FileWriter(normTestFile)) {
-                    Iterator<String> iter = IOUtils.lineIterator(contents, Charset.forName("UTF-8"));
+                    Iterator<String> iter = IOUtils.lineIterator(contents, StandardCharsets.UTF_8);
                     while (iter.hasNext()) {
                         String line = iter.next();
                         winOut.write(line + "\r\n");
@@ -127,27 +127,12 @@ public class MD5DigesterTest {
     }
 
     /**
-     * Method: update(String value)
-     */
-    @DisplayName("update(String value) with exception")
-    @Test
-    public void testUpdateString_withException() {
-        String value = "abc123";
-        MessageDigest mockMessageDigest = mock(MessageDigest.class);
-        doThrow(UnsupportedEncodingException.class).when(mockMessageDigest)
-                .update(any(byte[].class));
-        md5Digester.setMessageDigest(mockMessageDigest);
-
-        Assertions.assertThrows(P4JavaError.class, () -> md5Digester.update(value));
-    }
-
-    /**
      * Method: digestFileAs32ByteHex(File file, Charset charset, boolean
      * doesNeedConvertLineEndings)
      */
     @Test
     public void testDigestFileAs32ByteHexForFileCharsetConvertLineEndings() {
-        String actual = md5Digester.digestFileAs32ByteHex(normTestFile, Charset.forName("UTF-8"), true);
+        String actual = md5Digester.digestFileAs32ByteHex(normTestFile, StandardCharsets.UTF_8, true);
         assertThat(actual, is(expectedTestFileMd5));
 
         // FIXME This fails on non-Windows OS
@@ -155,7 +140,7 @@ public class MD5DigesterTest {
         // sees that the native line ending ("\n") is the same as the server line ending
         // (which the ClientLineEnding assumes is \n).
         if (OSUtils.isWindows()) {
-            actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"), true);
+            actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, StandardCharsets.UTF_8, true);
             assertThat(actual, is(expectedTestFileMd5));
         }
     }
@@ -166,11 +151,11 @@ public class MD5DigesterTest {
      */
     @Test
     public void testDigestFileAs32ByteHexForFileCharsetConvertLineEndingsClientLineEnding() {
-        String actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"), false,
+        String actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, StandardCharsets.UTF_8, false,
                 null);
         assertThat(actual, is(expectedTestFileMd5Win));
 
-        actual = md5Digester.digestFileAs32ByteHex(normTestFile, Charset.forName("UTF-8"), false,
+        actual = md5Digester.digestFileAs32ByteHex(normTestFile, StandardCharsets.UTF_8, false,
                 null);
         assertThat(actual, is(expectedTestFileMd5));
     }
@@ -194,12 +179,12 @@ public class MD5DigesterTest {
      */
     @Test
     public void testDigestFileAs32ByteHexForFileCharsetConvertLineEndingsClientLineEndingNonCharset_needConvertLindEnding() {
-        String actual = md5Digester.digestFileAs32ByteHex(normTestFile, Charset.forName("UTF-8"), true,
+        String actual = md5Digester.digestFileAs32ByteHex(normTestFile, StandardCharsets.UTF_8, true,
                 null);
         assertThat(actual, is(expectedTestFileMd5));
 
         // FIXME This fails on non-Windows computers
-        actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"), true,
+        actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, StandardCharsets.UTF_8, true,
                 null);
         //assertThat(actual, is(expectedTestFileMd5));
     }
@@ -212,7 +197,7 @@ public class MD5DigesterTest {
     @Test
     public void testDigestFileAs32ByteHexForFileCharsetConvertLineEndingsClientLineEndingNonCharset_throwException() {
         File dirAsFile = new File(System.getProperty("java.io.tmpdir"));
-        String actual = md5Digester.digestFileAs32ByteHex(dirAsFile, Charset.forName("UTF-8"), true,
+        String actual = md5Digester.digestFileAs32ByteHex(dirAsFile, StandardCharsets.UTF_8, true,
                 null);
         assertNull(actual);
     }
@@ -223,12 +208,12 @@ public class MD5DigesterTest {
      */
     @Test
     public void testDigestFileAs32ByteHexForFileCharsetConvertLineEndingsClientLineEndingNonCharset_nonNullClientLineEnding() {
-        String actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"), true,
+        String actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, StandardCharsets.UTF_8, true,
                 ClientLineEnding.FST_L_CR);
         assertThat(actual,
                 is(expectedTestFileMd5WinNonNullEnding));
 
-        actual = md5Digester.digestFileAs32ByteHex(normTestFile, Charset.forName("UTF-8"), true,
+        actual = md5Digester.digestFileAs32ByteHex(normTestFile, StandardCharsets.UTF_8, true,
                 ClientLineEnding.FST_L_CR);
         assertThat(actual,
                 is(expectedTestFileMd5));
@@ -251,10 +236,10 @@ public class MD5DigesterTest {
      */
     @Test
     public void testDigestFileAs32ByteHex_file_charset() {
-        String actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, Charset.forName("UTF-8"));
+        String actual = md5Digester.digestFileAs32ByteHex(windowsTestFile, StandardCharsets.UTF_8);
         assertThat(actual, is(expectedTestFileMd5Win));
 
-        actual = md5Digester.digestFileAs32ByteHex(normTestFile, Charset.forName("UTF-8"));
+        actual = md5Digester.digestFileAs32ByteHex(normTestFile, StandardCharsets.UTF_8);
         assertThat(actual, is(expectedTestFileMd5));
     }
 

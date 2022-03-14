@@ -619,8 +619,8 @@ public class SimpleConnectionManager implements ConnectionManager {
             return Answer.resolve(null)
                     .futureMap((x, sink) ->
                         ApplicationPasswordRegistry.getInstance().get(serverConfig)
-                            .processed(sink::resolve)
-                            .rejected((t) -> {
+                            .onProcessed(sink::resolve)
+                            .onError((t) -> {
                                 LOG.warn("Problem loading the password", t);
                                 sink.resolve(new OneTimeString(EMPTY_PASSWORD));
                             }));

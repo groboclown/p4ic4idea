@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FROM_FILE;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.TO_FILE;
@@ -24,9 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 
-import com.nitorcreations.junit.runners.NestedRunner;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.P4JavaException;
@@ -39,7 +36,6 @@ import com.perforce.p4java.option.server.MoveFileOptions;
  * @author Sean Shou
  * @since 22/09/2016
  */
-@RunWith(NestedRunner.class)
 public class MoveDelegatorTest {
     private static final String MESSAGE_CODE_IN_INFO_RANGE = "268435456";
     private static final String FROM_FILE_PATH_STRING = "//depot/from/test1.txt";
@@ -74,7 +70,7 @@ public class MoveDelegatorTest {
         moveDelegator = new MoveDelegator(server);
         // p4ic4idea: just use a hashmap, to make debugging easier and allow for correct API.
         resultMap = new HashMap<>();
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
         fromFileSpec = mock(IFileSpec.class);
         toFileSpec = mock(IFileSpec.class);
@@ -88,317 +84,292 @@ public class MoveDelegatorTest {
         when(toFileSpec.getPreferredPath()).thenReturn(toFilePath);
 
         serverVersion = 20161;
+
+        moveFileOptions = new MoveFileOptions(
+                CHANGELIST_ID,
+                LIST_ONLY,
+                FORCE,
+                noClientMove,
+                FILE_TYPE);
+    }
+
+
+    /**
+     * Rule for expected exception verification
+     */
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    /**
+     * Expected throws <code>NullPointerException</code> when fromFile is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void complexShouldThrownNullPointerExceptionWhenFromFileIsNull() throws Exception {
+        //given
+        fromFileSpec = null;
+        //then
+        complexExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
     }
 
     /**
-     * Test moveFile()
+     * Expected throws <code>NullPointerException</code> when fromFile's preferredPath is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
      */
-    public class TestMoveFile {
-        /**
-         * Test moveFile(CHANGELIST_ID, LIST_ONLY, noClientMove, FILE_TYPE, fromFileSpec, toFile)
-         */
-        public class WhenChangelistIdListOnlyNoClientMoveFileTypeFromFileToFileGiven {
-            /**
-             * Rule for expected exception verification
-             */
-            @Rule
-            public ExpectedException thrown = ExpectedException.none();
+    @Test
+    public void complexShouldThrownNullPointerExceptionWhenFromFilePreferredPathIsNull()
+            throws Exception {
+        //given
+        when(fromFileSpec.getPreferredPath()).thenReturn(null);
+        //then
+        complexExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
-            /**
-             * Expected throws <code>NullPointerException</code> when fromFile is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenFromFileIsNull() throws Exception {
-                //given
-                fromFileSpec = null;
-                //then
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>NullPointerException</code> when toFile is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void complexShouldThrownNullPointerExceptionWhenToFileIsNull() throws Exception {
+        //given
+        toFileSpec = null;
+        //then
+        complexExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
-            /**
-             * Expected throws <code>NullPointerException</code> when fromFile's preferredPath is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenFromFilePreferredPathIsNull()
-                    throws Exception {
-                //given
-                when(fromFileSpec.getPreferredPath()).thenReturn(null);
-                //then
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>NullPointerException</code> when toFile's preferredPath is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void complexShouldThrownNullPointerExceptionWhenToFilePreferredPathIsNull()
+            throws Exception {
+        //given
+        when(toFileSpec.getPreferredPath()).thenReturn(null);
+        //then
+        complexExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
-            /**
-             * Expected throws <code>NullPointerException</code> when toFile is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenToFileIsNull() throws Exception {
-                //given
-                toFileSpec = null;
-                //then
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>RequestException</code> when server version is less than 20091
+     * as it's not support 'move file'
+     *
+     * @throws Exception
+     */
+    @Test
+    public void complexShouldThrownRequestExceptionWhenServerVersionLessThan20091() throws Exception {
+        //given
+        serverVersion = 20090;
+        when(fromFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
+        when(toFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
+        when(server.getServerVersion()).thenReturn(serverVersion);
 
-            /**
-             * Expected throws <code>NullPointerException</code> when toFile's preferredPath is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenToFilePreferredPathIsNull()
-                    throws Exception {
-                //given
-                when(toFileSpec.getPreferredPath()).thenReturn(null);
-                //then
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+        //then
+        complexExecuteAndVerifyExpectedPreconditionFailException(RequestException.class);
+    }
 
-            /**
-             * Expected throws <code>RequestException</code> when server version is less than 20091
-             * as it's not support 'move file'
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownRequestExceptionWhenServerVersionLessThan20091() throws Exception {
-                //given
-                serverVersion = 20090;
-                when(fromFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
-                when(toFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
-                when(server.getServerVersion()).thenReturn(serverVersion);
+    /**
+     * Expected throws <code>RequestException</code> when 'noClientMove' not support by server version is less than 20092
+     * as it's not support 'move file'
+     *
+     * @throws Exception
+     */
+    @Test
+    public void complexShouldThrownRequestExceptionWhenNoClientMoveOptionNotSupportedByServerVersionLessThan20092() throws Exception {
+        //given
+        serverVersion = 20091;
+        when(fromFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
+        when(toFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
+        when(server.getServerVersion()).thenReturn(serverVersion);
+        noClientMove = true;
 
-                //then
-                executeAndVerifyExpectedPreconditionFailException(RequestException.class);
-            }
-
-            /**
-             * Expected throws <code>RequestException</code> when 'noClientMove' not support by server version is less than 20092
-             * as it's not support 'move file'
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownRequestExceptionWhenNoClientMoveOptionNotSupportedByServerVersionLessThan20092() throws Exception {
-                //given
-                serverVersion = 20091;
-                when(fromFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
-                when(toFileSpec.getPreferredPath()).thenReturn(mock(FilePath.class));
-                when(server.getServerVersion()).thenReturn(serverVersion);
-                noClientMove = true;
-
-                //then
-                executeAndVerifyExpectedPreconditionFailException(RequestException.class);
-            }
+        //then
+        complexExecuteAndVerifyExpectedPreconditionFailException(RequestException.class);
+    }
 
 
-            private void executeAndVerifyExpectedPreconditionFailException(Class<? extends Throwable> expectedThrownException)
-                    throws Exception {
+    private void complexExecuteAndVerifyExpectedPreconditionFailException(Class<? extends Throwable> expectedThrownException)
+            throws Exception {
 
-                thrown.expect(expectedThrownException);
+        thrown.expect(expectedThrownException);
 
-                moveDelegator.moveFile(
-                        CHANGELIST_ID,
-                        LIST_ONLY,
-                        noClientMove,
-                        FILE_TYPE,
-                        fromFileSpec,
-                        toFileSpec);
+        moveDelegator.moveFile(
+                CHANGELIST_ID,
+                LIST_ONLY,
+                noClientMove,
+                FILE_TYPE,
+                fromFileSpec,
+                toFileSpec);
 
-                verify(server, never()).execMapCmdList(eq(MOVE.toString()), any(String[].class), eq(null));
-            }
+        verify(server, never()).execMapCmdList(eq(MOVE.toString()), any(String[].class), eq(null));
+    }
 
-            /**
-             * Expected throws <code>ConnectionException</code> or <code>ConnectionException</code> when
-             * inner method call throws it
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownExceptionWhenInnerMethodCallThrowsIt() throws Exception {
-                thrown.expect(ConnectionException.class);
+    /**
+     * Expected throws <code>ConnectionException</code> or <code>ConnectionException</code> when
+     * inner method call throws it
+     *
+     * @throws Exception
+     */
+    @Test
+    public void simpleShouldThrownExceptionWhenInnerMethodCallThrowsIt() throws Exception {
+        thrown.expect(ConnectionException.class);
 
-                //given
-                when(server.getServerVersion()).thenReturn(serverVersion);
+        //given
+        when(server.getServerVersion()).thenReturn(serverVersion);
 
-                //then
-                executeThenExpectThrownExceptionOrEmptyList(ConnectionException.class);
-            }
+        //then
+        executeThenExpectThrownExceptionOrEmptyList(ConnectionException.class);
+    }
 
-            /**
-             * Expected return empty moved file list when inner method call throws <code>P4JavaException</code>.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnEmptyListWhenInnerMethodCallThrowsP4JavaException() throws Exception {
-                //when
-                List<IFileSpec> fileSpecs = executeThenExpectThrownExceptionOrEmptyList(P4JavaException.class);
+    /**
+     * Expected return empty moved file list when inner method call throws <code>P4JavaException</code>.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnEmptyListWhenInnerMethodCallThrowsP4JavaException() throws Exception {
+        //when
+        List<IFileSpec> fileSpecs = executeThenExpectThrownExceptionOrEmptyList(P4JavaException.class);
 
-                //then
-                assertThat(fileSpecs.size(), is(0));
-            }
+        //then
+        assertThat(fileSpecs.size(), is(0));
+    }
 
-            private List<IFileSpec> executeThenExpectThrownExceptionOrEmptyList(
-                    Class<? extends Throwable> expectedThrownException) throws Exception {
-                when(server.getServerVersion()).thenReturn(serverVersion);
-                doThrow(expectedThrownException).when(server).execMapCmdList(eq(MOVE.toString()), eq(moveCmdArguments), eq(null));
-                return moveDelegator.moveFile(
-                        CHANGELIST_ID,
-                        LIST_ONLY,
-                        noClientMove,
-                        FILE_TYPE,
-                        fromFileSpec,
-                        toFileSpec);
-            }
+    private List<IFileSpec> executeThenExpectThrownExceptionOrEmptyList(
+            Class<? extends Throwable> expectedThrownException) throws Exception {
+        when(server.getServerVersion()).thenReturn(serverVersion);
+        doThrow(expectedThrownException).when(server).execMapCmdList(eq(MOVE.toString()), eq(moveCmdArguments), eq(null));
+        return moveDelegator.moveFile(
+                CHANGELIST_ID,
+                LIST_ONLY,
+                noClientMove,
+                FILE_TYPE,
+                fromFileSpec,
+                toFileSpec);
+    }
 
-            /**
-             * Expected return non empty moved file specs
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnNonEmptyMovedFileSpecs() throws Exception {
-                //given
-                givenInfoMessageCode();
-                when(server.getServerVersion()).thenReturn(serverVersion);
-                IFileSpec fileSpec = mock(IFileSpec.class);
-                when(fileSpec.getFromFile()).thenReturn(FROM_FILE_PATH_STRING);
-                when(fileSpec.getToFile()).thenReturn(TO_FILE_PATH_STRING);
+    /**
+     * Expected return non empty moved file specs
+     *
+     * @throws Exception
+     */
+    @Test
+    public void simpleShouldReturnNonEmptyMovedFileSpecs() throws Exception {
+        //given
+        givenInfoMessageCode();
+        when(server.getServerVersion()).thenReturn(serverVersion);
+        IFileSpec fileSpec = mock(IFileSpec.class);
+        when(fileSpec.getFromFile()).thenReturn(FROM_FILE_PATH_STRING);
+        when(fileSpec.getToFile()).thenReturn(TO_FILE_PATH_STRING);
 
-                when(server.execMapCmdList(eq(MOVE.toString()), eq(moveCmdArguments), eq(null))).thenReturn(resultMaps);
-                //when
-                List<IFileSpec> fileSpecs = moveDelegator.moveFile(
-                        CHANGELIST_ID,
-                        LIST_ONLY,
-                        noClientMove,
-                        FILE_TYPE,
-                        fromFileSpec,
-                        toFileSpec);
+        when(server.execMapCmdList(eq(MOVE.toString()), eq(moveCmdArguments), eq(null))).thenReturn(resultMaps);
+        //when
+        List<IFileSpec> fileSpecs = moveDelegator.moveFile(
+                CHANGELIST_ID,
+                LIST_ONLY,
+                noClientMove,
+                FILE_TYPE,
+                fromFileSpec,
+                toFileSpec);
 
-                assertThat(fileSpecs.size(), is(1));
-                assertThat(fileSpecs.get(0).getFromFile(), is(FROM_FILE_PATH_STRING));
-                assertThat(fileSpecs.get(0).getToFile(), is(TO_FILE_PATH_STRING));
-            }
-        }
+        assertThat(fileSpecs.size(), is(1));
+        assertThat(fileSpecs.get(0).getFromFile(), is(FROM_FILE_PATH_STRING));
+        assertThat(fileSpecs.get(0).getToFile(), is(TO_FILE_PATH_STRING));
+    }
 
-        /**
-         * Test moveFile(fromFileSpec, toFile, moveFileOptions)
-         */
-        public class WhenFromFileToFileMoveFileOptionsGiven {
-            /**
-             * Rule for expected exception verification
-             */
-            @Rule
-            public ExpectedException thrown = ExpectedException.none();
-            private MoveFileOptions moveFileOptions;
+    private MoveFileOptions moveFileOptions;
 
-            /**
-             * Runs before every test.
-             */
-            @Before
-            public void beforeEach() {
-                moveFileOptions = new MoveFileOptions(
-                        CHANGELIST_ID,
-                        LIST_ONLY,
-                        FORCE,
-                        noClientMove,
-                        FILE_TYPE);
-            }
-
-            /**
-             * Expected throws <code>NullPointerException</code> when fromFile is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenFromFileIsNull() throws Exception {
-                fromFileSpec = null;
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>NullPointerException</code> when fromFile is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldThrownNullPointerExceptionWhenFromFileIsNull() throws Exception {
+        fromFileSpec = null;
+        simpleExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
 
-            /**
-             * Expected throws <code>NullPointerException</code> when fromFile's preferredPath is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenFromFilePreferredPathIsNull() throws Exception {
-                when(fromFileSpec.getPreferredPath()).thenReturn(null);
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>NullPointerException</code> when fromFile's preferredPath is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldThrownNullPointerExceptionWhenFromFilePreferredPathIsNull() throws Exception {
+        when(fromFileSpec.getPreferredPath()).thenReturn(null);
+        simpleExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
-            /**
-             * Expected throws <code>NullPointerException</code> when toFile is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenToFileIsNull() throws Exception {
-                toFileSpec = null;
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>NullPointerException</code> when toFile is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldThrownNullPointerExceptionWhenToFileIsNull() throws Exception {
+        toFileSpec = null;
+        simpleExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
 
-            /**
-             * Expected throws <code>NullPointerException</code> when toFile's preferredPath is null,
-             * So precondition check is fail.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldThrownNullPointerExceptionWhenToFilePreferredPathIsNull() throws Exception {
-                when(toFileSpec.getPreferredPath()).thenReturn(null);
-                executeAndVerifyExpectedPreconditionFailException(NullPointerException.class);
-            }
+    /**
+     * Expected throws <code>NullPointerException</code> when toFile's preferredPath is null,
+     * So precondition check is fail.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldThrownNullPointerExceptionWhenToFilePreferredPathIsNull() throws Exception {
+        when(toFileSpec.getPreferredPath()).thenReturn(null);
+        simpleExecuteAndVerifyExpectedPreconditionFailException(NullPointerException.class);
+    }
 
-            private void executeAndVerifyExpectedPreconditionFailException(Class<? extends Throwable> expectedThrownException)
-                    throws Exception {
+    private void simpleExecuteAndVerifyExpectedPreconditionFailException(Class<? extends Throwable> expectedThrownException)
+            throws Exception {
 
-                thrown.expect(expectedThrownException);
+        thrown.expect(expectedThrownException);
 
-                moveDelegator.moveFile(
-                        fromFileSpec,
-                        toFileSpec,
-                        moveFileOptions);
+        moveDelegator.moveFile(
+                fromFileSpec,
+                toFileSpec,
+                moveFileOptions);
 
-                verify(server, never()).execMapCmdList(eq(MOVE.toString()), any(String[].class), eq(null));
-            }
+        verify(server, never()).execMapCmdList(eq(MOVE.toString()), any(String[].class), eq(null));
+    }
 
-            /**
-             * Expected return non empty moved file specs
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnNonEmptyMovedFileSpecs() throws Exception {
-                //given
-                givenInfoMessageCode();
+    /**
+     * Expected return non empty moved file specs
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnNonEmptyMovedFileSpecs() throws Exception {
+        //given
+        givenInfoMessageCode();
 
-                IFileSpec fileSpec = mock(IFileSpec.class);
-                when(fileSpec.getFromFile()).thenReturn(FROM_FILE_PATH_STRING);
-                when(fileSpec.getToFile()).thenReturn(TO_FILE_PATH_STRING);
+        IFileSpec fileSpec = mock(IFileSpec.class);
+        when(fileSpec.getFromFile()).thenReturn(FROM_FILE_PATH_STRING);
+        when(fileSpec.getToFile()).thenReturn(TO_FILE_PATH_STRING);
 
-                when(server.execMapCmdList(eq(MOVE.toString()), eq(moveCmdArguments), eq(null))).thenReturn(resultMaps);
-                List<IFileSpec> fileSpecs = moveDelegator.moveFile(fromFileSpec, toFileSpec, moveFileOptions);
-                //then
-                assertThat(fileSpecs.size(), is(1));
-                assertThat(fileSpecs.get(0).getFromFile(), is(FROM_FILE_PATH_STRING));
-                assertThat(fileSpecs.get(0).getToFile(), is(TO_FILE_PATH_STRING));
-            }
-        }
+        when(server.execMapCmdList(eq(MOVE.toString()), eq(moveCmdArguments), eq(null))).thenReturn(resultMaps);
+        List<IFileSpec> fileSpecs = moveDelegator.moveFile(fromFileSpec, toFileSpec, moveFileOptions);
+        //then
+        assertThat(fileSpecs.size(), is(1));
+        assertThat(fileSpecs.get(0).getFromFile(), is(FROM_FILE_PATH_STRING));
+        assertThat(fileSpecs.get(0).getToFile(), is(TO_FILE_PATH_STRING));
     }
 
     private void givenInfoMessageCode() {

@@ -368,8 +368,8 @@ public class MD5Digester {
 			try {
 				messageDigest.update(str.getBytes(CharsetDefs.UTF8.name()));
 			} catch (UnsupportedEncodingException uee) {
-				Log.exception(uee);
-				throw new P4JavaError(uee);
+				// This should never happen.  It means UTF-8 was not supported.
+				throw new RuntimeException(uee);
 			}
 		}
 	}

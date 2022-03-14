@@ -246,11 +246,13 @@ public class ProjectConfigRegistryImpl
 
     }
 
+    @Override
     protected void onUserSelectedOnline(@NotNull ClientServerRef clientRef) {
         getServersFor(clientRef.getServerName())
                 .forEach((sc) -> sc.setUserOffline(false));
     }
 
+    @Override
     protected void onUserSelectedAllOnline() {
         getAllServers()
                 .forEach((sc) -> sc.setUserOffline(false));

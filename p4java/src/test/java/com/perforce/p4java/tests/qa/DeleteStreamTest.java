@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
@@ -64,7 +64,7 @@ public class DeleteStreamTest {
 
     @BeforeEach
     public void setup() throws Throwable {
-        List<String> paths = newArrayList();
+        List<String> paths = new ArrayList<>();
         paths.add("//Ace/dev");
         List<IStreamSummary> streams = server.getStreams(paths, null);
         if (streams.size() == 0) {
@@ -90,7 +90,7 @@ public class DeleteStreamTest {
     @Test
     public void simple() throws Exception {
         server.deleteStream("//Ace/dev", null);
-        List<String> paths = newArrayList();
+        List<String> paths = new ArrayList<>();
         paths.add("//Ace/dev");
         List<IStreamSummary> streams = server.getStreams(paths, null);
 
@@ -106,7 +106,7 @@ public class DeleteStreamTest {
 
         server.deleteStream("//Ace/otherDev", opts);
 
-        List<String> paths = newArrayList();
+        List<String> paths = new ArrayList<>();
         paths.add("//Ace/otherDev");
         List<IStreamSummary> streams = server.getStreams(paths, null);
 
@@ -120,7 +120,7 @@ public class DeleteStreamTest {
         try {
             server.deleteStream("//Ace/otherDev", null);
 
-            List<String> paths = newArrayList();
+            List<String> paths = new ArrayList<>();
             paths.add("//Ace/otherDev");
             List<IStreamSummary> streams = server.getStreams(paths, null);
 

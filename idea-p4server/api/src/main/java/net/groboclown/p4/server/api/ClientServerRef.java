@@ -14,10 +14,10 @@
 
 package net.groboclown.p4.server.api;
 
-
-import com.intellij.openapi.util.Comparing;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 /**
  * This class is used as a reference to a connection object.
@@ -70,7 +70,7 @@ public final class ClientServerRef {
         if (o.getClass().equals(getClass())) {
             ClientServerRef that = (ClientServerRef) o;
             return that.serverName.equals(serverName) &&
-                    Comparing.equal(that.clientName, clientName);
+                    Objects.equals(that.clientName, clientName);
         }
         return false;
     }

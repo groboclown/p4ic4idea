@@ -36,7 +36,7 @@ public abstract class AbstractMessageEvent {
     // lived, the memory won't grow by storing it in the event.
     private final Set<Object> visitedListeners = new HashSet<>();
 
-    private long id;
+    private final long id;
 
     protected AbstractMessageEvent() {
         id = EVENT_COUNT.incrementAndGet();

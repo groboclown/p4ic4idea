@@ -24,13 +24,6 @@ import javax.annotation.Nonnull
 
 class IdeaVersion {
     private final static IdeaVersionLibMatcher[] VERSION_LIB_MATCHERS = [
-            new IdeaVersion171_172_173(),
-            new IdeaVersion181(),
-            new IdeaVersion182_183(),
-            new IdeaVersion192(),
-            new IdeaVersion193(),
-            new IdeaVersion201(),
-            new IdeaVersion202(),
             new IdeaVersion203(),
             //new IdeaVersion211(),
             //new IdeaVersion212(),
@@ -78,11 +71,11 @@ class IdeaVersion {
     List<File> findJars(@Nonnull Collection<String> names) {
         def libDir = getLibDir()
         if (!libDir.isDirectory()) {
-            throw new GradleException("Unsupported IDEA version " + version)
+            // throw new GradleException("Unsupported IDEA version " + version)
+            throw new GradleException("Unsupported IDEA version " + version + " " + libDir)
         }
         // This may need to pull multiple files with the same base name.
         def matcher = getLibVersionMatcher()
-        Set<String> notFound = new HashSet<>(names)
         Map<String, File> remainingLibs = new HashMap<>()
         project.fileTree(libDir).forEach {
             if (it.isFile() && it.name.endsWith(".jar")) {
@@ -94,6 +87,7 @@ class IdeaVersion {
         names.forEach {
             def libSet = matcher.getNamedLib(it)
             if (libSet == null) {
+                project.logger.error("Failed to find IDEA version " + version + " jars for " + it)
                 throw new GradleException("Failed to find IDEA version " + version + " jars for " + it)
             }
             def matched = libSet.find(remainingLibs)
@@ -114,12 +108,5 @@ class IdeaVersion {
             }
         }
         throw new GradleException("Failed to find library name handler for IDEA version " + version)
-    }
-
-    private static String strip(@Nonnull String s, @Nonnull String suffix) {
-        if (s.endsWith(suffix)) {
-            return s.substring(0, s.length() - suffix.length())
-        }
-        throw new GradleException("`" + s + "` does not end with `" + suffix + "`")
     }
 }

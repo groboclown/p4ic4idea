@@ -33,7 +33,7 @@ class NamedLib {
     }
 
     Discovered find(Map<String, File> libs) {
-        def ret = new Discovered()
+        final Discovered ret = new Discovered()
         this.files.forEach {
             def file = libs.get(it)
             if (file == null) {

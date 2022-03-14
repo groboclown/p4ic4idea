@@ -15,7 +15,6 @@ package net.groboclown.p4.server.api.config.part;
 
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import org.junit.jupiter.api.Test;

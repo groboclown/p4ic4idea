@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.VALUE;
 import static com.perforce.p4java.server.CmdSpec.COUNTERS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -12,6 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,9 +55,9 @@ public class CountersDelegatorTest {
         server = mock(IOptionsServer.class);
         countersDelegator = new CountersDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        mockFileSpecs = newArrayList();
+        mockFileSpecs = new ArrayList<>();
         mockFileSpec = mock(IFileSpec.class);
         mockFileSpecs.add(mockFileSpec);
 
@@ -244,7 +244,7 @@ public class CountersDelegatorTest {
     @Test
     public void testEmptyResultMaps()
             throws P4JavaException, InvocationTargetException, IllegalAccessException {
-        checkEmptyCounters(() -> resultMaps = newArrayList(),
+        checkEmptyCounters(() -> resultMaps = new ArrayList<>(),
                 () -> countersDelegator.parseCounterCommandResultMaps(resultMaps, errorOrInfoStringCheckFunc));
     }
 

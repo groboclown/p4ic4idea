@@ -5,15 +5,11 @@ import com.perforce.p4java.impl.mapbased.rpc.RpcPropertyDefs;
 import com.perforce.p4java.option.server.TrustOptions;
 import com.perforce.p4java.server.IOptionsServer;
 import com.perforce.p4java.server.ServerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.Socket;
 import java.util.Properties;
 
 public class LocalTestServer extends SimpleTestServer {
-
-	private static Logger logger = LoggerFactory.getLogger(LocalTestServer.class);
 
 	private final String p4port;
 
@@ -38,17 +34,17 @@ public class LocalTestServer extends SimpleTestServer {
 	}
 
 	protected void start() throws Exception {
-		logger.info("Starting Perforce on: " + p4port);
+		// logger.info("Starting Perforce on: " + p4port);
 		exec(new String[]{"-p", p4port, "-L", "log"}, false);
 
 		while(!serverUp()) {
 			Thread.sleep(100);
 		}
-		logger.info("Started. ");
+		// logger.info("Started. ");
 	}
 
 	protected void stop() throws Exception {
-		logger.info("Stopping Perforce on: " + p4port);
+		// logger.info("Stopping Perforce on: " + p4port);
 
 		// Allow p4 admin commands.
 		Properties props = System.getProperties();
@@ -65,7 +61,7 @@ public class LocalTestServer extends SimpleTestServer {
 			server.login(P4PASS);
 		} catch (AccessException e) {
 			// Catch warning:  'login' not necessary, no password set for this user.
-			logger.info(e.getMessage());
+			// logger.info(e.getMessage());
 		}
 
 		server.execMapCmd("admin", new String[]{"stop"}, null);
@@ -73,7 +69,7 @@ public class LocalTestServer extends SimpleTestServer {
 		while(serverUp()) {
 			Thread.sleep(100);
 		}
-		logger.warn("Stopped. ");
+		// logger.warn("Stopped. ");
 	}
 
 	protected boolean serverUp() {

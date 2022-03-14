@@ -15,12 +15,12 @@ package net.groboclown.p4.server.impl.cache;
 
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockLocalChangeList;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.commands.changelist.CreateChangelistAction;
 import net.groboclown.p4.server.api.commands.changelist.DeleteChangelistAction;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.api.values.P4LocalChangelist;
 import net.groboclown.p4.server.impl.cache.store.ActionStore;
 import net.groboclown.p4.server.impl.cache.store.ClientQueryCacheStore;

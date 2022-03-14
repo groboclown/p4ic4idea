@@ -15,12 +15,13 @@ allprojects {
 
         // When the plugin only supports IDE version >= 2020.3, this must be
         // changed to JDK 11
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
 
         // Turn on deprecation warnings for all builds.
         // The only one that this is okay on, at the moment, is "test-core", as that
         // contains code used for mocking out calls.
         options.compilerArgs << "-Xlint:deprecation"
     }
+
 }

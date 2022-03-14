@@ -1,17 +1,11 @@
 package com.perforce.p4java.tests;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 
 public class SSLServerRule extends LocalServerRule {
-
-	private static Logger logger = LoggerFactory.getLogger(SSLServerRule.class);
-
 	private static final String P4SSLDIR = "p4ssldir";
 
 	private HashMap<String, String> env = new HashMap<>();
@@ -44,14 +38,14 @@ public class SSLServerRule extends LocalServerRule {
 		}
 	}
 
+	@Override
 	protected void start() throws Exception {
-		logger.info("Starting Perforce on: " + getP4Port());
+		// logger.info("Starting Perforce on: " + getP4Port());
 		exec(new String[]{"-p", getP4Port(), "-L", "log"}, false, env);
 
 		while(!serverUp()) {
 			Thread.sleep(100);
 		}
-		logger.info("Started. ");
-
+		// logger.info("Started. ");
 	}
 }

@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import com.nitorcreations.junit.runners.NestedRunner;
 import com.perforce.p4java.core.IFileDiff;
 import com.perforce.p4java.core.file.DiffType;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -19,7 +18,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.core.file.DiffType.SUMMARY_DIFF;
 import static com.perforce.p4java.server.CmdSpec.DIFF2;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,7 +31,6 @@ import static org.mockito.Mockito.when;
  * @author Sean Shou
  * @since 27/09/2016
  */
-@RunWith(NestedRunner.class)
 public class Diff2DelegatorTest {
     private Diff2Delegator diff2Delegator;
     private Map<String, Object> resultMap1;
@@ -53,6 +50,8 @@ public class Diff2DelegatorTest {
 
     private IOptionsServer server;
 
+    private DiffType diffType;
+
     /**
      * Runs before every test.
      */
@@ -63,239 +62,204 @@ public class Diff2DelegatorTest {
         diff2Delegator = new Diff2Delegator(server);
         resultMap1 = mock(Map.class);
         resultMap2 = mock(Map.class);
-        resultMaps = newArrayList(resultMap1, resultMap2);
+        resultMaps = List.of(resultMap1, resultMap2);
         fileSpec1 = new FileSpec(file1);
         fileSpec2 = new FileSpec(file2);
         fileDiffsOptions = new GetFileDiffsOptions();
+        diffType = SUMMARY_DIFF;
+    }
+    /**
+     * Test get file diffs by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
+     * It's expected thrown <code>ConnectionException</code>.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test(expected = ConnectionException.class)
+    public void shouldThrownConnectionExceptionWhenInnerMethodThrownIt() throws Exception {
+        doThrow(ConnectionException.class).when(server).execMapCmdList(
+                eq(DIFF2.toString()),
+                eq(cmdArguments),
+                eq(null));
+
+        diff2Delegator.getFileDiffs(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                fileDiffsOptions);
     }
 
     /**
-     * Test getFileDiffs()
+     * Test get file diffs by <code>IFileSpec</code> and <code>GetFileDiffsOptions</code>.
+     * It's expected return a non-empty list.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
      */
-    public class TestGetFileDiffs {
-        /**
-         * Test getFileDiffs() by 'fileSpec, branchSpecName, fileDiffOptions' arguments.
-         */
-        public class WhenFileSpecBranchSpecNameAndGetFileDiffsOptionsGiven {
-            /**
-             * Test get file diffs by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
-             * It's expected thrown <code>ConnectionException</code>.
-             *
-             * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-             */
-            @Test(expected = ConnectionException.class)
-            public void shouldThrownConnectionExceptionWhenInnerMethodThrownIt() throws Exception {
-                doThrow(ConnectionException.class).when(server).execMapCmdList(
-                        eq(DIFF2.toString()),
-                        eq(cmdArguments),
-                        eq(null));
-
-                diff2Delegator.getFileDiffs(
-                        fileSpec1,
-                        fileSpec2,
-                        branchName,
-                        fileDiffsOptions);
-            }
-
-            /**
-             * Test get file diffs by <code>IFileSpec</code> and <code>GetFileDiffsOptions</code>.
-             * It's expected return a non-empty list.
-             *
-             * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-             */
-            @Test
-            public void shouldReturnNonEmptyList() throws Exception {
-                //given
-                when(server.execMapCmdList(
-                        eq(DIFF2.toString()),
-                        eq(cmdArguments),
-                        eq(null))).thenReturn(resultMaps);
-                //when
-                List<IFileDiff> fileDiffs = diff2Delegator.getFileDiffs(
-                        fileSpec1,
-                        fileSpec2,
-                        branchName,
-                        fileDiffsOptions);
-                //then
-                assertThat(fileDiffs.size(), is(2));
-            }
-        }
-
-        /**
-         * Test getFileDiffs() by 'fileSpec, branchSpecName, diffType, quiet, includeNonTextDiffs' arguments.
-         */
-        public class WhenFileSpecBranchSpecNameDiffTypeQuietAndIncludeNonTextDiffsGiven {
-            private DiffType diffType;
-
-            /**
-             * Runs before every test.
-             */
-            @Before
-            public void beforeEach() {
-                diffType = SUMMARY_DIFF;
-            }
-
-            /**
-             * Test get file diffs by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
-             * It's expected thrown <code>ConnectionException</code>.
-             *
-             * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-             */
-            @Test(expected = ConnectionException.class)
-            public void shouldThrownConnectionExceptionWhenCommandThrownIt() throws Exception {
-                executeAndThrowsException(ConnectionException.class);
-            }
-
-            /**
-             * Test get file diffs by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
-             * It's expected thrown <code>ConnectionException</code>.
-             *
-             * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-             */
-            @Test(expected = RequestException.class)
-            public void shouldThrownRequestExceptionWhenCommandThrownP4JavaException()
-                    throws Exception {
-                executeAndThrowsException(P4JavaException.class);
-            }
-
-            private void executeAndThrowsException(Class<? extends Throwable> toBeThrown)
-                    throws Exception {
-                doThrow(toBeThrown).when(server).execMapCmdList(eq(DIFF2.toString()),
-                        eq(summaryDiffCmdArguments),
-                        eq(null));
-
-                diff2Delegator.getFileDiffs(
-                        fileSpec1,
-                        fileSpec2,
-                        branchName,
-                        diffType,
-                        false,
-                        false,
-                        false);
-            }
-
-            /**
-             * Test expected return non empty file diffs
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnNonEmptyFileDiffs() throws Exception {
-                when(server.execMapCmdList(eq(DIFF2.toString()),
-                        eq(summaryDiffCmdArguments),
-                        eq(null))).thenReturn(resultMaps);
-
-                List<IFileDiff> fileDiffs = diff2Delegator.getFileDiffs(
-                        fileSpec1,
-                        fileSpec2,
-                        branchName,
-                        diffType,
-                        false,
-                        false,
-                        false);
-
-                assertThat(fileDiffs.size(), is(2));
-            }
-        }
+    @Test
+    public void shouldReturnNonEmptyList() throws Exception {
+        //given
+        when(server.execMapCmdList(
+                eq(DIFF2.toString()),
+                eq(cmdArguments),
+                eq(null))).thenReturn(resultMaps);
+        //when
+        List<IFileDiff> fileDiffs = diff2Delegator.getFileDiffs(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                fileDiffsOptions);
+        //then
+        assertThat(fileDiffs.size(), is(2));
     }
 
     /**
-     * test getFileDiffsStream()
+     * Test get file diffs by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
+     * It's expected thrown <code>ConnectionException</code>.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
      */
-    public class TestGetFileDiffsStream {
-        /**
-         * Test get file diffs <code>InputStream</code> by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
-         * It's expected return non-null <code>InputStream</code>
-         *
-         * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-         */
-        @Test
-        public void shouldReturnFileDiffsInputStream() throws Exception {
-            //given
-            InputStream mockInputStream = mock(InputStream.class);
-            when(server.execStreamCmd(
-                    eq(DIFF2.toString()),
-                    eq(cmdArguments)))
-                    .thenReturn(mockInputStream);
-            //when
-            InputStream fileDiffsStream = diff2Delegator.getFileDiffsStream(
-                    fileSpec1,
-                    fileSpec2,
-                    branchName,
-                    fileDiffsOptions);
-            //then
-            assertThat(fileDiffsStream, is(mockInputStream));
-        }
+    @Test(expected = ConnectionException.class)
+    public void shouldThrownConnectionExceptionWhenCommandThrownIt() throws Exception {
+        executeAndThrowsException(ConnectionException.class);
     }
 
     /**
-     * test getServerFileDiffs()
+     * Test get file diffs by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
+     * It's expected thrown <code>ConnectionException</code>.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
      */
-    public class TestGetServerFileDiffs {
-        /**
-         * Test get server file diffs by <code>IFileSpec</code>, branchName, diffType, quiet, includeNonTextDiffs and gnuDiffs
-         * It's expected thrown <code>ConnectionException</code>.
-         *
-         * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-         */
-        @Test(expected = ConnectionException.class)
-        public void shouldThrowConnectionExceptionWhenInnerCmdCallThrowIt() throws Exception {
-            executeAndThrowException(ConnectionException.class);
-        }
+    @Test(expected = RequestException.class)
+    public void shouldThrownRequestExceptionWhenCommandThrownP4JavaException()
+            throws Exception {
+        executeAndThrowsException(P4JavaException.class);
+    }
 
-        /**
-         * Test get server file diffs by <code>IFileSpec</code>, branchName, diffType, quiet, includeNonTextDiffs and gnuDiffs
-         * It's expected thrown <code>RequestException</code>.
-         *
-         * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-         */
-        @Test(expected = RequestException.class)
-        public void shouldThrowRequestExceptionWhenInnerCmdCallThrowP4JavaException()
-                throws Exception {
-            executeAndThrowException(P4JavaException.class);
-        }
+    private void executeAndThrowsException(Class<? extends Throwable> toBeThrown)
+            throws Exception {
+        doThrow(toBeThrown).when(server).execMapCmdList(eq(DIFF2.toString()),
+                eq(summaryDiffCmdArguments),
+                eq(null));
 
-        private void executeAndThrowException(Class<? extends Throwable> toBeThrown)
-                throws Exception {
-            doThrow(toBeThrown).when(server).execStreamCmd(
-                    eq(DIFF2.toString()),
-                    eq(summaryDiffCmdArguments));
+        diff2Delegator.getFileDiffs(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                diffType,
+                false,
+                false,
+                false);
+    }
 
-            diff2Delegator.getServerFileDiffs(
-                    fileSpec1,
-                    fileSpec2,
-                    branchName,
-                    DiffType.SUMMARY_DIFF,
-                    false,
-                    false,
-                    false);
-        }
+    /**
+     * Test expected return non empty file diffs
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnNonEmptyFileDiffs() throws Exception {
+        when(server.execMapCmdList(eq(DIFF2.toString()),
+                eq(summaryDiffCmdArguments),
+                eq(null))).thenReturn(resultMaps);
 
-        /**
-         * Test get file diffs <code>InputStream</code> by <code>IFileSpec</code>, branchName, diffType, quiet, includeNonTextDiffs and gnuDiffs.
-         * It's expected return non-null <code>InputStream</code>
-         *
-         * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-         */
-        @Test
-        public void shouldReturnServerFileDiffsInputStream() throws Exception {
-            //given
-            InputStream mockInputStream = mock(InputStream.class);
-            when(server.execStreamCmd(
-                    eq(DIFF2.toString()),
-                    eq(summaryDiffCmdArguments)))
-                    .thenReturn(mockInputStream);
-            //when
-            InputStream fileDiffsStream = diff2Delegator.getServerFileDiffs(
-                    fileSpec1,
-                    fileSpec2,
-                    branchName,
-                    SUMMARY_DIFF,
-                    false,
-                    false,
-                    false);
-            //then
-            assertThat(fileDiffsStream, is(mockInputStream));
-        }
+        List<IFileDiff> fileDiffs = diff2Delegator.getFileDiffs(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                diffType,
+                false,
+                false,
+                false);
+
+        assertThat(fileDiffs.size(), is(2));
+    }
+
+    /**
+     * Test get file diffs <code>InputStream</code> by <code>IFileSpec</code>, branchName, diffType and <code>GetFileDiffsOptions</code>.
+     * It's expected return non-null <code>InputStream</code>
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test
+    public void shouldReturnFileDiffsInputStream() throws Exception {
+        //given
+        InputStream mockInputStream = mock(InputStream.class);
+        when(server.execStreamCmd(
+                eq(DIFF2.toString()),
+                eq(cmdArguments)))
+                .thenReturn(mockInputStream);
+        //when
+        InputStream fileDiffsStream = diff2Delegator.getFileDiffsStream(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                fileDiffsOptions);
+        //then
+        assertThat(fileDiffsStream, is(mockInputStream));
+    }
+
+    /**
+     * Test get server file diffs by <code>IFileSpec</code>, branchName, diffType, quiet, includeNonTextDiffs and gnuDiffs
+     * It's expected thrown <code>ConnectionException</code>.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test(expected = ConnectionException.class)
+    public void shouldThrowConnectionExceptionWhenInnerCmdCallThrowIt() throws Exception {
+        executeAndThrowException(ConnectionException.class);
+    }
+
+    /**
+     * Test get server file diffs by <code>IFileSpec</code>, branchName, diffType, quiet, includeNonTextDiffs and gnuDiffs
+     * It's expected thrown <code>RequestException</code>.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test(expected = RequestException.class)
+    public void shouldThrowRequestExceptionWhenInnerCmdCallThrowP4JavaException()
+            throws Exception {
+        executeAndThrowException(P4JavaException.class);
+    }
+
+    private void executeAndThrowException(Class<? extends Throwable> toBeThrown)
+            throws Exception {
+        doThrow(toBeThrown).when(server).execStreamCmd(
+                eq(DIFF2.toString()),
+                eq(summaryDiffCmdArguments));
+
+        diff2Delegator.getServerFileDiffs(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                DiffType.SUMMARY_DIFF,
+                false,
+                false,
+                false);
+    }
+
+    /**
+     * Test get file diffs <code>InputStream</code> by <code>IFileSpec</code>, branchName, diffType, quiet, includeNonTextDiffs and gnuDiffs.
+     * It's expected return non-null <code>InputStream</code>
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test
+    public void shouldReturnServerFileDiffsInputStream() throws Exception {
+        //given
+        InputStream mockInputStream = mock(InputStream.class);
+        when(server.execStreamCmd(
+                eq(DIFF2.toString()),
+                eq(summaryDiffCmdArguments)))
+                .thenReturn(mockInputStream);
+        //when
+        InputStream fileDiffsStream = diff2Delegator.getServerFileDiffs(
+                fileSpec1,
+                fileSpec2,
+                branchName,
+                SUMMARY_DIFF,
+                false,
+                false,
+                false);
+        //then
+        assertThat(fileDiffsStream, is(mockInputStream));
     }
 }

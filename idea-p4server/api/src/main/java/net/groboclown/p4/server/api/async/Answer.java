@@ -39,7 +39,7 @@ public interface Answer<S> {
                     ret.resolve(s);
                     return s;
                 })
-                .rejected((t) -> {
+                .onError((t) -> {
                     if (t instanceof P4CommandRunner.ServerResultException) {
                         ret.reject((P4CommandRunner.ServerResultException) t);
                     } else {

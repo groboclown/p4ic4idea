@@ -155,26 +155,16 @@ public class P4HistoryProvider
             LOG.info("File not under VCS: " + path);
             // TODO bundle message
             partner.reportException(new VcsException("File not under VCS: " + path));
-
-            // Deprecated in 191.
-            partner.finished();
             return;
         }
 
         // Async operation.
         getHistory(root, path, -1)
-                .whenCompleted((r) -> {
-                    r.getRevisions(formatter, loader).forEach(partner::acceptRevision);
-
-                    // Deprecated in 191.
-                    partner.finished();
-                })
+                .whenCompleted((r) ->
+                    r.getRevisions(formatter, loader).forEach(partner::acceptRevision))
                 .whenServerError((e) -> {
                     LOG.warn(e);
                     partner.reportException(e);
-
-                    // Deprecated in 191.
-                    partner.finished();
                 });
     }
 
@@ -215,7 +205,6 @@ public class P4HistoryProvider
             LOG.warn("File not under vcs: " + path);
             // TODO bundle message
             partner.reportException(new VcsException("File not under VCS: " + path));
-            partner.finished();
             return;
         }
         final int startingRev;
@@ -245,8 +234,7 @@ public class P4HistoryProvider
                         }
                     })
                 )
-                .whenServerError(partner::reportException)
-                .whenAnyState(partner::finished);
+                .whenServerError(partner::reportException);
     }
 
     @Nullable
@@ -269,6 +257,7 @@ public class P4HistoryProvider
              * @return current file revision, null if file does not exist anymore
              */
             @Nullable
+            @Override
             protected VcsRevisionNumber calcCurrentRevisionNumber() {
                 ClientConfigRoot root = getRootFor(path);
                 if (root == null) {
@@ -299,6 +288,7 @@ public class P4HistoryProvider
                 }
             }
 
+            @Override
             public HistoryAsTreeProvider getHistoryAsTreeProvider() {
                 // All providers seem to just return null here
                 return null;
@@ -338,7 +328,9 @@ public class P4HistoryProvider
             implements Comparator<VcsFileRevision> {
         @NotNull
         private final ColoredTableCellRenderer myRenderer = new ColoredTableCellRenderer() {
-            protected void customizeCellRenderer(JTable table, Object value, boolean selected, boolean hasFocus, int row, int column) {
+            @Override
+            protected void customizeCellRenderer(@NotNull JTable table, Object value, boolean selected, boolean hasFocus,
+                    int row, int column) {
                 this.setOpaque(selected);
                 this.append(value == null ? "?" : value.toString());
                 SpeedSearchUtil.applySpeedSearchHighlighting(table, this, false, selected);
@@ -359,27 +351,33 @@ public class P4HistoryProvider
             return null;
         }
 
+        @Override
         public Comparator<VcsFileRevision> getComparator() {
             return this;
         }
 
+        @Override
         public String valueOf(VcsFileRevision object) {
             Integer result = this.getDataOf(object);
             return result == null ? "" : result.toString();
         }
 
+        @Override
         public int compare(VcsFileRevision o1, VcsFileRevision o2) {
             return Comparing.compare(this.getDataOf(o1), this.getDataOf(o2));
         }
 
+        @Override
         public boolean shouldBeShownIsTheTree() {
             return true;
         }
 
+        @Override
         public boolean shouldBeShownIsTheTable() {
             return true;
         }
 
+        @Override
         @Nullable
         public TableCellRenderer getRenderer(VcsFileRevision revision) {
             return this.myRenderer;
@@ -387,5 +385,5 @@ public class P4HistoryProvider
     }
 
     private static final ChangelistColumnInfo CHANGELIST_COLUMN_INFO = new ChangelistColumnInfo();
-    private static final ColumnInfo[] ADDITIONAL_HISTORY_COLUMNS = new ColumnInfo[] { CHANGELIST_COLUMN_INFO };
+    private static final ColumnInfo<?, ?>[] ADDITIONAL_HISTORY_COLUMNS = new ColumnInfo[] { CHANGELIST_COLUMN_INFO };
 }

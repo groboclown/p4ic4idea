@@ -17,12 +17,15 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.NlsContexts;
+import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.changes.CommitSession;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
@@ -54,14 +57,15 @@ import net.groboclown.p4plugin.ui.submit.SubmitPanel;
 import net.groboclown.p4plugin.util.ChangelistUtil;
 import net.groboclown.p4plugin.util.CommitUtil;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,10 +83,17 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         this.project = vcs.getProject();
     }
 
+    @Override
+    public @Nullable RefreshableOnComponent createCommitOptions(@NotNull CheckinProjectPanel commitPanel,
+            @NotNull CommitContext commitContext) {
+        return CheckinEnvironment.super.createCommitOptions(commitPanel, commitContext);
+    }
+
     @Nullable
-    //@Override
+    @Override
     @Deprecated
-    public RefreshableOnComponent createAdditionalOptionsPanel(CheckinProjectPanel panel, PairConsumer<Object, Object> additionalDataConsumer) {
+    public RefreshableOnComponent createAdditionalOptionsPanel(
+            @Nonnull CheckinProjectPanel panel, @Nonnull PairConsumer<Object, Object> additionalDataConsumer) {
         // #52 - we could be able to monitor panel.getCommitMessage(); to ensure
         // that there's a message, and when there isn't, disable the submit
         // button.
@@ -100,7 +111,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
 
     @Nullable
     @Override
-    public String getDefaultMessageFor(FilePath[] filesToCheckin) {
+    public String getDefaultMessageFor(@Nonnull FilePath[] filesToCheckin) {
         return null;
     }
 
@@ -115,24 +126,29 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         return P4Bundle.message("commit.operation.name");
     }
 
-    @Nullable
-    //@Override
-    @Deprecated
-    public List<VcsException> commit(List<Change> changes, String preparedComment) {
-        return commit(changes, preparedComment, (p) -> null, new HashSet<>());
+    @Override
+    public @Nullable List<VcsException> commit(@NotNull List<? extends Change> changes,
+            @NotNull @NlsSafe String preparedComment) {
+        return CheckinEnvironment.super.commit(changes, preparedComment);
+    }
+
+    @Override
+    public @Nullable List<VcsException> commit(@NotNull List<? extends Change> changes,
+            @NotNull @NlsSafe String commitMessage, @NotNull CommitContext commitContext,
+            @NotNull Set<? super @NlsContexts.DetailedDescription String> feedback) {
+        return CheckinEnvironment.super.commit(changes, commitMessage, commitContext, feedback);
+    }
+
+    @Override
+    public @Nullable List<VcsException> commit(@NotNull List<? extends Change> changes, @NotNull String preparedComment,
+            @NotNull NullableFunction<Object, Object> parametersHolder,
+            @NotNull Set<? super @NlsContexts.DetailedDescription String> feedback) {
+        return CheckinEnvironment.super.commit(changes, preparedComment, parametersHolder, feedback);
     }
 
     @Nullable
     @Override
-    public List<VcsException> commit(List<Change> changes, final String preparedComment,
-            @NotNull NullableFunction<Object, Object> parametersHolder, Set<String> feedback) {
-        return CommitUtil.commit(project, changes, preparedComment, SubmitModel.getJobs(parametersHolder),
-                SubmitModel.getSubmitStatus(parametersHolder));
-    }
-
-    @Nullable
-    @Override
-    public List<VcsException> scheduleMissingFileForDeletion(List<FilePath> files) {
+    public List<VcsException> scheduleMissingFileForDeletion(@NotNull List<? extends FilePath> files) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("scheduleMissingFileForDeletion: " + files);
         }
@@ -177,7 +193,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
 
     @Nullable
     @Override
-    public List<VcsException> scheduleUnversionedFilesForAddition(List<VirtualFile> files) {
+    public List<VcsException> scheduleUnversionedFilesForAddition(@NotNull List<? extends VirtualFile> files) {
         if (LOG.isDebugEnabled()) {
             LOG.info("scheduleUnversionedFilesForAddition: " + files);
         }
@@ -227,7 +243,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     }
 
     @Deprecated
-    //@Override
+    @Override
     public boolean keepChangeListAfterCommit(ChangeList changeList) {
         return false;
     }
@@ -254,8 +270,29 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         return P4Bundle.getString("commit.operation.name");
     }
 
+    @Override
+    public boolean useDefaultAction() {
+        return CommitExecutor.super.useDefaultAction();
+    }
+
+    @Override
+    public @Nullable
+    @NonNls String getId() {
+        return CommitExecutor.super.getId();
+    }
+
+    @Override
+    public boolean areChangesRequired() {
+        return CommitExecutor.super.areChangesRequired();
+    }
+
+    @Override
+    public boolean supportsPartialCommit() {
+        return CommitExecutor.super.supportsPartialCommit();
+    }
+
     @NotNull
-    //@Override
+    @Override
     @Deprecated
     public CommitSession createCommitSession() {
         final SubmitModel model = new SubmitModel(project);
@@ -263,7 +300,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
             // Only here for API compatibility
             @Deprecated
             @Nullable
-            //@Override
+            @Override
             public JComponent getAdditionalConfigurationUI() {
                 return getAdditionalConfigurationUI(Collections.emptyList(), "");
             }
@@ -289,7 +326,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
             }
 
             @Override
-            public void execute(Collection<Change> changes, String commitMessage) {
+            public void execute(@Nonnull Collection<Change> changes, String commitMessage) {
                 List<Change> changeList;
                 if (changes instanceof List) {
                     changeList = (List<Change>) changes;
@@ -333,6 +370,10 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         };
     }
 
+    @Override
+    public @NotNull CommitSession createCommitSession(@NotNull CommitContext commitContext) {
+        return CommitExecutor.super.createCommitSession(commitContext);
+    }
 
 
     private static class P4OnCheckinPanel implements CheckinChangeListSpecificComponent {

@@ -14,7 +14,7 @@
 package net.groboclown.p4.server.api.async;
 
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.ResultErrorUtil;
+import net.groboclown.p4.server.api.util.ResultErrorUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

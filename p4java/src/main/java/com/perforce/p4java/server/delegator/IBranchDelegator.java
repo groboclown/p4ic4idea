@@ -125,6 +125,7 @@ public interface IBranchDelegator {
      *             when access to the branch command is not authorised
      * @deprecated use {@link IBranchDelegator#deleteBranchSpec(String, DeleteBranchSpecOptions)} instead
      */
+    @Deprecated
     String deleteBranchSpec(final String branchSpecName, final boolean force)
             throws ConnectionException, RequestException, AccessException;
 }

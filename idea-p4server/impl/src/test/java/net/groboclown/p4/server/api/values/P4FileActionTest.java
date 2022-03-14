@@ -23,9 +23,9 @@ import com.perforce.test.P4ServerExtension;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
@@ -61,7 +61,6 @@ class P4FileActionTest {
     @Test
     void convert_action_moveAdd(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -119,7 +118,6 @@ class P4FileActionTest {
     @Test
     void convert_action_moveOverDeleted(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly

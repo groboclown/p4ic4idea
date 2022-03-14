@@ -21,7 +21,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.exception.ConnectionException;
 import com.perforce.p4java.exception.RequestException;
@@ -64,7 +63,7 @@ public class SearchDelegatorTest {
         searchDelegator = new SearchDelegator(server);
 
         resultMap = mock(Map.class);
-        List<Map<String, Object>> resultMaps = Lists.newArrayList(resultMap);
+        List<Map<String, Object>> resultMaps = List.of(resultMap);
 
         opts = new SearchJobsOptions(CMD_OPTIONS);
 

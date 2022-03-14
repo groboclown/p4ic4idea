@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IBranchSpec;
 import com.perforce.p4java.exception.AccessException;
@@ -58,7 +57,7 @@ public class BranchDelegatorTest {
         server = mock(OneShotServerImpl.class);
         branchSpecDelegator = new BranchDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
         mockBranchSpec = mock(IBranchSpec.class);
     }

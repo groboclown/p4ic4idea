@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.DEPOT_FILE;
 import static com.perforce.p4java.server.CmdSpec.SIZES;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,7 +53,7 @@ public class SizesDelegatorTest {
 
     resultMap = mock(Map.class);
     when(resultMap.get(DEPOT_FILE)).thenReturn(TEST_FILE_DEPOT_PATH);
-    resultMaps = newArrayList(resultMap);
+    resultMaps = List.of(resultMap);
 
     fileSpecs = FileSpecBuilder.makeFileSpecList(TEST_FILE_DEPOT_PATH);
     opts = new GetFileSizesOptions(CMD_OPTIONS);

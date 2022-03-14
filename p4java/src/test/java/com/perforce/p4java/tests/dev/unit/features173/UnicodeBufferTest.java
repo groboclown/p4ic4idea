@@ -13,8 +13,6 @@ import com.perforce.p4java.option.client.AddFilesOptions;
 import com.perforce.p4java.option.client.SyncOptions;
 import com.perforce.p4java.tests.SimpleServerRule;
 import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
-import difflib.DiffUtils;
-import difflib.Patch;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -118,9 +116,7 @@ public class UnicodeBufferTest extends P4JavaRshTestCase {
 		// Verify content
 		List<String> original = fileToLines(utf8.getAbsolutePath());
 		List<String> revised = fileToLines(msg.get(0).getClientPathString());
-		Patch patch = DiffUtils.diff(original, revised);
-		List deltas = patch.getDeltas();
-		assertTrue(deltas.isEmpty());
+		assertEquals(original, revised);
 
 		Map<String, Object>[] res = server.execMapCmd(RETYPE.name(), new String[]{"-tutf16", msg.get(0).getDepotPathString()}, null);
 		assertNotNull(res);
@@ -138,9 +134,7 @@ public class UnicodeBufferTest extends P4JavaRshTestCase {
 		// Verify content
 		original = fileToLines(utf16.getAbsolutePath());
 		revised = fileToLines(msg.get(0).getClientPathString());
-		patch = DiffUtils.diff(original, revised);
-		deltas = patch.getDeltas();
-		assertTrue(deltas.isEmpty());
+		assertEquals(original, revised);
 	}
 
 	@Test
@@ -188,9 +182,7 @@ public class UnicodeBufferTest extends P4JavaRshTestCase {
 		// Verify content
 		List<String> original = fileToLines(utf16.getAbsolutePath());
 		List<String> revised = fileToLines(msg.get(0).getClientPathString());
-		Patch patch = DiffUtils.diff(original, revised);
-		List deltas = patch.getDeltas();
-		assertTrue(deltas.isEmpty());
+		assertEquals(original, revised);
 	}
 
 	private List<String> fileToLines(String filename) throws IOException {

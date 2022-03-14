@@ -172,7 +172,6 @@
 
         <!-- User settings, independent of the connection configuration; per-project -->
         <projectService
-                serviceInterface="net.groboclown.p4plugin.components.UserProjectPreferences"
                 serviceImplementation="net.groboclown.p4plugin.components.UserProjectPreferences"/>
 
         <!-- Populate a project with the contents from Perforce -->
@@ -183,6 +182,14 @@
         />
         <!-- optionally add in predicateClassName -->
 
+        <applicationService
+                serviceInterface="net.groboclown.p4.server.api.ApplicationPasswordRegistry"
+                serviceImplementation="net.groboclown.p4plugin.components.ApplicationPasswordRegistryComponent"/>
+
+        <!-- FIXME this needs to be turned into a service, or a set of extension points.
+        <applicationService
+                serviceImplementation="net.groboclown.p4plugin.components.InvalidPasswordMonitorComponent"/>
+        -->
     </extensions>
 
     <project-components>
@@ -238,15 +245,13 @@
     </module-components>
 
     <application-components>
-        <!-- Storage and retrieval of passwords -->
-        <component>
-            <interface-class>net.groboclown.p4.server.api.ApplicationPasswordRegistry</interface-class>
-            <implementation-class>net.groboclown.p4plugin.components.ApplicationPasswordRegistryComponent</implementation-class>
-        </component>
 
-        <!-- Manages password issues -->
+        <!-- Manages password issues
+        FIXME replace this with a service or extension points.
+         -->
         <component>
             <implementation-class>net.groboclown.p4plugin.components.InvalidPasswordMonitorComponent</implementation-class>
         </component>
+
     </application-components>
 </idea-plugin>

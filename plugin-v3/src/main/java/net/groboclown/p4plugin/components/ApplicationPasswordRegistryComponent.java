@@ -24,8 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.AsyncPromise;
 import org.jetbrains.concurrency.Promise;
+import org.jetbrains.concurrency.Promises;
 
 import java.awt.*;
+
 
 public class ApplicationPasswordRegistryComponent extends ApplicationPasswordRegistry {
     @NotNull
@@ -36,7 +38,7 @@ public class ApplicationPasswordRegistryComponent extends ApplicationPasswordReg
                     if (res == null) {
                         return promptForPassword(project, config);
                     }
-                    return Promise.resolve(res);
+                    return Promises.resolvedPromise(res);
                 });
     }
 

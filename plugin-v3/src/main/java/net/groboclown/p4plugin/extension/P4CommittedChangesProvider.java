@@ -74,6 +74,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import javax.swing.*;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -110,10 +111,12 @@ public class P4CommittedChangesProvider implements
         return new P4ChangeBrowserSettings();
     }
 
+    @Nonnull
     @Override
     public ChangesBrowserSettingsEditor<P4ChangeBrowserSettings> createFilterUI(boolean showDateFilter) {
         LOG.debug("Creating filter UI");
-        return new StandardVersionFilterComponent<P4ChangeBrowserSettings>() {
+        return new StandardVersionFilterComponent<>() {
+            @Nonnull
             @Override
             public JComponent getComponent() {
                 return (JComponent) getStandardPanel();
@@ -170,7 +173,7 @@ public class P4CommittedChangesProvider implements
 
     @Deprecated
     @Nullable
-    //@Override
+    @Override
     public RepositoryLocation getLocationFor(FilePath root, String repositoryPath) {
         // TODO should this use repository path?
         if (LOG.isDebugEnabled()) {
@@ -206,6 +209,7 @@ public class P4CommittedChangesProvider implements
      * @throws VcsException if there was a problem on the server.
      */
     @Override
+    @Nonnull
     public List<P4CommittedChangelist> getCommittedChanges(P4ChangeBrowserSettings settings,
             RepositoryLocation location, int maxCount) throws VcsException {
         if (LOG.isDebugEnabled()) {
@@ -227,8 +231,8 @@ public class P4CommittedChangesProvider implements
     // while v191+ has ... AsynchConsumer<? super CommittedChangelist>
     // The "fix" is to strip off the typing conflict.
     @Override
-    public void loadCommittedChanges(P4ChangeBrowserSettings settings, RepositoryLocation location, int maxCount,
-            AsynchConsumer consumer) throws VcsException {
+    public void loadCommittedChanges(P4ChangeBrowserSettings settings, @Nonnull RepositoryLocation location, int maxCount,
+            @Nonnull AsynchConsumer consumer) throws VcsException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Loading committed changes for location " + location);
         }
@@ -271,7 +275,8 @@ public class P4CommittedChangesProvider implements
     }
 
     @Override
-    public ChangeListColumn[] getColumns() {
+    @Nonnull
+    public ChangeListColumn<?>[] getColumns() {
         LOG.debug("Getting columns");
         return new ChangeListColumn[] {
                 // Need to support revision or changelist view...  See #180
@@ -287,7 +292,7 @@ public class P4CommittedChangesProvider implements
 
     @Nullable
     @Override
-    public VcsCommittedViewAuxiliary createActions(DecoratorManager manager, RepositoryLocation location) {
+    public VcsCommittedViewAuxiliary createActions(@Nonnull DecoratorManager manager, RepositoryLocation location) {
         LOG.debug("Creating actions");
         List<AnAction> allActions =
                 Collections.singletonList(new ChangelistDescriptionAction());
@@ -358,7 +363,7 @@ public class P4CommittedChangesProvider implements
     }
 
     @Override
-    public RepositoryLocation getForNonLocal(VirtualFile file) {
+    public RepositoryLocation getForNonLocal(@Nonnull VirtualFile file) {
         return getLocationFor(VcsUtil.getFilePath(file));
     }
 
@@ -437,8 +442,9 @@ public class P4CommittedChangesProvider implements
         dataOutput.writeInt(summary.hasShelvedFiles() ? 1 : 0);
     }
 
+    @Nonnull
     @Override
-    public P4CommittedChangelist readChangeList(RepositoryLocation repositoryLocation, DataInput dataInput)
+    public P4CommittedChangelist readChangeList(@Nonnull RepositoryLocation repositoryLocation, DataInput dataInput)
             throws IOException {
         // 1. Commit Date - long
         Date commitDate = new Date(dataInput.readLong());
@@ -592,7 +598,7 @@ public class P4CommittedChangesProvider implements
 
     @Nullable
     @Override
-    public Collection<FilePath> getIncomingFiles(RepositoryLocation repositoryLocation)
+    public Collection<FilePath> getIncomingFiles(@Nonnull RepositoryLocation repositoryLocation)
             throws VcsException {
         // No real concept of incoming files.
         return null;
@@ -617,8 +623,8 @@ public class P4CommittedChangesProvider implements
     }
 
     @Override
-    public boolean isChangeLocallyAvailable(FilePath filePath, @Nullable VcsRevisionNumber localRevision,
-            VcsRevisionNumber changeRevision, P4CommittedChangelist changelist) {
+    public boolean isChangeLocallyAvailable(@Nonnull FilePath filePath, @Nullable VcsRevisionNumber localRevision,
+            @Nonnull VcsRevisionNumber changeRevision, @Nonnull P4CommittedChangelist changelist) {
         // All committed revisions are remote.
         return false;
     }
@@ -704,14 +710,14 @@ public class P4CommittedChangesProvider implements
             return p4CommittedChangelist.getSummary().getChangelistId().getChangelistId();
         }
 
+        @Override
         @NotNull
         public Comparator<P4CommittedChangelist> getComparator() {
             return Comparator.comparing(CommittedChangeList::getNumber);
         }
     }
 
-    private static final ChangeListColumn<P4CommittedChangelist> HAS_SHELVED =
-            new ChangeListColumn<P4CommittedChangelist>() {
+    private static final ChangeListColumn<P4CommittedChangelist> HAS_SHELVED = new ChangeListColumn<>() {
         @Override
         public String getTitle() {
             return P4Bundle.message("changelist.shelved");

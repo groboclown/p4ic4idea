@@ -24,7 +24,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.google.common.collect.ImmutableMap;
 import com.perforce.p4java.impl.mapbased.server.Server;
 
 /**
@@ -104,7 +103,7 @@ public class PasswdDelegatorTest {
             String expectedOldPasswordString,
             String expectedNewPasswordString) throws Exception {
 
-        Map<String, Object> pwdMap = ImmutableMap.of(
+        Map<String, Object> pwdMap = Map.of(
                 NEW_PASSWORD2,
                 expectedNewPassword2String,
                 OLD_PASSWORD,

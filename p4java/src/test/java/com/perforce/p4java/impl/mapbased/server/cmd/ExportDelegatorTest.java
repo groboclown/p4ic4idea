@@ -1,7 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FUNCTION;
 import static com.perforce.p4java.server.CmdSpec.EXPORT;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -14,13 +12,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.perforce.p4java.server.IOptionsServer;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
@@ -60,9 +59,9 @@ public class ExportDelegatorTest {
         server = mock(Server.class);
         exportDelegator = new ExportDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        mockFileSpecs = newArrayList();
+        mockFileSpecs = new ArrayList<>();
         mockFileSpec = mock(IFileSpec.class);
         mockFileSpecs.add(mockFileSpec);
 
@@ -148,7 +147,7 @@ public class ExportDelegatorTest {
     }
 
     private void givenWorkingResultMaps() throws ConnectionException, AccessException, RequestException {
-        Map<String, Object> resultMap2 = newHashMap();
+        Map<String, Object> resultMap2 = new HashMap<>();
         resultMap2.put(FUNCTION, "fileLog");
         resultMap2.put("any other", "test");
         resultMaps.add(resultMap2);

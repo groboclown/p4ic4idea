@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -39,25 +38,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.perforce.p4java.exception.NullPointerError;
 import com.perforce.p4java.exception.SslException;
-import com.perforce.p4java.exception.SslHandshakeException;
-
-import com.google.common.collect.ImmutableMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Sean Shou
@@ -493,17 +482,21 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 	@Test
 	public void initSSL_with_exceptions() throws IllegalAccessException, IllegalArgumentException {
 		SSLSocket sslSocket = mock(SSLSocket.class);
-		doThrow(CertificateExpiredException.class).when(sslSocket).getSession();
-		mockConnection.socket(sslSocket);
-		assertThrows(SslException.class, () -> mockConnection.initSSL());
 
-		reset(sslSocket);
-		doThrow(CertificateNotYetValidException.class).when(sslSocket).getSession();
-		assertThrows(SslException.class, () -> mockConnection.initSSL());
+		// This happens with a different call...
+		//doThrow(CertificateExpiredException.class).when(sslSocket).getSession();
+		//mockConnection.socket(sslSocket);
+		//assertThrows(SslException.class, () -> mockConnection.initSSL());
 
-		reset(sslSocket);
-		doThrow(NoSuchAlgorithmException.class).when(sslSocket).getSession();
-		assertThrows(SslException.class, () -> mockConnection.initSSL());
+		// This happens with a different call...
+		//reset(sslSocket);
+		//doThrow(CertificateNotYetValidException.class).when(sslSocket).getSession();
+		//assertThrows(SslException.class, () -> mockConnection.initSSL());
+
+		// This happens with a different call...
+		//reset(sslSocket);
+		//doThrow(NoSuchAlgorithmException.class).when(sslSocket).getSession();
+		//assertThrows(SslException.class, () -> mockConnection.initSSL());
 
 		// getSession() cannot throw IOException
 		//reset(sslSocket);
@@ -605,12 +598,13 @@ public class RpcStreamConnectionTest extends AbstractP4JavaUnitTest {
 		assertThrows(ConnectionException.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
 
 		reset(topInputStream);
-		doThrow(ConnectionException.class).when(topInputStream).read(any());
+		doReturn(-1).when(topInputStream).read(any());
 		assertThrows(ConnectionException.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
 
-		reset(topInputStream);
-		doThrow(P4JavaError.class).when(topInputStream).read(any());
-		assertThrows(P4JavaError.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
+		// The only way to do this is to have a bad packet size.
+		//reset(topInputStream);
+		//doThrow(P4JavaError.class).when(topInputStream).read(any());
+		//assertThrows(P4JavaError.class, () -> mockConnection.getRpcPacket(fieldRule, filterCallback));
 
 		// Throwable is never caught explicitly.  Try a runtime exception instead.
 		reset(topInputStream);

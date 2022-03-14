@@ -2,23 +2,14 @@ package com.perforce.p4java.tests;
 
 import com.perforce.p4java.server.IServerAddress;
 import com.perforce.test.P4ExtFileUtils;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -27,9 +18,6 @@ import java.util.regex.Pattern;
 // p4ic4idea: TODO rewrite to use TestServer
 
 public class SimpleTestServer {
-
-	private static Logger logger = LoggerFactory.getLogger(SimpleTestServer.class);
-
 	private String p4d;
 	private final File p4root;
 
@@ -101,7 +89,7 @@ public class SimpleTestServer {
 			try {
 				FileUtils.cleanDirectory(p4root);
 			} catch (IOException e) {
-				logger.warn("Unable to clean p4root: ", e);
+				// logger.warn("Unable to clean p4root: ", e);
 			}
 		} else {
 			if (!p4root.mkdir()) {
@@ -116,14 +104,14 @@ public class SimpleTestServer {
 				FileUtils.deleteDirectory(p4root);
 			} catch (IOException e) {
 				if (!retryDestroy()) {
-					logger.warn("Unable to delete p4root.");
+					// logger.warn("Unable to delete p4root.");
 				}
 			}
 		}
 		final File p4dFile = new File(p4d);
 		if (p4dFile.isFile()) {
 			if (! p4dFile.delete()) {
-				logger.warn("Unable to delete " + p4dFile);
+				// logger.warn("Unable to delete " + p4dFile);
 			}
 		}
 	}
@@ -165,7 +153,7 @@ public class SimpleTestServer {
 				}
 			}
 		}
-		logger.info("P4D Version: " + version);
+		// logger.info("P4D Version: " + version);
 		return version;
 	}
 
@@ -182,7 +170,7 @@ public class SimpleTestServer {
 			cmdLine.addArgument(arg);
 		}
 
-		logger.debug("EXEC: " + cmdLine.toString());
+		// logger.debug("EXEC: " + cmdLine.toString());
 
 		DefaultExecutor executor = new DefaultExecutor();
 		if (block) {

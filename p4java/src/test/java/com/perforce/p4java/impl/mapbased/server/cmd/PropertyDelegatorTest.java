@@ -1,10 +1,7 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.server.CmdSpec.PROPERTY;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isNoneBlank;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -59,7 +56,7 @@ public class PropertyDelegatorTest {
         server = mock(Server.class);
         propertyDelegator = new PropertyDelegator(server);
         Map<String, Object> resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
         getPropertyOptions = mock(GetPropertyOptions.class);
         propertyOptions = mock(PropertyOptions.class);

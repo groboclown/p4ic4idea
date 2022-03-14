@@ -54,9 +54,9 @@ import static net.groboclown.p4.server.api.values.P4FileType.getFileType;
 public class P4VFSListener extends VcsVFSListener {
     private static final Logger LOG = Logger.getInstance(VcsVFSListener.class);
 
-    P4VFSListener(@NotNull Project project,
-            @NotNull P4Vcs vcs) {
-        super(project, vcs);
+    P4VFSListener(@NotNull P4Vcs vcs) {
+        super(vcs);
+        installListeners();
     }
 
     @Override

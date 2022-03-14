@@ -14,6 +14,7 @@
 
 package net.groboclown.p4.server.impl.connection;
 
+import com.intellij.credentialStore.OneTimeString;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
@@ -146,7 +147,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -563,7 +563,7 @@ public class ConnectCommandRunner
                             connectionManager.withConnection(config, (server) ->
                                 new SwarmConfig()
                                         .withUsername(config.getUsername())
-                                        .withServerInfo(server, new String(password.toCharArray(true)))
+                                        .withServerInfo(server, password.toString(true))
                                         .withLogger(query.getLogger())
                             )
                             .futureMap((BiConsumer<SwarmConfig, AnswerSink<SwarmClient>>) (swarmConfig, sink) -> {

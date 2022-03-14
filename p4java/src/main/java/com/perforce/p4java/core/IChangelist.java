@@ -97,7 +97,7 @@ public interface IChangelist extends IServerResource, IChangelistSummary {
 	 * 
 	 * @deprecated use update optionally followed by refresh()
 	 */
-	
+	@Deprecated
 	void updateOnServer(boolean refresh)
 					throws ConnectionException, RequestException, AccessException;
 	

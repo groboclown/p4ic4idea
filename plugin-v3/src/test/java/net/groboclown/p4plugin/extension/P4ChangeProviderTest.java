@@ -81,7 +81,6 @@ class P4ChangeProviderTest {
     void offlineOneChange(TemporaryFolder tmp)
             throws IOException, VcsException {
         List<Throwable> errors = new ArrayList<>();
-        vcs.idea.useInlineThreading(errors);
         VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
         MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
         MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);
@@ -150,7 +149,6 @@ class P4ChangeProviderTest {
     void offlineNewIdeChangelist(TemporaryFolder tmp)
             throws IOException, VcsException {
         List<Throwable> errors = new ArrayList<>();
-        vcs.idea.useInlineThreading(errors);
         VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
         MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
         MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);
@@ -200,7 +198,6 @@ class P4ChangeProviderTest {
     void offlineFileInNonDefaultChangelist(TemporaryFolder tmp)
             throws IOException {
         List<Throwable> errors = new ArrayList<>();
-        vcs.idea.useInlineThreading(errors);
         VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
         MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
         MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);
@@ -253,7 +250,6 @@ class P4ChangeProviderTest {
     @Test
     void refreshAfterFileMoved(TemporaryFolder tmp, Errors errors)
             throws InterruptedException, IOException, VcsException {
-        vcs.idea.useInlineThreading(errors.get());
         final VcsDirtyScope dirtyScope = mock(VcsDirtyScope.class);
         final MockChangeListManagerGate addGate = new MockChangeListManagerGate(vcs.getMockChangelistManager());
         final MockChangelistBuilder changeBuilder = new MockChangelistBuilder(addGate, vcs.vcs);

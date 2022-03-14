@@ -13,11 +13,11 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.core.file.FileSpecOpStatus;
 import com.perforce.p4java.core.file.IFileSpec;
 import com.perforce.p4java.exception.P4JavaException;
@@ -31,16 +31,16 @@ public class ParametersTest extends P4JavaTestCase {
   public void addOpts() throws Exception {
     Parameters parameters = new Parameters();
     Method addOpts = getPrivateMethod(Parameters.class, "addOpts", List.class, Options.class, IServer.class);
-    List<String> args = Lists.newArrayList();
+    List<String> args = new ArrayList<>();
     addOpts.invoke(parameters, args, null, null);
     assertThat(args.size(), is(0));
 
 
     Options opts = mock(Options.class);
     when(opts.isImmutable()).thenReturn(true);
-    ArrayList<String> optionsStrings = Lists.newArrayList("-a", "-f", "-s");
+    List<String> optionsStrings = Arrays.asList("-a", "-f", "-s");
     when(opts.getOptions()).thenReturn(optionsStrings);
-    args = Lists.newArrayList();
+    args = new ArrayList<>();
     addOpts.invoke(parameters, args, opts, mock(IServer.class));
     assertThat(args, is(optionsStrings));
 
@@ -48,7 +48,7 @@ public class ParametersTest extends P4JavaTestCase {
     IServer server = mock(IServer.class);
     when(opts.isImmutable()).thenReturn(false);
     when(opts.processOptions(server)).thenReturn(optionsStrings);
-    args = Lists.newArrayList();
+    args = new ArrayList<>();
     addOpts.invoke(parameters, args, opts, server);
     assertThat(args, is(optionsStrings));
   }
@@ -59,11 +59,11 @@ public class ParametersTest extends P4JavaTestCase {
     Method addFileSpecs = getPrivateMethod(Parameters.class, "addFileSpecs", List.class, List.class);
     assertThrows(InvocationTargetException.class, () -> addFileSpecs.invoke(parameters, null, null));
 
-    List<String> args = Lists.newArrayList();
+    List<String> args = new ArrayList<>();
     addFileSpecs.invoke(parameters, args, null);
     assertThat(args.size(), is(0));
 
-    List<IFileSpec> fileSpecs = Lists.newArrayList();
+    List<IFileSpec> fileSpecs = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("//depot/test");
@@ -83,12 +83,12 @@ public class ParametersTest extends P4JavaTestCase {
     Method addUnannotatedFileSpecs = getPrivateMethod(Parameters.class, "addUnannotatedFileSpecs", List.class, List.class);
     assertThrows(InvocationTargetException.class, () -> addUnannotatedFileSpecs.invoke(parameters, null, null));
 
-    List<String> args = Lists.newArrayList();
+    List<String> args = new ArrayList<>();
     addUnannotatedFileSpecs.invoke(parameters, args, null);
     assertThat(args.size(), is(0));
 
-    args = Lists.newArrayList();
-    List<IFileSpec> fileSpecs = Lists.newArrayList();
+    args = new ArrayList<>();
+    List<IFileSpec> fileSpecs = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getPreferredPathString()).thenReturn("//depot/test1");
@@ -110,7 +110,7 @@ public class ParametersTest extends P4JavaTestCase {
     Method addFileSpec = getPrivateMethod(Parameters.class, "addFileSpec", List.class, IFileSpec.class);
     assertThrows(InvocationTargetException.class, () -> addFileSpec.invoke(parameters, null, null));
 
-    List<String> args = Lists.newArrayList();
+    List<String> args = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("//depot/test1");
@@ -119,7 +119,7 @@ public class ParametersTest extends P4JavaTestCase {
     assertThat(args.size(), is(1));
     assertThat(args.get(0), is("//depot/test1"));
 
-    args = Lists.newArrayList();
+    args = new ArrayList<>();
     IFileSpec fileSpec2 = mock(IFileSpec.class);
     when(fileSpec2.getOpStatus()).thenReturn(FileSpecOpStatus.ERROR);
     addFileSpec.invoke(parameters, args, fileSpec2);
@@ -135,7 +135,7 @@ public class ParametersTest extends P4JavaTestCase {
     String[] processParameters = Parameters.processParameters(opts, fileSpecs, stringParams, null);
     assertThat(processParameters, is(new String[]{"-a", "-f", "-s"}));
 
-    fileSpecs = Lists.newArrayList();
+    fileSpecs = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("//depot/test1");
@@ -170,7 +170,7 @@ public class ParametersTest extends P4JavaTestCase {
     String[] processParameters = Parameters.processParameters(opts, fileSpecs, stringParams, true, null);
     assertThat(processParameters, is(new String[]{"-a", "-f", "-s"}));
 
-    fileSpecs = Lists.newArrayList();
+    fileSpecs = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("//depot/test1");
@@ -203,7 +203,7 @@ public class ParametersTest extends P4JavaTestCase {
     String[] processParameters = Parameters.processParameters(opts, mock(IFileSpec.class), toFileSpecs, stringParams, mock(IServer.class));
     assertThat(processParameters, is(new String[]{"-a", "-f", "-s"}));
 
-    toFileSpecs = Lists.newArrayList();
+    toFileSpecs = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("//depot/test1");
@@ -223,7 +223,7 @@ public class ParametersTest extends P4JavaTestCase {
   private Options createMockOptions() {
     Options opts = mock(Options.class);
     when(opts.isImmutable()).thenReturn(true);
-    when(opts.getOptions()).thenReturn(Lists.newArrayList("-a", "-f", "-s"));
+    when(opts.getOptions()).thenReturn(List.of("-a", "-f", "-s"));
     return opts;
   }
 
@@ -231,7 +231,7 @@ public class ParametersTest extends P4JavaTestCase {
   public void processParameters_opts_fromFileSpec_toFileSpecs_branchSpec_server() throws P4JavaException {
     Options opts = mock(Options.class);
     when(opts.isImmutable()).thenReturn(true);
-    when(opts.getOptions()).thenReturn(Lists.newArrayList("-a", "-f"));
+    when(opts.getOptions()).thenReturn(List.of("-a", "-f"));
 
     IFileSpec fromFile = mock(IFileSpec.class);
     when(fromFile.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
@@ -273,12 +273,12 @@ public class ParametersTest extends P4JavaTestCase {
 
     reset(opts);
     when(opts.isImmutable()).thenReturn(true);
-    when(opts.getOptions()).thenReturn(Lists.newArrayList("-a", "-f"));
+    when(opts.getOptions()).thenReturn(List.of("-a", "-f"));
     processParameters = Parameters.processParameters(opts, fromFiles, toFiles, "myBranch", mock(IServer.class));
     assertThat(processParameters, is(new String[]{"-a", "-f", "-b", "myBranch"}));
 
 
-    fromFiles = Lists.newArrayList();
+    fromFiles = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("//depot/test1");
@@ -289,7 +289,7 @@ public class ParametersTest extends P4JavaTestCase {
     when(fileSpec2.getAnnotatedPreferredPathString()).thenReturn("//depot/test2");
     fromFiles.add(fileSpec2);
 
-    toFiles = Lists.newArrayList();
+    toFiles = new ArrayList<>();
     IFileSpec fileSpec3 = mock(IFileSpec.class);
     when(fileSpec3.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec3.getAnnotatedPreferredPathString()).thenReturn("//depot/test3");
@@ -311,12 +311,13 @@ public class ParametersTest extends P4JavaTestCase {
 
     assertThrows(InvocationTargetException.class, () -> addFileSpecIfValidFileSpec.invoke(parameters, null, null));
 
-    List<String> args = Lists.newArrayList("a", "b");
+    // must be mutable...
+    List<String> args = new ArrayList<>(Arrays.asList("a", "b"));
 
     addFileSpecIfValidFileSpec.invoke(parameters, args, null);
     assertThat(args.size(), is(2));
 
-    List<IFileSpec> fileSpecs = Lists.newArrayList();
+    List<IFileSpec> fileSpecs = new ArrayList<>();
     IFileSpec fileSpec1 = mock(IFileSpec.class);
     when(fileSpec1.getOpStatus()).thenReturn(FileSpecOpStatus.VALID);
     when(fileSpec1.getAnnotatedPreferredPathString()).thenReturn("test1");

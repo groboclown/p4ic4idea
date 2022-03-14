@@ -32,12 +32,15 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.util.PartValidation;
 
 import javax.swing.*;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -218,15 +221,15 @@ public class P4RootConfigPanel {
         rootPanel.add(myTabbedPane, BorderLayout.CENTER);
         myConfigPanel = new JPanel();
         myConfigPanel.setLayout(new BorderLayout(0, 0));
-        myTabbedPane.addTab(this
-                        .$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.tab.properties"), null,
-                myConfigPanel, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+        myTabbedPane.addTab(
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.tab.properties"),
+                null, myConfigPanel, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                         "configuration.tab.properties.tooltip"));
         myConfigPanel.add(myConfigPartStack.$$$getRootComponent$$$(), BorderLayout.CENTER);
         myProblemsPanel = new JPanel();
         myProblemsPanel.setLayout(new BorderLayout(0, 0));
-        myTabbedPane.addTab(this
-                        .$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.problems-list.tab"),
+        myTabbedPane.addTab(
+                this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.problems-list.tab"),
                 myProblemsPanel);
         myTabbedPane.setEnabledAt(1, false);
         final JScrollPane scrollPane1 = new JScrollPane();
@@ -234,9 +237,8 @@ public class P4RootConfigPanel {
         scrollPane1.setViewportView(myProblemsList);
         myResolvedPropertyPanel = new JPanel();
         myResolvedPropertyPanel.setLayout(new BorderLayout(0, 0));
-        myTabbedPane.addTab(this
-                        .$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configurations.resolved-values.tab"),
-                myResolvedPropertyPanel);
+        myTabbedPane.addTab(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
+                "configurations.resolved-values.tab"), myResolvedPropertyPanel);
         myTabbedPane.setEnabledAt(2, false);
         final JScrollPane scrollPane2 = new JScrollPane();
         myResolvedPropertyPanel.add(scrollPane2, BorderLayout.CENTER);
@@ -269,8 +271,12 @@ public class P4RootConfigPanel {
                 resultName = currentFont.getName();
             }
         }
-        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+        Font font = new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
                 size >= 0 ? size : currentFont.getSize());
+        boolean isMac = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH).startsWith("mac");
+        Font fontWithFallback = isMac ? new Font(font.getFamily(), font.getStyle(), font.getSize())
+                : new StyleContext().getFont(font.getFamily(), font.getStyle(), font.getSize());
+        return fontWithFallback instanceof FontUIResource ? fontWithFallback : new FontUIResource(fontWithFallback);
     }
 
     private static Method $$$cachedGetBundleMethod$$$ = null;
@@ -343,14 +349,7 @@ public class P4RootConfigPanel {
                     ? JBColor.RED
                     : UIUtil.getTextAreaForeground());
 
-            // > v183 has nice API for this...
-            cell.setBackground(
-                    isSelected
-                            ? cellHasFocus
-                            ? UIUtil.getListUnfocusedSelectionBackground()
-                            : UIUtil.getListSelectionBackground()
-                            : UIUtil.getListBackground()
-            );
+            cell.setBackground(UIUtil.getListBackground(isSelected, cellHasFocus));
             cell.setText(problem.getMessage());
             return cell;
         }

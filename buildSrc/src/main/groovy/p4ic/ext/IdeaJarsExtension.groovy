@@ -29,7 +29,7 @@ class IdeaJarsExtension {
     }
 
     ConfigurableFileCollection getJarsFor(@Nonnull IdeaVersion version) {
-        return version.jars(jars.toArray(new String[0]))
+        return version.jars(jars)
     }
 
     List<String> getJarNames() {

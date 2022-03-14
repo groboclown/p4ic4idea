@@ -23,9 +23,9 @@ import com.perforce.test.ServerRule;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.impl.connection.impl.P4CommandUtil;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.jetbrains.concurrency.Promise;
@@ -97,7 +97,7 @@ class OpenedFilesChangesFactoryTest {
                 assertEquals("abc.txt", path1.getName());
                 assertEquals("a@b.txt", path2.getName());
 
-                return Promise.resolve(null);
+                return Promises.resolvedPromise(null);
             } catch (P4JavaException e) {
                 return Promises.rejectedPromise(e);
             }

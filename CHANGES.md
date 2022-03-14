@@ -6,6 +6,7 @@
 ### Overview
 
 * Bug fixes
+* Changed supported IDE versions - removed support for all versions of the IDE before v203.
 * Add support for compile and test against additional IDE versions.
 
 
@@ -14,7 +15,10 @@
 * RSH connections would incorrectly add "localhost:" to the command if the command name had no ':' character in it.
   * This primarily affected tests running on Linux.
   * The new version includes extra checking before using an RSH connection to ensure the executable file exists and is executable.  However, the logic in place only works if the executable has no spaces in the file name.
-* Updated the build to run against newer versions of the IDE (193, 201, 202).
+* Changed supported IDE versions.
+  * Removed all code that requires v202 and prior support.
+  * Internally added jar support for compiling against v203, 211, 212, 213, and 221.
+  * Upgraded compiler compatibility to JDK 11.
 
 
 ## ::v0.11.3::

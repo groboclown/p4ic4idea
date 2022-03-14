@@ -19,7 +19,7 @@ import com.intellij.credentialStore.Credentials;
 import com.intellij.credentialStore.OneTimeString;
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import net.groboclown.p4.server.api.config.ServerConfig;
@@ -30,21 +30,6 @@ import org.jetbrains.concurrency.Promise;
 import java.util.Arrays;
 
 
-/*
- * FIXME
- * Use application services or extensions instead of ApplicationComponent, because
- * if you register a class as an application component it will be loaded, its instance will be created and
- * {@link #initComponent()} methods will be called each time IDE is started even if user doesn't use any feature of your
- * plugin. So consider using specific extensions instead to ensure that the plugin will not impact IDE performance until user calls its
- * actions explicitly.
- *
- * Instead of {@link #initComponent()} please use {@link com.intellij.util.messages.MessageBus} and corresponding topics.
- * Instead of {@link #disposeComponent()} please use {@link com.intellij.openapi.Disposable}.
- *
- * If for some reasons replacing {@link #disposeComponent()} / {@link #initComponent()} is not a option, {@link BaseComponent} can be extended.
- */
-
-
 /**
  * Maintains the registry of plaintext passwords (either stored in files or entered by the user).
  * Passwords are stored in such a way that there may be a delay in fetching the actual value,
@@ -53,16 +38,15 @@ import java.util.Arrays;
  * This does not post messages to the message bus, as that would mean it's trivially easy for
  * malicious plugins to steal them.
  */
-public abstract class ApplicationPasswordRegistry
-        implements ApplicationComponent {
+@Service(Service.Level.APP)
+public abstract class ApplicationPasswordRegistry {
     private static final Logger LOG = Logger.getInstance(ApplicationPasswordRegistry.class);
 
     public static final Class<ApplicationPasswordRegistry> COMPONENT_CLASS = ApplicationPasswordRegistry.class;
-    public static final String COMPONENT_NAME = "p4ic4idea:pr";
 
     @NotNull
     public static ApplicationPasswordRegistry getInstance() {
-        return ApplicationManager.getApplication().getComponent(COMPONENT_CLASS);
+        return ApplicationManager.getApplication().getService(COMPONENT_CLASS);
     }
 
     /**
@@ -124,29 +108,12 @@ public abstract class ApplicationPasswordRegistry
         final CredentialAttributes attr = getCredentialAttributes(config, true);
         return PasswordSafe.getInstance().getAsync(attr)
                 .then((c) -> c == null ? null : c.getPassword())
-                // should use onProcessed, but that's a higher API version.
-                .processed((p) -> {
+                .onProcessed((p) -> {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Fetched password for config " + config.getServerName());
                     }
                 })
-                .rejected((t) -> LOG.warn("Password fetch generated an error", t));
-    }
-
-    @Override
-    public void initComponent() {
-        // do nothing
-    }
-
-    @Override
-    public void disposeComponent() {
-        // do nothing
-    }
-
-    @NotNull
-    @Override
-    public String getComponentName() {
-        return COMPONENT_NAME;
+                .onError((t) -> LOG.warn("Password fetch generated an error", t));
     }
 
     @NotNull

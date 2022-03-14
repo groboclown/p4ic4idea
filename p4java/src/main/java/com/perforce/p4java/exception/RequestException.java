@@ -83,6 +83,7 @@ public class RequestException extends P4JavaException {
 	*/
 
 	/** @deprecated should be a very specific exception */
+	@Deprecated
 	public RequestException(String message, int genericCode, int severityCode) {
 		super(message);
 		this.genericCode = genericCode;
@@ -164,12 +165,14 @@ public class RequestException extends P4JavaException {
 	}
 
 	/** @deprecated p4ic4idea: error should be immutable */
+	@Deprecated
 	public void setSeverityCode(int severityCode) {
 		this.severityCode = severityCode;
 	}
 
 
     /** @deprecated p4ic4idea: error should be immutable */
+	@Deprecated
 	public void setGenericCode(int genericCode) {
 		this.genericCode = genericCode;
 	}
@@ -217,6 +220,7 @@ public class RequestException extends P4JavaException {
 	}
 
 	/** @deprecated use the server code instead */
+	@Deprecated
 	public boolean hasMessageFragment(String fragment) {
 		return message == null
 				? (getMessage() != null && getMessage().toLowerCase().equals(fragment.toLowerCase()))

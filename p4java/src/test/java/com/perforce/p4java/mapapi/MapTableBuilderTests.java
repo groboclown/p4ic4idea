@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
 
-// @Ignore("p4ic4idea: SimpleServerRule crashes for some Linux setups")
+@Ignore("p4ic4idea: SimpleServerRule crashes for some Linux setups")
 public class MapTableBuilderTests extends P4JavaRshTestCase {
 
     @ClassRule
@@ -21,7 +21,7 @@ public class MapTableBuilderTests extends P4JavaRshTestCase {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        setupServer(p4d.getRSHURL(), userName, password, true, null);
+        setupServer(p4d.getRSHURL(), userName, password, true, props);
         client = getClient(server);
     }
 

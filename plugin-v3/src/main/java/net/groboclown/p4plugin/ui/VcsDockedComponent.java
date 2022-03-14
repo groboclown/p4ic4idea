@@ -24,12 +24,13 @@ import com.intellij.openapi.wm.ToolWindowId;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
-import com.intellij.ui.content.ContentManagerAdapter;
 import com.intellij.ui.content.ContentManagerEvent;
+import com.intellij.ui.content.ContentManagerListener;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import javax.swing.*;
 
 public class VcsDockedComponent implements Disposable, ProjectComponent {
@@ -51,9 +52,9 @@ public class VcsDockedComponent implements Disposable, ProjectComponent {
                 return;
             }
             final ContentManager contentManager = toolWindow.getContentManager();
-            contentManager.addContentManagerListener(new ContentManagerAdapter() {
+            contentManager.addContentManagerListener(new ContentManagerListener() {
                 @Override
-                public void contentRemoved(ContentManagerEvent event) {
+                public void contentRemoved(@Nonnull ContentManagerEvent event) {
                     final JComponent component = event.getContent().getComponent();
                     if (component instanceof Disposable) {
                         Disposer.dispose((Disposable) component);

@@ -23,9 +23,9 @@ import com.perforce.test.P4ServerExtension;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,6 @@ class OpenFileStatusTest {
     @Test
     void statusSort_notOnServer(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -108,7 +107,6 @@ class OpenFileStatusTest {
     @Test
     void statusSort_add(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -162,7 +160,6 @@ class OpenFileStatusTest {
     @Test
     void statusSort_notOpen(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -220,7 +217,6 @@ class OpenFileStatusTest {
     @Test
     void statusSort_edit(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -282,7 +278,6 @@ class OpenFileStatusTest {
     @Test
     void statusSort_delete(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -344,7 +339,6 @@ class OpenFileStatusTest {
     @Test
     void statusSort_move(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly

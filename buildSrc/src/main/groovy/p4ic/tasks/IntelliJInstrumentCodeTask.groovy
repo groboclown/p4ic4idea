@@ -1,7 +1,6 @@
 package p4ic.tasks
 
 import org.apache.tools.ant.BuildException
-import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.FileVisitDetails
@@ -25,24 +24,26 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     private static final String FILTER_ANNOTATION_REGEXP_CLASS = 'com.intellij.ant.ClassFilterAnnotationRegexp'
     private static final LOADER_REF = "java2.loader"
 
-    private FileCollection originalClassesDirs
-    private Set<File> allSources
-    protected FileCollection resources
-    private Callable<FileCollection> classPath
+    private FileCollection sourceSetOutputClassesDirs
+    private Set<File> sourceSetAllDirs
+    protected FileCollection sourceSetResources
+    private Callable<FileCollection> sourceSetCompileClasspath
+    private IdeaVersion ideaVersion
 
     @OutputDirectory
     File outputDir
 
     protected void fromSourceSet(@Nonnull final SourceSet sourceSet, final IdeaJarsExtension jars, final IdeaVersion version) {
-        originalClassesDirs = sourceSet.output.classesDirs
-        allSources = sourceSet.allSource.srcDirs
-        resources = sourceSet.resources
-        classPath = new Callable<FileCollection>() {
+        sourceSetOutputClassesDirs = sourceSet.output.classesDirs
+        sourceSetAllDirs = sourceSet.allSource.srcDirs
+        sourceSetResources = sourceSet.resources
+        ideaVersion = version
+        sourceSetCompileClasspath = new Callable<FileCollection>() {
             @Override
             FileCollection call() throws Exception {
                 FileCollection ret = sourceSet.compileClasspath
                 if (jars != null && version != null) {
-                    ret = jars.getJarsFor(version) + ret
+                    ret = project.files(jars.getJarsFor(version)) + ret
                 }
                 return ret
             }
@@ -50,21 +51,23 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     }
 
     protected void fromJavaCompile(@Nonnull JavaCompile task, Callable<FileCollection> classpath) {
-        originalClassesDirs = task.project.files(task.destinationDir)
-        allSources = task.inputs.files.getFiles()
-        resources = task.project.files()
-        classPath = classpath
+        sourceSetOutputClassesDirs = task.project.files(task.destinationDirectory)
+        sourceSetAllDirs = task.inputs.files.getFiles()
+        sourceSetResources = task.project.files()
+        sourceSetCompileClasspath = classpath
     }
 
     @InputFiles
     @SkipWhenEmpty
     FileTree getOriginalClasses() {
-        return project.files(originalClassesDirs.from).asFileTree
+        return project.files(sourceSetOutputClassesDirs.from).asFileTree
     }
 
     @InputFiles
     FileCollection getSourceDirs() {
-        return project.files(allSources.findAll { !resources.contains(it) && it.exists() })
+        return project.files(sourceSetAllDirs.findAll {
+            !sourceSetResources.contains(it) && it.exists()
+        })
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -73,16 +76,7 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         def outputDir = getOutputDir()
         copyOriginalClasses(outputDir)
 
-        def classpath = IdeaVersionUtil.lowestCompatibleBuildVersion(project).jars(
-                // jars required by the instrumentation
-                "javac2",
-                "jdom",
-                "asm",
-                "jgoodies-forms",
-                "instrumentation-util",
-                "forms-compiler",
-                "forms-rt"
-        )
+        def classpath = compilerClassPath()
 
         ant.taskdef(name: 'instrumentIdeaExtensions',
                 classpath: classpath.asPath,
@@ -91,12 +85,13 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
 
         logger.info("Compiling forms and instrumenting code with nullability preconditions")
         boolean instrumentNotNull = prepareNotNullInstrumenting(classpath)
-        instrumentCode(getSourceDirs(), outputDir, instrumentNotNull)
+        // instrumentCode(getSourceDirs(), outputDir, instrumentNotNull)
     }
 
 
     private void copyOriginalClasses(@Nonnull File outputDir) {
         outputDir.deleteDir()
+        outputDir.mkdirs()
         project.copy {
             from getOriginalClasses()
             into outputDir
@@ -121,34 +116,38 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
     }
 
     private void instrumentCode(@Nonnull FileCollection srcDirs, @Nonnull File outputDir, boolean instrumentNotNull) {
-        if (IdeaVersionUtil.isJdk9()) {
-            // A solution here is to use the boot classpath referencing JDK8.
-            // Without this, some APIs are incorrectly compiling with method references in the wrong interface
-            // or superclass.
-            throw new GradleException("Build incompatible with JDK >9; it produces JRE library API incompatibilities")
+        if (srcDirs.isEmpty()) {
+            return;
         }
 
-
-        def headlessOldValue = System.setProperty('java.awt.headless', 'true')
-        FileCollection cp = classPath.call()
+        FileCollection cp = sourceSetCompileClasspath.call()
         logger.info("Setting up instrumentation with classpath " + cp.asPath)
 
-        ant.instrumentIdeaExtensions(srcdir: srcDirs.asPath,
-                destdir: outputDir, classpath: cp.asPath,
+        def headlessOldValue = System.setProperty('java.awt.headless', 'true')
+        try {
+            ant.instrumentIdeaExtensions(
+                    srcdir: srcDirs.asPath,
+                    destdir: outputDir,
+                    classpath: cp.asPath,
 
-                // Force the class file version, which is necessary if compiling with any other JDK.
-                target: "1.8", source: "1.8",
+                    // Force the class file version, which is necessary if compiling with any other JDK.
+                    target: "11", source: "11",
 
-                "deprecation": true,
-                includeAntRuntime: false, instrumentNotNull: instrumentNotNull) {
-            if (instrumentNotNull) {
-                ant.skip(pattern: 'kotlin/Metadata')
+                    "deprecation": true,
+                    includeAntRuntime: false,
+                    includeJavaRuntime: true,
+                    instrumentNotNull: instrumentNotNull) {
+                if (instrumentNotNull) {
+                    ant.skip(pattern: 'kotlin/Metadata')
+                }
+                return null
             }
-        }
-        if (headlessOldValue != null) {
-            System.setProperty('java.awt.headless', headlessOldValue)
-        } else {
-            System.clearProperty('java.awt.headless')
+        } finally {
+            if (headlessOldValue != null) {
+                System.setProperty('java.awt.headless', headlessOldValue)
+            } else {
+                System.clearProperty('java.awt.headless')
+            }
         }
     }
 
@@ -156,7 +155,10 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         Set<File> dirs = new HashSet<>()
         logger.info("Finding jmod paths in " + System.properties."java.home")
         def jreHome = System.properties."java.home"
-        project.fileTree(jreHome).visit { FileVisitDetails details ->
+        def tree = project.fileTree(jreHome).filter {
+            include '*.jar'
+        }
+        tree.visit { FileVisitDetails details ->
             if (details.file.name.endsWith('.jmod')) {
                 dirs.add(details.file.parentFile)
             }
@@ -170,4 +172,26 @@ class IntelliJInstrumentCodeTask extends ConventionTask {
         }
         return ret
     }
+
+    // local compiler
+    private FileCollection compilerClassPath() {
+        IdeaVersion version = this.ideaVersion
+        if (version == null) {
+            version = IdeaVersionUtil.lowestCompatibleBuildVersion(project)
+        }
+        return version.jars(
+                // jars required by the instrumentation
+                "javac2",
+                "compiler-antTasks",
+                "compiler-instrumentationUtil",
+
+                //"jgoodies-forms",
+                "guiForms-compiler",
+                //"forms-rt",
+
+                "jdom",
+                "asm",
+        )
+    }
+
 }

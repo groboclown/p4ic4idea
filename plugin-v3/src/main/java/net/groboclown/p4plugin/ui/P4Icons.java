@@ -18,9 +18,9 @@ import com.intellij.openapi.util.IconLoader;
 import javax.swing.*;
 
 public interface P4Icons {
-    Icon CONNECTED = IconLoader.getIcon("/icons/p4connected.png");
-    Icon DISCONNECTED = IconLoader.getIcon("/icons/p4disconnected.png");
-    Icon SWARM = IconLoader.getIcon("/icons/swarm.png");
+    Icon CONNECTED = IconLoader.getIcon("/icons/p4connected.png", P4Icons.class);
+    Icon DISCONNECTED = IconLoader.getIcon("/icons/p4disconnected.png", P4Icons.class);
+    Icon SWARM = IconLoader.getIcon("/icons/swarm.png", P4Icons.class);
 
     // TODO make this its own icon
     Icon MIXED = CONNECTED;

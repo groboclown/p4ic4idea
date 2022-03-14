@@ -31,12 +31,16 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static net.groboclown.idea.ExtAsserts.assertEmpty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -85,27 +89,23 @@ public class MockThreadRunner {
     private final Map<String, CyclicBarrier> waitForMap = new HashMap<>();
     private final List<String> queuedKeys = new LinkedList<>();
     private final AtomicInteger activeCount = new AtomicInteger(0);
+    private final AtomicInteger totalStartedCount = new AtomicInteger(0);
 
     public MockThreadRunner(IdeaLightweightExtension extension) {
-        this(extension, 2L);
+        this(extension, 4L);
     }
 
     private MockThreadRunner(IdeaLightweightExtension extension, long waitTimeSeconds) {
         waitTimeoutSeconds = waitTimeSeconds;
-        Application application = extension.getMockApplication();
+        MockApplication application = extension.getMockApplication();
 
-        BlockingRunAnswer pooledThreadAnswer = new BlockingRunAnswer(pooledThreadsRun);
-        when(application.executeOnPooledThread((Runnable) any())).then(pooledThreadAnswer);
-        when(application.executeOnPooledThread((Callable<?>) any())).then(pooledThreadAnswer);
+        BlockingRunner pooledRunner = new BlockingRunner(pooledThreadsRun);
+        application.setPooledRunner(pooledRunner);
 
-        BlockingRunAnswer edtLaterAnswer = new BlockingRunAnswer(edtLaterRun);
-        doAnswer(edtLaterAnswer).when(application).invokeLater(any());
-        doAnswer(edtLaterAnswer).when(application).invokeLater(any(), (Condition) any());
-        doAnswer(edtLaterAnswer).when(application).invokeLater(any(), (ModalityState) any());
+        application.setEdtLaterRunner(new BlockingRunner(edtLaterRun));
 
         InthreadRunAnswer edtWaitAnswer = new InthreadRunAnswer(edtWaitRun);
-        doAnswer(edtWaitAnswer).when(application).invokeAndWait(any());
-        doAnswer(edtWaitAnswer).when(application).invokeAndWait(any(), any());
+        application.setEdtWaitRunner(edtWaitAnswer);
     }
 
     public void assertNoExceptions() {
@@ -114,6 +114,12 @@ public class MockThreadRunner {
 
     public void assertAllActionsCompleted() {
         assertEquals(0, activeCount.get(), "Should be no running actions.");
+    }
+
+    public void assertTotalStartedActionCount(int expectedCount) {
+        final int total = totalStartedCount.get();
+        assertEquals(expectedCount, total,
+                "Expected " + expectedCount + " actions started, found " + total);
     }
 
     public List<Exception> getCallableThrown() {
@@ -158,31 +164,19 @@ public class MockThreadRunner {
         waitFor(key);
     }
 
-    private class BlockingRunAnswer implements Answer<Object> {
+    private class BlockingRunner implements Function<Callable<Object>, Future<Object>> {
         private final AtomicInteger counter;
 
-        BlockingRunAnswer(AtomicInteger counter) {
+        BlockingRunner(AtomicInteger counter) {
             this.counter = counter;
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation)
-                throws Throwable {
+        public Future<Object> apply(Callable<Object> objectCallable) {
+            CompletableFuture<Object> ret = new CompletableFuture<>();
+            totalStartedCount.incrementAndGet();
             activeCount.incrementAndGet();
             try {
-                final Object arg = invocation.getArgument(0);
-                final Runnable runner;
-                if (arg instanceof Runnable) {
-                    runner = (Runnable) arg;
-                } else {
-                    runner = () -> {
-                        try {
-                            ((Callable<?>) arg).call();
-                        } catch (Exception e) {
-                            callableThrown.add(e);
-                        }
-                    };
-                }
                 final CyclicBarrier barrier;
                 final String lastKey;
                 synchronized (waitForMap) {
@@ -194,26 +188,30 @@ public class MockThreadRunner {
                     try {
                         barrier.await(waitTimeoutSeconds, TimeUnit.SECONDS);
                     } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
-                        fail("Test did not join", e);
+                        fail("Test did not join after " + waitTimeoutSeconds + " seconds", e);
                     }
                     counter.incrementAndGet();
-                    runner.run();
+                    try {
+                        ret.complete(objectCallable.call());
+                    } catch (Exception e) {
+                        ret.completeExceptionally(e);
+                    }
                     try {
                         barrier.await(waitTimeoutSeconds, TimeUnit.SECONDS);
                     } catch (InterruptedException | BrokenBarrierException | TimeoutException e) {
                         callableThrown.add(e);
-                        fail("Test did not join", e);
+                        fail("Test did not join after " + waitTimeoutSeconds + " seconds", e);
                     }
                 });
             } finally {
                 activeCount.decrementAndGet();
             }
-            return null;
+            return ret;
         }
     }
 
 
-    private class InthreadRunAnswer implements Answer<Object> {
+    private class InthreadRunAnswer implements Consumer<Runnable> {
         private final AtomicInteger counter;
 
         InthreadRunAnswer(AtomicInteger counter) {
@@ -221,17 +219,15 @@ public class MockThreadRunner {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation)
-                throws Throwable {
+        public void accept(Runnable runnable) {
+            totalStartedCount.incrementAndGet();
             activeCount.incrementAndGet();
             try {
-                Runnable runnable = invocation.getArgument(0);
                 counter.incrementAndGet();
                 runnable.run();
             } finally {
                 activeCount.decrementAndGet();
             }
-            return null;
         }
     }
 }

@@ -57,8 +57,6 @@ class P4ChangelistListenerTest {
     @Test
     void offlineCreateNewIdeChangelist(TemporaryFolder tmp, Errors errors)
             throws InterruptedException {
-        vcs.idea.useInlineThreading(errors.get());
-
         // Setup offline mode
         ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
@@ -89,8 +87,6 @@ class P4ChangelistListenerTest {
     @Test
     void offlineMoveFileToNewChangelist(TemporaryFolder tmp, Errors errors)
             throws InterruptedException, IOException {
-        vcs.idea.useInlineThreading(errors.get());
-
         // Setup offline mode
         ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());

@@ -16,7 +16,7 @@ package net.groboclown.p4.server.api.async;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.mock.MockThreadRunner;
 import net.groboclown.p4.server.api.P4CommandRunner;
-import net.groboclown.p4.server.api.ResultErrorUtil;
+import net.groboclown.p4.server.api.util.ResultErrorUtil;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -103,6 +103,7 @@ class AsyncAnswerTest {
 
         tr.assertNoExceptions();
         tr.assertAllActionsCompleted();
+        tr.assertTotalStartedActionCount(1);
     }
 
     @Test
@@ -146,6 +147,7 @@ class AsyncAnswerTest {
 
         tr.assertNoExceptions();
         tr.assertAllActionsCompleted();
+        tr.assertTotalStartedActionCount(1);
     }
 
     @Test
@@ -159,6 +161,7 @@ class AsyncAnswerTest {
     @Test
     void future_resolved()
             throws InterruptedException, P4CommandRunner.ServerResultException {
+        idea.getMockApplication().setIsDispatchThread(false);
         AsyncAnswer<Object> answer1 = new AsyncAnswer<>();
         answer1.resolve("a");
         AsyncAnswer<Object> answer2 = new AsyncAnswer<>();
@@ -225,6 +228,8 @@ class AsyncAnswerTest {
         tr.assertNoExceptions();
         assertTrue(answer.blockingWait(500, TimeUnit.SECONDS));
         assertEquals(1, completedCount.get());
+
+        tr.assertTotalStartedActionCount(2);
     }
 
     // TODO tests for reject errors passed to other promises.

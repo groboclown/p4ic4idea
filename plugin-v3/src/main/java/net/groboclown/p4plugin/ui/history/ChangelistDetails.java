@@ -33,9 +33,12 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.lang.reflect.Method;
 import java.util.Date;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class ChangelistDetails {
@@ -288,8 +291,8 @@ public class ChangelistDetails {
         final Spacer spacer1 = new Spacer();
         root.add(spacer1, cc.xy(1, 13, CellConstraints.DEFAULT, CellConstraints.FILL));
         myNoFilesPanel = new JPanel();
-        myNoFilesPanel
-                .setLayout(new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
+        myNoFilesPanel.setLayout(
+                new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
         root.add(myNoFilesPanel, cc.xy(1, 7));
         final JLabel label5 = new JLabel();
         this.$$$loadLabelText$$$(label5,
@@ -322,8 +325,12 @@ public class ChangelistDetails {
                 resultName = currentFont.getName();
             }
         }
-        return new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
+        Font font = new Font(resultName, style >= 0 ? style : currentFont.getStyle(),
                 size >= 0 ? size : currentFont.getSize());
+        boolean isMac = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH).startsWith("mac");
+        Font fontWithFallback = isMac ? new Font(font.getFamily(), font.getStyle(), font.getSize())
+                : new StyleContext().getFont(font.getFamily(), font.getStyle(), font.getSize());
+        return fontWithFallback instanceof FontUIResource ? fontWithFallback : new FontUIResource(fontWithFallback);
     }
 
     private static Method $$$cachedGetBundleMethod$$$ = null;

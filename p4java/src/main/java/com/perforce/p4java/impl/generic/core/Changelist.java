@@ -259,6 +259,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#isShelved()
 	 */
+	@Override
 	public boolean isShelved() {
 		return this.shelved;
 	}
@@ -266,54 +267,67 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * Set the changelist as shelved or not shelved
 	 */
+	@Override
 	public void setShelved(boolean shelved) {
 		this.shelved = shelved;
 	}
 
+	@Override
 	public int getId() {
 		return id;
 	}
 
+	@Override
 	public void setId(int id) {
 		this.id = id;
 	}
 
+	@Override
 	public String getClientId() {
 		return clientId;
 	}
 
+	@Override
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
 	}
 
+	@Override
 	public String getUsername() {
 		return username;
 	}
 
+	@Override
 	public void setUsername(String username) {
 		this.username = username;
 	}
 
+	@Override
 	public ChangelistStatus getStatus() {
 		return status;
 	}
 
+	@Override
 	public void setStatus(ChangelistStatus status) {
 		this.status = status;
 	}
 
+	@Override
 	public Date getDate() {
 		return date;
 	}
 
+	@Override
 	public void setDate(Date date) {
 		this.date = date;
 	}
 
+	@Override
 	public String getDescription() {
 		return description;
 	}
 
+	@Override
 	public String setDescription(String description) {
 		String oldVal = this.description;
 		this.description = description;
@@ -328,6 +342,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 		this.serverImpl = serverImpl;
 	}
 
+	@Override
 	public List<IFileSpec> getFiles(boolean refresh)
 			throws ConnectionException, RequestException,
 			AccessException {
@@ -381,6 +396,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#getDiffs(com.perforce.p4java.core.file.DiffType)
 	 */
+	@Override
 	public InputStream getDiffs(DiffType diffType)
 			throws ConnectionException, RequestException, AccessException {
 		if (this.serverImpl == null) {
@@ -392,6 +408,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#getDiffsStream(com.perforce.p4java.option.server.GetChangelistDiffsOptions)
 	 */
+	@Override
 	public InputStream getDiffsStream(GetChangelistDiffsOptions opts) throws P4JavaException {
 		if (this.serverImpl == null) {
 			throw new RequestException("Changelist not associated with a Perforce server");
@@ -403,7 +420,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#getJobIds()
 	 */
-
+	@Override
 	public List<String> getJobIds()
 			throws ConnectionException, RequestException, AccessException {
 		List<String> idList = new ArrayList<String>();
@@ -432,6 +449,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#getCachedJobIdList()
 	 */
+	@Override
 	public List<String> getCachedJobIdList()
 			throws ConnectionException, RequestException, AccessException {
 		if (this.jobIds != null) {
@@ -444,7 +462,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#getJobs()
 	 */
-
+	@Override
 	public List<IJob> getJobs()
 			throws ConnectionException, RequestException, AccessException {
 		List<String> idList = getJobIds();
@@ -463,7 +481,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#submit(boolean, java.util.List, java.lang.String)
 	 */
-
+	@Override
 	public List<IFileSpec> submit(boolean reOpen, List<String> jobIds, String jobStatus)
 			throws ConnectionException, RequestException, AccessException {
 		try {
@@ -486,6 +504,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#submit(com.perforce.p4java.option.changelist.SubmitOptions)
 	 */
+	@Override
 	public List<IFileSpec> submit(SubmitOptions opts) throws P4JavaException {
 
 		if (this.serverImpl == null) {
@@ -533,6 +552,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	 * @see com.perforce.p4java.core.IChangelist#submit(com.perforce.p4java.option.changelist.SubmitOptions,
 	 * com.perforce.p4java.server.callback.IStreamingCallback, int)
 	 */
+	@Override
 	public void submit(SubmitOptions opts, IStreamingCallback callback, int key) throws P4JavaException {
 
 		if (this.serverImpl == null) {
@@ -552,6 +572,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#submit(boolean)
 	 */
+	@Override
 	public List<IFileSpec> submit(boolean reOpen)
 			throws ConnectionException, RequestException, AccessException {
 		return submit(reOpen, null, null);
@@ -619,6 +640,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 		return inMap;
 	}
 
+	@Override
 	public void refresh()
 			throws ConnectionException, RequestException, AccessException {
 		// Basically, just ask the server about us and fill in the blanks... (and what
@@ -649,6 +671,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.impl.generic.core.ServerResource#update()
 	 */
+	@Override
 	public void update() throws ConnectionException, RequestException, AccessException {
 		update(false);
 	}
@@ -656,6 +679,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.impl.generic.core.ServerResource#update(boolean)
 	 */
+	@Override
 	public void update(boolean force) throws ConnectionException, RequestException, AccessException {
 		update(new ChangelistOptions().setForce(force));
 	}
@@ -705,6 +729,7 @@ public class Changelist extends ChangelistSummary implements IChangelist {
 	/**
 	 * @see com.perforce.p4java.core.IChangelist#updateOnServer(boolean)
 	 */
+	@Override
 	public void updateOnServer(boolean refresh)
 			throws ConnectionException, RequestException, AccessException {
 		this.update();

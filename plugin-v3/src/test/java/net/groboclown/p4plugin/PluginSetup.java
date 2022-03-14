@@ -34,11 +34,11 @@ import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.mock.MockCommandProcessor;
 import net.groboclown.idea.mock.MockLocalChangeList;
 import net.groboclown.p4.server.api.ClientConfigRoot;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
@@ -81,7 +81,7 @@ public class PluginSetup
     public P4ServerComponent server;
     public CacheComponent cacheComponent;
     public MockConnectionManager connectionManager;
-    private List<VirtualFile> roots = new ArrayList<>();
+    private final List<VirtualFile> roots = new ArrayList<>();
 
     @Override
     public void beforeEach(ExtensionContext extensionContext)
@@ -296,6 +296,7 @@ public class PluginSetup
         }
 
         @NotNull
+        @Override
         protected ConnectionManager createConnectionManager() {
             return mgr;
         }

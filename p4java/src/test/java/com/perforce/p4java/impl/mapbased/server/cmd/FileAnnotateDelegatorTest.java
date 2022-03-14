@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_FAILED;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.DEPOT_FILE;
 import static com.perforce.p4java.server.CmdSpec.ANNOTATE;
@@ -15,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,8 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Lists;
-import com.nitorcreations.junit.runners.NestedRunner;
 import com.perforce.p4java.core.file.DiffType;
 import com.perforce.p4java.core.file.IFileAnnotation;
 import com.perforce.p4java.core.file.IFileSpec;
@@ -38,7 +36,6 @@ import com.perforce.p4java.option.server.GetFileAnnotationsOptions;
  * @author Sean Shou
  * @since 21/09/2016
  */
-@RunWith(NestedRunner.class)
 public class FileAnnotateDelegatorTest {
     private FileAnnotateDelegator fileAnnotateDelegator;
     private Map<String, Object> resultMap;
@@ -48,6 +45,11 @@ public class FileAnnotateDelegatorTest {
     private IOptionsServer server;
 
     private static final String DEPOT_FILE_KEY = "depotFile";
+
+    private DiffType nonWhitespaceDiffType = DiffType.UNIFIED_DIFF;
+    private DiffType whitespaceDiffType = DiffType.IGNORE_WS;
+
+    private GetFileAnnotationsOptions fileAnnotationsOptions;
 
     /**
      * Runs before every test.
@@ -59,148 +61,122 @@ public class FileAnnotateDelegatorTest {
         fileAnnotateDelegator = new FileAnnotateDelegator(server);
 
         resultMap = mock(Map.class);
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
-        fileSpecs = Lists.newArrayList();
+        fileSpecs = new ArrayList<>();
         IFileSpec fileSpec = mock(IFileSpec.class);
         fileSpecs.add(fileSpec);
+
+        fileAnnotationsOptions = mock(GetFileAnnotationsOptions.class);
     }
 
     /**
-     * test getFileAnnotations()
+     * Expected thrown <code>RequestException</code> when "non whitespace diff option" of <code>DiffType</code> given.
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
      */
-    public class TestGetFileAnnotations {
-        /**
-         * test getFileAnnotations() by 'fileSpecs, diffType, allResult, useChangeNumber, followBranch' arguments
-         */
-        public class WhenFileSpecsDiffTypeAllResultsUseChangeNumberAndFollowBranch {
-            private DiffType nonWhitespaceDiffType = DiffType.UNIFIED_DIFF;
-            private DiffType whitespaceDiffType = DiffType.IGNORE_WS;
+    @Test(expected = RequestException.class)
+    public void shouldThrowRequestExceptionWhenNonWhitespaceDiffTypeGiven() throws Exception {
+        executeGetFileAnnotations(nonWhitespaceDiffType);
+        verify(server, never()).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
+    }
 
-            /**
-             * Expected thrown <code>RequestException</code> when "non whitespace diff option" of <code>DiffType</code> given.
-             *
-             * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-             */
-            @Test(expected = RequestException.class)
-            public void shouldThrowRequestExceptionWhenNonWhitespaceDiffTypeGiven() throws Exception {
-                executeGetFileAnnotations(nonWhitespaceDiffType);
-                verify(server, never()).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
-            }
+    /**
+     * Expected thrown <code>RequestException</code> when inner getFileAnnotations() throws the <code>P4JavaException</code>
+     *
+     * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
+     */
+    @Test(expected = RequestException.class)
+    public void shouldThrowRequestExceptionWhenInnerGetFileAnnotationsThrowsP4JavaException() throws Exception {
+        doThrow(P4JavaException.class).when(server).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
 
-            /**
-             * Expected thrown <code>RequestException</code> when inner getFileAnnotations() throws the <code>P4JavaException</code>
-             *
-             * @throws Exception if the <code>Exception</code> is thrown, it's mean an unexpected error occurs
-             */
-            @Test(expected = RequestException.class)
-            public void shouldThrowRequestExceptionWhenInnerGetFileAnnotationsThrowsP4JavaException() throws Exception {
-                doThrow(P4JavaException.class).when(server).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
+        executeGetFileAnnotations(whitespaceDiffType);
+    }
 
-                executeGetFileAnnotations(whitespaceDiffType);
-            }
+    /**
+     * Expected thrown <code>ConnectionException</code> when inner getFileAnnotations() throws the exception.
+     *
+     * @throws Exception
+     */
+    @Test(expected = ConnectionException.class)
+    public void shouldThrowExceptionWhenInnerGetFileAnnotationsThrowsIt() throws Exception {
+        doThrow(ConnectionException.class).when(server).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
+        executeGetFileAnnotations(whitespaceDiffType);
+    }
 
-            /**
-             * Expected thrown <code>ConnectionException</code> when inner getFileAnnotations() throws the exception.
-             *
-             * @throws Exception
-             */
-            @Test(expected = ConnectionException.class)
-            public void shouldThrowExceptionWhenInnerGetFileAnnotationsThrowsIt() throws Exception {
-                doThrow(ConnectionException.class).when(server).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
-                executeGetFileAnnotations(whitespaceDiffType);
-            }
+    /**
+     * Return non-empty list when non new depot files include in file specs
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnNonEmptyFileAnnotations() throws Exception {
+        mockResultMaps();
+        doReturn(resultMaps).when(server).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
 
-            /**
-             * Return non-empty list when non new depot files include in file specs
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnNonEmptyFileAnnotations() throws Exception {
-                mockResultMaps();
-                doReturn(resultMaps).when(server).execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null));
+        //when
+        List<IFileAnnotation> fileAnnotations = executeGetFileAnnotations(whitespaceDiffType);
+        //then
+        assertThat(fileAnnotations.size(), is(2));
+    }
 
-                //when
-                List<IFileAnnotation> fileAnnotations = executeGetFileAnnotations(whitespaceDiffType);
-                //then
-                assertThat(fileAnnotations.size(), is(2));
-            }
+    private List<IFileAnnotation> executeGetFileAnnotations(DiffType diffType) throws Exception {
+        boolean allResults = false;
+        boolean useChangeNumbers = false;
+        boolean followBranches = false;
+        return fileAnnotateDelegator.getFileAnnotations(
+                fileSpecs,
+                diffType,
+                allResults,
+                useChangeNumbers,
+                followBranches);
+    }
 
-            private List<IFileAnnotation> executeGetFileAnnotations(DiffType diffType) throws Exception {
-                boolean allResults = false;
-                boolean useChangeNumbers = false;
-                boolean followBranches = false;
-                return fileAnnotateDelegator.getFileAnnotations(
-                        fileSpecs,
-                        diffType,
-                        allResults,
-                        useChangeNumbers,
-                        followBranches);
-            }
-        }
+    /**
+     * Expected get empty file annotations when command return null result maps.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnEmptyFileAnnotatesWhenResultMapIsNull() throws Exception {
+        when(server.execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null))).thenReturn(null);
 
-        /**
-         * test getFileAnnotations() by 'fileSpecs, GetFileAnnotationsOptions'
-         */
-        public class WhenFileSpecsAndGetFileAnnotationsOptions {
-            private GetFileAnnotationsOptions fileAnnotationsOptions;
+        executeThenVerifyEmptyFileAnnotations();
+    }
 
-            /**
-             * Runs before every test.
-             */
-            @Before
-            public void beforeEach() {
-                fileAnnotationsOptions = mock(GetFileAnnotationsOptions.class);
-            }
+    /**
+     * Expected get empty file annotations when only new depot files.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnEmptyFileAnnotationsWhenOnlyNewDepotFiles() throws Exception {
+        when(resultMap.containsKey(DEPOT_FILE_KEY)).thenReturn(true);
+        when(server.execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null))).thenReturn(resultMaps);
 
-            /**
-             * Expected get empty file annotations when command return null result maps.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnEmptyFileAnnotatesWhenResultMapIsNull() throws Exception {
-                when(server.execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null))).thenReturn(null);
+        executeThenVerifyEmptyFileAnnotations();
+        verify(resultMap, never()).get(E_FAILED);
+    }
 
-                executeThenVerifyEmptyFileAnnotations();
-            }
+    private void executeThenVerifyEmptyFileAnnotations() throws P4JavaException {
+        List<IFileAnnotation> fileAnnotations = fileAnnotateDelegator.getFileAnnotations(
+                fileSpecs,
+                fileAnnotationsOptions);
+        assertThat(fileAnnotations.size(), is(0));
+    }
 
-            /**
-             * Expected get empty file annotations when only new depot files.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnEmptyFileAnnotationsWhenOnlyNewDepotFiles() throws Exception {
-                when(resultMap.containsKey(DEPOT_FILE_KEY)).thenReturn(true);
-                when(server.execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null))).thenReturn(resultMaps);
+    /**
+     * Return non-empty list when non new depot file include in file specs.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnNonEmptyFileAnnotationsWhenExistDepotFileGiven() throws Exception {
+        mockResultMaps();
+        when(server.execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null))).thenReturn(resultMaps);
 
-                executeThenVerifyEmptyFileAnnotations();
-                verify(resultMap, never()).get(E_FAILED);
-            }
-
-            private void executeThenVerifyEmptyFileAnnotations() throws P4JavaException {
-                List<IFileAnnotation> fileAnnotations = fileAnnotateDelegator.getFileAnnotations(
-                        fileSpecs,
-                        fileAnnotationsOptions);
-                assertThat(fileAnnotations.size(), is(0));
-            }
-
-            /**
-             * Return non-empty list when non new depot file include in file specs.
-             *
-             * @throws Exception
-             */
-            @Test
-            public void shouldReturnNonEmptyFileAnnotationsWhenExistDepotFileGiven() throws Exception {
-                mockResultMaps();
-                when(server.execMapCmdList(eq(ANNOTATE.toString()), any(String[].class), eq(null))).thenReturn(resultMaps);
-
-                List<IFileAnnotation> fileAnnotations = fileAnnotateDelegator.getFileAnnotations(fileSpecs, fileAnnotationsOptions);
-                assertThat(fileAnnotations.size(), is(2));
-            }
-        }
+        List<IFileAnnotation> fileAnnotations = fileAnnotateDelegator.getFileAnnotations(fileSpecs, fileAnnotationsOptions);
+        assertThat(fileAnnotations.size(), is(2));
     }
 
     @SuppressWarnings("unchecked")
@@ -232,6 +208,6 @@ public class FileAnnotateDelegatorTest {
         when(newDepotFileResultMap1.get("upper1")).thenReturn(upper);
         when(newDepotFileResultMap1.get("lower1")).thenReturn("not valid number");
 
-        resultMaps = newArrayList(resultMap0, resultMap1, newDepotFileResultMap1);
+        resultMaps = List.of(resultMap0, resultMap1, newDepotFileResultMap1);
     }
 }

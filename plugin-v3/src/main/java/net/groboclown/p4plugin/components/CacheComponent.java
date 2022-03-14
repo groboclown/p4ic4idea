@@ -276,7 +276,7 @@ public class CacheComponent implements
     }
 
     @Override
-    public void loadState(ProjectCacheStore.State state) {
+    public void loadState(@NotNull ProjectCacheStore.State state) {
         try {
             this.projectCache.setState(state);
         } catch (InterruptedException e) {

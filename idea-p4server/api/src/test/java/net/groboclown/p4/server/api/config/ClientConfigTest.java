@@ -14,7 +14,7 @@
 package net.groboclown.p4.server.api.config;
 
 import net.groboclown.p4.server.api.ClientServerRef;
-import net.groboclown.p4.server.api.MockConfigPart;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import org.junit.jupiter.api.Test;
 
 import static net.groboclown.idea.ExtMatchers.greaterThan;

@@ -18,7 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.p4.server.api.ApplicationPasswordRegistry;
-import net.groboclown.p4.server.api.MockConfigPart;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.api.P4ServerName;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +57,7 @@ class ConfigPropertiesUtilTest {
                 // do nothing
             }
         };
-        idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_NAME, passwdRegistry);
+        //idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_NAME, passwdRegistry);
         idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_CLASS, passwdRegistry);
     }
 

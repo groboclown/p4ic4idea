@@ -6,12 +6,9 @@ plugins {
 
 
 ideaImplementation.uses(
-        'openapi',
-        'core-api',
-        'annotations',
-        'vcs-api-core',
-        'vcs-api',
-        'platform-api',
+        'core',
+        'vcs-core',
+        'vcs',
         'util',
         'util-rt',
         'extensions',
@@ -21,12 +18,19 @@ ideaImplementation.uses(
         'editor-ui-api',
 
         'jdom',
-        'kotlin'
+        'annotations',
 )
 
 
 ideaTest.uses(
-        'platform-resources-en',
+        'concurrency',
+        'util',
+        'core-impl',
+
+        'fastutil',
+        'trove4j',
+        'intellij-util-collections',
+        'kotlin-stdlib',
 )
 
 
@@ -43,10 +47,18 @@ dependencies {
     )
     compatTest(
             project(':idea-test-core'),
-            project(path: ':idea-p4server:api', configuration: 'testArtifacts'),
             project(':p4d-test-core'),
 
-            'org.junit.jupiter:junit-jupiter-engine:5.6.2',
+            'org.junit.jupiter:junit-jupiter-engine:5.8.2',
+    )
+    jacocoAnt (
+            'org.jacoco:org.jacoco.core:0.8.7',
+            'org.jacoco:org.jacoco.report:0.8.7',
+            'org.jacoco:org.jacoco.agent:0.8.7',
+            'org.jacoco:org.jacoco.ant:0.8.7',
+            'org.ow2.asm:asm:9.2',
+            'org.ow2.asm:asm-commons:9.2',
+            'org.ow2.asm:asm-tree:9.2',
     )
 }
 
@@ -57,7 +69,7 @@ compileJava {
 
 
 jacoco {
-    toolVersion = '0.8.1'
+    toolVersion = '0.8.7'
 }
 
 jacocoTestReport {

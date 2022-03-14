@@ -5,6 +5,9 @@
       <item index="0" class="java.lang.String" itemvalue="org.junit.jupiter.api.extension.RegisterExtension" />
     </list>
   </component>
+  <component name="ExcludeFromValidation">
+    <file url="file://$PROJECT_DIR$/p4java/src/com/jcraft/jzlib/Deflate.java" />
+  </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="IdProvider" IDEtalkID="2432D203DBC55496502712AC8D885D4B" />
   <component name="NullableNotNullManager">
@@ -30,7 +33,7 @@
     </option>
     <option name="myNotNulls">
       <value>
-        <list size="12">
+        <list size="13">
           <item index="0" class="java.lang.String" itemvalue="org.jetbrains.annotations.NotNull" />
           <item index="1" class="java.lang.String" itemvalue="javax.annotation.Nonnull" />
           <item index="2" class="java.lang.String" itemvalue="edu.umd.cs.findbugs.annotations.NonNull" />
@@ -43,6 +46,7 @@
           <item index="9" class="java.lang.String" itemvalue="androidx.annotation.RecentlyNonNull" />
           <item index="10" class="java.lang.String" itemvalue="com.android.annotations.NonNull" />
           <item index="11" class="java.lang.String" itemvalue="org.eclipse.jdt.annotation.NonNull" />
+          <item index="12" class="java.lang.String" itemvalue="lombok.NonNull" />
         </list>
       </value>
     </option>
@@ -69,7 +73,7 @@
       </State>
     </option>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="corretto-11" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/../.idea/out" />
   </component>
   <component name="VcsRevisionGraphProjectComponent">

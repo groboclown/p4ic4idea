@@ -16,13 +16,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.perforce.p4java.server.IServerMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.CommandLineArgumentMatcher;
 import com.perforce.p4java.core.IUserGroup;
 import com.perforce.p4java.exception.AccessException;
@@ -58,7 +56,7 @@ public class GroupsDelegatorTest extends P4JavaTestCase {
         userGroup1 = mock(IUserGroup.class);
         opts1 = mock(UpdateUserGroupOptions.class);
         firstResultMap = mock(HashMap.class);
-        resultMaps = Lists.newArrayList(firstResultMap);
+        resultMaps = List.of(firstResultMap);
         group = mock(IUserGroup.class);
     }
 

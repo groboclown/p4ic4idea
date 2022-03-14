@@ -17,8 +17,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.perforce.p4java.core.IReviewChangelist;
 import com.perforce.p4java.exception.AccessException;
 import com.perforce.p4java.impl.mapbased.server.Server;
@@ -50,8 +48,8 @@ public class ReviewDelegatorTest {
     public void beforeEach() {
         server = mock(Server.class);
         reviewDelegator = new ReviewDelegator(server);
-        resultMap = Maps.newHashMap();
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMap = Map.of();
+        resultMaps = List.of(resultMap);
 
         opts = new GetReviewChangelistsOptions(CMD_ARGUMENTS);
     }

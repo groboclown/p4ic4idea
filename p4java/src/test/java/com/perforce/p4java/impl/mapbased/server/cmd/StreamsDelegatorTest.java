@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.FMT0;
 import static com.perforce.p4java.server.CmdSpec.STREAMS;
@@ -51,10 +50,10 @@ public class StreamsDelegatorTest {
         server = mock(Server.class);
         streamsDelegator = new StreamsDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
 
         opts = new GetStreamsOptions(CMD_OPTIONS);
-        streamPaths = newArrayList(STREAM_PATHS);
+        streamPaths = List.of(STREAM_PATHS);
 
         when(server.execMapCmdList(eq(STREAMS.toString()), eq(CMD_ARGUMENTS), eq(null)))
                 .thenReturn(resultMaps);

@@ -59,6 +59,7 @@ public abstract class AccessException extends P4JavaException {
 	/**
 	 * @deprecated use the server code instead
 	 */
+	@Deprecated
 	public boolean hasMessageFragment(String fragment) {
 		return err == null
 				? (getMessage() != null && getMessage().toLowerCase().equals(fragment.toLowerCase()))

@@ -13,7 +13,7 @@
  */
 package net.groboclown.p4.server.api.config;
 
-import net.groboclown.p4.server.api.MockConfigPart;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.api.P4ServerName;
 import org.junit.jupiter.api.Test;
 

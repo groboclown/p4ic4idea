@@ -19,8 +19,6 @@ import com.perforce.p4java.tests.dev.unit.P4JavaRshTestCase;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -36,8 +34,6 @@ import static org.junit.Assert.fail;
 @Jobs({"job046102"})
 @TestId("Dev112_IntegrateSkipActionTest")
 public class IntegrateSkipActionTest extends P4JavaRshTestCase {
-
-	private static Logger logger = LoggerFactory.getLogger(IntegrateSkipActionTest.class);
 
 	@ClassRule
 	public static SimpleServerRule p4d = new SimpleServerRule("r16.1", IntegrateSkipActionTest.class.getSimpleName());

@@ -215,7 +215,7 @@ public class SwarmReviewPanel {
 
         this.reviewersPanel = new SearchSelectPanel<>(
                 P4ServerComponent.query(project, new OptionalClientServerConfig(clientConfig),
-                        new ListUsersQuery(-1))
+                                new ListUsersQuery(-1))
                         .mapQuery(r -> r.getUsers().stream()
                                 .map(Reviewer::new)
                                 .collect(Collectors.toList())),

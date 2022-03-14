@@ -101,6 +101,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
         this.loader = loader;
     }
 
+    @Override
     @Nullable
     public VcsKey getVcsKey() {
         return P4Vcs.getKey();
@@ -274,7 +275,7 @@ public class P4AnnotatedFileImpl extends FileAnnotation {
 
     private abstract class P4LineAnnotationAspect extends LineAnnotationAspectAdapter {
         P4LineAnnotationAspect(@NotNull String id, boolean showByDefault) {
-            super(id, showByDefault);
+            super(null, id, showByDefault);
         }
 
         @Override

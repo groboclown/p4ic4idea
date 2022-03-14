@@ -1,6 +1,5 @@
 package com.perforce.p4java.impl.mapbased.server.cmd;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static com.perforce.p4java.exception.MessageSeverityCode.E_INFO;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.CODE0;
 import static com.perforce.p4java.impl.mapbased.rpc.func.RpcFunctionMapKey.DEPOT_FILE;
@@ -63,7 +62,7 @@ public class VerifyDelegatorTest {
         resultMap = mock(Map.class);
         when(resultMap.get(E_INFO)).thenReturn(EMPTY);
 
-        List<Map<String, Object>> resultMaps = newArrayList(resultMap);
+        List<Map<String, Object>> resultMaps = List.of(resultMap);
         opts = new VerifyFilesOptions(CMD_OPTIONS);
 
         when(server.execMapCmdList(eq(VERIFY.toString()), eq(CMD_ARGUMENTS), eq(null)))

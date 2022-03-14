@@ -5,7 +5,6 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -16,7 +15,6 @@ import java.util.Map;
 
 import com.perforce.p4java.server.IOptionsServer;
 
-import com.google.common.collect.Lists;
 import com.perforce.p4java.core.IBranchSpec;
 import com.perforce.p4java.core.IBranchSpecSummary;
 import com.perforce.p4java.exception.AccessException;
@@ -47,7 +45,7 @@ public class BranchesDelegatorTest {
         server = mock(OneShotServerImpl.class);
         branchesDelegator = new BranchesDelegator(server);
         resultMap = mock(Map.class);
-        resultMaps = Lists.newArrayList(resultMap);
+        resultMaps = List.of(resultMap);
         // server = mock(Server.class);
         mockBranchSpec = mock(IBranchSpec.class);
     }

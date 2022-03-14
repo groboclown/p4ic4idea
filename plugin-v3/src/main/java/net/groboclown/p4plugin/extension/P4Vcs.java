@@ -44,6 +44,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.merge.MergeProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
+import com.intellij.openapi.vcs.versionBrowser.CommittedChangeList;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
@@ -215,6 +216,7 @@ public class P4Vcs extends AbstractVcs {
     }
 
     @Override
+    @NotNull
     public String getDisplayName() {
         return P4Bundle.message("p4ic.name");
     }
@@ -233,6 +235,7 @@ public class P4Vcs extends AbstractVcs {
         return new P4VcsRootConfigurable(getProject(), mapping);
     }
 
+    @Override
     @Nullable
     public VcsRootSettings createEmptyVcsRootSettings() {
         return new P4VcsRootSettingsImpl(
@@ -240,17 +243,6 @@ public class P4Vcs extends AbstractVcs {
                 ProjectUtil.guessProjectBaseDir(myProject)
         );
     }
-
-    // This is only needed if the user's defined VCS roots don't
-    // necessarily match up with the actual VCS.  For this plugin, at the
-    // moment, we're defining the per-client setup at the VCS root level,
-    // so we don't need this conversion (we have an identity mapping).
-    // Eventually, if the relative config file is implemented again, we can use this.
-    //@Nullable
-    //public RootsConvertor getCustomConvertor() {
-    //    return null;
-    //}
-
 
     /**
      *
@@ -275,7 +267,7 @@ public class P4Vcs extends AbstractVcs {
         tempFileWatchDog.start();
 
         if (myVFSListener == null) {
-            myVFSListener = new P4VFSListener(getProject(), this);
+            myVFSListener = new P4VFSListener(this);
         }
 
         // VcsCompat.getInstance().setupPlugin(myProject);
@@ -475,7 +467,7 @@ public class P4Vcs extends AbstractVcs {
 
     @Override
     @Nullable
-    public CommittedChangesProvider getCommittedChangesProvider() {
+    public CommittedChangesProvider<? extends CommittedChangeList, ?> getCommittedChangesProvider() {
         return committedChangesProvider;
     }
 
@@ -522,10 +514,12 @@ public class P4Vcs extends AbstractVcs {
     }
 
 
+    @Override
     public boolean allowsNestedRoots() {
         return true;
     }
 
+    @Override
     public boolean fileListenerIsSynchronous() {
         return false;
     }

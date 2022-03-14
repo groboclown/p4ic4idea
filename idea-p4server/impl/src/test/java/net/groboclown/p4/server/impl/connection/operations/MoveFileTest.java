@@ -29,11 +29,11 @@ import com.perforce.test.P4ServerExtension;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
-import net.groboclown.p4.server.api.MockConfigPart;
 import net.groboclown.p4.server.api.commands.file.MoveFileAction;
 import net.groboclown.p4.server.api.commands.file.MoveFileResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.connection.MockP4RequestErrorHandler;
 import net.groboclown.p4.server.impl.connection.impl.MessageStatusUtil;
@@ -78,7 +78,6 @@ class MoveFileTest {
     @Test
     void move_add(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -137,7 +136,6 @@ class MoveFileTest {
     @Test
     void move_sourceEdited(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -201,7 +199,6 @@ class MoveFileTest {
     @Test
     void moveMessage_addNotOpen(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -263,7 +260,6 @@ class MoveFileTest {
     @Test
     void moveMessage_targetExists_notOpen(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -331,7 +327,6 @@ class MoveFileTest {
     @Test
     void moveMessage_targetExists_notOpenForce(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly
@@ -401,7 +396,6 @@ class MoveFileTest {
     @Test
     void moveMessage_targetExists_edit(TemporaryFolder tmpDir)
             throws IOException {
-        idea.useInlineThreading(null);
         MockConfigPart part = new MockConfigPart()
                 // By using the RSH port, it means that the connection will be kept open
                 // (NTS connection).  By keeping the connection open until explicitly

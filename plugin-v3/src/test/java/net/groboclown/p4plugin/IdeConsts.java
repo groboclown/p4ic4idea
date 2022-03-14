@@ -1,4 +1,3 @@
-// Copyright (C) Zilliant, Inc.
 package net.groboclown.p4plugin;
 
 import com.intellij.openapi.vcs.changes.LocalChangeList;

@@ -5,7 +5,7 @@
 The plugin allows for associating an [IntelliJ IDEA Community Edition IDE](https://www.jetbrains.com/idea/)
 project with a Perforce repository through IDEA's built-in VCS support.
 
-**Currently Supported IDEA versions: 2017.1 and above**
+**Currently Supported IDEA versions: 2020.3 and above**
 For a full list of supported products, please see
 [the JetBrains plugin page](https://plugins.jetbrains.com/update/index?pr=&updateId=22898)
 
@@ -43,7 +43,7 @@ in the `135-compat` branch.
            environment and building the `p4ic4idea-plugin.jar` file.
         1. In IDEA, open the IDE settings dialog ( **File** -> **Settings...** ).
         1. Navigate to the Plugins panel.
-        1. Click the ![gear](plugin/docs/img/settings-gear-icon-1.png) icon, and select the
+        1. Click the ![gear](docs/img/settings-gear-icon-1.png) icon, and select the
            **Install plugin from disk...** item from the pop-up menu.
         1. Select the downloaded file from the file selection dialog.
 1. In IDEA, [configure the VCS root directory managed by Perforce and its connection properties](#setting-up-the-plugin).
@@ -232,4 +232,4 @@ Please see the bug list for the project, and the [TODO.md] file for details on t
 
 The plugin is released under the [Apache 2.0 license](LICENSE).  It includes modifications to code from:
 
-* [p4java](p4java/LICENSE-p4java.txt), released under a 2-clause BSD license by Perforce Software, Inc.
+* [p4java](p4java/LICENSE-p4java.txt), released under a 2-clause BSD license by Perforce Software, Inc.  This code has been modified by the project, but is still under the terms of the original license.

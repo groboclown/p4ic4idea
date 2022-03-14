@@ -3,7 +3,7 @@
     <id>PerforceIC</id>
     <version>0.12.0</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
-    <idea-version since-build="171"/>
+    <idea-version since-build="203"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>

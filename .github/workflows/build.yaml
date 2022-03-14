@@ -1,7 +1,7 @@
 name: p4ic4idea-build
 on: [push, pull_request]
 jobs:
-  build-jdk8:
+  build-jdk11:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

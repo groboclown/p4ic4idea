@@ -18,108 +18,124 @@ import java.util.regex.Pattern
 
 class IdeaVersion212 implements IdeaVersionLibMatcher {
     private static final LibGroup libs = new LibGroup().add(
-            new NamedLib("openapi",
-                    //"intellij.platform.util.rt.jar"
-            ),
-            new NamedLib("core-api",
+            new NamedLib("core",
                     //"intellij.platform.core.jar"
             ),
-            new NamedLib("core-impl",
-                    // Should only be used by tests, but no longer needed.
+            new NamedLib("core-ui",
+                    // com.intellij.openapi.actionSystem.DataContext
+                    //"intellij.platform.core.ui.jar",
             ),
-            new NamedLib("vcs-api-core",
+            new NamedLib("core-impl",
+                    // com.intellij.openapi.application.impl.ModalityStateEx
+                    //"intellij.platform.core.impl.jar",
+            ),
+            new NamedLib("vcs-core",
                     //"intellij.platform.vcs.core.jar"
             ),
-            new NamedLib("vcs-api",
+            new NamedLib("vcs",
                     //"intellij.platform.vcs.jar",
-
-                    // Strange that
-                    //   com.intellij.openapi.vfs.LocalFileSystem
-                    // is now in the analysis jar.
+            ),
+            new NamedLib("analysis",
+                    // Contains com.intellij.openapi.vfs.LocalFileSystem
                     //"intellij.platform.analysis.jar"
             ),
             new NamedLib("vcs-impl",
+                    // com.intellij.openapi.vcs.history.VcsHistoryUtil
                     //"intellij.platform.vcs.impl.jar",
             ),
-            new NamedLib("platform-api",
-                    //"intellij.platform.ide.jar"
+            new NamedLib("ide",
+                    //"intellij.platform.ide.jar",
             ),
-            new NamedLib("platform-impl",
+            new NamedLib("ide-impl",
+                    // com.intellij.credentialStore.CredentialPromptDialog
                     //"intellij.platform.ide.impl.jar",
             ),
-            new NamedLib("projectModel-api",
-                    // No longer needed
+            new NamedLib("project-model",
+                    //"intellij.platform.projectModel.jar",
             ),
             new NamedLib("extensions",
                     //"intellij.platform.extensions.jar"
             ),
+            new NamedLib("editor",
+                    // for com.intellij.openapi.vcs.FileStatus
+                    //"intellij.platform.editor.jar",
+            ),
             new NamedLib("util",
                     //"intellij.platform.util.jar",
-                    //"intellij.platform.util.classLoader.jar",
-            ),
-            new NamedLib("util-ui",
-                    //"intellij.platform.util.ui.jar"
             ),
             new NamedLib("util-rt",
-                    //"intellij.platform.util.rt.jar",
-
+                    //"intellij.platform.util.rt.jar"
+            ),
+            new NamedLib("util-ui",
+                    //"intellij.platform.util.ui.jar",
+            ),
+            new NamedLib("util-strings",
                     // com.intellij.util.text.CharArrayCharSequence, used in password access, moved here:
-                    //"intellij.platform.util.strings.jar"
+                    //"intellij.platform.util.strings.jar",
+            ),
+            new NamedLib("util-io",
+                    //"intellij.platform.ide.util.io.jar",
+            ),
+            new NamedLib("util-classloader",
+                    //"intellij.platform.util.classLoader.jar",
+            ),
+            new NamedLib("util-collections",
+                    //"intellij.platform.util.collections.jar",
             ),
             new NamedLib("editor-ui-api",
                     // this includes com.intellij.openapi.vcs.FileStatus
-                    //"intellij.platform.editor.jar"
+                    //"intellij.platform.editor.jar",
             ),
-            new NamedLib("platform-resources-en",
-                    // not used anymore
+            new NamedLib("guiforms-rt",
+                    //"intellij.java.guiForms.rt.jar",
             ),
-            new NamedLib('testFramework',
-                    // not used anymore
-            ),
-            new NamedLib("forms_rt",
-                    // "intellij.java.guiForms.rt.jar"
-            ),
-            new NamedLib("java-psi-impl",
-                    // not used anymore
-            ),
-            new NamedLib("java-runtime",
-                    // not used anymore
-            ),
-            new NamedLib("lang-api",
-                    // not used anymore
-            ),
-            new NamedLib("lang-impl",
-                    // not used anymore
-            ),
-            new NamedLib("instrumentation-util",
-                    // not used anymore
-            ),
-            new NamedLib("javac2",
-                    // not used anymore
-            ),
-            new NamedLib("forms-compiler",
-                    // not used anymore
+            new NamedLib("concurrency",
+                    //"intellij.platform.concurrency.jar",
             ),
 
             // deps
             new NamedLib("jdom",
                     //"jdom-2.0.6.jar"
             ),
-            new NamedLib("picocontainer",
-                    // Note: This is ONLY used by tests.
-                    //"picocontainer-1.2.jar"
-            ),
-            new NamedLib("trove4j",
-                    // not needed anymore
-            ),
-            new NamedLib("kotlin",
-                    // not needed anymore
-            ),
             new NamedLib("jgoodies-forms",
                     //"forms-1.1-preview.jar"
             ),
             new NamedLib("annotations",
                     //"annotations-java5-20.0.0.jar"
+            ),
+            // test deps
+            new NamedLib("fastutil",
+                    //"intellij-deps-fastutil-8.4.1-4.jar",
+            ),
+            new NamedLib("trove4j",
+                    //"trove4j-1.0.20200330.jar",
+            ),
+            new NamedLib("kotlin-stdlib",
+                    //"kotlin-stdlib-1.4.0.jar",
+            ),
+            new NamedLib("intellij-util-collections",
+                    //"util-collections-203.3157.jar",
+            ),
+
+            // Used by IntelliJInstrumentCodeTask
+            new NamedLib("javac2",
+                    //"javac2.jar",
+            ),
+            new NamedLib("compiler-instrumentationUtil",
+                    // com.intellij.compiler.instrumentation.FailSafeClassReader
+                    //"intellij.java.compiler.instrumentationUtil.jar"
+            ),
+            new NamedLib("compiler-antTasks",
+                    // com.intellij.ant.InstrumentIdeaExtensions
+                    //"intellij.java.compiler.antTasks.jar"
+            ),
+            new NamedLib("asm",
+                    // org.jetbrains.org.objectweb.asm.ClassReader
+                    //"asm-all-9.0.jar"
+            ),
+            new NamedLib("guiForms-compiler",
+                    // com.intellij.uiDesigner.compiler.AlienFormFileException
+                    //"intellij.java.guiForms.compiler.jar",
             ),
     )
 

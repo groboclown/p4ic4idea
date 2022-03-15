@@ -34,6 +34,7 @@ import org.jdom.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -144,7 +145,7 @@ public class PersistentRootConfigComponent
     }
 
     @Override
-    public void loadState(Element element) {
+    public void loadState(@Nonnull Element element) {
         if (element == null || element.getChildren().isEmpty()) {
             LOG.warn("Loaded null or empty state");
             return;

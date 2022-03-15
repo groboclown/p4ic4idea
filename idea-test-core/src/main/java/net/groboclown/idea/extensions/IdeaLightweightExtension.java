@@ -294,7 +294,8 @@ public class IdeaLightweightExtension
             return serviceObj;
         }
 
-        @Override
+        // Removed in v>=211
+        // @Override
         public void verify(PicoContainer picoContainer)
                 throws PicoIntrospectionException {
             // do nothing

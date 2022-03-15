@@ -34,7 +34,8 @@ public class ClientConfigRootImpl
     // must monitor for client config removed.
     private boolean disposed;
 
-    public ClientConfigRootImpl(@NotNull final ClientConfig config,
+    public ClientConfigRootImpl(
+            @NotNull final ClientConfig config,
             @NotNull ServerStatusImpl serverConfigState,
             @NotNull VirtualFile vcsRootDir) {
         this.config = config;

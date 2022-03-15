@@ -8,6 +8,7 @@
 * Bug fixes
 * Changed supported IDE versions - removed support for all versions of the IDE before v203.
 * Add support for compile and test against additional IDE versions.
+* Upgraded referenced libraries.
 
 
 ### Details
@@ -18,7 +19,9 @@
 * Changed supported IDE versions.
   * Removed all code that requires v202 and prior support.
   * Internally added jar support for compiling against v203, 211, 212, 213, and 221.
+  * Old versions of IntelliJ libraries, used for compiling, are still in the `lib` directory, but prefixed with "o".  These were hard to create and, even though they remain in source control, I'm hard-pressed to part with them.
   * Upgraded compiler compatibility to JDK 11.
+* Nearly all bundled libraries have been updated.  The included `bom.xml` file includes the updated information.
 
 
 ## ::v0.11.3::

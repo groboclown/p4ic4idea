@@ -49,8 +49,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ThreeState;
 import com.intellij.util.messages.MessageBusConnection;
 import net.groboclown.p4.server.api.P4VcsKey;
-import net.groboclown.p4.server.api.util.ProjectUtil;
-import net.groboclown.p4.server.impl.config.P4VcsRootSettingsImpl;
 import net.groboclown.p4.server.impl.tasks.TempFileWatchDog;
 import net.groboclown.p4.server.impl.util.ChangeListUtil;
 import net.groboclown.p4plugin.P4Bundle;
@@ -238,10 +236,8 @@ public class P4Vcs extends AbstractVcs {
     @Override
     @Nullable
     public VcsRootSettings createEmptyVcsRootSettings() {
-        return new P4VcsRootSettingsImpl(
-                myProject,
-                ProjectUtil.guessProjectBaseDir(myProject)
-        );
+        // This now is associated with the ClientConfigRoot.
+        return null;
     }
 
     /**

@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
@@ -50,14 +51,13 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     private final Project project;
     private final VirtualFile vcsRoot;
     private final VcsDirectoryMapping mapping;
-    private final P4VcsRootSettings settings;
     private P4RootConfigPanel panel;
     private Controller controller;
 
     public P4VcsRootConfigurable(Project project, VcsDirectoryMapping mapping) {
         this.project = project;
         this.settings = RootSettingsUtil.getFixedRootSettings(project, mapping);
-        this.vcsRoot = settings.getRootDir();
+        this.vcsRoot = VcsUtil.getVirtualFile(mapping.getDirectory());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Creating configurable for vcs root " + vcsRoot);
         }

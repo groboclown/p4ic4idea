@@ -20,6 +20,7 @@ import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.command.UndoConfirmationPolicy;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.NlsContexts;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +28,8 @@ import org.jetbrains.annotations.Nullable;
 // v183 - com.intellij.mock.MockCommandProcessor is no longer provided.
 public class MockCommandProcessor
         extends CommandProcessor {
-    @Override
+    // Removed in v>=211
+    // @Override
     public void executeCommand(@NotNull Runnable runnable, @Nullable String s, @Nullable Object o) {
 
     }
@@ -59,6 +61,14 @@ public class MockCommandProcessor
     @Override
     public void executeCommand(@Nullable Project project, @NotNull Runnable runnable, @Nullable String s,
             @Nullable Object o, @NotNull UndoConfirmationPolicy undoConfirmationPolicy, boolean b) {
+
+    }
+
+    // Introduced in 211
+    //@Override
+    public void executeCommand(@Nullable Project project, @NotNull Runnable runnable,
+            @Nullable @NlsContexts.Command String s, @Nullable Object o,
+            @NotNull UndoConfirmationPolicy undoConfirmationPolicy, boolean b, @Nullable Document document) {
 
     }
 

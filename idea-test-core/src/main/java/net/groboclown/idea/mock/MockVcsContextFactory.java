@@ -54,8 +54,9 @@ public class MockVcsContextFactory implements VcsContextFactory {
         return new IOFilePath(file);
     }
 
+    // Removed in v>=211
     @NotNull
-    @Override
+    // @Override
     public FilePath createFilePathOnDeleted(@NotNull File file, boolean isDirectory) {
         return new IOFilePath(file, isDirectory);
     }

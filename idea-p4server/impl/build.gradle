@@ -12,6 +12,7 @@ ideaImplementation.uses(
         'util',
         'util-rt',
         'extensions',
+        'util-collections',
 
         // TODO look at removing this
         // this os only used by P4FileAction

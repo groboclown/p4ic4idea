@@ -7,6 +7,8 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationListener;
 import com.intellij.openapi.application.ModalityInvokator;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.extensions.PluginDescriptor;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.util.ActionCallback;
 import com.intellij.openapi.util.Computable;
@@ -15,6 +17,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.pico.DefaultPicoContainer;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.picocontainer.PicoContainer;
@@ -420,6 +423,33 @@ public class MockApplication implements Application {
                 return false;
             }
         };
+    }
+
+    // Introduced in v>=211
+    // @Override
+    public @NotNull RuntimeException createError(@NotNull Throwable throwable, @NotNull PluginId pluginId) {
+        return new RuntimeException(throwable);
+    }
+
+
+    // Introduced in v>=211
+    //@Override
+    public @NotNull RuntimeException createError(@NotNull @NonNls String s, @NotNull PluginId pluginId) {
+        return new RuntimeException(s);
+    }
+
+    // Introduced in v>=211
+    //@Override
+    public @NotNull RuntimeException createError(@NotNull @NonNls String s, @NotNull PluginId pluginId,
+            @Nullable Map<String, String> map) {
+        return new RuntimeException(s);
+    }
+
+    // Removed in v>=211
+    //@Override
+    public @NotNull <T> Class<T> loadClass(@NotNull String s, @NotNull PluginDescriptor pluginDescriptor)
+            throws ClassNotFoundException {
+        return (Class<T>) getClass().getClassLoader().loadClass(s);
     }
 
     @Override

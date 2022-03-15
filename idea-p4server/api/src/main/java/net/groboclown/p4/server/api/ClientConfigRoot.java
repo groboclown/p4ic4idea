@@ -40,6 +40,7 @@ public interface ClientConfigRoot
      *      the data from the server), or false if the state has no
      *      information about the server configuration.
      */
+    @Override
     boolean isLoadedFromServer();
 
     /**
@@ -57,5 +58,6 @@ public interface ClientConfigRoot
     @NotNull
     VirtualFile getProjectVcsRootDir();
 
+    @Override
     boolean isDisposed();
 }

@@ -11,6 +11,7 @@ ideaImplementation.uses(
         'vcs-core',
         'vcs',
         'ide',
+        'editor',
         'util',
         'util-ui',
         'util-rt',

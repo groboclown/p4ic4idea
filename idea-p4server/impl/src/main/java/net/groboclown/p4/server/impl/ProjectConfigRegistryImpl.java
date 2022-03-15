@@ -19,8 +19,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
-import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -28,7 +28,6 @@ import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
-import net.groboclown.p4.server.api.config.P4VcsRootSettings;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.config.part.MultipleConfigPart;
@@ -37,7 +36,7 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
 import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
-import net.groboclown.p4.server.impl.util.RootSettingsUtil;
+import net.groboclown.p4.server.impl.config.part.EnvCompositePart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,6 +56,9 @@ import java.util.stream.Stream;
  * Stores the registered configurations for a specific project.  The registry must
  * also inform the application server connection registry about the configurations, so that
  * the correct counters can be preserved.
+ * <p>
+ * This synchronizes the state with the underlying data store,
+ * {@link PersistentRootConfigComponent}
  */
 public class ProjectConfigRegistryImpl
        extends ProjectConfigRegistry {
@@ -263,32 +265,34 @@ public class ProjectConfigRegistryImpl
         if (LOG.isDebugEnabled()) {
             LOG.debug("Updating VCS roots");
         }
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(getProject());
+        if (registry == null) {
+            LOG.warn("Skipping update; no project configuration registry.");
+            return;
+        }
         synchronized (registeredServers) {
             final Set<VirtualFile> oldRoots;
             synchronized (registeredClients) {
                 oldRoots = new HashSet<>(registeredRoots.keySet());
             }
             for (VcsDirectoryMapping directoryMapping : getDirectoryMappings()) {
-                VcsRootSettings settings = directoryMapping.getRootSettings();
-                if (settings == null) {
-                    LOG.info("Skipping root " + directoryMapping.getDirectory() + "; no settings");
+                final VirtualFile rootDir = VcsUtil.getVirtualFile(directoryMapping.getDirectory());
+                if (rootDir == null) {
+                    LOG.info("Skipping VCS directory mapping with no root directory");
                     continue;
                 }
-                if (settings instanceof P4VcsRootSettings) {
-                    oldRoots.remove(RootSettingsUtil.getDirectory(getProject(), directoryMapping));
-                    updateRoot(
-                            RootSettingsUtil.getFixedRootSettings(getProject(), directoryMapping),
-                            directoryMapping);
+                ClientConfigRoot clientConfig = registry.getClientFor(rootDir);
+                if (clientConfig == null) {
+                    addClientConfig(createDefaultClientConfig(rootDir), rootDir);
                 } else {
-                    LOG.warn("P4Vcs root mapping has non-vcs settings " + settings.getClass());
+                    updateRoot(clientConfig);
                 }
             }
             oldRoots.forEach(this::removeClientConfigAt);
         }
     }
 
-    private void updateRoot(@NotNull P4VcsRootSettings settings,
-            @NotNull VcsDirectoryMapping directoryMapping) {
+    private void updateRoot(@NotNull ClientConfigRoot clientConfig) {
         VirtualFile root = settings.getRootDir();
         List<ConfigPart> parts = settings.getConfigParts();
         MultipleConfigPart parentPart = new MultipleConfigPart("Project Registry", parts);
@@ -404,6 +408,12 @@ public class ProjectConfigRegistryImpl
         return servers.stream()
                 .filter((sr) -> !sr.state.isDisposed())
                 .map((sr) -> sr.state);
+    }
+
+    private static ClientConfig createDefaultClientConfig(@NotNull VirtualFile vcsRootDir) {
+        ConfigPart part = new EnvCompositePart(vcsRootDir);
+        ServerConfig serverConfig = ServerConfig.createFrom(part);
+        return ClientConfig.createFrom(serverConfig, part);
     }
 
     private static class ClientRef {

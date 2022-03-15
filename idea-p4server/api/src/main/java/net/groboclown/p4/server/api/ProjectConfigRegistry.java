@@ -160,6 +160,9 @@ public abstract class ProjectConfigRegistry
      * client-server reference is already registered, then it will be removed.  If that configuration is the exact
      * same as the requested added configuration, then it will still be removed then re-added.
      *
+     * FIXME this must instead be first managed through the PersistentRootConfigComponent to handle the list
+     *   of ConfigPart instances, then this class must be notified of the root's update.
+     *
      * @param config configuration to register
      * @param vcsRootDir root directory for the configuration.
      */
@@ -168,6 +171,9 @@ public abstract class ProjectConfigRegistry
     /**
      * Removes the client configuration registration with the given reference.  If it is registered, then
      * the appropriate messages will be sent out.
+     *
+     * FIXME this must instead be first managed through the PersistentRootConfigComponent to handle the list
+     *   of ConfigPart instances, then this class must be notified of the root's update.
      *
      * @param vcsRootDir the VCS root directory to de-register; if it is not exactly a known root directory, this will
      *                   do nothing.

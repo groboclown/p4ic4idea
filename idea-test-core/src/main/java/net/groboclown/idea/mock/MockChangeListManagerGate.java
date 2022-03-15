@@ -121,8 +121,9 @@ public class MockChangeListManagerGate implements ChangeListManagerGate {
         //return null;
     }
 
+    // Removed in v>=211
     @Deprecated
-    @Override
+    //@Override
     public FileStatus getStatus(File file) {
         throw new IllegalStateException("not implemented");
         //return null;

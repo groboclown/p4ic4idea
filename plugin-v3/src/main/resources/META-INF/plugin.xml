@@ -198,6 +198,7 @@
                 serviceInterface="net.groboclown.p4.server.api.ProjectConfigRegistry"
                 serviceImplementation="net.groboclown.p4plugin.modules.connection.ProjectConfigRegistryImpl" />
 
+        <!-- Run in a worker thread when the project loads -->
         <backgroundPostStartupActivity implementation="net.groboclown.p4plugin.modules.connection.ConfigRegistryStartup"/>
     </extensions>
 

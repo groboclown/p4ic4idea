@@ -33,7 +33,6 @@ import org.jdom.output.XMLOutputter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ public class PersistentRootConfigModel
 
     @Nullable
     static PersistentRootConfigModel getInstance(@NotNull Project project) {
-        return project.getComponent(COMPONENT_CLASS);
+        return project.getService(COMPONENT_CLASS);
     }
 
     void setConfigPartsForRoot(@NotNull VirtualFile root, @NotNull List<ConfigPart> parts) {

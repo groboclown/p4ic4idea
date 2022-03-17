@@ -64,7 +64,7 @@ public abstract class ProjectConfigRegistry
 
     @Nullable
     public static ProjectConfigRegistry getInstance(@NotNull Project project) {
-        return project.getComponent(COMPONENT_CLASS);
+        return project.getService(COMPONENT_CLASS);
     }
 
 

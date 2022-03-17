@@ -368,7 +368,7 @@ public class RpcStreamConnection extends RpcConnection {
                         "Error occurred while generating the fingerprint for the Perforce SSL connection",
                         e);
             } catch (SSLPeerUnverifiedException e) {
-                // p4ic4idea: use a more precise exception
+                // p4ic4idea: use a more precise exception; see bug #232
                 throw new SslHandshakeException("Error occurred while verifying the SSL peer.", e);
             }
         }

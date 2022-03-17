@@ -52,7 +52,7 @@ class IntelliJInstrumentCodeTaskTest {
         task.fromSourceSet(
                 sourceSet,
                 new IdeaJarsExtension(),
-                new MockIdeaVersion(project, "203", project.file(libDir))
+                new MockIdeaVersion(project, "212", project.file(libDir))
         )
         task.instrumentClasses()
     }

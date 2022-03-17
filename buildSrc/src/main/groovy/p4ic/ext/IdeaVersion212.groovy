@@ -19,99 +19,155 @@ import java.util.regex.Pattern
 class IdeaVersion212 implements IdeaVersionLibMatcher {
     private static final LibGroup libs = new LibGroup().add(
             new NamedLib("core",
-                    //"intellij.platform.core.jar"
+                    // com.intellij.openapi.editor.Document
+                    // com.intellij.openapi.fileTypes.FileType
+                    // com.intellij.openapi.project.Project
+                    // com.intellij.openapi.vfs.VirtualFile
+                    // com.intellij.openapi.application.ApplicationInfo
+                    // com.intellij.openapi.application.ApplicationManager
+                    // com.intellij.openapi.application.ModalityState
+                    "intellij.platform.core.jar"
             ),
             new NamedLib("core-ui",
                     // com.intellij.openapi.actionSystem.DataContext
-                    //"intellij.platform.core.ui.jar",
+                    // com.intellij.ui.SimpleTextAttributes
+                    // com.intellij.openapi.ui.popup.PopupStep
+                    "intellij.platform.core.ui.jar",
             ),
             new NamedLib("core-impl",
                     // com.intellij.openapi.application.impl.ModalityStateEx
-                    //"intellij.platform.core.impl.jar",
+                    "intellij.platform.core.impl.jar",
             ),
             new NamedLib("vcs-core",
-                    //"intellij.platform.vcs.core.jar"
+                    // com.intellij.openapi.vcs.VcsKey
+                    // com.intellij.openapi.vcs.changes.Change
+                    "intellij.platform.vcs.core.jar"
             ),
             new NamedLib("vcs",
-                    //"intellij.platform.vcs.jar",
+                    // com.intellij.openapi.vcs.actions.VcsContextFactory
+                    "intellij.platform.vcs.jar",
             ),
             new NamedLib("analysis",
-                    // Contains com.intellij.openapi.vfs.LocalFileSystem
-                    //"intellij.platform.analysis.jar"
+                    // com.intellij.openapi.vfs.LocalFileSystem
+                    "intellij.platform.analysis.jar"
             ),
             new NamedLib("vcs-impl",
                     // com.intellij.openapi.vcs.history.VcsHistoryUtil
-                    //"intellij.platform.vcs.impl.jar",
+                    // com.intellij.openapi.vcs.VcsVFSListener
+                    // com.intellij.openapi.vcs.RemoteFilePath
+                    // com.intellij.openapi.vcs.actions.AbstractVcsAction
+                    "intellij.platform.vcs.impl.jar",
             ),
             new NamedLib("ide",
-                    //"intellij.platform.ide.jar",
+                    // com.intellij.openapi.vcs.FilePath
+                    // com.intellij.openapi.application.Application
+                    "intellij.platform.ide.jar",
             ),
             new NamedLib("ide-impl",
                     // com.intellij.credentialStore.CredentialPromptDialog
-                    //"intellij.platform.ide.impl.jar",
+                    "intellij.platform.ide.impl.jar",
             ),
             new NamedLib("project-model",
-                    //"intellij.platform.projectModel.jar",
+                    // com.intellij.openapi.components.PersistentStateComponent
+                    "intellij.platform.projectModel.jar",
             ),
             new NamedLib("extensions",
-                    //"intellij.platform.extensions.jar"
+                    // com.intellij.util.messages.MessageBus
+                    // com.intellij.util.pico.DefaultPicoContainer
+                    // org.picocontainer.PicoContainer
+                    // org.picocontainer.ComponentAdapter
+                    "intellij.platform.extensions.jar"
             ),
             new NamedLib("editor",
-                    // for com.intellij.openapi.vcs.FileStatus
-                    //"intellij.platform.editor.jar",
+                    // com.intellij.openapi.vcs.FileStatus
+                    // com.intellij.openapi.actionSystem.AnActionEvent
+                    "intellij.platform.editor.jar",
+            ),
+            new NamedLib("remote",
+                    // com.intellij.credentialStore.CredentialAttributes
+                    // com.intellij.ide.passwordSafe.PasswordSafe
+                    "intellij.platform.remote.core.jar",
             ),
             new NamedLib("util",
-                    //"intellij.platform.util.jar",
+                    // com.intellij.openapi.Disposable
+                    // com.intellij.openapi.application.AccessToken
+                    // com.intellij.openapi.util.ClassLoaderUtil
+                    // com.intellij.util.ReflectionUtil
+                    // com.intellij.openapi.util.UserDataHolderBase
+                    "intellij.platform.util.jar",
             ),
             new NamedLib("util-rt",
-                    //"intellij.platform.util.rt.jar"
+                    // com.intellij.openapi.util.Condition
+                    // com.intellij.openapi.util.Pair
+                    "intellij.platform.util.rt.jar"
             ),
             new NamedLib("util-ui",
-                    //"intellij.platform.util.ui.jar",
+                    // com.intellij.util.ui.JBUI
+                    "intellij.platform.util.ui.jar",
             ),
             new NamedLib("util-strings",
-                    // com.intellij.util.text.CharArrayCharSequence, used in password access, moved here:
-                    //"intellij.platform.util.strings.jar",
+                    // com.intellij.util.text.CharArrayCharSequence
+                    "intellij.platform.util.strings.jar",
+            ),
+            new NamedLib("util-ex",
+                    // com.intellij.credentialStore.OneTimeString
+                    "intellij.platform.util.ex.jar",
             ),
             new NamedLib("util-io",
-                    //"intellij.platform.ide.util.io.jar",
+                    // com.intellij.execution.configurations.GeneralCommandLine
+                    // com.intellij.execution.process.CapturingProcessHandler
+                    // com.intellij.execution.process.ProcessOutput
+                    // com.intellij.execution.util.ExecUtil
+                    "intellij.platform.ide.util.io.jar",
             ),
             new NamedLib("util-classloader",
-                    //"intellij.platform.util.classLoader.jar",
+                    // com.intellij.util.lang.UrlClassLoader
+                    "intellij.platform.util.classLoader.jar",
             ),
             new NamedLib("util-collections",
-                    //"intellij.platform.util.collections.jar",
+                    // com.intellij.util.SmartList
+                    "intellij.platform.util.collections.jar",
             ),
-            new NamedLib("editor-ui-api",
-                    // this includes com.intellij.openapi.vcs.FileStatus
-                    //"intellij.platform.editor.jar",
-            ),
+            new NamedLib("editor-ui-api"),
             new NamedLib("guiforms-rt",
-                    //"intellij.java.guiForms.rt.jar",
+                    // com.intellij.uiDesigner.core.GridConstraints
+                    "intellij.java.guiForms.rt.jar",
             ),
             new NamedLib("concurrency",
-                    //"intellij.platform.concurrency.jar",
+                    // org.jetbrains.concurrency.AsyncPromise
+                    "intellij.platform.concurrency.jar",
+            ),
+            new NamedLib("diagnostic",
+                    // com.intellij.diagnostic.ActivityCategory
+                    "intellij.platform.util.diagnostic.jar",
             ),
 
             // deps
             new NamedLib("jdom",
-                    //"jdom-2.0.6.jar"
+                    // org.jdom.Element
+                    "jdom-2.0.6.jar"
             ),
             new NamedLib("jgoodies-forms",
-                    //"forms-1.1-preview.jar"
+                    // com.jgoodies.forms.layout.CellConstraints
+                    "forms-1.1-preview.jar"
             ),
             new NamedLib("annotations",
-                    //"annotations-java5-20.0.0.jar"
+                    // org.jetbrains.annotations.NotNull
+                    // org.jetbrains.annotations.Nullable
+                    "annotations-java5-20.0.0.jar"
             ),
             // test deps
             new NamedLib("fastutil",
-                    //"intellij-deps-fastutil-8.4.1-4.jar",
+                    // it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet
+                    "intellij-deps-fastutil-8.3.1-3.jar",
             ),
             new NamedLib("trove4j",
-                    //"trove4j-1.0.20200330.jar",
+                    // gnu.trove.TObjectHashingStrategy
+                    "trove4j-1.0.20200330.jar",
             ),
             new NamedLib("kotlin-stdlib",
-                    //"kotlin-stdlib-1.4.0.jar",
+                    // kotlin.jvm.internal.Intrinsics
+                    "kotlin-stdlib-1.4.0.jar",
             ),
             new NamedLib("intellij-util-collections",
                     //"util-collections-203.3157.jar",
@@ -119,23 +175,25 @@ class IdeaVersion212 implements IdeaVersionLibMatcher {
 
             // Used by IntelliJInstrumentCodeTask
             new NamedLib("javac2",
-                    //"javac2.jar",
+                    "javac2.jar",
             ),
             new NamedLib("compiler-instrumentationUtil",
                     // com.intellij.compiler.instrumentation.FailSafeClassReader
-                    //"intellij.java.compiler.instrumentationUtil.jar"
+                    // com.intellij.compiler.instrumentation.InstrumenterClassWriter
+                    "intellij.java.compiler.instrumentationUtil.jar"
             ),
             new NamedLib("compiler-antTasks",
                     // com.intellij.ant.InstrumentIdeaExtensions
-                    //"intellij.java.compiler.antTasks.jar"
+                    "intellij.java.compiler.antTasks.jar"
             ),
             new NamedLib("asm",
                     // org.jetbrains.org.objectweb.asm.ClassReader
-                    //"asm-all-9.0.jar"
+                    // org.jetbrains.org.objectweb.asm.ClassWriter
+                    "asm-all-8.0.1.jar"
             ),
             new NamedLib("guiForms-compiler",
                     // com.intellij.uiDesigner.compiler.AlienFormFileException
-                    //"intellij.java.guiForms.compiler.jar",
+                    "intellij.java.guiForms.compiler.jar",
             ),
     )
 

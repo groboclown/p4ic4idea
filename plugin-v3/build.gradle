@@ -30,6 +30,7 @@ ideaImplementation.uses(
 )
 
 ideaTest.uses(
+        'core-impl',
 )
 
 configurations {

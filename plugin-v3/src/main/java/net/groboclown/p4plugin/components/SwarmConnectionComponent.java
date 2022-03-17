@@ -60,8 +60,8 @@ public class SwarmConnectionComponent
                                 () -> Answer.resolve(null)
                                         .futureMap((o, sink) ->
                                                 ApplicationPasswordRegistry.getInstance().getOrAskFor(null, serverConfig)
-                                                        .processed(sink::resolve)
-                                                        .rejected((t) -> {
+                                                        .onProcessed(sink::resolve)
+                                                        .onError((t) -> {
                                                             LOG.warn("Problem loading the password", t);
                                                             sink.resolve(new OneTimeString(new char[0]));
                                                         })),

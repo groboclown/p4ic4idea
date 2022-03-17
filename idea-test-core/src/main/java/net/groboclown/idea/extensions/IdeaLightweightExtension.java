@@ -16,50 +16,36 @@ package net.groboclown.idea.extensions;
 
 import com.intellij.ide.passwordSafe.PasswordSafe;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.components.ApplicationComponent;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.fileTypes.FileTypeRegistry;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.ClassLoaderUtil;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vcs.actions.VcsContextFactory;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.util.ReflectionUtil;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.pico.DefaultPicoContainer;
-import net.groboclown.idea.mock.MockApplication;
+import net.groboclown.idea.mock.FieldHelper;
 import net.groboclown.idea.mock.MockPasswordSafe;
 import net.groboclown.idea.mock.MockVcsContextFactory;
+import net.groboclown.idea.mock.P4icMockApplication;
+import net.groboclown.idea.mock.P4icMockProject;
 import net.groboclown.idea.mock.SingleThreadedMessageBus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.picocontainer.ComponentAdapter;
 import org.picocontainer.PicoContainer;
-import org.picocontainer.PicoInitializationException;
-import org.picocontainer.PicoIntrospectionException;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,7 +64,7 @@ public class IdeaLightweightExtension
         return getDisposableParent(getTopContext());
     }
 
-    public MockApplication getMockApplication() {
+    public P4icMockApplication getMockApplication() {
         return getApplication(getTopContext());
     }
 
@@ -86,8 +72,12 @@ public class IdeaLightweightExtension
         return getMockFileTypeRegistry(getTopContext());
     }
 
-    public Project getMockProject() {
+    public P4icMockProject getMockProject() {
         return getMockProject(getTopContext());
+    }
+
+    public DefaultPicoContainer getProjectPicoContainer() {
+        return getProjectPicoContainer(getTopContext());
     }
 
     public LocalFileSystem getMockLocalFilesystem() {
@@ -95,30 +85,31 @@ public class IdeaLightweightExtension
     }
 
     public <T> void registerApplicationComponent(@NotNull Class<? super T> name, @NotNull T component) {
-        getMockApplication().mockGetPicoContainer().registerComponent(service(name, component));
+        getMockApplication().getPicoContainer().
+                registerComponentImplementation(component, name);
     }
 
     public <I> void registerApplicationService(@NotNull Class<? super I> interfaceClass, @NotNull I service) {
-        getMockApplication().mockGetPicoContainer().
-                registerComponent(service(interfaceClass, service));
-    }
-
-    public void registerProjectComponent(@NotNull String name, @NotNull ProjectComponent component) {
-        when(getMockProject().getComponent(name)).thenReturn(component);
+        getMockApplication().getPicoContainer().
+                registerComponentInstance(interfaceClass, service);
+        getMockApplication().getPicoContainer().
+                registerComponentInstance(interfaceClass.getName(), service);
     }
 
     public <T> void registerProjectComponent(@NotNull Class<? super T> interfaceClass, @NotNull T component) {
-        when(getMockProject().getComponent(interfaceClass)).thenReturn(component);
+        getMockProject().getPicoContainer().registerComponentInstance(interfaceClass, component);
     }
 
     public <T> void registerProjectService(@NotNull Class<? super T> serviceClass, @NotNull T service) {
-        ((DefaultPicoContainer) getMockProject().getPicoContainer()).
-                registerComponent(service(serviceClass, service));
+        getMockProject().getPicoContainer().
+                registerComponentImplementation(service, serviceClass);
     }
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) {
         contextStack.add(0, extensionContext);
+        final DefaultPicoContainer container = new DefaultPicoContainer();
+        getStore(extensionContext).put("pico", container);
 
         DisposableRegistry parent = new DisposableRegistry();
         getStore(extensionContext).put("parent", parent);
@@ -129,23 +120,20 @@ public class IdeaLightweightExtension
         Application original = ApplicationManager.getApplication();
         getStore(extensionContext).put("original-application", original);
 
-        MockApplication application = new MockApplication();
-        ApplicationManager.setApplication(application, () -> fileTypeRegistry, parent);
+        P4icMockApplication application = P4icMockApplication.setUp(parent);
         getStore(extensionContext).put("application", application);
         initializeApplication(application);
 
-        Project project = mock(Project.class);
-        when(project.isInitialized()).thenReturn(true);
-        when(project.isDisposed()).thenReturn(false);
+        P4icMockProject project = new P4icMockProject(
+                container, new SingleThreadedMessageBus(null), parent);
         getStore(extensionContext).put("project", project);
-        initializeProject(project);
 
         LocalFileSystem lfs = mock(LocalFileSystem.class);
         getStore(extensionContext).put("local-filesystem", lfs);
         setupLocalFileSystem(lfs);
     }
 
-    private void initializeApplication(MockApplication application) {
+    private void initializeApplication(P4icMockApplication application) {
         // Service setup.  See ServiceManager
         MockPasswordSafe passwordSafe = new MockPasswordSafe();
         registerApplicationService(PasswordSafe.class, passwordSafe);
@@ -166,30 +154,10 @@ public class IdeaLightweightExtension
         // LocalFileSystem has an odd way to set up the underlying implementation.
         // We need to first get the LocalFileSystemHolder then set the underlying
         // ourInstance value.
-        try {
-            Class<?> cls = lfs.getClass().getClassLoader().loadClass(
-                    LocalFileSystem.class.getName() + "$LocalFileSystemHolder");
-            for (Field field: cls.getDeclaredFields()) {
-                if (field.getType().equals(LocalFileSystem.class) &&
-                        Modifier.isStatic(field.getModifiers())) {
-                    assertTrue(field.trySetAccessible());
-                    Field modifiersField = Field.class.getDeclaredField( "modifiers" );
-                    assertTrue(modifiersField.trySetAccessible());
-                    modifiersField.setInt( field, field.getModifiers() & ~Modifier.FINAL );
-                    field.set(null, lfs);
-                }
-            }
-        } catch (ClassNotFoundException | IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void initializeProject(Project project) {
-        MessageBus projectBus = new SingleThreadedMessageBus(null);
-        when(project.getMessageBus()).thenReturn(projectBus);
-
-        DefaultPicoContainer pico = new DefaultPicoContainer();
-        when(project.getPicoContainer()).thenReturn(pico);
+        FieldHelper.setTypedStaticField(
+                LocalFileSystem.class.getName() + "$LocalFileSystemHolder",
+                LocalFileSystem.class,
+                lfs);
     }
 
     @Override
@@ -205,8 +173,12 @@ public class IdeaLightweightExtension
         }
     }
 
-    private Project getMockProject(ExtensionContext topContext) {
-        return (Project) getStore(topContext).get("project");
+    private P4icMockProject getMockProject(ExtensionContext topContext) {
+        return (P4icMockProject) getStore(topContext).get("project");
+    }
+
+    private DefaultPicoContainer getProjectPicoContainer(ExtensionContext topContext) {
+        return (DefaultPicoContainer) getStore(topContext).get("pico");
     }
 
     private LocalFileSystem getMockLocalFilesystem(ExtensionContext topContext) {
@@ -221,8 +193,8 @@ public class IdeaLightweightExtension
         return (DisposableRegistry) getStore(context).get("parent");
     }
 
-    private MockApplication getApplication(ExtensionContext context) {
-        return (MockApplication) getStore(context).get("application");
+    private P4icMockApplication getApplication(ExtensionContext context) {
+        return (P4icMockApplication) getStore(context).get("application");
     }
 
     private ExtensionContext.Store getStore(ExtensionContext context) {
@@ -257,72 +229,29 @@ public class IdeaLightweightExtension
         }
     }
 
+    static final class TestComponentAdapter implements ComponentAdapter {
+        private final Object componentKey;
+        private final Object componentInstance;
 
-    private static <T> ComponentAdapter mockService(@NotNull Class<T> interfaceType) {
-        return service(interfaceType, mock(interfaceType));
-    }
+        public TestComponentAdapter(@NotNull Object componentKey, @NotNull Object componentInstance) {
+            this.componentKey = componentKey;
+            this.componentInstance = componentInstance;
+        }
 
-
-    private static <T> ComponentAdapter service(@NotNull Class<T> interfaceType, @NotNull T service) {
-        return new ComAd<>(interfaceType, service);
-    }
-
-
-    private static class ComAd<T>
-            implements ComponentAdapter {
-        private final Class<T> serviceType;
-        private final T serviceObj;
-
-        private ComAd(Class<T> serviceType, T serviceObj) {
-            this.serviceType = serviceType;
-            this.serviceObj = serviceObj;
+        @Override
+        public Object getComponentInstance(PicoContainer container) {
+            return this.componentInstance;
         }
 
         @Override
         public Object getComponentKey() {
-            return serviceType.getName();
+            return this.componentKey;
         }
 
         @Override
         public Class<?> getComponentImplementation() {
-            return serviceObj.getClass();
-        }
-
-        @Override
-        public Object getComponentInstance(PicoContainer picoContainer)
-                throws PicoInitializationException, PicoIntrospectionException {
-            return serviceObj;
-        }
-
-        // Removed in v>=211
-        // @Override
-        public void verify(PicoContainer picoContainer)
-                throws PicoIntrospectionException {
-            // do nothing
+            return this.componentInstance.getClass();
         }
     }
 
-    private final static Answer<Object> IMMEDIATE_THREAD_RUNNER = new ImmediateRunner();
-
-    private static class ImmediateRunner implements Answer<Object> {
-        @Override
-        public Object answer(InvocationOnMock invocation)
-                throws Throwable {
-            final Object arg = invocation.getArgument(0);
-            final Runnable runner;
-            if (arg instanceof Runnable) {
-                runner = (Runnable) arg;
-            } else {
-                runner = () -> {
-                    try {
-                        ((Callable<?>) arg).call();
-                    } catch (Exception e) {
-                        fail(e);
-                    }
-                };
-            }
-            runner.run();
-            return null;
-        }
-    }
 }

@@ -98,7 +98,7 @@ public class PluginSetup
 
         idea.registerProjectService(ProjectConfigRegistry.class, registry);
         idea.registerProjectComponent(ProjectConfigRegistry.class, registry);
-        idea.registerProjectComponent(P4ServerComponent.COMPONENT_NAME, server);
+        // idea.registerProjectComponent(P4ServerComponent.COMPONENT_NAME, server);
         idea.registerProjectComponent(P4ServerComponent.class, server);
         idea.registerProjectComponent(CacheComponent.class, cacheComponent);
 

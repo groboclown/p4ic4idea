@@ -102,18 +102,6 @@ public class DummyProgressIndicator implements ProgressIndicator {
 
     }
 
-    // @Override
-    @Deprecated
-    public void startNonCancelableSection() {
-
-    }
-
-    // @Override
-    @Deprecated
-    public void finishNonCancelableSection() {
-
-    }
-
     @Override
     public boolean isModal() {
         return false;

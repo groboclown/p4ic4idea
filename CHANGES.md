@@ -6,7 +6,7 @@
 ### Overview
 
 * Bug fixes
-* Changed supported IDE versions - removed support for all versions of the IDE before v203.
+* Changed supported IDE versions - removed support for all versions of the IDE before v212.
 * Refactored to simplify connection configuration code.  This is starting a change to the code 
 * Upgraded referenced libraries.
 
@@ -17,10 +17,10 @@
   * This primarily affected tests running on Linux.
   * The new version includes extra checking before using an RSH connection to ensure the executable file exists and is executable.  However, the logic in place only works if the executable has no spaces in the file name.
 * Changed supported IDE versions.
-  * Removed all code that requires v202 and prior support.
-  * Internally added jar support for compiling against v203, 211, 212, 213, and 221.
-  * Old versions of IntelliJ libraries, used for compiling, are still in the `lib` directory, but prefixed with "o".  These were hard to create and, even though they remain in source control, I'm hard-pressed to part with them.
-  * Upgraded compiler compatibility to JDK 11.
+  * Removed all code that requires v211 and prior support.
+    * Internally added jar support for compiling against 212, 213, and 221.
+    * v203 and v211 were originally planned for support, but they were removed due to complications in the codebase for backwards compatibility.
+  * Upgraded required minimum compiler compatibility to JDK 11.
 * Nearly all bundled libraries have been updated.  The included `bom.xml` file includes the updated information.
 * Refactored to simplify connection configuration code.
   * This is starting a change to the code to be organized around specific, distinct bits of functionality, rather than around the IDE extension points.

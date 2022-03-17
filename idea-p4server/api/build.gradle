@@ -10,11 +10,13 @@ ideaApi.uses(
         'vcs-core',
         'vcs',
         'ide',
+        'remote',
         'analysis',
         'project-model',
         'util-io',
         'util-classloader',
         'util-strings',
+        'util-ex',
 
         'annotations',
 )

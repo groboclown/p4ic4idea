@@ -36,7 +36,6 @@ import static net.groboclown.p4.server.api.config.part.ConfigProblemUtil.createE
 import static net.groboclown.p4.server.api.config.part.ConfigProblemUtil.createWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@SuppressWarnings("unchecked")
 class ConfigPropertiesUtilTest {
     @SuppressWarnings("WeakerAccess")
     @RegisterExtension
@@ -57,8 +56,7 @@ class ConfigPropertiesUtilTest {
                 // do nothing
             }
         };
-        //idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_NAME, passwdRegistry);
-        idea.registerApplicationComponent(ApplicationPasswordRegistry.COMPONENT_CLASS, passwdRegistry);
+        idea.registerApplicationService(ApplicationPasswordRegistry.COMPONENT_CLASS, passwdRegistry);
     }
 
 
@@ -83,7 +81,6 @@ class ConfigPropertiesUtilTest {
         ));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void toProperties_configPartEmptyPassword() {
         Map<String, String> props = ConfigPropertiesUtil.toProperties(

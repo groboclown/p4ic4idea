@@ -10,14 +10,18 @@ ideaApi.uses(
 
 
 ideaImplementation.uses(
+        'core-impl',
         'util',
         'util-rt',
+        'util-ex',
         'vcs',
         'vcs-core',
         'ide',
         'editor',
         'extensions',
         'analysis',
+        'remote',
+        'diagnostic',
 
         'jdom',
 )

@@ -15,12 +15,9 @@
 package net.groboclown.idea.mock;
 
 import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.util.Condition;
 import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import org.jetbrains.annotations.NotNull;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,9 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
 
 /**
  * Sets up the mock ApplicationManager to run threads in a controlled way.
@@ -97,7 +91,7 @@ public class MockThreadRunner {
 
     private MockThreadRunner(IdeaLightweightExtension extension, long waitTimeSeconds) {
         waitTimeoutSeconds = waitTimeSeconds;
-        MockApplication application = extension.getMockApplication();
+        P4icMockApplication application = extension.getMockApplication();
 
         BlockingRunner pooledRunner = new BlockingRunner(pooledThreadsRun);
         application.setPooledRunner(pooledRunner);

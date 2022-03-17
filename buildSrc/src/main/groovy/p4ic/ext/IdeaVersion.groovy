@@ -24,8 +24,6 @@ import javax.annotation.Nonnull
 
 class IdeaVersion {
     private final static IdeaVersionLibMatcher[] VERSION_LIB_MATCHERS = [
-            new IdeaVersion203(),
-            new IdeaVersion211(),
             new IdeaVersion212(),
             new IdeaVersion213(),
     ]

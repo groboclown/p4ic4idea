@@ -12,7 +12,7 @@
   <component name="IdProvider" IDEtalkID="2432D203DBC55496502712AC8D885D4B" />
   <component name="NullableNotNullManager">
     <option name="myDefaultNullable" value="org.jetbrains.annotations.Nullable" />
-    <option name="myDefaultNotNull" value="javax.annotation.Nonnull" />
+    <option name="myDefaultNotNull" value="org.jetbrains.annotations.NotNull" />
     <option name="myNullables">
       <value>
         <list size="12">

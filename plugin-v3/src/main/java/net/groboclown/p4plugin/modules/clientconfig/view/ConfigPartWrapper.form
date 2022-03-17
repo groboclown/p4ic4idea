@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="net.groboclown.p4plugin.modules.clientconfig.view.ConfigPartWrapper">
+  <grid id="27dc6" binding="rootPane" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="890" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="line"/>
+    <children>
+      <grid id="134eb" binding="panelContainer" layout-manager="BorderLayout" hgap="0" vgap="0">
+        <constraints border-constraint="Center"/>
+        <properties/>
+        <border type="empty">
+          <size top="4" left="4" bottom="2" right="4"/>
+        </border>
+        <children/>
+      </grid>
+      <grid id="c5fce" binding="headerPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
+        <constraints border-constraint="North"/>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="34ba9" layout-manager="BorderLayout" hgap="0" vgap="0">
+            <constraints border-constraint="North"/>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="934df" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
+                <constraints border-constraint="East"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="beca3" class="javax.swing.JButton" binding="myRemoveButton">
+                    <constraints/>
+                    <properties>
+                      <hideActionText value="true"/>
+                      <horizontalAlignment value="0"/>
+                      <horizontalTextPosition value="0"/>
+                      <text value=""/>
+                      <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.stack.remove"/>
+                    </properties>
+                  </component>
+                  <component id="7725" class="javax.swing.JButton" binding="myUpButton">
+                    <constraints/>
+                    <properties>
+                      <hideActionText value="true"/>
+                      <horizontalAlignment value="0"/>
+                      <horizontalTextPosition value="0"/>
+                      <text value=""/>
+                      <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.stack.move-up"/>
+                    </properties>
+                  </component>
+                  <component id="13227" class="javax.swing.JButton" binding="myDownButton">
+                    <constraints/>
+                    <properties>
+                      <hideActionText value="true"/>
+                      <horizontalAlignment value="0"/>
+                      <horizontalTextPosition value="0"/>
+                      <text value=""/>
+                      <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.stack.move-down"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="f2cc7" layout-manager="FormLayout">
+                <rowspec value="center:d:grow"/>
+                <colspec value="fill:d:noGrow"/>
+                <colspec value="left:4dlu:noGrow"/>
+                <colspec value="fill:max(d;4px):noGrow"/>
+                <constraints border-constraint="Center"/>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="55212" class="javax.swing.JButton" binding="myDescriptionToggle">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <forms/>
+                    </constraints>
+                    <properties>
+                      <text value=""/>
+                      <toolTipText resource-bundle="net/groboclown/p4plugin/P4Bundle" key="configuration.stack.wrapper.description.toggle.tooltip"/>
+                    </properties>
+                  </component>
+                  <component id="e33ef" class="javax.swing.JLabel" binding="myPartName">
+                    <constraints>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <forms/>
+                    </constraints>
+                    <properties>
+                      <text value="Label"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
+          <grid id="d17f1" binding="myPartDescriptionPanel" layout-manager="FormLayout">
+            <rowspec value="center:d:grow"/>
+            <colspec value="fill:d:grow"/>
+            <constraints border-constraint="Center"/>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="4507b" class="javax.swing.JTextArea" binding="myPartDescription">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="50"/>
+                  </grid>
+                  <forms defaultalign-horz="false" defaultalign-vert="false"/>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <lineWrap value="true"/>
+                  <wrapStyleWord value="true"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

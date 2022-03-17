@@ -47,13 +47,13 @@ public class ClientActionMessage
 
 
     public static class Event extends AbstractCacheUpdateEvent<Event> {
-        private final P4CommandRunner.ClientAction action;
+        private final P4CommandRunner.ClientAction<?> action;
         private final P4CommandRunner.ClientResult result;
         private final ActionState state;
         private final P4CommandRunner.ServerResultException error;
 
         public Event(@NotNull ClientServerRef ref,
-                @NotNull P4CommandRunner.ClientAction action) {
+                @NotNull P4CommandRunner.ClientAction<?> action) {
             super(ref);
             this.action = action;
             this.result = null;
@@ -62,7 +62,7 @@ public class ClientActionMessage
         }
 
         public Event(@NotNull ClientServerRef ref,
-                @NotNull P4CommandRunner.ClientAction action,
+                @NotNull P4CommandRunner.ClientAction<?> action,
                 @NotNull P4CommandRunner.ClientResult result) {
             super(ref);
             this.action = action;
@@ -72,7 +72,7 @@ public class ClientActionMessage
         }
 
         public Event(@NotNull ClientServerRef ref,
-                @NotNull P4CommandRunner.ClientAction action,
+                @NotNull P4CommandRunner.ClientAction<?> action,
                 @NotNull P4CommandRunner.ServerResultException error) {
             super(ref);
             this.action = action;
@@ -81,7 +81,7 @@ public class ClientActionMessage
             this.error = error;
         }
 
-        public P4CommandRunner.ClientAction getAction() {
+        public P4CommandRunner.ClientAction<?> getAction() {
             return action;
         }
 

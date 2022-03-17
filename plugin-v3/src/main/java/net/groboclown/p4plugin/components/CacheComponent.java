@@ -53,11 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @State(
         name = "p4-ProjectCache",
-        storages = {
-                @Storage(
-                        file = StoragePathMacros.WORKSPACE_FILE
-                )
-        }
+        storages = @Storage(StoragePathMacros.WORKSPACE_FILE)
 )
 public class CacheComponent implements
         ProjectComponent, PersistentStateComponent<ProjectCacheStore.State>,

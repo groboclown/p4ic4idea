@@ -21,6 +21,7 @@ import net.groboclown.idea.mock.MockVirtualFileSystem;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.config.part.MockConfigPart;
@@ -98,12 +99,17 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        public void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir) {
-            states.add(new MockClientConfigRoot(config, vcsRootDir));
+        protected void updateClientConfigAt(@Nonnull VirtualFile vcsRoot, @Nonnull List<ConfigPart> parts) {
+            throw new IllegalStateException();
         }
 
         @Override
-        public boolean removeClientConfigAt(@NotNull VirtualFile ref) {
+        public void removeClientConfigAt(@NotNull VirtualFile ref) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        protected void initializeRoots() {
             throw new IllegalStateException();
         }
 
@@ -149,9 +155,8 @@ class ProjectConfigRegistryTest {
             throw new IllegalStateException();
         }
 
-        @Override
-        protected void updateVcsRoots() {
-            throw new IllegalStateException();
+        void addClientConfig(@NotNull ClientConfig cc, @NotNull VirtualFile root) {
+            states.add(new MockClientConfigRoot(cc, root));
         }
     }
 

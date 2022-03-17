@@ -15,16 +15,16 @@
 package net.groboclown.p4.server.api;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.FilePath;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
+import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
 import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
@@ -34,20 +34,24 @@ import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
+import net.groboclown.p4.server.api.messagebus.VcsRootClientPartsMessage;
 import net.groboclown.p4.server.api.util.FileTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
  * also inform the application server connection registry about the configurations, so that
  * the correct counters can be preserved.
  */
+@Service(Service.Level.PROJECT)
 public abstract class ProjectConfigRegistry
-        implements ProjectComponent, Disposable {
+        implements Disposable {
     public static final Class<ProjectConfigRegistry> COMPONENT_CLASS = ProjectConfigRegistry.class;
     public static final String COMPONENT_NAME = COMPONENT_CLASS.getName();
 
@@ -155,45 +159,7 @@ public abstract class ProjectConfigRegistry
     @Nullable
     public abstract ClientConfig getRegisteredClientConfigState(@NotNull ClientServerRef ref);
 
-    /**
-     * Registers the client configuration to the project and the application.  If a configuration with the same
-     * client-server reference is already registered, then it will be removed.  If that configuration is the exact
-     * same as the requested added configuration, then it will still be removed then re-added.
-     *
-     * FIXME this must instead be first managed through the PersistentRootConfigComponent to handle the list
-     *   of ConfigPart instances, then this class must be notified of the root's update.
-     *
-     * @param config configuration to register
-     * @param vcsRootDir root directory for the configuration.
-     */
-    public abstract void addClientConfig(@NotNull ClientConfig config, @NotNull VirtualFile vcsRootDir);
-
-    /**
-     * Removes the client configuration registration with the given reference.  If it is registered, then
-     * the appropriate messages will be sent out.
-     *
-     * FIXME this must instead be first managed through the PersistentRootConfigComponent to handle the list
-     *   of ConfigPart instances, then this class must be notified of the root's update.
-     *
-     * @param vcsRootDir the VCS root directory to de-register; if it is not exactly a known root directory, this will
-     *                   do nothing.
-     * @return true if it was registered, false if not.
-     */
-    public abstract boolean removeClientConfigAt(@NotNull VirtualFile vcsRootDir);
-
-    @Override
-    public void projectOpened() {
-        // Initial startup needs to read in the list of roots.
-        updateVcsRoots();
-    }
-
-    @Override
-    public final void projectClosed() {
-        disposeComponent();
-    }
-
-    @Override
-    public void initComponent() {
+    public void initializeService() {
         LoginFailureMessage.addListener(applicationBusClient, this, new LoginFailureMessage.AllErrorListener() {
             @Override
             public void onLoginFailure(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
@@ -242,10 +208,20 @@ public abstract class ProjectConfigRegistry
             }
         });
 
+        VcsRootClientPartsMessage.addListener(projectBusClient, this, new VcsRootClientPartsMessage.Listener() {
+            @Override
+            public void vcsRootClientPartsRemoved(
+                    @Nonnull VcsRootClientPartsMessage.VcsRootClientPartsRemovedEvent event) {
+                removeClientConfigAt(event.getVcsRoot());
+            }
 
-        // Explicitly avoid the ProjectMessage, because this is an event owned by the IDE.
-        projectBusClient.add(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, this::updateVcsRoots);
-        projectBusClient.add(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED_IN_PLUGIN, this::updateVcsRoots);
+            @Override
+            public void vcsRootUpdated(@Nonnull VcsRootClientPartsMessage.VcsRootClientPartsUpdatedEvent event) {
+                updateClientConfigAt(event.getVcsRoot(), event.getParts());
+            }
+        });
+
+        initializeRoots();
     }
 
     public boolean isDisposed() {
@@ -258,17 +234,6 @@ public abstract class ProjectConfigRegistry
             disposed = true;
             Disposer.dispose(this);
         }
-    }
-
-    @Override
-    public final void disposeComponent() {
-        dispose();
-    }
-
-    @NotNull
-    @Override
-    public final String getComponentName() {
-        return COMPONENT_NAME;
     }
 
     @NotNull
@@ -319,5 +284,9 @@ public abstract class ProjectConfigRegistry
 
     protected abstract void onUserSelectedAllOnline();
 
-    protected abstract void updateVcsRoots();
+    protected abstract void updateClientConfigAt(@NotNull VirtualFile vcsRoot, @NotNull List<ConfigPart> parts);
+
+    protected abstract void removeClientConfigAt(@NotNull VirtualFile vcsRootDir);
+
+    protected abstract void initializeRoots();
 }

@@ -14,7 +14,6 @@
 
 package net.groboclown.p4plugin;
 
-import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
@@ -44,7 +43,7 @@ import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.api.values.P4ChangelistType;
-import net.groboclown.p4.server.impl.ProjectConfigRegistryImpl;
+import net.groboclown.p4plugin.modules.connection.ProjectConfigRegistryImpl;
 import net.groboclown.p4.server.impl.cache.store.ClientQueryCacheStore;
 import net.groboclown.p4.server.impl.cache.store.ClientServerRefStore;
 import net.groboclown.p4.server.impl.cache.store.IdeChangelistCacheStore;
@@ -77,7 +76,7 @@ public class PluginSetup
         implements BeforeEachCallback, AfterEachCallback {
     public IdeaLightweightExtension idea;
     public P4Vcs vcs;
-    public ProjectConfigRegistry registry;
+    public ProjectConfigRegistryImpl registry;
     public P4ServerComponent server;
     public CacheComponent cacheComponent;
     public MockConnectionManager connectionManager;
@@ -97,7 +96,7 @@ public class PluginSetup
         server = new CustomP4ServerComponent(idea.getMockProject(), connectionManager);
         cacheComponent = new CacheComponent(idea.getMockProject());
 
-        idea.registerProjectComponent(ProjectConfigRegistry.COMPONENT_NAME, registry);
+        idea.registerProjectService(ProjectConfigRegistry.class, registry);
         idea.registerProjectComponent(ProjectConfigRegistry.class, registry);
         idea.registerProjectComponent(P4ServerComponent.COMPONENT_NAME, server);
         idea.registerProjectComponent(P4ServerComponent.class, server);
@@ -108,7 +107,7 @@ public class PluginSetup
         when(mockVcsMgr.checkVcsIsActive(VCS_NAME)).thenReturn(true);
 
         vcs.doStart();
-        registry.initComponent();
+        registry.initializeService();
         server.initComponent();
         vcs.doActivate();
     }
@@ -120,7 +119,7 @@ public class PluginSetup
         vcs.doShutdown();
         vcs = null;
 
-        registry.disposeComponent();
+        registry.dispose();
         registry = null;
 
         server.disposeComponent();
@@ -183,6 +182,7 @@ public class PluginSetup
         changelist.shelvedFiles = new ArrayList<>();
         changelist.containedFiles = new ArrayList<>();
         changelist.jobs = new ArrayList<>();
+        changelist.comment = description;
 
         if (state.clientState == null) {
             state.clientState = new ArrayList<>();
@@ -264,9 +264,6 @@ public class PluginSetup
         when(mgr.getGlobalScheme()).thenReturn(scheme);
         when(mgr.getSchemeForCurrentUITheme()).thenReturn(scheme);
         when(scheme.getColor(any())).thenReturn(JBColor.BLACK);
-
-        PeriodicalTasksCloser closer = new PeriodicalTasksCloser();
-        idea.registerApplicationComponent(PeriodicalTasksCloser.class, closer);
 
         ChangeListManager clMgr = mock(ChangeListManager.class);
         idea.registerProjectComponent(ChangeListManager.class, clMgr);

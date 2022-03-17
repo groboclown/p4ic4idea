@@ -55,7 +55,7 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.messages.CompatibilityCheck;
 import net.groboclown.p4plugin.ui.ColorUtil;
 import net.groboclown.p4plugin.ui.config.P4ProjectConfigurable;
-import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
+import net.groboclown.p4plugin.modules.clientconfig.view.P4VcsRootConfigurable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

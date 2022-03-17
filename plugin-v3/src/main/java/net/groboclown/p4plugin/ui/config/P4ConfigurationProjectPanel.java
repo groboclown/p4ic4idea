@@ -67,6 +67,7 @@ public class P4ConfigurationProjectPanel implements Disposable {
         return wrappedPanel;
     }
 
+    @Override
     public synchronized void dispose() {
         // TODO is there a dispose to call on this panel?
         //if (myMainPanel != null) {

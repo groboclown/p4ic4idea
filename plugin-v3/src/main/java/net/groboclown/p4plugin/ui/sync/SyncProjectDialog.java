@@ -30,7 +30,7 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.extension.P4Vcs;
 import net.groboclown.p4plugin.ui.SwingUtil;
-import net.groboclown.p4plugin.ui.vcsroot.P4VcsRootConfigurable;
+import net.groboclown.p4plugin.modules.clientconfig.view.P4VcsRootConfigurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 

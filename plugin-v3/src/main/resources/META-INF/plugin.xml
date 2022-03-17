@@ -1,7 +1,7 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.12.0-b1</version>
+    <version>0.12.0-b2</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="203"/>
     <category>VCS Integration</category>
@@ -87,14 +87,14 @@
 
     <actions>
         <group id="P4ExtendedActions">
-            <!-- FIXME re-add behavior
+            <!-- TODO re-add behavior
             <action id="P4.RevertUnchanged" class="net.groboclown.p4plugin.actions.P4RevertUnchanged"
                 text="Revert unchanged"
                 description="Revert files that are checked out but not different from the server version."
                 />
             -->
 
-            <!-- FIXME re-add behavior
+            <!-- TODO re-add behavior
             <action id="P4.Shelve" class="net.groboclown.p4plugin.actions.P4ShelveChangesAction"
                     description="Preserve work to the Perforce server without committing them"/>
             -->
@@ -121,7 +121,7 @@
                     use-shortcut-of="ChangesView.AddUnversioned"/>
             <reference ref="ChangesView.Revert"/>
             <reference ref="UpdateFiles" />
-            <!-- FIXME re-add behavior
+            <!-- TODO re-add behavior
             <reference ref="P4.RevertUnchanged"/>
             <reference ref="P4.Shelve"/>
             -->
@@ -166,7 +166,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <vcs name="p4ic" vcsClass="net.groboclown.p4plugin.extension.P4Vcs" displayName="Perforce"/>
 
-        <!-- FIXME do we need this?
+        <!-- TODO do we need this?
         <vcsPopupProvider implementation="net.groboclown.p4plugin.extension.P4QuickListContentProvider"/>
         -->
 
@@ -178,7 +178,7 @@
         <checkoutProvider implementation="net.groboclown.p4plugin.extension.P4CheckoutProvider"/>
 
         <changesViewContent tabName="Active Connections"
-                className="net.groboclown.p4plugin.ui.connection.ActiveConnectionViewManager"
+                className="net.groboclown.p4plugin.modules.connection.view.ActiveConnectionViewManager"
         />
         <!-- optionally add in predicateClassName -->
 
@@ -186,11 +186,26 @@
                 serviceInterface="net.groboclown.p4.server.api.ApplicationPasswordRegistry"
                 serviceImplementation="net.groboclown.p4plugin.components.ApplicationPasswordRegistryComponent"/>
 
-        <!-- FIXME this needs to be turned into a service, or a set of extension points.
+        <!-- TODO this needs to be turned into a service, or a set of extension points.
         <applicationService
                 serviceImplementation="net.groboclown.p4plugin.components.InvalidPasswordMonitorComponent"/>
         -->
+
+        <projectService
+            serviceImplementation="net.groboclown.p4plugin.modules.clientconfig.PersistentRootConfigModel"/>
+
+        <projectService
+                serviceInterface="net.groboclown.p4.server.api.ProjectConfigRegistry"
+                serviceImplementation="net.groboclown.p4plugin.modules.connection.ProjectConfigRegistryImpl" />
+
+        <backgroundPostStartupActivity implementation="net.groboclown.p4plugin.modules.connection.ConfigRegistryStartup"/>
     </extensions>
+
+    <projectListeners>
+        <listener
+                class="net.groboclown.p4plugin.modules.clientconfig.VcsRootChangeListener"
+                topic="com.intellij.openapi.vcs.VcsListener"/>
+    </projectListeners>
 
     <project-components>
 
@@ -205,11 +220,6 @@
         </component>
 
         <component>
-            <interface-class>net.groboclown.p4.server.api.ProjectConfigRegistry</interface-class>
-            <implementation-class>net.groboclown.p4.server.impl.ProjectConfigRegistryImpl</implementation-class>
-        </component>
-
-        <component>
             <implementation-class>net.groboclown.p4plugin.ui.VcsDockedComponent</implementation-class>
         </component>
 
@@ -220,10 +230,6 @@
 
         <component>
             <implementation-class>net.groboclown.p4plugin.components.UserErrorComponent</implementation-class>
-        </component>
-
-        <component>
-            <implementation-class>net.groboclown.p4.server.impl.config.PersistentRootConfigComponent</implementation-class>
         </component>
 
         <component>

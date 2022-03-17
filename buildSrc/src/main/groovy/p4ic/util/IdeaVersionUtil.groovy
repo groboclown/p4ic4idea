@@ -14,16 +14,13 @@
 
 package p4ic.util
 
-import org.apache.tools.ant.util.DeweyDecimal
-import org.apache.tools.ant.util.JavaEnvUtils
 import org.gradle.api.Project
-import org.gradle.tooling.BuildException
 import p4ic.ext.IdeaVersion
 
 import javax.annotation.Nonnull
 
 class IdeaVersionUtil {
-    public static final String LOWEST_COMPATIBLE_VERSION_NAME = "211" // "203"
+    public static final String LOWEST_COMPATIBLE_VERSION_NAME = "203"
 
     @Nonnull
     static IdeaVersion lowestCompatible(@Nonnull Project project) {

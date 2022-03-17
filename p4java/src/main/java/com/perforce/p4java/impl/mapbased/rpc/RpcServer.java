@@ -419,6 +419,7 @@ public abstract class RpcServer extends Server {
 	 * @deprecated use {@link com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser#isAuthFail(String)}
 	 */
 	@Override
+	@Deprecated
 	public boolean isAuthFail(final String errStr) {
 		return ResultMapParser.isAuthFail(errStr);
 	}
@@ -427,6 +428,7 @@ public abstract class RpcServer extends Server {
 	 * @deprecated use {@link com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser#getInfoStr(Map)}
 	 */
 	@Override
+	@Deprecated
 	public String getInfoStr(final Map<String, Object> map) {
 		return ResultMapParser.getInfoStr(map);
 	}
@@ -434,6 +436,7 @@ public abstract class RpcServer extends Server {
 	/**
 	 * @deprecated use {@link com.perforce.p4java.impl.mapbased.server.cmd.ResultMapParser#isInfoMessage(Map)}
 	 */
+	@Override
 	@Deprecated
 	public boolean isInfoMessage(final Map<String, Object> map) {
 		return ResultMapParser.isInfoMessage(map);

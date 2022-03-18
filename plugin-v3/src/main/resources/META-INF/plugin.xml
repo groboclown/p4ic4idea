@@ -1,7 +1,7 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.12.0-b3</version>
+    <version>0.12.0-b4</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="212"/>
     <category>VCS Integration</category>
@@ -191,22 +191,18 @@
                 serviceImplementation="net.groboclown.p4plugin.components.InvalidPasswordMonitorComponent"/>
         -->
 
+        <!-- clientconfig module -->
         <projectService
             serviceImplementation="net.groboclown.p4plugin.modules.clientconfig.PersistentRootConfigModel"/>
+        <backgroundPostStartupActivity implementation="net.groboclown.p4plugin.modules.clientconfig.ClientConfigStartup"/>
 
+
+        <!-- connection module -->
         <projectService
                 serviceInterface="net.groboclown.p4.server.api.ProjectConfigRegistry"
                 serviceImplementation="net.groboclown.p4plugin.modules.connection.ProjectConfigRegistryImpl" />
-
-        <!-- Run in a worker thread when the project loads -->
-        <backgroundPostStartupActivity implementation="net.groboclown.p4plugin.modules.connection.ConfigRegistryStartup"/>
+        <backgroundPostStartupActivity implementation="net.groboclown.p4plugin.modules.connection.ConnectionStartup"/>
     </extensions>
-
-    <projectListeners>
-        <listener
-                class="net.groboclown.p4plugin.modules.clientconfig.VcsRootChangeListener"
-                topic="com.intellij.openapi.vcs.VcsListener"/>
-    </projectListeners>
 
     <project-components>
 

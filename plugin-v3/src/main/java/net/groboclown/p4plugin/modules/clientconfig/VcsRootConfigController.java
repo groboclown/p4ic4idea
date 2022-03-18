@@ -82,7 +82,11 @@ public class VcsRootConfigController {
      * Remove the VCS root from the registration store.
      */
     public void removeRoot(@NotNull final Project project, @NotNull final VirtualFile root) {
-
+        withModel(project, null, (m) -> {
+            m.removeRoot(root);
+            VcsRootClientPartsMessage.sendVcsRootClientPartsRemoved(project, root);
+            return null;
+        });
     }
 
 

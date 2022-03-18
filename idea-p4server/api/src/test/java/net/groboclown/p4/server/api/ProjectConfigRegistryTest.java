@@ -136,11 +136,6 @@ class ProjectConfigRegistryTest {
         }
 
         @Override
-        protected void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
-            throw new IllegalStateException();
-        }
-
-        @Override
         protected void onUserSelectedOffline(@NotNull UserSelectedOfflineMessage.OfflineEvent e) {
             throw new IllegalStateException();
         }

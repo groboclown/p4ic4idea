@@ -73,4 +73,12 @@ public class OptionalClientServerConfig {
     public boolean usesStoredPassword() {
         return serverConfig.usesStoredPassword();
     }
+
+    @Override
+    public String toString() {
+        if (clientConfig != null) {
+            return clientConfig.toString();
+        }
+        return serverConfig.toString();
+    }
 }

@@ -17,6 +17,8 @@ package net.groboclown.p4plugin.modules.connection.view;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
@@ -25,10 +27,14 @@ import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
 import net.groboclown.p4plugin.components.CacheComponent;
+import net.groboclown.p4plugin.extension.P4Vcs;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -51,8 +57,22 @@ public class ConnectionTreeRootNode
 
         synchronized (sync) {
             removeAllChildren();
-            registry.getClientConfigRoots().forEach((root) ->
-                    loadClientConfigRoot(project, root));
+            final List<VirtualFile> vcsRoots =
+                    new ArrayList<>(Arrays.asList(
+                            ProjectLevelVcsManager.getInstance(project).
+                                    getRootsUnderVcs(P4Vcs.getInstance(project))));
+            vcsRoots.sort((a, b) ->
+                a == null
+                    ? 1
+                    : b == null
+                        ? -1
+                        : a.toString().compareTo(b.toString()));
+            LOG.info("Setting up roots for " + registry.getClientConfigRoots() + " ; " + vcsRoots);
+            registry.getClientConfigRoots().forEach((root) -> {
+                    loadClientConfigRoot(project, root);
+                    vcsRoots.remove(root.getClientRootDir());
+            });
+            vcsRoots.forEach(this::markRootAsInvalid);
         }
         return Collections.singleton(this);
     }
@@ -71,6 +91,7 @@ public class ConnectionTreeRootNode
 
 
     private void loadClientConfigRoot(@NotNull Project project, @NotNull ClientConfigRoot root) {
+        LOG.info("Loading connection display for " + root);
         RootNode fileRoot = createRootNode(root);
 
         try {
@@ -95,7 +116,7 @@ public class ConnectionTreeRootNode
     }
 
 
-    private RootNode createRootNode(ClientConfigRoot root) {
+    private RootNode createRootNode(@NotNull ClientConfigRoot root) {
         RootNode fileRoot = new RootNode(root, new DefaultMutableTreeNode(root, true));
 
         // The client root details should never change, so only add them when the root itself is added.
@@ -107,6 +128,15 @@ public class ConnectionTreeRootNode
         fileRoot.fileRoot.add(fileRoot.pendingNode);
         add(fileRoot.fileRoot);
         return fileRoot;
+    }
+
+    private void markRootAsInvalid(@Nullable VirtualFile root) {
+        if (root != null) {
+            LOG.info("Loading connection display for invalid root " + root);
+            DefaultMutableTreeNode node = new DefaultMutableTreeNode(root, false);
+            node.setUserObject(root);
+            add(node);
+        }
     }
 
 

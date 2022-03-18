@@ -119,6 +119,8 @@ import java.util.function.BiFunction;
 
 /**
  * Layers a queryCache and server.
+ *
+ * FIXME stateCache server state should be moved into the ClientConfig object.
  */
 public class TopCommandRunner extends AbstractP4CommandRunner
         implements Disposable {

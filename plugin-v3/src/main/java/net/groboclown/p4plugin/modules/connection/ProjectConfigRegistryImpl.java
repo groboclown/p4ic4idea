@@ -36,7 +36,6 @@ import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
 import net.groboclown.p4.server.api.util.FilteredIterable;
 import net.groboclown.p4.server.impl.cache.ClientConfigRootImpl;
 import net.groboclown.p4.server.impl.cache.ServerStatusImpl;
-import net.groboclown.p4.server.impl.config.part.EnvCompositePart;
 import net.groboclown.p4plugin.modules.clientconfig.VcsRootConfigController;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,9 +110,14 @@ public class ProjectConfigRegistryImpl
         checkDisposed();
         ClientServerRef ref = config.getClientServerRef();
         ClientConfigRootImpl updated;
+
+        // FIXME this is probably the source of an issue - a double bang of removing a client
+        //   then adding it back at the same root.  If the handling order is mixed up, this
+        //   can be the source of a bug.
         synchronized (registeredClients) {
             ClientConfigRootImpl oldRoot = registeredRoots.get(vcsRootDir);
             if (oldRoot != null) {
+                // Only report a removal if the server changes.
                 if (oldRoot.getClientConfig().getClientServerRef().equals(ref)) {
                     // Old root is the same as the new root.  Don't do anything.
                     return;
@@ -209,26 +213,6 @@ public class ProjectConfigRegistryImpl
                 state.setServerLoginProblem(false);
             }
         });
-    }
-
-    @Override
-    protected void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
-        if (vcsRootDir != null) {
-            // Need to double check that the config is the same at the root, because since this call the
-            // root might have already changed to something else.
-            synchronized (registeredClients) {
-                ClientConfigRootImpl existing = registeredRoots.get(vcsRootDir);
-                if (existing != null && config.getClientServerRef().equals(existing.getClientConfig().getClientServerRef())) {
-                    removeClientConfigAt(vcsRootDir);
-                } else if (LOG.isDebugEnabled()) {
-                    LOG.debug("Skipping removal of " + vcsRootDir +
-                            ": existing registered config (" + existing + ") does not match requested removal config (" +
-                            config + ")");
-                }
-            }
-        } else {
-            LOG.warn("Skipping removal of client config " + config + " at null root");
-        }
     }
 
     @Override
@@ -394,12 +378,6 @@ public class ProjectConfigRegistryImpl
         return servers.stream()
                 .filter((sr) -> !sr.state.isDisposed())
                 .map((sr) -> sr.state);
-    }
-
-    private static ClientConfig createDefaultClientConfig(@NotNull VirtualFile vcsRootDir) {
-        ConfigPart part = new EnvCompositePart(vcsRootDir);
-        ServerConfig serverConfig = ServerConfig.createFrom(part);
-        return ClientConfig.createFrom(serverConfig, part);
     }
 
     private static class ClientRef {

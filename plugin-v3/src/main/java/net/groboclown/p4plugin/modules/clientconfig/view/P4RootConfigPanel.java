@@ -30,6 +30,8 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.util.PartValidation;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -92,11 +94,15 @@ public class P4RootConfigPanel {
         return rootPanel;
     }
 
+    @NotNull
     List<ConfigPart> getConfigParts() {
         return myConfigPartStack.getParts();
     }
 
-    void setConfigParts(List<ConfigPart> parts) {
+    void setConfigParts(@Nullable List<ConfigPart> parts) {
+        if (parts == null) {
+            parts = List.of();
+        }
         myConfigPartStack.setParts(parts);
     }
 

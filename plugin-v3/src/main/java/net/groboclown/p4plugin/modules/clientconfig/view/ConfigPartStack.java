@@ -76,7 +76,7 @@ public class ConfigPartStack {
             for (ConfigPart part : configParts) {
                 boolean matched = false;
                 for (ConfigPartUIFactory partFactory : partFactories) {
-                    ConfigPartUI partUI = partFactory.createForPart(part, connectionController);
+                    ConfigPartUI<?> partUI = partFactory.createForPart(part, connectionController);
                     if (partUI != null) {
                         WrapListener listener = new WrapListener();
                         ConfigPartWrapper wrapper = new ConfigPartWrapper(partUI, listener);
@@ -95,6 +95,7 @@ public class ConfigPartStack {
         fireListOrderChanged();
     }
 
+    @NotNull
     List<ConfigPart> getParts() {
         List<ConfigPart> ret;
         synchronized (parts) {
@@ -106,7 +107,10 @@ public class ConfigPartStack {
         return ret;
     }
 
-    boolean isModified(List<ConfigPart> configParts) {
+    boolean isModified(@Nullable List<ConfigPart> configParts) {
+        if (configParts == null) {
+            configParts = List.of();
+        }
         List<ConfigPart> pendingParts = getParts();
         if (pendingParts.size() != configParts.size()) {
             return true;
@@ -129,12 +133,12 @@ public class ConfigPartStack {
     }
 
     private ListPopup createConfigPartPopup(final Consumer<ConfigPartUIFactory> onChosen) {
-        return JBPopupFactory.getInstance().createListPopup(new BaseListPopupStep<ConfigPartUIFactory>(
+        return JBPopupFactory.getInstance().createListPopup(new BaseListPopupStep<>(
                 P4Bundle.getString("configuration.stack.choose.title"),
                 partFactories) {
             @Nullable
             @Override
-            public PopupStep onChosen(ConfigPartUIFactory configPartType, boolean finalChoice) {
+            public PopupStep<?> onChosen(ConfigPartUIFactory configPartType, boolean finalChoice) {
                 onChosen.consume(configPartType);
                 return super.onChosen(configPartType, finalChoice);
             }
@@ -174,7 +178,7 @@ public class ConfigPartStack {
         partStackPanel.getParent().repaint();
     }
 
-    private void addChildFirst(ConfigPartUI partUI) {
+    private void addChildFirst(ConfigPartUI<?> partUI) {
         WrapListener listener = new WrapListener();
         ConfigPartWrapper wrapper = new ConfigPartWrapper(partUI, listener);
         listener.wrapper = wrapper;

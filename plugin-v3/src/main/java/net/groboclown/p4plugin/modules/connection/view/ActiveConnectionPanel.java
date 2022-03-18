@@ -85,11 +85,13 @@ public class ActiveConnectionPanel {
             parentDisposable = project;
         }
         runner = new IntervalPeriodExecution(() -> {
-            // FIXME the tree is collapsed every time it's refreshed.
             // Attempts to store and restore the expanded list fails, and attempts to refresh by updating
             // the data without creating new data fail.
+            LOG.info("Refreshing panel state");
             connectionTree.setPaintBusy(true);
             treeNode.refresh(project);
+            // FIXME the tree is collapsed every time it's refreshed.  That's because we remove everything
+            //   then add it back in.
             ApplicationManager.getApplication().invokeAndWait(() -> connectionTreeModel.reload());
             connectionTree.setPaintBusy(false);
         }, 5, TimeUnit.SECONDS);
@@ -97,18 +99,37 @@ public class ActiveConnectionPanel {
         // Listeners must be registered after initializing the base data.
         final String cacheId = AbstractCacheMessage.createCacheId(project, ActiveConnectionPanel.class);
         MessageBusClient.ApplicationClient appBus = MessageBusClient.forApplication(parentDisposable);
-        MessageBusClient.ProjectClient clientBus = MessageBusClient.forProject(project, parentDisposable);
+        MessageBusClient.ProjectClient projectBus = MessageBusClient.forProject(project, parentDisposable);
 
-        ClientConfigAddedMessage.addListener(clientBus, cacheId, e -> refresh());
-        ClientConfigRemovedMessage.addListener(clientBus, cacheId, event -> refresh());
-        ServerConnectedMessage.addListener(appBus, cacheId, (e) -> refresh());
-        UserSelectedOfflineMessage.addListener(clientBus, cacheId, name -> refresh());
-        ClientActionMessage.addListener(appBus, cacheId, event -> refresh());
-        ServerActionCacheMessage.addListener(appBus, cacheId, event -> refresh());
+        ClientConfigAddedMessage.addListener(projectBus, cacheId, e -> {
+            LOG.info("Refreshing connection display due to added config at " + e.getRoot());
+            refresh();
+        });
+        ClientConfigRemovedMessage.addListener(projectBus, cacheId, event -> {
+            LOG.info("Refreshing connection display due to removed config at " + event.getVcsRootDir());
+            refresh();
+        });
+        ServerConnectedMessage.addListener(appBus, cacheId, (e) -> {
+            LOG.info("Refreshing connection display due to server connected message at " + e.getConfig());
+            refresh();
+        });
+        UserSelectedOfflineMessage.addListener(projectBus, cacheId, name -> {
+            LOG.info("Refreshing connection display due to user set offline for " + name.getName());
+            refresh();
+        });
+        ClientActionMessage.addListener(appBus, cacheId, event -> {
+            LOG.info("Refreshing connection display due to action message " + event.getAction());
+            refresh();
+        });
+        ServerActionCacheMessage.addListener(appBus, cacheId, event -> {
+            LOG.info("Refreshing connection display due to server action " + event.getServerAction());
+            refresh();
+        });
         ConnectionErrorMessage.addListener(appBus, cacheId, new ConnectionErrorMessage.AllErrorListener() {
             @Override
             public <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event) {
                 // TODO add in a list of errors per server?
+                LOG.info("Refreshing connection display due to connection error at " + event.getConfig());
                 refresh();
             }
         });
@@ -117,6 +138,7 @@ public class ActiveConnectionPanel {
             protected void onLoginFailure(
                     @NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 // TODO add in a list of errors per server?
+                LOG.info("Refreshing connection display due to login error at " + e.getConfig());
                 refresh();
             }
         });
@@ -127,9 +149,6 @@ public class ActiveConnectionPanel {
         // P4WarningMessage
         // P4ServerErrorMessage
         // CancellationMessage
-
-        // Don't listen to reconnect requests; instead, we listen for server connected.
-        // ReconnectRequestMessage.addListener
     }
 
     public JComponent getRoot() {

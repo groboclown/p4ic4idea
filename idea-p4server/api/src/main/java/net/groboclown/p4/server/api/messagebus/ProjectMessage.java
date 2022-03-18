@@ -14,10 +14,7 @@
 
 package net.groboclown.p4.server.api.messagebus;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.messages.MessageBus;
-import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.messages.Topic;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,8 +41,6 @@ public abstract class ProjectMessage<L> {
         }
         return listener;
     }
-
-
 
     static boolean canSendMessage(@NotNull Project project) {
         return project.isInitialized() && !project.isDisposed();

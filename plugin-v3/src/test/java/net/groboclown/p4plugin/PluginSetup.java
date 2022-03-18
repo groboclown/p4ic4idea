@@ -158,7 +158,7 @@ public class PluginSetup
     }
 
     public void goOnline(ClientConfigRoot root) {
-        ClientConfigAddedMessage.sendClientConfigurationAdded(idea.getMockProject(),
+        ClientConfigAddedMessage.reportClientConfigurationAdded(idea.getMockProject(),
                 root.getClientRootDir(), root.getClientConfig());
         ServerConnectedMessage.send().serverConnected(new ServerConnectedMessage.ServerConnectedEvent(
                 new OptionalClientServerConfig(root.getClientConfig()), true));

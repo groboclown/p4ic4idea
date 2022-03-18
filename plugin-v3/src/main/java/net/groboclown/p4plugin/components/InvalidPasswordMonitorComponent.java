@@ -45,8 +45,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /*
- * FIXME
- * Use application services or extensions instead of ApplicationComponent, because
+ * FIXME switch to only asking for the password when explicitly called out.  Invalid passwords should indicate
+ *   just an error message along with wiping out the stored password.
+ *
+ * FIXME Use application services or extensions instead of ApplicationComponent
+ * because
  * if you register a class as an application component it will be loaded, its instance will be created and
  * {@link #initComponent()} methods will be called each time IDE is started even if user doesn't use any feature of your
  * plugin. So consider using specific extensions instead to ensure that the plugin will not impact IDE performance until user calls its
@@ -169,7 +172,7 @@ public class InvalidPasswordMonitorComponent
                     // Update the password to remove the stored password.
                     ApplicationPasswordRegistry.getInstance().remove(e.getConfig().getServerConfig());
                 } else {
-                    LOG.info("Not handling password uncessary issue for " + e.getConfig());
+                    LOG.info("Not handling password unnecessary issue for " + e.getConfig());
                 }
             }
         });

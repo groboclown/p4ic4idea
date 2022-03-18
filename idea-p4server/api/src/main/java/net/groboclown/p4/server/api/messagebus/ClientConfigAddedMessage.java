@@ -89,7 +89,7 @@ public class ClientConfigAddedMessage extends ProjectMessage<ClientConfigAddedMe
      *
      * @param project project to send the message on.
      */
-    public static void sendClientConfigurationAdded(@NotNull Project project,
+    public static void reportClientConfigurationAdded(@NotNull Project project,
             @Nullable VirtualFile root, @NotNull ClientConfig clientConfig) {
         ServerListener serverListener = ApplicationMessage.getListener(SERVER_TOPIC);
         if (serverListener != null) {

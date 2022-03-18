@@ -8,9 +8,7 @@ of Github.
 The codebase is based on 2013 versions of the IDE, and slowly upgraded from then.  Work is going on to upgrade this to support >=203 of the IDE (probably should just go up to 213 of the IDE).  This requires replacing many of the old ways of doing things and removing use of deprecated APIs.
 
 * First
-  * `RootSettingsUtil` uses `VcsDirectoryMapping.setRootSettings()`, which is deprecated and slated for removal.  This is indicative of one weakness in the code - how the ConfigPart is registered and managed through the ProjectConfigRegistry.  This needs to be refactored:
-    * Management of the VCS Root list of configurations is done through the PersistentRootConfigComponent.  This needs a new controller class to handle the event registration/reactions + notifications. 
-    * When the list of roots is manipulated, project-level events are broadcast which causes the ProjectConfigRegistryImpl to update its client settings.  This then can propagate events out to listeners on the ClientConfig instances or the ServerConfig (for application-wide updates).
+  * Bug with active connection view.  It includes the project root, not the VCS roots.
 
 * Easy
   * Replace deprecated APIs with the modern usage.

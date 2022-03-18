@@ -12,20 +12,33 @@
  * limitations under the License.
  */
 
-package net.groboclown.p4plugin.modules.connection;
+package net.groboclown.p4plugin.modules.boilerplate;
 
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import com.intellij.openapi.util.Disposer;
+import net.groboclown.p4.server.api.messagebus.MessageBusClient;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Sets up the {@link net.groboclown.p4.server.api.ProjectConfigRegistry} after the IDE starts up.
+ * A stateless task runner for background
  */
-public class ConfigRegistryStartup
+public abstract class AbstractProjectBackgroundStartup extends AbstractProjectStartup
         implements StartupActivity.Background {
+
+
+    protected AbstractProjectBackgroundStartup(
+            @Nullable ProjectRegister projectRegister,
+            @Nullable ProjectListenerRegister projectListenerRegister,
+            @Nullable Disposable projectShutdown) {
+        super(projectRegister, projectListenerRegister, projectShutdown);
+    }
+
     @Override
     public void runActivity(@NotNull Project project) {
-        project.getService(ProjectConfigRegistry.class).initializeService();
+        onProjectStartup(project);
     }
 }

@@ -88,6 +88,12 @@ public class PersistentRootConfigModel
         return res;
     }
 
+    void removeRoot(@NotNull VirtualFile root) {
+        synchronized (sync) {
+            rootPartMap.remove(root);
+        }
+    }
+
     @NotNull
     List<VirtualFile> getRegisteredRoots() {
         List<VirtualFile> res;

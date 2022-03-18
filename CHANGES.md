@@ -13,9 +13,11 @@
 
 ### Details
 
-* RSH connections would incorrectly add "localhost:" to the command if the command name had no ':' character in it.
-  * This primarily affected tests running on Linux.
-  * The new version includes extra checking before using an RSH connection to ensure the executable file exists and is executable.  However, the logic in place only works if the executable has no spaces in the file name.
+* Bug fixes
+  * RSH connections would incorrectly add "localhost:" to the command if the command name had no ':' character in it.
+    * This primarily affected tests running on Linux.
+    * The new version includes extra checking before using an RSH connection to ensure the executable file exists and is executable.  However, the logic in place only works if the executable has no spaces in the file name.
+  * Improved the Active Connections panel to better refresh when the connection state changes, and now includes VCS roots that have an invalid Perforce configuration.
 * Changed supported IDE versions.
   * Removed all code that requires v211 and prior support.
     * Internally added jar support for compiling against 212, 213, and 221.

@@ -48,12 +48,14 @@ import java.util.List;
  * Stores the registered configurations for a specific project.  The registry must
  * also inform the application server connection registry about the configurations, so that
  * the correct counters can be preserved.
+ * <p>
+ * This service sends the Client Added and Client Removed messages.  It maintains the online / offline
+ * state by listening to connection messages.
  */
 @Service(Service.Level.PROJECT)
 public abstract class ProjectConfigRegistry
         implements Disposable {
     public static final Class<ProjectConfigRegistry> COMPONENT_CLASS = ProjectConfigRegistry.class;
-    public static final String COMPONENT_NAME = COMPONENT_CLASS.getName();
 
     private static final Logger LOG = Logger.getInstance(ProjectConfigRegistry.class);
 
@@ -144,7 +146,6 @@ public abstract class ProjectConfigRegistry
 
     @NotNull
     public Collection<ClientConfigRoot> getClientConfigRoots() {
-        // updateVcsRoots();
         return new ArrayList<>(getRegisteredStates());
     }
 
@@ -173,28 +174,7 @@ public abstract class ProjectConfigRegistry
             }
         });
         ServerConnectedMessage.addListener(applicationBusClient, this, this::onServerConnected);
-        ClientConfigRemovedMessage.addListener(projectBusClient, this, event -> {
-            if (! ProjectConfigRegistry.this.equals(event.getEventSource())) {
-                onClientRemoved(event.getClientConfig(), event.getVcsRootDir());
-            }
-        });
         UserSelectedOfflineMessage.addListener(projectBusClient, this, this::onUserSelectedOffline);
-        //ClientActionMessage.addListener(appBus, cacheId, event -> refresh());
-        //ServerActionCacheMessage.addListener(appBus, cacheId, event -> refresh());
-
-
-        // New clients should only be registered by this component, which means that the "add client"
-        // message should ONLY be sent by this class.  Therefore, this class doesn't need to listen
-        // for add events, as that could cause recursive problems.
-        //ClientConfigAddedMessage.addListener(projectBusClient, (r, c) -> {
-        //    // Need to make sure we don't perform a recursive call here.
-        //    if (r != null) {
-        //        ClientConfigRoot existingClient = getClientFor(r);
-        //        if (existingClient != null && !c.getClientServerRef().equals(existingClient.getClientConfig().getClientServerRef())) {
-        //            addClientConfig(c, r);
-        //        }
-        //    }
-        //});
 
         ReconnectRequestMessage.addListener(projectBusClient, this, new ReconnectRequestMessage.Listener() {
             @Override
@@ -261,7 +241,7 @@ public abstract class ProjectConfigRegistry
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Sending notification that root was added: " + state.getClientRootDir());
             }
-            ClientConfigAddedMessage.sendClientConfigurationAdded(getProject(),
+            ClientConfigAddedMessage.reportClientConfigurationAdded(getProject(),
                     state.getClientRootDir(),
                     state.getClientConfig());
         }
@@ -275,8 +255,6 @@ public abstract class ProjectConfigRegistry
     protected abstract void onHostConnectionError(@NotNull P4ServerName server);
 
     protected abstract void onServerConnected(@NotNull ServerConnectedMessage.ServerConnectedEvent event);
-
-    protected abstract void onClientRemoved(@NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir);
 
     protected abstract void onUserSelectedOffline(@NotNull UserSelectedOfflineMessage.OfflineEvent event);
 

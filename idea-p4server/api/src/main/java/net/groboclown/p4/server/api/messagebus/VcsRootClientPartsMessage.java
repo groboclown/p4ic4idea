@@ -39,7 +39,7 @@ public class VcsRootClientPartsMessage
     /**
      * Event object describing the vcs root client part.
      */
-    public static class VcsRootClientPartsRemovedEvent {
+    public static class VcsRootClientPartsRemovedEvent extends AbstractMessageEvent {
         private final VirtualFile vcsRoot;
 
         public VcsRootClientPartsRemovedEvent(@Nonnull VirtualFile vcsRoot) {
@@ -54,7 +54,7 @@ public class VcsRootClientPartsMessage
     /**
      * Event object describing the updated client parts for the vcs root.
      */
-    public static class VcsRootClientPartsUpdatedEvent {
+    public static class VcsRootClientPartsUpdatedEvent extends AbstractMessageEvent {
         private final VirtualFile vcsRoot;
         private final List<ConfigPart> parts;
 

@@ -15,6 +15,7 @@
 package net.groboclown.p4plugin.modules.connection.view;
 
 import com.intellij.openapi.vcs.FilePath;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleTextAttributes;
@@ -26,6 +27,7 @@ import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4plugin.P4Bundle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -83,6 +85,8 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
             renderFilePath((FilePath) value);
         } else if (value instanceof P4CommandRunner.ResultError) {
             renderResultError((P4CommandRunner.ResultError) value);
+        } else if (value instanceof VirtualFile) {
+            renderInvalidConfiguration((VirtualFile) value);
         } else {
             renderError(value);
         }
@@ -90,17 +94,22 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
         SpeedSearchUtil.applySpeedSearchHighlighting(tree, this, true, selected);
     }
 
+    private void renderInvalidConfiguration(VirtualFile value) {
+        append(P4Bundle.message("connection.tree.root.name", value.getPresentableName()),
+                ROOT_NAME_STYLE);
+
+        String rootPath = virtualFileToDisplayString(value);
+        append(P4Bundle.message("connection.tree.root.path", rootPath), ROOT_PATH_STYLE);
+
+        append(P4Bundle.message("connection.tree.root.invalid-config"), ERROR_STYLE);
+    }
+
 
     private void renderClientConfigRoot(ClientConfigRoot value) {
         append(P4Bundle.message("connection.tree.root.name", value.getProjectVcsRootDir().getPresentableName()),
                 ROOT_NAME_STYLE);
 
-        String rootPath = value.getProjectVcsRootDir().getPath();
-        if (rootPath.startsWith("file://")) {
-            rootPath = rootPath.substring(7);
-        }
-        // Normalize path for Windows
-        rootPath = new File(rootPath).getAbsolutePath();
+        String rootPath = virtualFileToDisplayString(value.getProjectVcsRootDir());
         append(P4Bundle.message("connection.tree.root.path", rootPath), ROOT_PATH_STYLE);
 
         if (value.isOnline()) {
@@ -169,5 +178,18 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
 
     private void renderError(Object value) {
         append("<ERROR " + value.getClass() + ">", ERROR_STYLE);
+    }
+
+    private static String virtualFileToDisplayString(@Nullable VirtualFile vf) {
+        if (vf == null) {
+            return "?";
+        }
+        String ret = vf.getPath();
+        if (ret.startsWith("file://")) {
+            ret = ret.substring(7);
+        }
+        // Normalize path for Windows
+        ret = new File(ret).getAbsolutePath();
+        return ret;
     }
 }

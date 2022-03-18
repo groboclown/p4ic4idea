@@ -18,7 +18,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
 import com.intellij.openapi.vcs.VcsRootSettings;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -105,11 +104,13 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         // case of an error, or if there were no updates.  The no updates use case is for the situation where
         // events were fired in an unexpected order, then the user can rerun the apply to re-trigger everything.
         // It's a hack, yes.
-        project.getMessageBus().syncPublisher(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED)
-                .directoryMappingChanged();
+        //   - Not only is it a hack, but in IDE v212 with the new service model, this fails due to
+        //     different class loader between the returned listener object and this object.
+        // project.getMessageBus().syncPublisher(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED)
+        //        .directoryMappingChanged();
 
         if (problems != null) {
-            LOG.warn("Configuration problems discovered; not adding: " + problems);
+            LOG.warn("Configuration problems discovered: " + problems);
             throw new ConfigurationException(toMessage(problems),
                     P4Bundle.getString("configuration.error.title"));
         }

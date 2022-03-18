@@ -18,6 +18,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.VcsListener;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,22 +33,20 @@ import java.util.Set;
 public class VcsRootChangeListener implements VcsListener {
     private final Project project;
 
-    public VcsRootChangeListener(Project project) {
+    public VcsRootChangeListener(@NotNull Project project) {
         this.project = project;
     }
 
     @Override
     public void directoryMappingChanged() {
-        if (project != null) {
-            final Set<VirtualFile> currentRoots =
-                    new HashSet<>(VcsRootConfigController.getInstance().getRegisteredRoots(project));
-            for (VirtualFile root: ProjectLevelVcsManager.getInstance(project).getAllVersionedRoots()) {
-                currentRoots.remove(root);
-            }
-            // whatever remains is extra.
-            for (VirtualFile root: currentRoots) {
-                VcsRootConfigController.getInstance().removeRoot(project, root);
-            }
+        final Set<VirtualFile> currentRoots =
+                new HashSet<>(VcsRootConfigController.getInstance().getRegisteredRoots(project));
+        for (VirtualFile root: ProjectLevelVcsManager.getInstance(project).getAllVersionedRoots()) {
+            currentRoots.remove(root);
+        }
+        // whatever remains is extra.
+        for (VirtualFile root: currentRoots) {
+            VcsRootConfigController.getInstance().removeRoot(project, root);
         }
     }
 }

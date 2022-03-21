@@ -20,15 +20,19 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * A layer on top of a {@link ServerStatus} to include the client connection
  * details.  It is limited to project scope, and is the only client configuration
- * for a VCS root.
+ * for a VCS root.  Due to the nature of the roots, though, one client configuration
+ * can be reused for multiple VCS roots; therefore, the client config can be associated
+ * with 1 or more roots.  It is an error for a client config to be associated with 0 roots.
  * <p>
  * Due to the underlying mechanisms for data storage, the root may store state
  * information insofar as it relates to the client workspace information.
  */
-public interface ClientConfigRoot
+public interface RootedClientConfig
         extends Disposable, ServerStatus {
     @NotNull
     ClientConfig getClientConfig();
@@ -53,11 +57,8 @@ public interface ClientConfigRoot
 
     /**
      *
-     * @return the project VCS root directory.
+     * @return the VCS root directories with this client configuration for the project.
      */
     @NotNull
-    VirtualFile getProjectVcsRootDir();
-
-    @Override
-    boolean isDisposed();
+    List<VirtualFile> getProjectVcsRootDirs();
 }

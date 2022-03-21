@@ -21,7 +21,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ContentRevision;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
@@ -78,7 +78,7 @@ public class CommitUtil {
             return Collections.singletonList(new VcsException("System not ready to run"));
         }
 
-        Map<ClientConfigRoot, List<FilePath>> filesByRoot = mapChangedFilesByRoot(registry, changes);
+        Map<RootedClientConfig, List<FilePath>> filesByRoot = mapChangedFilesByRoot(registry, changes);
         List<VcsException> errors = new ArrayList<>();
 
         // This bit of code can incorrectly duplicate changelist items to submit.  Need to protect against that.
@@ -135,14 +135,14 @@ public class CommitUtil {
 
 
     @NotNull
-    private static Map<ClientConfigRoot, List<FilePath>> mapChangedFilesByRoot(@NotNull ProjectConfigRegistry registry,
+    private static Map<RootedClientConfig, List<FilePath>> mapChangedFilesByRoot(@NotNull ProjectConfigRegistry registry,
             @NotNull Collection<Change> changes) {
-        Map<ClientConfigRoot, List<FilePath>> ret = new HashMap<>();
+        Map<RootedClientConfig, List<FilePath>> ret = new HashMap<>();
         for (Change change : changes) {
             {
                 ContentRevision before = change.getBeforeRevision();
                 if (before != null) {
-                    ClientConfigRoot root = registry.getClientFor(before.getFile());
+                    RootedClientConfig root = registry.getClientConfigFor(before.getFile());
                     List<FilePath> paths = ret.computeIfAbsent(root, k -> new ArrayList<>());
                     paths.add(before.getFile());
                 }
@@ -150,7 +150,7 @@ public class CommitUtil {
             {
                 ContentRevision after = change.getAfterRevision();
                 if (after != null) {
-                    ClientConfigRoot root = registry.getClientFor(after.getFile());
+                    RootedClientConfig root = registry.getClientConfigFor(after.getFile());
                     List<FilePath> paths = ret.computeIfAbsent(root, k -> new ArrayList<>());
                     paths.add(after.getFile());
                 }
@@ -160,7 +160,7 @@ public class CommitUtil {
     }
 
 
-    private static JobData getJobsIn(Project project, ClientConfigRoot root,
+    private static JobData getJobsIn(Project project, RootedClientConfig root,
             List<FilePath> files, List<P4Job> jobs) {
         return new JobData(root, files, getJobsIn(project, root.getClientConfig(), jobs));
     }
@@ -220,7 +220,7 @@ public class CommitUtil {
 
 
     static class SubmitChangelistData {
-        final ClientConfigRoot root;
+        final RootedClientConfig root;
         final List<FilePath> files;
         final P4ChangelistId changelistId;
         final P4CommandRunner.QueryAnswer<Set<P4Job>> answer;
@@ -235,11 +235,11 @@ public class CommitUtil {
     }
 
     static class JobData {
-        final ClientConfigRoot root;
+        final RootedClientConfig root;
         final List<FilePath> files;
         final P4CommandRunner.QueryAnswer<Set<P4Job>> jobAnswer;
 
-        JobData(@NotNull ClientConfigRoot root, @NotNull List<FilePath> files,
+        JobData(@NotNull RootedClientConfig root, @NotNull List<FilePath> files,
                 @NotNull P4CommandRunner.QueryAnswer<Set<P4Job>> jobAnswer) {
             this.root = root;
             this.files = files;

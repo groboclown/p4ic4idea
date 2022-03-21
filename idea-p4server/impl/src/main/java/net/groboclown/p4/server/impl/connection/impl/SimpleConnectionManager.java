@@ -211,38 +211,44 @@ public class SimpleConnectionManager implements ConnectionManager {
         }
         server.connect();
 
-        // Seems to be connected.  Tell the world that it can be
-        // connected to.  Note that this is independent of login validity.
-        ServerConnectedMessage.send().serverConnected(
-                new ServerConnectedMessage.ServerConnectedEvent(config, false));
+        try {
+            boolean usedPassword = false;
 
-        // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
-        // set, then a simple password login attempt should be made.  The P4LOGINSSO will
-        // ignore the password.
-        // However, we will always perform the SSO login here.
-        // With the addition of the LoginAction, we should only perform this when absolutely required.
-        // The original server authentication terribleness is enshrined in v2's ServerAuthenticator.
-        if (serverConfig.hasLoginSso() || (serverConfig.usesStoredPassword() && password != null)) {
-            final boolean useTicket = serverConfig.getAuthTicket() != null && serverConfig.getAuthTicket().isFile()
-                    && serverConfig.getAuthTicket().canWrite();
-            final LoginOptions loginOptions = new LoginOptions();
-            loginOptions.setDontWriteTicket(! useTicket);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Attempting to log into the server.  Auth Ticket: " +
-                        (useTicket ? serverConfig.getAuthTicket() : "don't use") +
-                        "; password? " + (password == null ? "(not used)" : "(set)")
+            // #147 if the user isn't logged in with an authentication ticket, but has P4LOGINSSO
+            // set, then a simple password login attempt should be made.  The P4LOGINSSO will
+            // ignore the password.
+            // However, we will always perform the SSO login here.
+            // With the addition of the LoginAction, we should only perform this when absolutely required.
+            // The original server authentication terribleness is enshrined in v2's ServerAuthenticator.
+            if (serverConfig.hasLoginSso() || (serverConfig.usesStoredPassword() && password != null)) {
+                final boolean useTicket = serverConfig.getAuthTicket() != null && serverConfig.getAuthTicket().isFile()
+                        && serverConfig.getAuthTicket().canWrite();
+                final LoginOptions loginOptions = new LoginOptions();
+                loginOptions.setDontWriteTicket(!useTicket);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Attempting to log into the server.  Auth Ticket: " +
+                            (useTicket ? serverConfig.getAuthTicket() : "don't use") +
+                            "; password? " + (password == null ? "(not used)" : "(set)")
                     );
+                }
+                server.login(password, loginOptions);
+                usedPassword = true;
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No attempt made to authenticate with the server.");
+                }
             }
-            server.login(password, loginOptions);
-        } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("No attempt made to authenticate with the server.");
-            }
-        }
-        // TODO should this always be sent???
-        ServerConnectedMessage.send().serverConnected(
-                new ServerConnectedMessage.ServerConnectedEvent(config, true));
+            // TODO should this always be sent???
+            ServerConnectedMessage.send().serverConnected(
+                    new ServerConnectedMessage.ServerConnectedEvent(config, true, usedPassword));
+        } catch (P4JavaException ex) {
+            // Connection happened, but login failed.
+            // Tell the world that it can be connected to.
+            ServerConnectedMessage.send().serverConnected(
+                    new ServerConnectedMessage.ServerConnectedEvent(config, false, false));
 
+            throw ex;
+        }
         return server;
     }
 

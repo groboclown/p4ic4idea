@@ -19,8 +19,6 @@ import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-
 /**
  * Indicates that a server was successfully contacted without issue.  The server should be
  * considered online.  It's acceptable for a server to have multiple online messages sent
@@ -40,10 +38,13 @@ public class ServerConnectedMessage
     public static final class ServerConnectedEvent extends AbstractMessageEvent {
         private final OptionalClientServerConfig config;
         private final boolean loggedIn;
+        private final boolean usedPassword;
 
-        public ServerConnectedEvent(@NotNull OptionalClientServerConfig config, boolean loggedIn) {
+        public ServerConnectedEvent(@NotNull OptionalClientServerConfig config,
+                boolean loggedIn, boolean usedPassword) {
             this.config = config;
             this.loggedIn = loggedIn;
+            this.usedPassword = usedPassword;
         }
 
         @NotNull
@@ -58,6 +59,10 @@ public class ServerConnectedMessage
 
         public boolean isLoggedIn() {
             return loggedIn;
+        }
+
+        public boolean isPasswordUsed() {
+            return usedPassword;
         }
     }
 
@@ -78,6 +83,10 @@ public class ServerConnectedMessage
         }
     }
 
+    public static void sendServerConnectedMessage(@NotNull OptionalClientServerConfig config,
+            boolean loggedIn, boolean usedPassword) {
+        send().serverConnected(new ServerConnectedEvent(config, loggedIn, usedPassword));
+    }
 
     public static Listener send() {
         return getListener(TOPIC, DEFAULT_LISTENER);

@@ -20,10 +20,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.perforce.p4java.exception.AuthenticationFailedException;
 import com.perforce.p4java.impl.mapbased.server.ServerInfo;
 import net.groboclown.p4.server.api.AbstractP4CommandRunner;
+import net.groboclown.p4.server.api.RootedClientConfig;
+import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4ServerName;
+import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.ServerStatus;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.CachePendingActionHandler;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
@@ -81,15 +84,13 @@ import net.groboclown.p4.server.api.commands.user.ListUsersQuery;
 import net.groboclown.p4.server.api.commands.user.ListUsersResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
+import net.groboclown.p4.server.api.exceptions.ConnectionTimeoutException;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
-import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
-import net.groboclown.p4.server.api.messagebus.ClientConfigRemovedMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
-import net.groboclown.p4.server.api.messagebus.LoginFailureMessage;
 import net.groboclown.p4.server.api.messagebus.MessageBusClient;
+import net.groboclown.p4.server.api.messagebus.PushPendingActionsRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ReconnectRequestMessage;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.ServerErrorEvent;
@@ -108,19 +109,16 @@ import org.jetbrains.annotations.Nullable;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 
 /**
  * Layers a queryCache and server.
- *
- * FIXME stateCache server state should be moved into the ClientConfig object.
  */
 public class TopCommandRunner extends AbstractP4CommandRunner
         implements Disposable {
@@ -130,7 +128,6 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     private final CacheQueryHandler queryCache;
     private final CachePendingActionHandler pendingActionCache;
     private final AbstractServerCommandRunner server;
-    private final Map<String, ServerConnectionState> stateCache = new HashMap<>();
     private boolean disposed;
 
 
@@ -145,140 +142,92 @@ public class TopCommandRunner extends AbstractP4CommandRunner
         this.server = server;
         Disposer.register(parentDisposable, this);
 
-        final Map<VirtualFile, ClientConfig> clientConfigs = new HashMap<>();
-
-        MessageBusClient.ApplicationClient appClient = MessageBusClient.forApplication(this);
         MessageBusClient.ProjectClient projClient = MessageBusClient.forProject(project, this);
-        ClientConfigAddedMessage.addListener(projClient, this, (e) -> clientConfigs.put(e.getRoot(), e.getClientConfig()));
-        ClientConfigRemovedMessage.addListener(projClient, this,
-                (event) -> clientConfigs.remove(event.getVcsRootDir()));
-        ClientConfigAddedMessage.addServerListener(appClient, this,
-                // Creates the state for the server config, if it doesn't already exist.
-                // This prevents issues with the user going offline before any action on the
-                // server happens.
-                (e) -> this.getProjectStateFor(e.getServerConfig()));
-        ServerConnectedMessage.addListener(appClient, this, (e) -> {
-            // This is an application-level event listener for server config state changes.
-            Optional<ServerConnectionState> op = getAppStateFor(e.getConfig());
-            if (!op.isPresent()) {
-                return;
-            }
-            ServerConnectionState state = op.get();
-            if (state.userOffline) {
-                state.pendingActionsRequireResend = true;
-            }
-            state.badConnection = false;
-            state.userOffline = false;
+        PushPendingActionsRequestMessage.addListener(projClient, this, (e) ->
+                getClientConfigRootFor(e.getVcsRoot()).ifPresent((r) ->
+                        sendCachedPendingRequests(r.getClientConfig())));
 
-            if (e.isLoggedIn()) {
-                state.needsLogin = false;
-                state.badLogin = false;
-            }
+        // User wants to work offline, regardless of connection status.
+        UserSelectedOfflineMessage.addListener(projClient, this, e ->
+                server.disconnect(e.getName()));
 
-            if (state.pendingActionsRequireResend) {
-                state.pendingActionsRequireResend = false;
-                for (ClientConfig clientConfig : clientConfigs.values()) {
-                    if (clientConfig.isIn(e.getServerConfig())) {
-                        sendCachedPendingRequests(clientConfig);
-                    }
-                }
-            }
-        });
-        UserSelectedOfflineMessage.addListener(projClient, this, e -> {
-            // User wants to work offline, regardless of connection status.
-            for (ServerConnectionState state : getStatesFor(e.getName())) {
-                state.userOffline = true;
-                server.disconnect(state.config.getServerName());
-            }
-        });
         ReconnectRequestMessage.addListener(projClient, this, new ReconnectRequestMessage.Listener() {
             // The user requested to go online, so clear out the states
             // that might cause a request to not be fulfilled.
             @Override
             public void reconnectToAllClients(@NotNull ReconnectRequestMessage.ReconnectAllEvent e) {
-                for (ServerConnectionState state : getAllStates()) {
-
-                    if (state.userOffline) {
-                        state.pendingActionsRequireResend = true;
-                    }
-                    state.userOffline = false;
-                    state.badConnection = false;
-                    state.badLogin = false;
-                    state.needsLogin = false;
-                }
-                for (ClientConfig clientConfig: clientConfigs.values()) {
+                getClientConfigRoots().forEach((r) -> {
                     // Try to connect to the server, and wait for that connection
                     // attempt to complete.
-                    tryOnlineAfterReconnect(clientConfig);
-                    sendCachedPendingRequests(clientConfig);
-                }
+                    tryOnlineAfterReconnect(r.getClientConfig());
+                    sendCachedPendingRequests(r.getClientConfig());
+                });
             }
 
             @Override
             public void reconnectToClient(@NotNull ReconnectRequestMessage.ReconnectEvent e) {
-                for (ServerConnectionState state : getStatesFor(e.getRef().getServerName())) {
-                    if (state.userOffline) {
-                        state.pendingActionsRequireResend = true;
-                    }
-                    state.userOffline = false;
-                    state.badConnection = false;
-                    state.badLogin = false;
-                    state.needsLogin = false;
-                }
-                for (ClientConfig clientConfig: clientConfigs.values()) {
-                    if (clientConfig.getClientServerRef().equals(e.getRef())) {
-                        // Try to connect to the server, and wait for that connection
-                        // attempt to complete.
-                        tryOnlineAfterReconnect(clientConfig);
-                        sendCachedPendingRequests(clientConfig);
-                    }
-                }
-            }
-        });
-        LoginFailureMessage.addListener(appClient, this, new LoginFailureMessage.Listener() {
-            @Override
-            public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getAppStateFor(e.getConfig()).ifPresent(s -> s.badLogin = true);
-            }
-
-            @Override
-            public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
-                getAppStateFor(e.getConfig()).ifPresent(s -> s.badLogin = true);
-            }
-
-            @Override
-            public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getAppStateFor(e.getConfig()).ifPresent(s -> {
-                    s.badLogin = false;
-                    s.needsLogin = true;
-                });
-            }
-
-            @Override
-            public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getAppStateFor(e.getConfig()).ifPresent(s -> s.badLogin = true);
-            }
-
-            @Override
-            public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
-                getAppStateFor(e.getConfig()).ifPresent(s -> {
-                    s.badLogin = false;
-                    s.passwordUnnecessary = true;
+                getClientConfigRootsFor(e.getRef()).forEach((r) -> {
+                    // Try to connect to the server, and wait for that connection
+                    // attempt to complete.
+                    tryOnlineAfterReconnect(r.getClientConfig());
+                    sendCachedPendingRequests(r.getClientConfig());
                 });
             }
         });
-        ConnectionErrorMessage.addListener(appClient, this, new ConnectionErrorMessage.AllErrorListener() {
-            @Override
-            public <E extends Exception> void onHostConnectionError(@NotNull ServerErrorEvent<E> event) {
-                if (event.getConfig() != null) {
-                    getAppStateFor(event.getConfig()).ifPresent(s -> s.badConnection = true);
-                } else {
-                    for (ServerConnectionState state : getStatesFor(event.getName())) {
-                        state.badConnection = true;
-                    }
+    }
+
+    private List<RootedClientConfig> getClientConfigRootsFor(@NotNull ClientConfig config) {
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        final List<RootedClientConfig> roots = new ArrayList<>();
+        if (registry != null) {
+            for (RootedClientConfig root : registry.getRootedClientConfigs()) {
+                if (root.getClientConfig().equals(config)) {
+                    roots.add(root);
                 }
             }
-        });
+        }
+        return roots;
+    }
+
+    private List<RootedClientConfig> getClientConfigRootsFor(@NotNull ClientServerRef config) {
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        final List<RootedClientConfig> roots = new ArrayList<>();
+        if (registry != null) {
+            for (RootedClientConfig root : registry.getRootedClientConfigs()) {
+                if (root.getClientConfig().getClientServerRef().equals(config)) {
+                    roots.add(root);
+                }
+            }
+        }
+        return roots;
+    }
+
+    private List<RootedClientConfig> getClientConfigRootsFor(@NotNull OptionalClientServerConfig config) {
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry != null) {
+            if (config.getClientConfig() != null) {
+                return registry.getClientConfigsForRef(config.getClientConfig().getClientServerRef());
+            }
+            return registry.getClientConfigsForServer(config.getServerName());
+        }
+        return List.of();
+    }
+
+    private Optional<RootedClientConfig> getClientConfigRootFor(VirtualFile vcsRoot) {
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry != null) {
+            return Optional.ofNullable(registry.getClientConfigFor(vcsRoot));
+        }
+        return Optional.empty();
+    }
+
+
+    private Collection<RootedClientConfig> getClientConfigRoots() {
+        final ProjectConfigRegistry registry = ProjectConfigRegistry.getInstance(project);
+        if (registry != null) {
+            return registry.getRootedClientConfigs();
+        }
+        return List.of();
     }
 
 
@@ -306,19 +255,21 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected ActionAnswer<LoginResult> login(
             @NotNull OptionalClientServerConfig config,
             @NotNull LoginAction action) {
-        ServerConnectionState state = getProjectStateFor(config.getServerConfig());
-
-        // Login has special state checking, because all it cares about is online vs. offline, not login
-        // status.
-        if (state.badLogin && !state.userOffline && !state.badConnection) {
-            return server.perform(config, action)
-                    .whenCompleted((resp) -> {
-                        // Login was good.
-                        ServerConnectedMessage.send().serverConnected(
-                                new ServerConnectedMessage.ServerConnectedEvent(config, true));
-                        state.needsLogin = false;
-                        state.badConnection = false;
-                    });
+        final List<RootedClientConfig> roots = getClientConfigRootsFor(config);
+        for (final RootedClientConfig root : roots) {
+            // This only tries to connect to the first server... which should be unique across
+            // all configurations.
+            if (
+                    // if login is bad, then don't retry the login.
+                    canRunOnline(root) && root.isLoginNeeded()
+            ) {
+                return server.perform(config, action)
+                        .whenCompleted((resp) -> {
+                            // Login was good.
+                            ServerConnectedMessage.sendServerConnectedMessage(
+                                    config, true, resp.isPasswordUsed());
+                        });
+            }
         }
         return new OfflineActionAnswerImpl<>();
     }
@@ -477,9 +428,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListChangelistsFixedByJobResult> listChangelistsFixedByJob(
             @NotNull OptionalClientServerConfig config,
             @NotNull ListChangelistsFixedByJobQuery query) {
-        // FIXME implement
+        // TODO implement
         LOG.warn("FIXME implement listChangelistsFixedByJob");
-        return null;
+        return new DoneQueryAnswer<>(new ListChangelistsFixedByJobResult());
     }
 
 
@@ -506,9 +457,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListDirectoriesResult> listDirectories(
             @NotNull OptionalClientServerConfig config,
             @NotNull ListDirectoriesQuery query) {
-        // FIXME implement
+        // TODO implement
         LOG.warn("FIXME implement listDirectories");
-        return null;
+        return new DoneQueryAnswer<>(new ListDirectoriesResult());
     }
 
 
@@ -517,9 +468,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     protected QueryAnswer<ListFilesResult> listFiles(
             @NotNull OptionalClientServerConfig config,
             @NotNull ListFilesQuery query) {
-        // FIXME implement
+        // TODO implement
         LOG.warn("FIXME implement listFiles");
-        return null;
+        return new DoneQueryAnswer<>(new ListFilesResult());
     }
 
 
@@ -603,9 +554,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @Override
     protected QueryAnswer<ListClientFetchStatusResult> listClientFetchStatus(@Nonnull ClientConfig config,
             @Nonnull ListClientFetchStatusQuery query) {
-        // FIXME implement
+        // TODO implement
         LOG.warn("FIXME implement listClientFetchStatus");
-        return null;
+        return new DoneQueryAnswer<>(new ListClientFetchStatusResult());
     }
 
 
@@ -623,9 +574,9 @@ public class TopCommandRunner extends AbstractP4CommandRunner
     @NotNull
     @Override
     protected QueryAnswer<ServerInfoResult> serverInfo(@Nonnull P4ServerName name, @Nonnull ServerInfo query) {
-        // FIXME implement
+        // TODO implement
         LOG.warn("FIXME implement serverInfo");
-        return null;
+        return new DoneQueryAnswer<>(new ServerInfoResult());
     }
 
 
@@ -649,54 +600,6 @@ public class TopCommandRunner extends AbstractP4CommandRunner
 
     public boolean isDisposed() {
         return disposed;
-    }
-
-    /** Should be called for application-level invocations. */
-    @NotNull
-    private Optional<ServerConnectionState> getAppStateFor(@NotNull OptionalClientServerConfig config) {
-        ServerConnectionState state;
-        synchronized (stateCache) {
-            state = stateCache.get(config.getServerId());
-        }
-        return Optional.ofNullable(state);
-    }
-
-    /**
-     * Should be called for project-level invocations only, because it will create a project-level reference to
-     * the server config.
-     *
-     * @param config config
-     * @return state for the config
-     */
-    @NotNull
-    private ServerConnectionState getProjectStateFor(@NotNull ServerConfig config) {
-        ServerConnectionState state;
-        synchronized (stateCache) {
-            state = stateCache.get(config.getServerId());
-            if (state == null) {
-                state = new ServerConnectionState(config);
-                stateCache.put(config.getServerId(), state);
-            }
-        }
-        return state;
-    }
-
-    private Collection<ServerConnectionState> getStatesFor(@Nonnull P4ServerName name) {
-        List<ServerConnectionState> ret = new ArrayList<>();
-        synchronized (stateCache) {
-            for (ServerConnectionState state : stateCache.values()) {
-                if (state.config.getServerName().equals(name)) {
-                    ret.add(state);
-                }
-            }
-        }
-        return ret;
-    }
-
-    private Collection<ServerConnectionState> getAllStates() {
-        synchronized (stateCache) {
-            return new ArrayList<>(stateCache.values());
-        }
     }
 
     /**
@@ -734,78 +637,81 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                                 // This will be bubbled up to the outer error trap.
                                 // Additionally, the underlying code has its own error reporting.
                                 LOG.debug("Problem committing pending action " + action, ex);
-                            }).whenOffline(() -> {
-                                LOG.warn("Went offline while committing pending action " + action);
-                            })),
+                            }).whenOffline(() ->
+                                    LOG.warn("Went offline while committing pending action " + action))),
                     (actionLeft, actionRight) -> actionLeft.mapActionAsync((x) -> actionRight))
-                .whenServerError((e) -> {
-                    LOG.warn("Encountered unexpected error: " + e);
-                })
-                .whenOffline(() -> {
-                    LOG.warn("Went offline while sending pending actions");
-                });
+                .whenServerError((e) ->
+                        LOG.warn("Encountered unexpected error: " + e))
+                .whenOffline(() ->
+                        LOG.warn("Went offline while sending pending actions"));
         } catch (InterruptedException e) {
             InternalErrorMessage.send(project).cacheLockTimeoutError(new ErrorEvent<>(new VcsInterruptedException(e)));
             return new DoneActionAnswer<>(null);
         }
     }
 
-    private <R> ActionAnswer<R> onlineExec(@NotNull ClientConfig clientConfig, Exec<ActionAnswer<R>> serverExec,
-            Exec<ActionAnswer<R>> cacheExec) {
+    private <R> ActionAnswer<R> onlineExec(@NotNull ClientConfig clientConfig, Supplier<ActionAnswer<R>> serverExec,
+            Supplier<ActionAnswer<R>> cacheExec) {
         return onlineExec(new OptionalClientServerConfig(clientConfig), serverExec, cacheExec);
     }
 
     private <R> ActionAnswer<R> onlineExec(
-            @NotNull OptionalClientServerConfig config, Exec<ActionAnswer<R>> serverExec,
-            Exec<ActionAnswer<R>> cacheExec) {
-        final ServerConnectionState firstState = getProjectStateFor(config.getServerConfig());
-        final ActionAnswer<R> ret;
-        if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
-            ret = login(config, new LoginAction()).mapAction((x) -> null);
-        } else {
-            ret = new DoneActionAnswer<>(null);
+            @NotNull final OptionalClientServerConfig config, @NotNull final Supplier<ActionAnswer<R>> serverExec,
+            @NotNull final Supplier<ActionAnswer<R>> cacheExec) {
+        // Try each root until we get something good.  Note that, really, any should work.
+        ActionAnswer<R> ret = new DoneActionAnswer<>(null);
+        for (final RootedClientConfig root : getClientConfigRootsFor(config)) {
+            if (root.isLoginNeeded() && canRunOnline(root)) {
+                ret = login(config, new LoginAction()).mapAction((x) -> null);
+                break;
+            }
         }
         return ret.mapActionAsync((x) -> {
-            final ServerConnectionState nextState = getProjectStateFor(config.getServerConfig());
-            if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
-                return serverExec.exec();
+            // Need to re-grab the right config.
+            for (final RootedClientConfig root : getClientConfigRootsFor(config)) {
+                if (canRunOnline(root)) {
+                    return serverExec.get();
+                }
             }
-            return cacheExec.exec();
+            return cacheExec.get();
         });
     }
 
-    private <R> QueryAnswer<R> onlineQuery(@NotNull ClientConfig clientConfig, Exec<QueryAnswer<R>> serverExec,
-            Exec<QueryAnswer<R>> cacheExec) {
+    private <R> QueryAnswer<R> onlineQuery(@NotNull ClientConfig clientConfig,
+            @NotNull final Supplier<QueryAnswer<R>> serverExec,
+            @NotNull final Supplier<QueryAnswer<R>> cacheExec) {
         return onlineQuery(new OptionalClientServerConfig(clientConfig), serverExec, cacheExec);
     }
 
     private <R> QueryAnswer<R> onlineQuery(
-            @NotNull OptionalClientServerConfig config,
-            Exec<QueryAnswer<R>> serverExec,
-            Exec<QueryAnswer<R>> cacheExec) {
-        final ServerConnectionState firstState = getProjectStateFor(config.getServerConfig());
-        final QueryAnswer<R> ret;
-        if (firstState.needsLogin && !(firstState.badLogin || firstState.badConnection || firstState.userOffline)) {
-            ret = login(config, new LoginAction()).mapQuery((x) -> null);
-        } else {
-            ret = new DoneQueryAnswer<>(null);
+            @NotNull final OptionalClientServerConfig config,
+            @NotNull final Supplier<QueryAnswer<R>> serverExec,
+            @NotNull final Supplier<QueryAnswer<R>> cacheExec) {
+        QueryAnswer<R> ret = new DoneQueryAnswer<>(null);
+        for (final RootedClientConfig root : getClientConfigRootsFor(config)) {
+            if (root.isLoginNeeded() && canRunOnline(root)) {
+                ret = login(config, new LoginAction()).mapQuery((x) -> null);
+                break;
+            }
         }
         return ret.mapQueryAsync((x) -> {
-            final ServerConnectionState nextState = getProjectStateFor(config.getServerConfig());
-            if (!(nextState.badConnection || nextState.badLogin || nextState.userOffline || nextState.needsLogin)) {
-                return serverExec.exec();
+            // Need to re-grab the right config.
+            for (final RootedClientConfig root : getClientConfigRootsFor(config)) {
+                if (canRunOnline(root)) {
+                    return serverExec.get();
+                }
             }
-            return cacheExec.exec();
+            return cacheExec.get();
         });
     }
 
     private void tryOnlineAfterReconnect(@NotNull final ClientConfig clientConfig) {
         // Ensure the connection is allowed.
-        for (ServerConnectionState state : getStatesFor(clientConfig.getClientServerRef().getServerName())) {
-            if (state.userOffline || state.badConnection || state.badLogin || state.needsLogin) {
+        for (final RootedClientConfig root : getClientConfigRootsFor(clientConfig)) {
+            if (root.isLoginNeeded() || !canRunOnline(root)) {
                 // Already checked the online state, and it's not valid.
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Skipping another attempt for " + state.config.getServerName());
+                    LOG.debug("Skipping another attempt for " + root.getServerConfig().getServerName());
                 }
                 continue;
             }
@@ -813,51 +719,43 @@ public class TopCommandRunner extends AbstractP4CommandRunner
                 LOG.debug("Attempting to connect to " + clientConfig.getClientServerRef());
             }
             AtomicInteger debugCompleteState = new AtomicInteger(0);
-            boolean completed = server.getClientsForUser(new OptionalClientServerConfig(state.config, clientConfig),
-                    new ListClientsForUserQuery(state.config.getUsername(), 1))
-            .whenCompleted((x) -> {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Completed connection attempt to " + clientConfig.getClientServerRef());
-                    debugCompleteState.incrementAndGet();
-                }
-            })
-            .whenServerError((e) -> {
-                // The correct listeners will fire.
-                LOG.info("Reconnect failed for " + clientConfig.getClientServerRef(), e);
-                debugCompleteState.decrementAndGet();
-            })
-            .waitForCompletion(30, TimeUnit.SECONDS);
+            boolean completed = server.getClientsForUser(new OptionalClientServerConfig(clientConfig),
+                            new ListClientsForUserQuery(clientConfig.getServerConfig().getUsername(), 1))
+                    .whenCompleted((x) -> {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Completed connection attempt to " + clientConfig.getClientServerRef());
+                            debugCompleteState.incrementAndGet();
+                        }
+                    })
+                    .whenServerError((e) -> {
+                        // The correct listeners will fire.
+                        LOG.info("Reconnect failed for " + clientConfig.getClientServerRef(), e);
+                        debugCompleteState.decrementAndGet();
+                    })
+                    .waitForCompletion(30, TimeUnit.SECONDS);
             if (!completed) {
                 LOG.info("Reconnect attempt timed out waiting for connection to " + clientConfig.getClientServerRef());
-                state.badConnection = true;
+                ConnectionErrorMessage.send().connectionTimedOut(new ServerErrorEvent.ServerNameErrorEvent<>(
+                        clientConfig.getServerConfig().getServerName(),
+                        new OptionalClientServerConfig(clientConfig),
+                        new ConnectionTimeoutException("Connect to Server", 30)
+                ));
             } else if (LOG.isDebugEnabled()) {
                 // -1 means failure, 1 means success, 0 means didn't complete.
                 LOG.debug("Completed reconnect attempt; either success or failure: " + debugCompleteState.get());
             }
-        }
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Completed online check after reconnect for " + clientConfig.getClientServerRef());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Completed online check after reconnect for " + clientConfig.getClientServerRef());
+            }
+            return;
         }
     }
 
-    // Could replace this with "Supplier"
-    interface Exec<R> {
-        R exec();
-    }
 
-    private static class ServerConnectionState {
-        final ServerConfig config;
-        boolean badConnection;
-        boolean badLogin;
-        boolean needsLogin;
-        boolean passwordUnnecessary;
-        boolean userOffline;
-
-        // in order to avoid pushing the old pending list to the server many, many times
-        boolean pendingActionsRequireResend;
-
-        private ServerConnectionState(@Nonnull ServerConfig config) {
-            this.config = config;
-        }
+    private static boolean canRunOnline(@NotNull ServerStatus status) {
+        return !status.isLoginBad()
+                && !status.isServerConnectionBad()
+                && !status.isUserWorkingOffline()
+                && !status.isServerConnectionProblem();
     }
 }

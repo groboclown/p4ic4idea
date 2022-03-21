@@ -36,7 +36,7 @@ import com.intellij.ui.speedSearch.SpeedSearchUtil;
 import com.intellij.util.ui.ColumnInfo;
 import com.intellij.vcs.history.VcsHistoryProviderEx;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
@@ -128,7 +128,7 @@ public class P4HistoryProvider
     @Nullable
     @Override
     public VcsHistorySession createSessionFor(FilePath filePath) throws VcsException {
-        ClientConfigRoot root = getRootFor(filePath);
+        RootedClientConfig root = getRootFor(filePath);
         if (root == null) {
             LOG.info("Not in P4 project: " + filePath);
             return null;
@@ -150,7 +150,7 @@ public class P4HistoryProvider
     public void reportAppendableHistory(FilePath path, VcsAppendableHistorySessionPartner partner) {
         partner.reportCreatedEmptySession(createAppendableSession(
                 path, Collections.emptyList(), null));
-        ClientConfigRoot root = getRootFor(path);
+        RootedClientConfig root = getRootFor(path);
         if (root == null) {
             LOG.info("File not under VCS: " + path);
             // TODO bundle message
@@ -172,7 +172,7 @@ public class P4HistoryProvider
     @Nullable
     public VcsFileRevision getLastRevision(FilePath filePath)
             throws VcsException {
-        ClientConfigRoot root = getRootFor(filePath);
+        RootedClientConfig root = getRootFor(filePath);
         if (root == null) {
             LOG.info("File not under vcs: " + filePath);
             return null;
@@ -200,7 +200,7 @@ public class P4HistoryProvider
             @NotNull VcsAppendableHistorySessionPartner partner) {
         partner.reportCreatedEmptySession(createAppendableSession(
                 path, Collections.emptyList(), null));
-        ClientConfigRoot root = getRootFor(path);
+        RootedClientConfig root = getRootFor(path);
         if (root == null) {
             LOG.warn("File not under vcs: " + path);
             // TODO bundle message
@@ -238,7 +238,7 @@ public class P4HistoryProvider
     }
 
     @Nullable
-    private ClientConfigRoot getRootFor(FilePath fp) {
+    private RootedClientConfig getRootFor(FilePath fp) {
         if (fp == null || project.isDisposed()) {
             return null;
         }
@@ -246,7 +246,7 @@ public class P4HistoryProvider
         if (registry == null || registry.isDisposed()) {
             return null;
         }
-        return registry.getClientFor(fp);
+        return registry.getClientConfigFor(fp);
     }
 
     private VcsAbstractHistorySession createAppendableSession(final FilePath path, List<VcsFileRevision> revisions, @Nullable final VcsRevisionNumber number) {
@@ -259,7 +259,7 @@ public class P4HistoryProvider
             @Nullable
             @Override
             protected VcsRevisionNumber calcCurrentRevisionNumber() {
-                ClientConfigRoot root = getRootFor(path);
+                RootedClientConfig root = getRootFor(path);
                 if (root == null) {
                     return null;
                 }
@@ -302,7 +302,7 @@ public class P4HistoryProvider
     }
 
     private P4CommandRunner.QueryAnswer<ListFileHistoryResult> getHistory(
-            @NotNull ClientConfigRoot root, FilePath file, int revisionCount) {
+            @NotNull RootedClientConfig root, FilePath file, int revisionCount) {
         return P4ServerComponent
                 .query(project, root.getClientConfig(), new ListFileHistoryQuery(file, revisionCount));
     }

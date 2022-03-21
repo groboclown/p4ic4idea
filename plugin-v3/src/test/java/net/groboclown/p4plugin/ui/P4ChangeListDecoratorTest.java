@@ -13,11 +13,10 @@
  */
 package net.groboclown.p4plugin.ui;
 
-import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.idea.mock.MockLocalChangeList;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4plugin.PluginSetup;
 import net.groboclown.p4plugin.mock.MockColoredTreeCellRenderer;
@@ -59,7 +58,7 @@ class P4ChangeListDecoratorTest {
     void offlineNoP4ChangeDecorateChangeListWithDefault(TemporaryFolder tmp) {
 
         // Setup offline mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));

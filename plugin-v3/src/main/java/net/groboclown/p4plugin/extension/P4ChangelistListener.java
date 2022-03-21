@@ -25,7 +25,8 @@ import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListListener;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.AnswerSink;
@@ -96,13 +97,13 @@ public class P4ChangelistListener
                 CacheComponent.getInstance(myProject).getServerOpenedCache().first;
         try {
             final List<P4ChangelistId> changelists = new ArrayList<>(changelistMap.getP4ChangesFor(local));
-            for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
+            for (RootedClientConfig rootedClientConfig : getClientConfigRoots()) {
                 final Iterator<P4ChangelistId> iter = changelists.iterator();
                 while (iter.hasNext()) {
                     final P4ChangelistId p4change = iter.next();
-                    if (p4change.isIn(clientConfigRoot.getServerConfig())) {
+                    if (p4change.isIn(rootedClientConfig.getServerConfig())) {
                         iter.remove();
-                        P4ServerComponent.perform(myProject, clientConfigRoot.getClientConfig(),
+                        P4ServerComponent.perform(myProject, rootedClientConfig.getClientConfig(),
                                 new DeleteChangelistAction(p4change))
                         .whenCompleted((r) -> {
                             UserMessage.showNotification(myProject, UserMessage.INFO,
@@ -157,11 +158,11 @@ public class P4ChangelistListener
 
         LocalChangeList local = (LocalChangeList) toList;
 
-        for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
+        for (RootedClientConfig rootedClientConfig : getClientConfigRoots()) {
             // First, see if there are any changes for this client config that require an
             // underlying P4 changelist move.
 
-            Collection<FilePath> affectedFiles = getAffectedFiles(clientConfigRoot, changes);
+            Collection<FilePath> affectedFiles = getAffectedFiles(rootedClientConfig, changes);
             if (affectedFiles.isEmpty()) {
                 continue;
             }
@@ -172,7 +173,7 @@ public class P4ChangelistListener
                 final Pair<IdeChangelistMap, IdeFileMap> cache =
                         CacheComponent.getInstance(myProject).getServerOpenedCache();
                 final P4ChangelistId p4changeSrc = cache.first.getP4ChangeFor(
-                        clientConfigRoot.getClientConfig().getClientServerRef(),
+                        rootedClientConfig.getClientConfig().getClientServerRef(),
                         local);
                 if (p4changeSrc != null) {
                     final Iterator<FilePath> iter = affectedFiles.iterator();
@@ -203,13 +204,13 @@ public class P4ChangelistListener
                     }
                     // No server changelist associated with this ide change.  Create one.
                     CreateChangelistAction action =
-                            new CreateChangelistAction(clientConfigRoot.getClientConfig().getClientServerRef(),
+                            new CreateChangelistAction(rootedClientConfig.getClientConfig().getClientServerRef(),
                                     toDescription(local), local.getId());
-                    P4ServerComponent.perform(myProject, clientConfigRoot.getClientConfig(), action)
+                    P4ServerComponent.perform(myProject, rootedClientConfig.getClientConfig(), action)
                             .whenCompleted((res) -> {
                                 sink.resolve(new P4ChangelistIdImpl(
                                         res.getChangelistId(),
-                                        clientConfigRoot.getClientConfig().getClientServerRef()));
+                                        rootedClientConfig.getClientConfig().getClientServerRef()));
                             })
                             .whenServerError(sink::reject)
                             .whenOffline(() -> {
@@ -238,7 +239,7 @@ public class P4ChangelistListener
                             P4Bundle.message("changelist.created.title"),
                             NotificationType.INFORMATION);
                     P4ServerComponent
-                            .perform(myProject, clientConfigRoot.getClientConfig(),
+                            .perform(myProject, rootedClientConfig.getClientConfig(),
                                     new MoveFilesToChangelistAction(cl, affectedFiles))
                     .whenCompleted(sink::resolve)
                     .whenServerError(sink::reject)
@@ -289,15 +290,15 @@ public class P4ChangelistListener
 
         LocalChangeList local = (LocalChangeList) list;
 
-        for (ClientConfigRoot clientConfigRoot : getClientConfigRoots()) {
+        for (RootedClientConfig rootedClientConfig : getClientConfigRoots()) {
             try {
                 P4ChangelistId change =
                         CacheComponent.getInstance(myProject).getServerOpenedCache().first.getP4ChangeFor(
-                                clientConfigRoot.getClientConfig().getClientServerRef(),
+                                rootedClientConfig.getClientConfig().getClientServerRef(),
                                 local);
                 if (change != null) {
                     P4ServerComponent
-                            .perform(myProject, clientConfigRoot.getClientConfig(),
+                            .perform(myProject, rootedClientConfig.getClientConfig(),
                                     new EditChangelistAction(change, toDescription(local)));
                 }
             } catch (InterruptedException e) {
@@ -373,14 +374,20 @@ public class P4ChangelistListener
         return ChangelistUtil.createP4ChangelistDescription(myProject, changeList);
     }
 
-    private Collection<FilePath> getAffectedFiles(ClientConfigRoot clientConfigRoot, Collection<Change> changes) {
+    private Collection<FilePath> getAffectedFiles(RootedClientConfig rootedClientConfig, Collection<Change> changes) {
         Set<FilePath> ret = new HashSet<>();
         for (Change change : changes) {
             for (ContentRevision cr : Arrays.asList(change.getBeforeRevision(), change.getAfterRevision())) {
                 if (cr != null) {
                     FilePath file = cr.getFile();
-                    if (!ret.contains(file) && FileTreeUtil.isSameOrUnder(clientConfigRoot.getClientRootDir(), file)) {
-                        ret.add(cr.getFile());
+                    if (ret.contains(file)) {
+                        continue;
+                    }
+                    for (VirtualFile vcsRoot : rootedClientConfig.getProjectVcsRootDirs()) {
+                        if (FileTreeUtil.isSameOrUnder(vcsRoot, file)) {
+                            ret.add(cr.getFile());
+                            break;
+                        }
                     }
                 }
             }
@@ -389,8 +396,8 @@ public class P4ChangelistListener
     }
 
     @NotNull
-    private Collection<ClientConfigRoot> getClientConfigRoots() {
+    private Collection<RootedClientConfig> getClientConfigRoots() {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(myProject);
-        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
+        return reg == null ? Collections.emptyList() : reg.getRootedClientConfigs();
     }
 }

@@ -20,7 +20,7 @@ import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.speedSearch.SpeedSearchUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
@@ -32,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.io.File;
+import java.util.Collection;
 
 public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
 
@@ -71,8 +72,8 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
                 value = other;
             }
         }
-        if (value instanceof ClientConfigRoot) {
-            renderClientConfigRoot((ClientConfigRoot) value);
+        if (value instanceof RootedClientConfig) {
+            renderClientConfigRoot((RootedClientConfig) value);
         } else if (value instanceof P4ServerName) {
             renderP4ServerName((P4ServerName) value);
         } else if (value instanceof ClientServerRef) {
@@ -105,18 +106,35 @@ public class ConnectionTreeCellRenderer extends ColoredTreeCellRenderer {
     }
 
 
-    private void renderClientConfigRoot(ClientConfigRoot value) {
-        append(P4Bundle.message("connection.tree.root.name", value.getProjectVcsRootDir().getPresentableName()),
-                ROOT_NAME_STYLE);
-
-        String rootPath = virtualFileToDisplayString(value.getProjectVcsRootDir());
-        append(P4Bundle.message("connection.tree.root.path", rootPath), ROOT_PATH_STYLE);
+    private void renderClientConfigRoot(RootedClientConfig value) {
+        final Collection<VirtualFile> vcsRoots = value.getProjectVcsRootDirs();
+        if (vcsRoots.isEmpty()) {
+            // Invalid State
+            append(P4Bundle.message("connection.tree.root.name", "<invalid state>"),
+                    ROOT_NAME_STYLE);
+        } else {
+            append(P4Bundle.message("connection.tree.root.name", value.getClientConfig().getClientname()),
+                    ROOT_NAME_STYLE);
+            StringBuilder rootPath = new StringBuilder();
+            boolean first = true;
+            for (final VirtualFile root : vcsRoots) {
+                String name = virtualFileToDisplayString(root);
+                if (first) {
+                    first = false;
+                    rootPath.append(P4Bundle.message("connection.tree.root.path.initial", name));
+                } else {
+                    rootPath.append(P4Bundle.message("connection.tree.root.path.joiner", name));
+                }
+            }
+            append(P4Bundle.message("connection.tree.root.path", rootPath), ROOT_PATH_STYLE);
+        }
 
         if (value.isOnline()) {
             append(P4Bundle.message("connection.tree.root.online"), ROOT_ONLINE_STYLE);
-        }
-        if (value.isOffline()) {
+        } else if (value.isOffline()) {
             append(P4Bundle.message("connection.tree.root.offline"), ROOT_OFFLINE_STYLE);
+        } else {
+            append(P4Bundle.message("connection.tree.root.status-unknown"), ROOT_OFFLINE_STYLE);
         }
     }
 

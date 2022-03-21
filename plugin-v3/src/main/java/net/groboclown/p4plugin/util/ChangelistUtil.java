@@ -19,7 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
@@ -134,7 +134,7 @@ public class ChangelistUtil {
     }
 
     @NotNull
-    public static P4ChangelistId getActiveChangelistFor(@NotNull ClientConfigRoot root,
+    public static P4ChangelistId getActiveChangelistFor(@NotNull RootedClientConfig root,
             @NotNull Map<ClientServerRef, P4ChangelistId> ids) {
         ClientServerRef ref = root.getClientConfig().getClientServerRef();
         P4ChangelistId ret = ids.get(ref);

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.TestOnly;
 import javax.annotation.concurrent.Immutable;
 import java.io.File;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static net.groboclown.p4.server.api.util.EqualUtil.isEqual;
@@ -232,6 +233,7 @@ public final class ServerConfig {
         return serverId;
     }
 
+
     /**
      * Checks if the {@literal part} connects to the same server
      * in the same way as this server configuration.  For identifying
@@ -343,6 +345,7 @@ public final class ServerConfig {
 
     @Override
     public int hashCode() {
+        // NOTE Due to information loss, this should never be used in a map.
         return getServerId().hashCode();
     }
 

@@ -30,7 +30,9 @@ import org.jetbrains.annotations.Nullable;
 public interface ServerErrorEvent<E extends Exception> {
     @NotNull
     P4ServerName getName();
+
     OptionalClientServerConfig getConfig();
+
     E getError();
 
     class ServerNameErrorEvent<E extends Exception> extends AbstractMessageEvent implements ServerErrorEvent<E> {
@@ -38,26 +40,25 @@ public interface ServerErrorEvent<E extends Exception> {
         private final OptionalClientServerConfig config;
         private final E error;
 
-        public ServerNameErrorEvent(@NotNull ClientConfig config, @NotNull E error) {
-            this(config.getServerConfig().getServerName(), new OptionalClientServerConfig(config), error);
-        }
-
         public ServerNameErrorEvent(@NotNull P4ServerName name, @Nullable OptionalClientServerConfig config, @NotNull E error) {
             this.name = name;
             this.config = config;
             this.error = error;
         }
 
+        @Override
         @NotNull
         public P4ServerName getName() {
             return name;
         }
 
+        @Override
         @Nullable
         public OptionalClientServerConfig getConfig() {
             return config;
         }
 
+        @Override
         @NotNull
         public E getError() {
             return error;
@@ -77,16 +78,19 @@ public interface ServerErrorEvent<E extends Exception> {
             this(new OptionalClientServerConfig(config), error);
         }
 
+        @Override
         @NotNull
         public P4ServerName getName() {
             return config.getServerName();
         }
 
+        @Override
         @NotNull
         public OptionalClientServerConfig getConfig() {
             return config;
         }
 
+        @Override
         @NotNull
         public E getError() {
             return error;
@@ -104,16 +108,19 @@ public interface ServerErrorEvent<E extends Exception> {
             this(new OptionalClientServerConfig(config));
         }
 
+        @Override
         @NotNull
         public P4ServerName getName() {
             return config.getServerName();
         }
 
+        @Override
         @NotNull
         public OptionalClientServerConfig getConfig() {
             return config;
         }
 
+        @Override
         @Nullable
         public Exception getError() {
             return null;
@@ -133,16 +140,19 @@ public interface ServerErrorEvent<E extends Exception> {
             this(config.getServerConfig().getServerName(), new OptionalClientServerConfig(config));
         }
 
+        @Override
         @NotNull
         public P4ServerName getName() {
             return name;
         }
 
+        @Override
         @Nullable
         public OptionalClientServerConfig getConfig() {
             return config;
         }
 
+        @Override
         @Nullable
         public Exception getError() {
             return null;
@@ -151,13 +161,6 @@ public interface ServerErrorEvent<E extends Exception> {
 
     class ServerMessageEvent extends ServerNameErrorEvent<RequestException> {
         private final IServerMessage msg;
-
-        public ServerMessageEvent(@NotNull P4ServerName name,
-                @Nullable OptionalClientServerConfig config,
-                @NotNull IServerMessage msg, @NotNull RequestException error) {
-            super(name, config, error);
-            this.msg = msg;
-        }
 
         public ServerMessageEvent(@NotNull ClientConfig config,
                 @NotNull IServerMessage msg, @NotNull RequestException error) {

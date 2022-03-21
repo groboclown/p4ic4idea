@@ -22,6 +22,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.AnswerSink;
 import net.groboclown.p4.server.api.commands.file.ShelveFilesAction;
@@ -39,6 +40,7 @@ import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.components.SwarmConnectionComponent;
 import net.groboclown.p4plugin.messages.UserMessage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.URI;
@@ -65,8 +67,7 @@ public class SwarmReview {
             SwarmErrorMessage.send(project).notNumberedChangelist(new SwarmErrorMessage.SwarmEvent(changelistId));
             return Answer.resolve(-1);
         }
-        final ClientConfig clientConfig =
-                registry.getRegisteredClientConfigState(changelistId.getClientServerRef());
+        final ClientConfig clientConfig = getClientConfigFor(registry, changelistId);
         if (clientConfig == null) {
             LOG.info("Skipping changelist " + changelistId + " because it has no registered client");
             SwarmErrorMessage.send(project).notNumberedChangelist(new SwarmErrorMessage.SwarmEvent(changelistId));
@@ -200,5 +201,15 @@ public class SwarmReview {
             SwarmErrorMessage.send(project).reviewCreateFailed(new SwarmErrorMessage.SwarmEvent(changelistId), e);
             return new QueryAnswerImpl<>(Answer.resolve(-1));
         }
+    }
+
+    @Nullable
+    private static ClientConfig getClientConfigFor(@NotNull ProjectConfigRegistry registry,
+            @NotNull P4ChangelistId changelistId) {
+        // Just return the first one.
+        for (final RootedClientConfig config : registry.getClientConfigsForRef(changelistId.getClientServerRef())) {
+            return config.getClientConfig();
+        }
+        return null;
     }
 }

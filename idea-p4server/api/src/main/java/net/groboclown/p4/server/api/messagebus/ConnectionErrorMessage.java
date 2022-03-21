@@ -22,6 +22,7 @@ import com.perforce.p4java.exception.SslException;
 import com.perforce.p4java.exception.SslHandshakeException;
 import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
+import net.groboclown.p4.server.api.exceptions.ConnectionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 
 public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMessage.Listener> {
@@ -98,6 +99,8 @@ public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMe
          */
         void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event);
 
+        void connectionTimedOut(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionTimeoutException> event);
+
         /**
          * Client doesn't have the resources necessary to open the connection to the server.
          *
@@ -141,6 +144,10 @@ public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMe
 
         @Override
         public void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event) {
+        }
+
+        @Override
+        public void connectionTimedOut(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionTimeoutException> event) {
         }
 
         @Override
@@ -191,6 +198,11 @@ public class ConnectionErrorMessage extends ApplicationMessage<ConnectionErrorMe
 
         @Override
         public void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event) {
+            onHostConnectionError(event);
+        }
+
+        @Override
+        public void connectionTimedOut(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionTimeoutException> event) {
             onHostConnectionError(event);
         }
 

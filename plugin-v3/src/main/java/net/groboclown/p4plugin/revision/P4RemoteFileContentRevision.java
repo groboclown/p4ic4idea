@@ -20,7 +20,7 @@ import com.intellij.openapi.vcs.RemoteFilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -49,7 +49,7 @@ public class P4RemoteFileContentRevision extends AbstractP4FileContentRevision {
                     if (reg == null) {
                         return null;
                     }
-                    ClientConfigRoot config = reg.getClientFor(path);
+                    RootedClientConfig config = reg.getClientConfigFor(path);
                     if (config == null) {
                         return null;
                     }

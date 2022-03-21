@@ -22,17 +22,15 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
+import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import net.groboclown.p4.server.api.messagebus.ServerConnectedMessage;
 import net.groboclown.p4.server.api.messagebus.UserSelectedOfflineMessage;
-import net.groboclown.p4.server.api.config.part.MockConfigPart;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -73,29 +71,34 @@ class ProjectConfigRegistryTest {
         registry.addClientConfig(cc2, two.getParent());
 
 
-        assertNotNull(registry.getClientFor(five));
-        assertSame(cc2, registry.getClientFor(five).getClientConfig());
-        assertNotNull(registry.getClientFor(five.asFilePath()));
-        assertSame(cc2, registry.getClientFor(five.asFilePath()).getClientConfig());
+        assertNotNull(registry.getClientConfigFor(five));
+        assertSame(cc2, registry.getClientConfigFor(five).getClientConfig());
+        assertNotNull(registry.getClientConfigFor(five.asFilePath()));
+        assertSame(cc2, registry.getClientConfigFor(five.asFilePath()).getClientConfig());
 
-        assertNotNull(registry.getClientFor(one.asFilePath()));
-        assertSame(cc1, registry.getClientFor(one.asFilePath()).getClientConfig());
+        assertNotNull(registry.getClientConfigFor(one.asFilePath()));
+        assertSame(cc1, registry.getClientConfigFor(one.asFilePath()).getClientConfig());
 
-        assertNull(registry.getClientFor(zero));
-        assertNull(registry.getClientFor(zero.asFilePath()));
+        assertNull(registry.getClientConfigFor(zero));
+        assertNull(registry.getClientConfigFor(zero.asFilePath()));
     }
 
     private static class TestableProjectConfigRegistry extends ProjectConfigRegistry {
-        private final List<ClientConfigRoot> states = new ArrayList<>();
+        private final List<RootedClientConfig> states = new ArrayList<>();
 
         protected TestableProjectConfigRegistry(@NotNull Project project) {
             super(project);
         }
 
-        @Nullable
+        @NotNull
         @Override
-        public ClientConfig getRegisteredClientConfigState(@NotNull ClientServerRef ref) {
-            return null;
+        public List<RootedClientConfig> getRootedClientConfigs() {
+            return states;
+        }
+
+        @Override
+        protected void onLoginExpired(@NotNull OptionalClientServerConfig config) {
+
         }
 
         @Override
@@ -113,16 +116,19 @@ class ProjectConfigRegistryTest {
             throw new IllegalStateException();
         }
 
-        @Nonnull
-        @NotNull
-        @Override
-        protected Collection<ClientConfigRoot> getRegisteredStates() {
-            return states;
-        }
-
         @Override
         protected void onLoginError(@NotNull OptionalClientServerConfig config) {
             throw new IllegalStateException();
+        }
+
+        @Override
+        protected void onPasswordInvalid(@NotNull OptionalClientServerConfig config) {
+
+        }
+
+        @Override
+        protected void onPasswordUnnecessary(@NotNull OptionalClientServerConfig config) {
+
         }
 
         @Override
@@ -151,7 +157,7 @@ class ProjectConfigRegistryTest {
         }
 
         void addClientConfig(@NotNull ClientConfig cc, @NotNull VirtualFile root) {
-            states.add(new MockClientConfigRoot(cc, root));
+            states.add(new MockRootedClientConfig(cc, root));
         }
     }
 

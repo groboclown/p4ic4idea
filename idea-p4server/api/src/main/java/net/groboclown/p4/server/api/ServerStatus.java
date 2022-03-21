@@ -40,6 +40,31 @@ public interface ServerStatus
     boolean isDisposed();
 
     /**
+     * @return true if the server does not require a password to be sent.
+     */
+    boolean isPasswordUnnecessary();
+
+    /**
+     *
+     * @return true if the connection has not been logged in yet, or if the active session has expired.  This may
+     *      trigger password requests.  Changing the stored password should also reset this.
+     */
+    boolean isLoginNeeded();
+
+    /**
+     *
+     * @return true if the current login information is known to be bad.  This is different from a problem
+     *      to connect to the server due to network issues.  Changing the stored password should reset this.
+     */
+    boolean isLoginBad();
+
+    /**
+     *
+     * @return true if the last request to the server caused a bad connection.
+     */
+    boolean isServerConnectionBad();
+
+    /**
      *
      * @return true if the details about the server configuration state
      *      have been loaded from the server (or from a cached copy of
@@ -50,7 +75,17 @@ public interface ServerStatus
 
     /**
      *
-     * @return true if the server is known to be case sensitive, false if not,
+     * @return true if the pending actions list requires a resend to the server.
+     *      By allowing this to be false, it prevents the code from retrying to
+     *      send when the state should not allow it.
+     */
+    boolean isPendingActionsListResendRequired();
+
+    void setPendingActionsListResendRequired(boolean required);
+
+    /**
+     *
+     * @return true if the server is known to be case-sensitive, false if not,
      *      and null if the state is not known.
      */
     @Nullable

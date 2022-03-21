@@ -18,6 +18,7 @@
     * This primarily affected tests running on Linux.
     * The new version includes extra checking before using an RSH connection to ensure the executable file exists and is executable.  However, the logic in place only works if the executable has no spaces in the file name.
   * Improved the Active Connections panel to better refresh when the connection state changes, and now includes VCS roots that have an invalid Perforce configuration.
+  * Internally changed the association of workspace associations to the VCS root registration, which allows for more accurate file associations.  This also alters how the Active Connections panel associates connections to roots.  This is expected to eliminate many places where the plugin showed odd behavior.
 * Changed supported IDE versions.
   * Removed all code that requires v211 and prior support.
     * Internally added jar support for compiling against 212, 213, and 221.

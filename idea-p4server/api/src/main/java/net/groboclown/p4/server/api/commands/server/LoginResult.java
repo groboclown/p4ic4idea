@@ -20,14 +20,20 @@ import org.jetbrains.annotations.NotNull;
 
 public class LoginResult implements P4CommandRunner.ServerResult {
     private final ServerConfig config;
+    private final boolean usedPassword;
 
-    public LoginResult(ServerConfig config) {
+    public LoginResult(@NotNull ServerConfig config, boolean usedPassword) {
         this.config = config;
+        this.usedPassword = usedPassword;
     }
 
     @NotNull
     @Override
     public ServerConfig getServerConfig() {
         return config;
+    }
+
+    public boolean isPasswordUsed() {
+        return this.usedPassword;
     }
 }

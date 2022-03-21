@@ -19,7 +19,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.ActionChoice;
@@ -67,10 +67,10 @@ public class ConnectionTreeRootNode
                     : b == null
                         ? -1
                         : a.toString().compareTo(b.toString()));
-            LOG.info("Setting up roots for " + registry.getClientConfigRoots() + " ; " + vcsRoots);
-            registry.getClientConfigRoots().forEach((root) -> {
+            LOG.info("Setting up roots for " + registry.getRootedClientConfigs() + " ; " + vcsRoots);
+            registry.getRootedClientConfigs().forEach((root) -> {
                     loadClientConfigRoot(project, root);
-                    vcsRoots.remove(root.getClientRootDir());
+                    vcsRoots.removeAll(root.getProjectVcsRootDirs());
             });
             vcsRoots.forEach(this::markRootAsInvalid);
         }
@@ -90,7 +90,7 @@ public class ConnectionTreeRootNode
     }
 
 
-    private void loadClientConfigRoot(@NotNull Project project, @NotNull ClientConfigRoot root) {
+    private void loadClientConfigRoot(@NotNull Project project, @NotNull RootedClientConfig root) {
         LOG.info("Loading connection display for " + root);
         RootNode fileRoot = createRootNode(root);
 
@@ -116,7 +116,7 @@ public class ConnectionTreeRootNode
     }
 
 
-    private RootNode createRootNode(@NotNull ClientConfigRoot root) {
+    private RootNode createRootNode(@NotNull RootedClientConfig root) {
         RootNode fileRoot = new RootNode(root, new DefaultMutableTreeNode(root, true));
 
         // The client root details should never change, so only add them when the root itself is added.
@@ -141,12 +141,12 @@ public class ConnectionTreeRootNode
 
 
     private static class RootNode {
-        final ClientConfigRoot root;
+        final RootedClientConfig root;
         final DefaultMutableTreeNode fileRoot;
         final PendingParentNode pending;
         final DefaultMutableTreeNode pendingNode;
 
-        private RootNode(ClientConfigRoot root, DefaultMutableTreeNode fileRoot) {
+        private RootNode(RootedClientConfig root, DefaultMutableTreeNode fileRoot) {
             this.root = root;
             this.fileRoot = fileRoot;
             this.pending = new PendingParentNode();

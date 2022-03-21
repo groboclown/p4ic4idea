@@ -24,8 +24,9 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.async.Answer;
 import net.groboclown.p4.server.api.async.BlockingAnswer;
@@ -139,7 +140,7 @@ public class CacheComponent implements
      *
      * @return the pending answer.
      */
-    private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<ClientConfigRoot> clients) {
+    private Answer<Pair<IdeChangelistMap, IdeFileMap>> refreshServerOpenedCache(Collection<RootedClientConfig> clients) {
         initComponent();
         if (project == null) {
             // Null project cannot have anything to refresh.
@@ -150,36 +151,34 @@ public class CacheComponent implements
         // series of promises together.
         Answer<?> ret = Answer.resolve(null);
 
-        for (ClientConfigRoot clientRoot : clients) {
-            final File root = clientRoot.getClientRootDir() != null
-                    ? VcsUtil.getFilePath(clientRoot.getClientRootDir()).getIOFile()
-                    : null;
-
-            ret = ret.mapAsync((x) ->
-            Answer.background((sink) -> P4ServerComponent.syncQuery(
-                    project,
-                    clientRoot.getClientConfig(),
-                    new SyncListOpenedFilesChangesQuery(
-                            root,
-                            UserProjectPreferences.getMaxChangelistRetrieveCount(project),
-                            UserProjectPreferences.getMaxFileRetrieveCount(project))
-            ).getPromise()
-            .whenCompleted((changesResult) -> {
-                if (updateListener != null) {
-                    // TODO is this a duplicate call for the updateListener's CacheListener?
-                    updateListener.setOpenedChanges(
-                            changesResult.getClientConfig().getClientServerRef(),
-                            changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
-                }
-                // Else - timing issue with dispose and when this ran.
-                sink.resolve(null);
-                if (LOG.isDebugEnabled() && changelistMap != null && fileMap != null) {
-                    LOG.debug(this + " opened cache refreshed; " + clientRoot.getClientRootDir()
-                            + " contains " + changelistMap.getEstimateCount() + " pending changes, "
-                            + fileMap.getEstimateSize() + " opened files.");
-                }
-            })
-            .whenServerError(sink::reject)));
+        for (RootedClientConfig clientRoot : clients) {
+            for (VirtualFile vcsRoot : clientRoot.getProjectVcsRootDirs()) {
+                final File root = VcsUtil.getFilePath(vcsRoot).getIOFile();
+                ret = ret.mapAsync((x) -> Answer.background((sink) -> P4ServerComponent.syncQuery(
+                        project,
+                        clientRoot.getClientConfig(),
+                        new SyncListOpenedFilesChangesQuery(
+                                root,
+                                UserProjectPreferences.getMaxChangelistRetrieveCount(project),
+                                UserProjectPreferences.getMaxFileRetrieveCount(project))
+                ).getPromise()
+                .whenCompleted((changesResult) -> {
+                    if (updateListener != null) {
+                        // TODO is this a duplicate call for the updateListener's CacheListener?
+                        updateListener.setOpenedChanges(
+                                changesResult.getClientConfig().getClientServerRef(),
+                                changesResult.getPendingChangelists(), changesResult.getOpenedFiles());
+                    }
+                    // Else - timing issue with dispose and when this ran.
+                    sink.resolve(null);
+                    if (LOG.isDebugEnabled() && changelistMap != null && fileMap != null) {
+                        LOG.debug(this + " opened cache refreshed; " + clientRoot.getClientRootDir()
+                                + " contains " + changelistMap.getEstimateCount() + " pending changes, "
+                                + fileMap.getEstimateSize() + " opened files.");
+                    }
+                })
+                .whenServerError(sink::reject)));
+            }
         }
 
         return ret.map((x) -> getServerOpenedCache());
@@ -198,7 +197,7 @@ public class CacheComponent implements
      *
      * @return the opened cache pair.  The values can be null if the cache has not yet been initialized.
      */
-    public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<ClientConfigRoot> clients,
+    public Pair<IdeChangelistMap, IdeFileMap> blockingRefreshServerOpenedCache(Collection<RootedClientConfig> clients,
             int timeout, TimeUnit timeoutUnit) {
         try {
             return BlockingAnswer.defaultBlockingGet(refreshServerOpenedCache(clients), timeout, timeoutUnit,

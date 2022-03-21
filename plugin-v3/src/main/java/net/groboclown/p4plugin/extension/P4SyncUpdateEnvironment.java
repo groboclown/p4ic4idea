@@ -26,14 +26,13 @@ import com.intellij.openapi.vcs.update.SequentialUpdatesContext;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
 import com.intellij.openapi.vcs.update.UpdateSession;
 import com.intellij.openapi.vcs.update.UpdatedFiles;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.FetchFilesAction;
 import net.groboclown.p4.server.api.commands.file.FetchFilesResult;
 import net.groboclown.p4.server.api.config.ClientConfig;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.values.P4LocalFile;
 import net.groboclown.p4plugin.components.P4ServerComponent;
@@ -81,9 +80,9 @@ public class P4SyncUpdateEnvironment
         }
 
         final Map<String, FileGroup> groups = collateByFileGroupId(updatedFiles.getTopLevelGroups(), null);
-        final Map<ClientConfigRoot, List<FilePath>> filesByRoot = new HashMap<>();
+        final Map<RootedClientConfig, List<FilePath>> filesByRoot = new HashMap<>();
         for (FilePath filePath : filePaths) {
-            filesByRoot.computeIfAbsent(registry.getClientFor(filePath), k -> new ArrayList<>()).add(filePath);
+            filesByRoot.computeIfAbsent(registry.getClientConfigFor(filePath), k -> new ArrayList<>()).add(filePath);
         }
         final double inc = filesByRoot.isEmpty() ? 1.0 : (1.0 / filesByRoot.size());
         final double[] pos = { 0.0 };
@@ -180,7 +179,7 @@ public class P4SyncUpdateEnvironment
         }
         Map<P4ServerName, ClientConfig> configMap = new HashMap<>();
         collection.forEach((fp) -> {
-            ClientConfigRoot clientRoot = registry.getClientFor(fp);
+            RootedClientConfig clientRoot = registry.getClientConfigFor(fp);
             if (clientRoot != null) {
                 configMap.put(clientRoot.getServerConfig().getServerName(), clientRoot.getClientConfig());
             }
@@ -195,7 +194,7 @@ public class P4SyncUpdateEnvironment
             return false;
         }
         for (FilePath filePath : collection) {
-            ClientConfigRoot root = registry.getClientFor(filePath);
+            RootedClientConfig root = registry.getClientConfigFor(filePath);
             if (root != null) {
                 return true;
             }

@@ -16,13 +16,13 @@ package net.groboclown.p4.server.impl.repository;
 
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.RepositoryLocation;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import org.jetbrains.annotations.NotNull;
 
 public class RepositoryLocationFactory {
     @NotNull
-    public static RepositoryLocation getLocationFor(@NotNull FilePath root, @NotNull ClientConfigRoot clientRoot,
+    public static RepositoryLocation getLocationFor(@NotNull FilePath root, @NotNull RootedClientConfig clientRoot,
             @NotNull ListFilesDetailsResult details) {
         if (details.getFiles().isEmpty()) {
             String clientName = clientRoot.getClientConfig().getClientname();

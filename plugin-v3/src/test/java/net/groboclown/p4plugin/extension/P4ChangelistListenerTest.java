@@ -24,7 +24,7 @@ import net.groboclown.idea.extensions.Errors;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.idea.mock.MockLocalChangeList;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
@@ -58,7 +58,7 @@ class P4ChangelistListenerTest {
     void offlineCreateNewIdeChangelist(TemporaryFolder tmp, Errors errors)
             throws InterruptedException {
         // Setup offline mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
@@ -88,7 +88,7 @@ class P4ChangelistListenerTest {
     void offlineMoveFileToNewChangelist(TemporaryFolder tmp, Errors errors)
             throws InterruptedException, IOException {
         // Setup offline mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));

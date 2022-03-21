@@ -26,7 +26,7 @@ import com.intellij.openapi.vcs.rollback.RollbackProgressListener;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.async.BlockingAnswer;
@@ -102,7 +102,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             LOG.debug("Unconditional Revert origin stack trace", new Throwable());
 
             BlockingAnswer.createBlockFor(paths.stream()
-                    .map((f) -> Pair.create(registry.getClientFor(f), f))
+                    .map((f) -> Pair.create(registry.getClientConfigFor(f), f))
                     .filter((p) -> p.first != null)
                     .map((p) -> P4ServerComponent
                             .perform(project, p.first.getClientConfig(), new RevertFileAction(p.second, false))
@@ -165,7 +165,7 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             LOG.info("Skipping revert for " + file + ": no FilePath found");
             return;
         }
-        ClientConfigRoot root = registry.getClientFor(file);
+        RootedClientConfig root = registry.getClientConfigFor(file);
         if (root == null) {
             LOG.info("SKipping revert for " + file + ": no P4 root found");
             return;
@@ -207,15 +207,15 @@ public class P4RollbackEnvironment implements RollbackEnvironment {
             .whenFailed((c) -> LOG.info("Failed to sync files"));
     }
 
-    private Set<Map.Entry<ClientConfigRoot, List<FilePath>>> groupFilesByClient(@NotNull final ProjectConfigRegistry registry,
+    private Set<Map.Entry<RootedClientConfig, List<FilePath>>> groupFilesByClient(@NotNull final ProjectConfigRegistry registry,
             @NotNull final List<? extends FilePath> files) {
         // Note: can't use files.stream().collect(Collectors.groupingBy(registry::getClientFor))
         // because the root might be null for a file, and the groupingBy doesn't allow for null keys.
         // See #195.
         // This fix also moves the null root check into this method, out of the stream processing.
-        Map<ClientConfigRoot, List<FilePath>> ret = new HashMap<>();
+        Map<RootedClientConfig, List<FilePath>> ret = new HashMap<>();
         files.forEach((f) -> {
-            ClientConfigRoot root = registry.getClientFor(f);
+            RootedClientConfig root = registry.getClientConfigFor(f);
             if (root != null) {
                 ret.computeIfAbsent(root, (x) -> new ArrayList<>()).add(f);
             } else {

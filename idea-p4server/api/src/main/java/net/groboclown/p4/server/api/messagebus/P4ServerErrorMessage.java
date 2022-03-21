@@ -17,12 +17,7 @@ package net.groboclown.p4.server.api.messagebus;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.Topic;
 import com.perforce.p4java.exception.P4JavaException;
-import com.perforce.p4java.exception.RequestException;
-import com.perforce.p4java.server.IServerMessage;
-import net.groboclown.p4.server.api.P4ServerName;
-import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class P4ServerErrorMessage extends ProjectMessage<P4ServerErrorMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:login failed";

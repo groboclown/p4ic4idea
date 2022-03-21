@@ -21,6 +21,12 @@ import net.groboclown.p4.server.api.config.ClientConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Indicates that a client configuration no longer exists.  The server connections may still exist
+ * in other VCS roots, but the client is no longer active.  This will only be triggered if the
+ * client configuration is completely removed; if the configuration is shared between roots, and only
+ * one root is removed, then this will not be triggered.
+ */
 public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemovedMessage.Listener> {
     private static final String DISPLAY_NAME = "p4ic4idea:client configuration registration removed";
     private static final Topic<Listener> TOPIC = new Topic<>(
@@ -33,12 +39,10 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
         // it receives the event it just sent out.
         private final Object eventSource;
         private final ClientConfig config;
-        private final VirtualFile vcsRootDir;
 
-        public Event(Object eventSource, ClientConfig config, VirtualFile vcsRootDir) {
+        public Event(Object eventSource, ClientConfig config) {
             this.eventSource = eventSource;
             this.config = config;
-            this.vcsRootDir = vcsRootDir;
         }
 
         public Object getEventSource() {
@@ -47,10 +51,6 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
 
         public ClientConfig getClientConfig() {
             return config;
-        }
-
-        public VirtualFile getVcsRootDir() {
-            return vcsRootDir;
         }
     }
 
@@ -68,8 +68,8 @@ public class ClientConfigRemovedMessage extends ProjectMessage<ClientConfigRemov
     }
 
     public static void reportClientConfigRemoved(@NotNull Project project, @NotNull Object src,
-            @NotNull ClientConfig config, @Nullable VirtualFile vcsRootDir) {
-        getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationRemoved(new Event(src, config, vcsRootDir));
+            @NotNull ClientConfig config) {
+        getListener(project, TOPIC, DEFAULT_LISTENER).clientConfigurationRemoved(new Event(src, config));
     }
 
     public static void addListener(@NotNull MessageBusClient.ProjectClient client,

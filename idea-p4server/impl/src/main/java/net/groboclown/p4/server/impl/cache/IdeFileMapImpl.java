@@ -17,7 +17,7 @@ package net.groboclown.p4.server.impl.cache;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.CacheQueryHandler;
 import net.groboclown.p4.server.api.cache.IdeFileMap;
@@ -57,7 +57,7 @@ public class IdeFileMapImpl implements IdeFileMap {
         if (registry == null) {
             return null;
         }
-        ClientConfigRoot clientConfig = registry.getClientFor(file);
+        RootedClientConfig clientConfig = registry.getClientConfigFor(file);
         if (clientConfig == null) {
             return null;
         }
@@ -75,7 +75,7 @@ public class IdeFileMapImpl implements IdeFileMap {
         if (file == null) {
             return null;
         }
-        ClientConfigRoot clientConfig = getClientFor(file);
+        RootedClientConfig clientConfig = getClientFor(file);
         if (clientConfig == null) {
             return null;
         }
@@ -93,7 +93,7 @@ public class IdeFileMapImpl implements IdeFileMap {
         if (file == null) {
             return null;
         }
-        for (ClientConfigRoot root : getClientConfigRoots()) {
+        for (RootedClientConfig root : getClientConfigRoots()) {
             for (P4LocalFile openedFile : cache.getCachedOpenedFiles(root.getClientConfig())) {
                 if (file.equals(openedFile.getDepotPath())) {
                     return openedFile;
@@ -107,7 +107,7 @@ public class IdeFileMapImpl implements IdeFileMap {
     @Override
     public Stream<P4LocalFile> getLinkedFiles() {
         List<P4LocalFile> ret = new LinkedList<>();
-        for (ClientConfigRoot root : getClientConfigRoots()) {
+        for (RootedClientConfig root : getClientConfigRoots()) {
             ret.addAll(cache.getCachedOpenedFiles(root.getClientConfig()));
         }
         return ret.stream();
@@ -124,14 +124,14 @@ public class IdeFileMapImpl implements IdeFileMap {
         return cache.getEstimateSize();
     }
 
-    private ClientConfigRoot getClientFor(FilePath file) {
+    private RootedClientConfig getClientFor(FilePath file) {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
-        return reg == null ? null : reg.getClientFor(file);
+        return reg == null ? null : reg.getClientConfigFor(file);
     }
 
     @NotNull
-    private Collection<ClientConfigRoot> getClientConfigRoots() {
+    private Collection<RootedClientConfig> getClientConfigRoots() {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
-        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
+        return reg == null ? Collections.emptyList() : reg.getRootedClientConfigs();
     }
 }

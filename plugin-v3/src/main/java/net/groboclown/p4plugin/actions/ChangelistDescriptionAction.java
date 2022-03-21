@@ -25,7 +25,7 @@ import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vfs.VirtualFile;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.changelist.DescribeChangelistQuery;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -40,9 +40,12 @@ import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.CacheComponent;
 import net.groboclown.p4plugin.components.P4ServerComponent;
 import net.groboclown.p4plugin.ui.history.ChangelistDetails;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collection;
+
 
 public class ChangelistDescriptionAction extends DumbAwareAction {
     private static final Logger LOG = Logger.getInstance(ChangelistDescriptionAction.class);
@@ -55,7 +58,7 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
     }
 
     @Override
-    public void actionPerformed(AnActionEvent e) {
+    public void actionPerformed(@NotNull AnActionEvent e) {
         final Project project = getEventProject(e);
         if (project == null || project.isDisposed()) {
             LOG.info("Skipping because project is disposed");
@@ -139,7 +142,7 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
 
                     VirtualFile file = e.getData(VcsDataKeys.VCS_VIRTUAL_FILE);
                     if (file != null) {
-                        ClientConfigRoot root = registry.getClientFor(file);
+                        RootedClientConfig root = registry.getClientConfigFor(file);
                         if (root != null) {
                             for (P4ChangelistId p4ChangeList : p4ChangeLists) {
                                 if (p4ChangeList.isIn(root.getServerConfig())) {
@@ -173,8 +176,13 @@ public class ChangelistDescriptionAction extends DumbAwareAction {
         return null;
     }
 
-    private ClientConfig getConfigForChangelistId(ProjectConfigRegistry registry, P4ChangelistId p4cl) {
-        return registry.getRegisteredClientConfigState(p4cl.getClientServerRef());
+    @Nullable
+    private ClientConfig getConfigForChangelistId(@NotNull ProjectConfigRegistry registry, @NotNull P4ChangelistId p4cl) {
+        // Get the first one that matches.
+        for (final RootedClientConfig config : registry.getClientConfigsForRef(p4cl.getClientServerRef())) {
+            return config.getClientConfig();
+        }
+        return null;
     }
 
 

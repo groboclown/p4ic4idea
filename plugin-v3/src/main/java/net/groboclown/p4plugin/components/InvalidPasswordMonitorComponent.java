@@ -188,7 +188,7 @@ public class InvalidPasswordMonitorComponent
         // doesn't touch the server config, should clear the login state.
         mbClient.add(ProjectManager.TOPIC, new ProjectManagerListener() {
             @Override
-            public void projectOpened(Project project) {
+            public void projectOpened(@NotNull Project project) {
                 MessageBusClient.ProjectClient projectMbClient =
                         MessageBusClient.forProject(project, InvalidPasswordMonitorComponent.this);
                 ClientConfigAddedMessage.addListener(projectMbClient, this,
@@ -197,19 +197,13 @@ public class InvalidPasswordMonitorComponent
                         event -> forgetLoginProblem(new OptionalClientServerConfig(event.getClientConfig())));
             }
 
-            @Deprecated
-            //@Override
-            public boolean canCloseProject(Project project) {
-                return true;
-            }
-
             @Override
-            public void projectClosed(Project project) {
+            public void projectClosed(@NotNull Project project) {
                 // do nothing.
             }
 
             @Override
-            public void projectClosing(Project project) {
+            public void projectClosing(@NotNull Project project) {
                 // do nothing.
             }
         });

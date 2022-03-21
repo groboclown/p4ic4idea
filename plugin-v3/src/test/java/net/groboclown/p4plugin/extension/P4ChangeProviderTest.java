@@ -17,7 +17,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vcs.changes.Change;
-import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
@@ -33,7 +32,7 @@ import net.groboclown.idea.extensions.TemporaryFolderExtension;
 import net.groboclown.idea.mock.MockChangeListManagerGate;
 import net.groboclown.idea.mock.MockChangelistBuilder;
 import net.groboclown.idea.mock.MockLocalChangeList;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
 import net.groboclown.p4.server.api.values.P4ChangelistId;
 import net.groboclown.p4.server.impl.util.FileSpecBuildUtil;
@@ -90,7 +89,7 @@ class P4ChangeProviderTest {
         when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
 
         // Setup offline mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
@@ -158,7 +157,7 @@ class P4ChangeProviderTest {
         when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
 
         // Setup offline mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
@@ -207,7 +206,7 @@ class P4ChangeProviderTest {
         when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
 
         // Setup offline mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOffline(root);
         assertFalse(vcs.registry.isOnline(root.getClientConfig().getClientServerRef()));
@@ -259,7 +258,7 @@ class P4ChangeProviderTest {
         when(dirtyScope.wasEveryThingDirty()).thenReturn(true);
 
         // Simulate online mode
-        ClientConfigRoot root = vcs.addClientConfigRoot(tmp, "client");
+        RootedClientConfig root = vcs.addClientConfigRoot(tmp, "client");
         assertNotNull(root.getClientRootDir());
         vcs.goOnline(root);
 

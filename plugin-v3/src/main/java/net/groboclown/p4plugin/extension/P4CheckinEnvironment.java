@@ -36,7 +36,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
@@ -162,7 +162,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         }
         Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (FilePath file : files) {
-            ClientConfigRoot root = registry.getClientFor(file);
+            RootedClientConfig root = registry.getClientConfigFor(file);
             if (root == null) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Skipped adding file not in VCS root: " + file);
@@ -207,7 +207,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
         }
         Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (VirtualFile file : files) {
-            ClientConfigRoot root = registry.getClientFor(file);
+            RootedClientConfig root = registry.getClientConfigFor(file);
             if (root == null) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Skipped adding file not in VCS root: " + file);
@@ -262,7 +262,7 @@ public class P4CheckinEnvironment implements CheckinEnvironment, CommitExecutor 
     }
 
     @NotNull
-    private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
+    private P4ChangelistId getActiveChangelistFor(RootedClientConfig root, Map<ClientServerRef, P4ChangelistId> ids) {
         return ChangelistUtil.getActiveChangelistFor(root, ids);
     }
 

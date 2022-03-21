@@ -32,7 +32,7 @@ import net.groboclown.idea.extensions.IdeaLightweightExtension;
 import net.groboclown.idea.extensions.TemporaryFolder;
 import net.groboclown.idea.mock.MockCommandProcessor;
 import net.groboclown.idea.mock.MockLocalChangeList;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
@@ -133,7 +133,7 @@ public class PluginSetup
         return idea.getMockProject();
     }
 
-    public ClientConfigRoot addClientConfigRoot(TemporaryFolder tmp, String clientRootDir) {
+    public RootedClientConfig addClientConfigRoot(TemporaryFolder tmp, String clientRootDir) {
         File base = tmp.newFile(clientRootDir);
         if (!base.mkdirs()) {
             throw new RuntimeException("Could not create directory " + base);
@@ -148,23 +148,23 @@ public class PluginSetup
         VirtualFile rootDir = Objects.requireNonNull(fp.getVirtualFile());
         registry.addClientConfig(cc, rootDir);
         roots.add(rootDir);
-        return Objects.requireNonNull(registry.getClientFor(rootDir));
+        return Objects.requireNonNull(registry.getClientConfigFor(rootDir));
     }
 
-    public void goOffline(ClientConfigRoot root) {
+    public void goOffline(RootedClientConfig root) {
         UserSelectedOfflineMessage.send(idea.getMockProject()).userSelectedServerOffline(
                 new UserSelectedOfflineMessage.OfflineEvent(
                         root.getClientConfig().getClientServerRef().getServerName()));
     }
 
-    public void goOnline(ClientConfigRoot root) {
+    public void goOnline(RootedClientConfig root) {
         ClientConfigAddedMessage.reportClientConfigurationAdded(idea.getMockProject(),
-                root.getClientRootDir(), root.getClientConfig());
+                root.getClientConfig());
         ServerConnectedMessage.send().serverConnected(new ServerConnectedMessage.ServerConnectedEvent(
-                new OptionalClientServerConfig(root.getClientConfig()), true));
+                new OptionalClientServerConfig(root.getClientConfig()), true, false));
     }
 
-    public P4ChangelistId addNewChangelist(ClientConfigRoot root, int p4ChangelistId, String description) {
+    public P4ChangelistId addNewChangelist(RootedClientConfig root, int p4ChangelistId, String description) {
         CacheComponent cc = CacheComponent.getInstance(idea.getMockProject());
         // Use the state object to avoid all the work to populate the cache.
         ProjectCacheStore.State state = cc.getState();
@@ -207,7 +207,7 @@ public class PluginSetup
         return P4ChangelistIdStore.read(changelist.changelistId);
     }
 
-    public void linkP4ChangelistToIdeChangelist(ClientConfigRoot root, P4ChangelistId p4cl, LocalChangeList ide) {
+    public void linkP4ChangelistToIdeChangelist(RootedClientConfig root, P4ChangelistId p4cl, LocalChangeList ide) {
         CacheComponent cc = CacheComponent.getInstance(idea.getMockProject());
         // Use the state object to avoid all the work to populate the cache.
         ProjectCacheStore.State state = cc.getState();
@@ -223,7 +223,7 @@ public class PluginSetup
         cc.loadState(state);
     }
 
-    public P4ChangelistId addDefaultChangelist(ClientConfigRoot root) {
+    public P4ChangelistId addDefaultChangelist(RootedClientConfig root) {
         P4ChangelistId p4cl = addNewChangelist(root, 0, IdeConsts.DEFAULT_LOCAL_CHANGELIST_NAME);
         MockLocalChangeList ideCl = addIdeChangelist(IdeConsts.DEFAULT_LOCAL_CHANGELIST_NAME, null, true);
         linkP4ChangelistToIdeChangelist(root, p4cl, ideCl);

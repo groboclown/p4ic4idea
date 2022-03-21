@@ -25,7 +25,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AnnotateFileQuery;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
@@ -91,7 +91,7 @@ public class P4AnnotationProvider
             // TODO bundle for error messages
             throw new VcsException("Project not configured for showing annotations");
         }
-        ClientConfigRoot client = registry.getClientFor(file);
+        RootedClientConfig client = registry.getClientConfigFor(file);
         if (client == null) {
             // TODO bundle for error messages
             throw new VcsException("No known Perforce server for " + file);

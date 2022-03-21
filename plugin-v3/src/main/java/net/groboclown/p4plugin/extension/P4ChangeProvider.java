@@ -33,7 +33,7 @@ import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.VcsDirtyScope;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.IdeChangelistMap;
@@ -196,7 +196,7 @@ public class P4ChangeProvider
             // refresh the cache from the server.  Then we'll update the requested file
             // status.
 
-            Collection<ClientConfigRoot> allClientRoots = getClientConfigRoots();
+            Collection<RootedClientConfig> allClientRoots = getClientConfigRoots();
 
             // This request is performed by the IDE in a background thread, so it can block.
 
@@ -231,8 +231,8 @@ public class P4ChangeProvider
                 // Update all the files.
 
                 double fractionRootIncr = (1.0 - lastFraction) / allClientRoots.size();
-                for (ClientConfigRoot root : allClientRoots) {
-                    LOG.info("Processing changes in " + root.getProjectVcsRootDir());
+                for (RootedClientConfig root : allClientRoots) {
+                    LOG.info("Processing changes in " + root.getProjectVcsRootDirs());
 
                     updateFileCache(root.getClientConfig(),
                             cachedMaps.first, cachedMaps.second, builder);
@@ -259,7 +259,7 @@ public class P4ChangeProvider
                         if (entry.getKey().getVcs() != null &&
                                 P4Vcs.getKey().equals(entry.getKey().getVcs().getKeyInstanceMethod())) {
                             VirtualFile root = entry.getKey().getPath();
-                            ClientConfigRoot config = getClientFor(root);
+                            RootedClientConfig config = getClientFor(root);
                             Set<FilePath> matched =
                                     getMatchedDirtyRootFiles(dirtyFiles, config, root, entry.getValue());
                             if (!matched.isEmpty() && config != null) {
@@ -285,7 +285,7 @@ public class P4ChangeProvider
     }
 
     private Set<FilePath> getMatchedDirtyRootFiles(Set<FilePath> dirtyFiles,
-            @Nullable ClientConfigRoot config, VirtualFile root, List<FilePath> changedFiles) {
+            @Nullable RootedClientConfig config, VirtualFile root, List<FilePath> changedFiles) {
         LOG.info("Processing changes for " + changedFiles + " under " + root);
         if (config == null) {
             if (LOG.isDebugEnabled()) {
@@ -319,23 +319,23 @@ public class P4ChangeProvider
         List<LocalChangeList> existingLocalChangeLists = new ArrayList<>(addGate.getListsCopy());
         P4CommandRunner.ActionAnswer<Object> actions = new DoneActionAnswer<>(null);
 
-        Collection<ClientConfigRoot> roots = getClientConfigRoots();
+        Collection<RootedClientConfig> roots = getClientConfigRoots();
 
         // #177 - prevent old clients from keeping their changelist mappings around.
         changelistMap.clearChangesNotIn(
                 roots.stream()
-                    .map(ClientConfigRoot::getClientConfig)
+                    .map(RootedClientConfig::getClientConfig)
                     .map(ClientConfig::getClientServerRef)
                     .collect(Collectors.toList())
         );
 
-        for (ClientConfigRoot clientConfigRoot : roots) {
+        for (RootedClientConfig rootedClientConfig : roots) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Updating changelists for " + clientConfigRoot);
+                LOG.debug("Updating changelists for " + rootedClientConfig);
             }
             Set<LocalChangeList> unvisitedLocalChangeLists = new HashSet<>(existingLocalChangeLists);
             for (P4LocalChangelist changelist : CacheComponent.getInstance(project).getCacheQuery()
-                    .getCachedOpenedChangelists(clientConfigRoot.getClientConfig())) {
+                    .getCachedOpenedChangelists(rootedClientConfig.getClientConfig())) {
                 LocalChangeList ideChangeList =
                         changelistMap.getIdeChangeFor(changelist.getChangelistId());
                 if (LOG.isDebugEnabled()) {
@@ -389,7 +389,7 @@ public class P4ChangeProvider
             // by the P4ChangelistListener class.
             for (LocalChangeList unvisited : unvisitedLocalChangeLists) {
                 P4ChangelistId attached = changelistMap.getP4ChangeFor(
-                            clientConfigRoot.getClientConfig().getClientServerRef(),
+                            rootedClientConfig.getClientConfig().getClientServerRef(),
                             unvisited);
                 if (attached != null) {
                     changelistMap.changelistDeleted(attached);
@@ -818,14 +818,14 @@ public class P4ChangeProvider
         cache.changelistDeleted(action.getChangelistId());
     }
 
-    private ClientConfigRoot getClientFor(VirtualFile file) {
+    private RootedClientConfig getClientFor(VirtualFile file) {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
-        return reg == null ? null : reg.getClientFor(file);
+        return reg == null ? null : reg.getClientConfigFor(file);
     }
 
     @NotNull
-    private Collection<ClientConfigRoot> getClientConfigRoots() {
+    private Collection<RootedClientConfig> getClientConfigRoots() {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
-        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
+        return reg == null ? Collections.emptyList() : reg.getRootedClientConfigs();
     }
 }

@@ -22,7 +22,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.perforce.p4java.exception.AuthenticationFailedException;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.OptionalClientServerConfig;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4.server.api.messagebus.ClientConfigAddedMessage;
@@ -41,8 +40,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+
 
 /**
  * Stores the registered configurations for a specific project.  The registry must
@@ -79,6 +78,52 @@ public abstract class ProjectConfigRegistry
 
 
     /**
+     * Find all client configs for the given reference.  There may be situations where a
+     * user has multiple VCS roots, each with different ways to connect to the same client +
+     * server.  Many of the commands used by the plugin don't care about the root that is
+     * referenced, but only the client + server, so multiple of these may need to be attempted.
+     *
+     * @param ref client reference
+     * @return all rooted client configs for the given client server reference.
+     */
+    @NotNull
+    public List<RootedClientConfig> getClientConfigsForRef(@NotNull ClientServerRef ref) {
+        if (isDisposed()) {
+            return List.of();
+        }
+        final List<RootedClientConfig> ret = new ArrayList<>();
+        for (RootedClientConfig config: getRootedClientConfigs()) {
+            if (ref.equals(config.getClientConfig().getClientServerRef())) {
+                ret.add(config);
+            }
+        }
+        return ret;
+    }
+
+
+
+    /**
+     * Find all client configs for the given server.
+     *
+     * @param ref client reference
+     * @return all rooted client configs for the given client server reference.
+     */
+    @NotNull
+    public List<RootedClientConfig> getClientConfigsForServer(@NotNull P4ServerName ref) {
+        if (isDisposed()) {
+            return List.of();
+        }
+        final List<RootedClientConfig> ret = new ArrayList<>();
+        for (RootedClientConfig config: getRootedClientConfigs()) {
+            if (ref.equals(config.getServerConfig().getServerName())) {
+                ret.add(config);
+            }
+        }
+        return ret;
+    }
+
+
+    /**
      * Find the client that is closest to the {@literal file}.  If multiple clients
      * are in the same tree, then the client that is deepest is returned.
      *
@@ -86,85 +131,108 @@ public abstract class ProjectConfigRegistry
      * @return the client that is the best match for the {@literal file}.
      */
     @Nullable
-    public ClientConfigRoot getClientFor(@Nullable VirtualFile file) {
+    public RootedClientConfig getClientConfigFor(@Nullable final VirtualFile file) {
         if (file == null) {
             return null;
         }
         int closestDepth = Integer.MAX_VALUE;
-        ClientConfigRoot closest = null;
-        for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
-            int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
-            if (depth >= 0 && depth < closestDepth) {
-                closestDepth = depth;
-                closest = clientConfigRoot;
+        RootedClientConfig closest = null;
+        for (final RootedClientConfig rootedClientConfig : getRootedClientConfigs()) {
+            // Match on the VCS root, not the client root.  Client root may be very different.
+            for (final VirtualFile vcsRoot : rootedClientConfig.getProjectVcsRootDirs()) {
+                int depth = FileTreeUtil.getPathDepth(file, vcsRoot);
+                if (depth >= 0 && depth < closestDepth) {
+                    closestDepth = depth;
+                    closest = rootedClientConfig;
+                }
             }
         }
 
         return closest;
     }
 
-
+    /**
+     * Each VCS root has at most 1 client config.  This searches the list of registered
+     * configurations for the best-match of the file to the VCS root.
+     *
+     * @param file a file in the project.
+     * @return the best match client config, or, if the file is not under a VCS root, null.
+     */
     @Nullable
-    public ClientConfigRoot getClientFor(@Nullable FilePath file) {
+    public RootedClientConfig getClientConfigFor(@Nullable FilePath file) {
+        // This behavior needs to match up with the VirtualFile implementation.
         if (file == null) {
             return null;
         }
-        // updateVcsRoots();
         int closestDepth = Integer.MAX_VALUE;
-        ClientConfigRoot closest = null;
+        RootedClientConfig closest = null;
         if (LOG.isDebugEnabled()) {
             LOG.debug("Finding best client root match for " + file);
         }
-        for (ClientConfigRoot clientConfigRoot : getRegisteredStates()) {
-            int depth = FileTreeUtil.getPathDepth(file, clientConfigRoot.getClientRootDir());
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Root " + clientConfigRoot.getClientRootDir() + ": " + depth);
-            }
-            if (depth >= 0 && depth < closestDepth) {
-                closestDepth = depth;
-                closest = clientConfigRoot;
+        for (RootedClientConfig rootedClientConfig : getRootedClientConfigs()) {
+            // Match on the VCS root, not the client root.  Client root may be very different.
+            for (final VirtualFile vcsRoot : rootedClientConfig.getProjectVcsRootDirs()) {
+                int depth = FileTreeUtil.getPathDepth(file, vcsRoot);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Root " + vcsRoot + ": " + depth);
+                }
+                if (depth >= 0 && depth < closestDepth) {
+                    closestDepth = depth;
+                    closest = rootedClientConfig;
+                }
             }
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Using client root " + (closest == null ? null : closest.getClientRootDir()) + " for " + file);
+            LOG.debug("Using client root " + (closest == null ? null : closest.getProjectVcsRootDirs()) + " for " + file);
         }
 
         return closest;
     }
 
+    /**
+     * Are any of the servers for the given client ref online?
+     *
+     * @param clientServerRef reference
+     * @return true if at least one is online.
+     */
     public boolean isOnline(@Nullable ClientServerRef clientServerRef) {
         if (clientServerRef == null) {
             return false;
         }
-        for (ClientConfigRoot configRoot: getRegisteredStates()) {
-            if (clientServerRef.equals(configRoot.getClientConfig().getClientServerRef())) {
-                return configRoot.isOnline();
-            }
+        for (RootedClientConfig configRoot: getClientConfigsForRef(clientServerRef)) {
+            return configRoot.isOnline();
         }
         return false;
     }
 
     @NotNull
-    public Collection<ClientConfigRoot> getClientConfigRoots() {
-        return new ArrayList<>(getRegisteredStates());
-    }
-
-
-    /**
-     * Retrieve the client configuration information about the client server ref.  Even though the
-     * connections are registered application-wide, individual projects must register themselves
-     *
-     * @param ref client reference
-     * @return the client config state, or null if it isn't registered.
-     */
-    @Nullable
-    public abstract ClientConfig getRegisteredClientConfigState(@NotNull ClientServerRef ref);
+    public abstract List<RootedClientConfig> getRootedClientConfigs();
 
     public void initializeService() {
-        LoginFailureMessage.addListener(applicationBusClient, this, new LoginFailureMessage.AllErrorListener() {
+        LoginFailureMessage.addListener(applicationBusClient, this, new LoginFailureMessage.Listener() {
             @Override
-            public void onLoginFailure(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+            public void singleSignOnFailed(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
                 ProjectConfigRegistry.this.onLoginError(e.getConfig());
+            }
+
+            @Override
+            public void singleSignOnExecutionFailed(@NotNull LoginFailureMessage.SingleSignOnExecutionFailureEvent e) {
+                ProjectConfigRegistry.this.onLoginError(e.getConfig());
+            }
+
+            @Override
+            public void sessionExpired(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                ProjectConfigRegistry.this.onLoginExpired(e.getConfig());
+            }
+
+            @Override
+            public void passwordInvalid(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                ProjectConfigRegistry.this.onPasswordInvalid(e.getConfig());
+            }
+
+            @Override
+            public void passwordUnnecessary(@NotNull ServerErrorEvent.ServerConfigErrorEvent<AuthenticationFailedException> e) {
+                ProjectConfigRegistry.this.onPasswordUnnecessary(e.getConfig());
             }
         });
         ConnectionErrorMessage.addListener(applicationBusClient, this, new ConnectionErrorMessage.AllErrorListener() {
@@ -226,31 +294,33 @@ public abstract class ProjectConfigRegistry
         LOG.assertTrue(!disposed, "Already disposed");
     }
 
-    protected final void sendClientRemoved(@Nullable ClientConfigRoot state) {
+    protected final void sendClientRemoved(@Nullable RootedClientConfig state) {
         if (state != null) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Sending notification that root was removed: " + state.getClientRootDir());
+                LOG.debug("Sending notification that root was removed: " + state.getProjectVcsRootDirs());
             }
             ClientConfigRemovedMessage.reportClientConfigRemoved(getProject(), this,
-                    state.getClientConfig(), state.getProjectVcsRootDir());
-        }
-    }
-
-    protected final void sendClientAdded(@Nullable ClientConfigRoot state) {
-        if (state != null) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Sending notification that root was added: " + state.getClientRootDir());
-            }
-            ClientConfigAddedMessage.reportClientConfigurationAdded(getProject(),
-                    state.getClientRootDir(),
                     state.getClientConfig());
         }
     }
 
-    @NotNull
-    protected abstract Collection<ClientConfigRoot> getRegisteredStates();
+    protected final void sendClientAdded(@Nullable RootedClientConfig state) {
+        if (state != null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Sending notification that client was added: " + state.getClientConfig());
+            }
+            ClientConfigAddedMessage.reportClientConfigurationAdded(getProject(),
+                    state.getClientConfig());
+        }
+    }
+
+    protected abstract void onLoginExpired(@NotNull OptionalClientServerConfig config);
 
     protected abstract void onLoginError(@NotNull OptionalClientServerConfig config);
+
+    protected abstract void onPasswordInvalid(@NotNull OptionalClientServerConfig config);
+
+    protected abstract void onPasswordUnnecessary(@NotNull OptionalClientServerConfig config);
 
     protected abstract void onHostConnectionError(@NotNull P4ServerName server);
 

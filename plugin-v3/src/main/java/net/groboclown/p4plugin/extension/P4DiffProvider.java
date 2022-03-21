@@ -27,7 +27,7 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.perforce.p4java.core.file.IFileSpec;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
@@ -73,7 +73,7 @@ public class P4DiffProvider extends DiffProviderEx
             return null;
         }
         // TODO this needs to return the "have", not "head" revision
-        ClientConfigRoot root = getRootFor(file);
+        RootedClientConfig root = getRootFor(file);
         if (root == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Not under perforce root: " + file);
@@ -130,7 +130,7 @@ public class P4DiffProvider extends DiffProviderEx
         if (filePath.isDirectory()) {
             return null;
         }
-        ClientConfigRoot root = getRootFor(filePath);
+        RootedClientConfig root = getRootFor(filePath);
         if (root == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Not under perforce root: " + filePath);
@@ -168,7 +168,7 @@ public class P4DiffProvider extends DiffProviderEx
     @Override
     public ContentRevision createFileContent(final VcsRevisionNumber revisionNumber, VirtualFile selectedFile) {
         FilePath local = VcsUtil.getFilePath(selectedFile);
-        final ClientConfigRoot root = getRootFor(local);
+        final RootedClientConfig root = getRootFor(local);
         if (root == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Not under perforce root: " + selectedFile);
@@ -238,7 +238,7 @@ public class P4DiffProvider extends DiffProviderEx
     @Override
     public VcsRevisionDescription getCurrentRevisionDescription(VirtualFile file) {
         FilePath local = VcsUtil.getFilePath(file);
-        final ClientConfigRoot root = getRootFor(local);
+        final RootedClientConfig root = getRootFor(local);
         if (root == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Not under perforce root: " + file);
@@ -278,7 +278,7 @@ public class P4DiffProvider extends DiffProviderEx
 
 
     @Nullable
-    private ClientConfigRoot getRootFor(VirtualFile f) {
+    private RootedClientConfig getRootFor(VirtualFile f) {
         if (f == null) {
             return null;
         }
@@ -286,11 +286,11 @@ public class P4DiffProvider extends DiffProviderEx
         if (registry == null) {
             return null;
         }
-        return registry.getClientFor(f);
+        return registry.getClientConfigFor(f);
     }
 
     @Nullable
-    private ClientConfigRoot getRootFor(FilePath f) {
+    private RootedClientConfig getRootFor(FilePath f) {
         if (f == null) {
             return null;
         }
@@ -298,6 +298,6 @@ public class P4DiffProvider extends DiffProviderEx
         if (registry == null) {
             return null;
         }
-        return registry.getClientFor(f);
+        return registry.getClientConfigFor(f);
     }
 }

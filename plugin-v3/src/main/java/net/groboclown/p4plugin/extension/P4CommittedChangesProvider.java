@@ -38,17 +38,16 @@ import com.intellij.openapi.vcs.versionBrowser.StandardVersionFilterComponent;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.AsynchConsumer;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.commands.HistoryContentLoader;
 import net.groboclown.p4.server.api.commands.changelist.ListSubmittedChangelistsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsQuery;
 import net.groboclown.p4.server.api.commands.file.ListFilesDetailsResult;
 import net.groboclown.p4.server.api.commands.sync.SyncListFilesDetailsQuery;
-import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.ErrorEvent;
 import net.groboclown.p4.server.api.messagebus.InternalErrorMessage;
@@ -135,7 +134,7 @@ public class P4CommittedChangesProvider implements
             LOG.debug("No registry, or root is null");
             return null;
         }
-        ClientConfigRoot client = registry.getClientFor(root);
+        RootedClientConfig client = registry.getClientConfigFor(root);
         if (client == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("No client for root " + root);
@@ -169,17 +168,6 @@ public class P4CommittedChangesProvider implements
             }
         }
         return RepositoryLocationFactory.getLocationFor(root, client, details);
-    }
-
-    @Deprecated
-    @Nullable
-    @Override
-    public RepositoryLocation getLocationFor(FilePath root, String repositoryPath) {
-        // TODO should this use repository path?
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Finding location for root [" + root + "], path [" + repositoryPath + "]");
-        }
-        return getLocationFor(root);
     }
 
     @Nullable
@@ -258,17 +246,16 @@ public class P4CommittedChangesProvider implements
         }
         if (location instanceof P4RepositoryLocation) {
             P4RepositoryLocation repo = (P4RepositoryLocation) location;
-            ClientConfig clientConfig = registry.getRegisteredClientConfigState(repo.getClientServerRef());
-            if (clientConfig == null) {
-                LOG.warn("Could not find configuration for " + repo.getClientServerRef());
-                return new DoneQueryAnswer<>(Collections.emptyList());
+            for (final RootedClientConfig clientConfig : registry.getClientConfigsForRef(repo.getClientServerRef())) {
+                // Just use the first config that matches.  That's all we need.
+                P4Vcs vcs = P4Vcs.getInstance(project);
+                return P4ServerComponent
+                        .query(project, clientConfig.getClientConfig(),
+                                new ListSubmittedChangelistsQuery(repo, settings.getQueryFilter(), maxCount))
+                        .mapQuery((c) -> c.getChangesForVcs(vcs));
             }
-
-            P4Vcs vcs = P4Vcs.getInstance(project);
-            return P4ServerComponent
-                    .query(project, clientConfig,
-                            new ListSubmittedChangelistsQuery(repo, settings.getQueryFilter(), maxCount))
-                    .mapQuery((c) -> c.getChangesForVcs(vcs));
+            LOG.warn("Could not find configuration for " + repo.getClientServerRef());
+            return new DoneQueryAnswer<>(Collections.emptyList());
         }
         LOG.warn("Cannot load changes for non-perforce repository location " + location);
         return new DoneQueryAnswer<>(Collections.emptyList());
@@ -335,7 +322,7 @@ public class P4CommittedChangesProvider implements
         if (registry == null) {
             return Pair.create(null, fp);
         }
-        ClientConfigRoot clientConfig = registry.getClientFor(file);
+        RootedClientConfig clientConfig = registry.getClientConfigFor(file);
         if (clientConfig == null) {
             return Pair.create(null, fp);
         }

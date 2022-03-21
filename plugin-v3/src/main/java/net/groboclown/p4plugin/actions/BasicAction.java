@@ -30,7 +30,7 @@ import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.config.ClientConfig;
@@ -172,9 +172,9 @@ public abstract class BasicAction extends DumbAwareAction {
         if (registry == null) {
             return Stream.empty();
         }
-        final Map<ClientConfigRoot, List<VirtualFile>> mapping = new HashMap<>();
+        final Map<RootedClientConfig, List<VirtualFile>> mapping = new HashMap<>();
         files.forEach((file) -> {
-            ClientConfigRoot config = registry.getClientFor(file);
+            RootedClientConfig config = registry.getClientConfigFor(file);
             if (config != null) {
                 List<VirtualFile> mappedFiles = mapping.computeIfAbsent(config, k -> new ArrayList<>());
                 mappedFiles.add(file);

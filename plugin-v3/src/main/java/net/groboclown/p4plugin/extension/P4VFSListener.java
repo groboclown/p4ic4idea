@@ -14,13 +14,12 @@
 package net.groboclown.p4plugin.extension;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsVFSListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsFileUtil;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
@@ -80,7 +79,7 @@ public class P4VFSListener extends VcsVFSListener {
                 LOG.warn("Attempted to add a directory " + file);
                 continue;
             }
-            ClientConfigRoot root = getClientFor(file);
+            RootedClientConfig root = getClientFor(file);
             if (root != null) {
                 FilePath fp = VcsUtil.getFilePath(file);
 
@@ -119,7 +118,7 @@ public class P4VFSListener extends VcsVFSListener {
 
                 Map<ClientServerRef, P4ChangelistId> activeChangelistIds = getActiveChangelistIds();
         for (FilePath filePath : filesToDelete) {
-            ClientConfigRoot root = getClientFor(filePath);
+            RootedClientConfig root = getClientFor(filePath);
             if (root != null) {
                 P4ChangelistId id = getActiveChangelistFor(root, activeChangelistIds);
                 if (LOG.isDebugEnabled()) {
@@ -167,8 +166,8 @@ public class P4VFSListener extends VcsVFSListener {
             }
             allFiles.add(src);
             allFiles.add(tgt);
-            ClientConfigRoot srcRoot = getClientFor(src);
-            ClientConfigRoot tgtRoot = getClientFor(tgt);
+            RootedClientConfig srcRoot = getClientFor(src);
+            RootedClientConfig tgtRoot = getClientFor(tgt);
             if (srcRoot != null && tgtRoot != null &&
                     srcRoot.getClientConfig().getClientServerRef().equals(tgtRoot.getClientConfig().getClientServerRef())) {
                 // A real P4 move operation.
@@ -281,17 +280,17 @@ public class P4VFSListener extends VcsVFSListener {
     }
 
     @NotNull
-    private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
+    private P4ChangelistId getActiveChangelistFor(RootedClientConfig root, Map<ClientServerRef, P4ChangelistId> ids) {
         return ChangelistUtil.getActiveChangelistFor(root, ids);
     }
 
-    private ClientConfigRoot getClientFor(FilePath file) {
+    private RootedClientConfig getClientFor(FilePath file) {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(myProject);
-        return reg == null ? null : reg.getClientFor(file);
+        return reg == null ? null : reg.getClientConfigFor(file);
     }
 
-    private ClientConfigRoot getClientFor(VirtualFile file) {
+    private RootedClientConfig getClientFor(VirtualFile file) {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(myProject);
-        return reg == null ? null : reg.getClientFor(file);
+        return reg == null ? null : reg.getClientConfigFor(file);
     }
 }

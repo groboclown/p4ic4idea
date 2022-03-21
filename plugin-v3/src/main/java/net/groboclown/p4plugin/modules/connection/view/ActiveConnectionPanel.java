@@ -30,10 +30,11 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.vcs.VcsDirectoryMapping;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.perforce.p4java.exception.AuthenticationFailedException;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4VcsKey;
 import net.groboclown.p4.server.api.cache.ActionChoice;
 import net.groboclown.p4.server.api.cache.messagebus.AbstractCacheMessage;
@@ -66,6 +67,7 @@ import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ActiveConnectionPanel {
@@ -102,11 +104,11 @@ public class ActiveConnectionPanel {
         MessageBusClient.ProjectClient projectBus = MessageBusClient.forProject(project, parentDisposable);
 
         ClientConfigAddedMessage.addListener(projectBus, cacheId, e -> {
-            LOG.info("Refreshing connection display due to added config at " + e.getRoot());
+            LOG.info("Refreshing connection display due to added config " + e.getClientConfig());
             refresh();
         });
         ClientConfigRemovedMessage.addListener(projectBus, cacheId, event -> {
-            LOG.info("Refreshing connection display due to removed config at " + event.getVcsRootDir());
+            LOG.info("Refreshing connection display due to removed config " + event.getClientConfig());
             refresh();
         });
         ServerConnectedMessage.addListener(appBus, cacheId, (e) -> {
@@ -237,7 +239,7 @@ public class ActiveConnectionPanel {
                         AllIcons.Actions.Lightning) { // Upload?
                     @Override
                     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                        final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        final RootedClientConfig sel = getSelected(RootedClientConfig.class);
                         if (sel != null && sel.isOffline()) {
                             ReconnectRequestMessage.requestReconnectToClient(project,
                                     sel.getClientConfig().getClientServerRef(), true);
@@ -246,7 +248,7 @@ public class ActiveConnectionPanel {
 
                     @Override
                     boolean isEnabled() {
-                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        RootedClientConfig sel = getSelected(RootedClientConfig.class);
                         return sel != null && sel.isOffline();
                     }
                 },
@@ -257,7 +259,7 @@ public class ActiveConnectionPanel {
                         AllIcons.Actions.Pause) {
                     @Override
                     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                        final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        final RootedClientConfig sel = getSelected(RootedClientConfig.class);
                         if (sel != null && sel.isOnline()) {
                             UserSelectedOfflineMessage.send(project).userSelectedServerOffline(
                                     new UserSelectedOfflineMessage.OfflineEvent(
@@ -267,7 +269,7 @@ public class ActiveConnectionPanel {
 
                     @Override
                     boolean isEnabled() {
-                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        RootedClientConfig sel = getSelected(RootedClientConfig.class);
                         return sel != null && sel.isOnline();
                     }
                 },
@@ -277,17 +279,21 @@ public class ActiveConnectionPanel {
                         AllIcons.General.GearPlain) {
                     @Override
                     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                        final ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        final RootedClientConfig sel = getSelected(RootedClientConfig.class);
                         boolean shown = false;
-                        if (sel != null && sel.getClientRootDir() != null) {
-                            String dirName = sel.getClientRootDir().getPath();
-                            // TODO this is not accurate.  It does not supply the correct VcsDirectoryMapping instance.
-                            VcsDirectoryMapping mapping = new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME, null);
-                            UnnamedConfigurable configurable = P4Vcs.getInstance(project).getRootConfigurable(mapping);
-                            if (configurable != null) {
-                                new ConfigDialog(project, dirName, configurable)
-                                        .show();
-                                shown = true;
+                        if (sel != null) {
+                            final List<VirtualFile> vcsRoots = sel.getProjectVcsRootDirs();
+                            // TODO for now, just allow this operation if there's just 1 root.
+                            if (vcsRoots.size() == 1) {
+                                String dirName = vcsRoots.get(0).getPath();
+                                VcsDirectoryMapping mapping = new VcsDirectoryMapping(dirName, P4VcsKey.VCS_NAME, null);
+                                UnnamedConfigurable configurable =
+                                        P4Vcs.getInstance(project).getRootConfigurable(mapping);
+                                if (configurable != null) {
+                                    new ConfigDialog(project, dirName, configurable)
+                                            .show();
+                                    shown = true;
+                                }
                             }
                         }
                         if (!shown) {
@@ -297,8 +303,11 @@ public class ActiveConnectionPanel {
 
                     @Override
                     boolean isEnabled() {
-                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
-                        return sel != null && sel.getClientRootDir() != null;
+                        RootedClientConfig sel = getSelected(RootedClientConfig.class);
+                        if (sel == null) {
+                            return false;
+                        }
+                        return sel.getProjectVcsRootDirs().size() == 1;
                     }
                 },
 
@@ -308,13 +317,13 @@ public class ActiveConnectionPanel {
                         AllIcons.Actions.Upload) {
                     @Override
                     boolean isEnabled() {
-                        ClientConfigRoot sel = getSelected(ClientConfigRoot.class);
+                        RootedClientConfig sel = getSelected(RootedClientConfig.class);
                         return sel != null && sel.isOnline();
                     }
 
                     @Override
                     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                        final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);
+                        final RootedClientConfig selRoot = getSelected(RootedClientConfig.class);
                         if (selRoot != null) {
                             P4ServerComponent.sendCachedPendingRequests(project, selRoot.getClientConfig())
                                 .whenCompleted(c -> LOG.info("Sent pending actions"));
@@ -328,7 +337,7 @@ public class ActiveConnectionPanel {
                         AllIcons.Actions.Cancel) {
                     @Override
                     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                        final ClientConfigRoot selRoot = getSelected(ClientConfigRoot.class);
+                        final RootedClientConfig selRoot = getSelected(RootedClientConfig.class);
                         final ActionChoice sel = getSelected(ActionChoice.class);
                         final CacheComponent cache = CacheComponent.getInstance(project);
                         if (selRoot != null && sel != null) {

@@ -18,7 +18,8 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FilePath;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import com.intellij.openapi.vfs.VirtualFile;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.cache.ActionChoice;
@@ -119,7 +120,7 @@ public class CacheStoreUpdateListener {
         // Debug data.
         Set<P4LocalFile> unusedFiles = new HashSet<>(openedFiles);
 
-        for (ClientConfigRoot root : getClientConfigRoots()) {
+        for (RootedClientConfig root : getClientConfigRoots()) {
             if (ref.equals(root.getClientConfig().getClientServerRef())) {
                 try {
                     if (LOG.isDebugEnabled()) {
@@ -128,11 +129,18 @@ public class CacheStoreUpdateListener {
                     cache.write(root.getClientConfig(), (store) -> {
                         List<P4LocalFile> rootFiles = new ArrayList<>();
                         for (P4LocalFile openedFile : openedFiles) {
-                            if (FileTreeUtil.isSameOrUnder(root.getClientRootDir(), openedFile.getFilePath())) {
+                            boolean match = false;
+                            for (VirtualFile vcsRoot : root.getProjectVcsRootDirs()) {
+                                if (FileTreeUtil.isSameOrUnder(vcsRoot, openedFile.getFilePath())) {
+                                    match = true;
+                                    break;
+                                }
+                            }
+                            if (match) {
                                 rootFiles.add(openedFile);
                             } else if (LOG.isDebugEnabled()) {
-                                LOG.debug("File " + openedFile.getFilePath() + " not under root " +
-                                        root.getClientRootDir());
+                                LOG.debug("File " + openedFile.getFilePath() + " not under roots " +
+                                        root.getProjectVcsRootDirs());
                             }
                         }
                         if (LOG.isDebugEnabled()) {
@@ -168,9 +176,9 @@ public class CacheStoreUpdateListener {
         }
     }
 
-    private Collection<ClientConfigRoot> getClientConfigRoots() {
+    private Collection<RootedClientConfig> getClientConfigRoots() {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
-        return reg == null ? Collections.emptyList() : reg.getClientConfigRoots();
+        return reg == null ? Collections.emptyList() : reg.getRootedClientConfigs();
     }
 
     private void handleClientAction(@NotNull ClientActionMessage.Event event)
@@ -212,7 +220,7 @@ public class CacheStoreUpdateListener {
     private Collection<ClientConfig> getActiveClientConfigs() {
         final Set<ClientConfig> configs = new HashSet<>();
         getClientConfigRoots().stream()
-                .map(ClientConfigRoot::getClientConfig)
+                .map(RootedClientConfig::getClientConfig)
                 .forEach(configs::add);
         return configs;
     }

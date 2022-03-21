@@ -33,6 +33,7 @@ import com.perforce.p4java.exception.TrustException;
 import com.perforce.p4java.exception.ZeroconfException;
 import com.perforce.p4java.server.IServerMessage;
 import com.perforce.p4java.server.ISingleServerMessage;
+import net.groboclown.p4.server.api.exceptions.ConnectionTimeoutException;
 import net.groboclown.p4.server.api.exceptions.VcsInterruptedException;
 import net.groboclown.p4.server.api.messagebus.CancellationMessage;
 import net.groboclown.p4.server.api.messagebus.ConnectionErrorMessage;
@@ -165,6 +166,15 @@ public class UserErrorComponent implements ProjectComponent, Disposable {
             @Override
             public void connectionError(@NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionException> event) {
                 simpleError("Connection to Perforce server " + event.getName() + " failed: " +
+                                event.getError().getMessage(),
+                        "Perforce Connection Error");
+                LOG.warn(event.getError());
+            }
+
+            @Override
+            public void connectionTimedOut(
+                    @NotNull ServerErrorEvent.ServerNameErrorEvent<ConnectionTimeoutException> event) {
+                simpleError("Connection to Perforce server " + event.getName() + " timed out: " +
                                 event.getError().getMessage(),
                         "Perforce Connection Error");
                 LOG.warn(event.getError());

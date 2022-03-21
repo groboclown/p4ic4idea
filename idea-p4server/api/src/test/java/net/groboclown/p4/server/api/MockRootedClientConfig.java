@@ -20,12 +20,15 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-class MockClientConfigRoot
-        implements ClientConfigRoot {
+import java.util.Collections;
+import java.util.List;
+
+class MockRootedClientConfig
+        implements RootedClientConfig {
     final ClientConfig config;
     final VirtualFile root;
 
-    public MockClientConfigRoot(ClientConfig config, VirtualFile vcsRootDir) {
+    public MockRootedClientConfig(ClientConfig config, VirtualFile vcsRootDir) {
         this.config = config;
         this.root = vcsRootDir;
     }
@@ -41,6 +44,16 @@ class MockClientConfigRoot
         return false;
     }
 
+    @Override
+    public boolean isPendingActionsListResendRequired() {
+        return false;
+    }
+
+    @Override
+    public void setPendingActionsListResendRequired(boolean required) {
+
+    }
+
     @Nullable
     @Override
     public Boolean isCaseSensitive() {
@@ -50,13 +63,13 @@ class MockClientConfigRoot
     @Nullable
     @Override
     public VirtualFile getClientRootDir() {
-        return root;
+        return null;
     }
 
     @NotNull
     @Override
-    public VirtualFile getProjectVcsRootDir() {
-        return null;
+    public List<VirtualFile> getProjectVcsRootDirs() {
+        return Collections.singletonList(root);
     }
 
     @NotNull
@@ -87,6 +100,26 @@ class MockClientConfigRoot
 
     @Override
     public boolean isDisposed() {
+        return false;
+    }
+
+    @Override
+    public boolean isPasswordUnnecessary() {
+        return false;
+    }
+
+    @Override
+    public boolean isLoginNeeded() {
+        return false;
+    }
+
+    @Override
+    public boolean isLoginBad() {
+        return false;
+    }
+
+    @Override
+    public boolean isServerConnectionBad() {
         return false;
     }
 

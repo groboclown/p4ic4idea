@@ -90,19 +90,18 @@ public class IdeaLightweightExtension
     }
 
     public <I> void registerApplicationService(@NotNull Class<? super I> interfaceClass, @NotNull I service) {
-        getMockApplication().getPicoContainer().
-                registerComponentInstance(interfaceClass, service);
-        getMockApplication().getPicoContainer().
-                registerComponentInstance(interfaceClass.getName(), service);
+        getMockApplication().getPicoContainer().registerComponentInstance(interfaceClass, service);
+        getMockApplication().getPicoContainer().registerComponentInstance(interfaceClass.getName(), service);
     }
 
     public <T> void registerProjectComponent(@NotNull Class<? super T> interfaceClass, @NotNull T component) {
         getMockProject().getPicoContainer().registerComponentInstance(interfaceClass, component);
+        getMockProject().getPicoContainer().registerComponentInstance(interfaceClass.getName(), component);
     }
 
     public <T> void registerProjectService(@NotNull Class<? super T> serviceClass, @NotNull T service) {
-        getMockProject().getPicoContainer().
-                registerComponentImplementation(service, serviceClass);
+        getMockProject().getPicoContainer().registerComponentInstance(serviceClass, service);
+        getMockProject().getPicoContainer().registerComponentInstance(serviceClass.getName(), service);
     }
 
     @Override

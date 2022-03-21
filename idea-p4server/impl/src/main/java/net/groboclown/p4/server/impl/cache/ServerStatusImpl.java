@@ -20,6 +20,7 @@ import net.groboclown.p4.server.api.config.ServerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+
 public class ServerStatusImpl
         implements ServerStatus {
     private static final Logger LOG = Logger.getInstance(ServerStatusImpl.class);
@@ -27,16 +28,19 @@ public class ServerStatusImpl
     private final ServerConfig config;
     private boolean disposed;
 
-    private boolean serverHostProblem;
-
-    private boolean serverLoginProblem;
-
     // for user explicitly wanting to not try to connect.
     private boolean userWorkingOffline;
 
-    private Boolean serverCaseSensitive = null;
+    private final Boolean serverCaseSensitive = null;
 
-    private boolean loaded = false;
+    private final boolean loaded = false;
+
+    private boolean badConnection = false;
+    private boolean badLogin = false;
+    private boolean needsLogin = false;
+    private boolean passwordUnnecessary = false;
+    private boolean pendingActionsRequireResend = true;
+
 
     public ServerStatusImpl(@NotNull ServerConfig config) {
         this.config = config;
@@ -50,17 +54,17 @@ public class ServerStatusImpl
 
     @Override
     public boolean isOffline() {
-        return serverHostProblem || serverLoginProblem || userWorkingOffline;
+        return badConnection || badLogin || needsLogin || userWorkingOffline;
     }
 
     @Override
     public boolean isOnline() {
-        return !serverHostProblem && !serverLoginProblem && !userWorkingOffline;
+        return !badConnection && !badLogin && !needsLogin && !userWorkingOffline;
     }
 
     @Override
     public boolean isServerConnectionProblem() {
-        return serverHostProblem || serverLoginProblem;
+        return badConnection || badLogin || needsLogin;
     }
 
     @Override
@@ -79,8 +83,38 @@ public class ServerStatusImpl
     }
 
     @Override
+    public boolean isPasswordUnnecessary() {
+        return this.passwordUnnecessary;
+    }
+
+    @Override
+    public boolean isLoginNeeded() {
+        return needsLogin;
+    }
+
+    @Override
+    public boolean isLoginBad() {
+        return badLogin;
+    }
+
+    @Override
+    public boolean isServerConnectionBad() {
+        return badConnection;
+    }
+
+    @Override
     public boolean isLoadedFromServer() {
         return loaded;
+    }
+
+    @Override
+    public boolean isPendingActionsListResendRequired() {
+        return pendingActionsRequireResend;
+    }
+
+    @Override
+    public void setPendingActionsListResendRequired(boolean required) {
+        this.pendingActionsRequireResend = required;
     }
 
     @Nullable
@@ -93,15 +127,101 @@ public class ServerStatusImpl
         LOG.assertTrue(!disposed, "Already disposed");
     }
 
-    public void setServerHostProblem(boolean hasProblem) {
-        serverHostProblem = hasProblem;
-    }
-
-    public void setServerLoginProblem(boolean hasProblem) {
-        serverLoginProblem = hasProblem;
-    }
-
     public void setUserOffline(boolean isOffline) {
         userWorkingOffline = isOffline;
+    }
+
+    /**
+     * Mark the server as switching to connected state.
+     */
+    public void markServerConnected() {
+        // Only affect the pending actions if it was already offline; that means they need to
+        // be sent.
+        if (! this.isOnline()) {
+            this.pendingActionsRequireResend = true;
+        }
+        this.badConnection = false;
+
+        // Mark as a login is still needed, but discard any concept that the previous login
+        // was wrong.
+        this.badLogin = false;
+        this.needsLogin = true;
+        // keep the "password unnecessary" flag state.
+
+        // Don't touch the user offline flag.  Even if we are triggered about a valid connection,
+        // the user still requested to be offline.
+    }
+
+    /**
+     * Mark the server as switching to connected state.
+     */
+    public void markLoggedIn(boolean usedPassword) {
+        // Only affect the pending actions if it was already offline; that means they need to
+        // be sent.
+        if (! this.isOnline()) {
+            this.pendingActionsRequireResend = true;
+        }
+        this.badLogin = false;
+        this.badConnection = false;
+        this.needsLogin = false;
+        this.passwordUnnecessary = !usedPassword;
+
+        // Don't touch the user offline flag.  Even if we are triggered about a valid connection,
+        // the user still requested to be offline.
+    }
+
+    /**
+     * Mark the server as having failed the login process.
+     */
+    public void markLoginFailed() {
+        this.badLogin = true;
+        this.needsLogin = true;
+    }
+
+    /**
+     * Mark the server as having its session expired.
+     */
+    public void markSessionExpired() {
+        this.needsLogin = true;
+    }
+
+    /**
+     * Mark the password as being reported by the server as bad.
+     */
+    public void markBadPassword() {
+        this.needsLogin = true;
+        this.badLogin = true;
+    }
+
+    /**
+     * Mark that the password was specified, but the server does not need it.
+     */
+    public void markPasswordIsUnnecessary() {
+        this.needsLogin = true;
+        this.passwordUnnecessary = true;
+    }
+
+    public void markBadConnection() {
+        this.needsLogin = true;
+        this.badConnection = true;
+    }
+
+    /**
+     * Set the state to indicate that a login retry is requested by the user.  This can be called when a retry is
+     * explicitly requested, or if the password is changed.
+     */
+    public void requestLoginRetry() {
+        // Only affect the pending actions if it was already offline; that means they need to
+        // be sent.
+        if (! this.isOnline()) {
+            this.pendingActionsRequireResend = true;
+        }
+        this.needsLogin = true;
+        this.badConnection = false;
+        this.badLogin = false;
+
+        // The user could have updated their account in a separate program, so this state
+        // is updated to indicate the password should be tried again.
+        this.passwordUnnecessary = false;
     }
 }

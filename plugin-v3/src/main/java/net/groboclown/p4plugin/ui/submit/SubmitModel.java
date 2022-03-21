@@ -22,7 +22,7 @@ import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.util.NullableFunction;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.ListTableModel;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.P4CommandRunner;
 import net.groboclown.p4.server.api.P4ServerName;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
@@ -287,7 +287,7 @@ public class SubmitModel {
         // with each server.
         Map<P4ServerName, OptionalClientServerConfig> configs = new HashMap<>();
         for (FilePath file : files) {
-            ClientConfigRoot config = registry.getClientFor(file);
+            RootedClientConfig config = registry.getClientConfigFor(file);
             if (config != null && !configs.containsKey(config.getServerConfig().getServerName())) {
                 configs.put(
                         config.getServerConfig().getServerName(),

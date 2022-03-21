@@ -23,7 +23,7 @@ import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.VcsException;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
-import net.groboclown.p4.server.api.ClientConfigRoot;
+import net.groboclown.p4.server.api.RootedClientConfig;
 import net.groboclown.p4.server.api.ClientServerRef;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
 import net.groboclown.p4.server.api.commands.file.AddEditAction;
@@ -87,7 +87,7 @@ public class P4EditFileProvider implements EditFileProvider {
                 if (fp == null || !file.isInLocalFileSystem()) {
                     continue;
                 }
-                ClientConfigRoot root = getClientFor(file);
+                RootedClientConfig root = getClientFor(file);
                 if (root != null) {
                     P4ChangelistId id = getActiveChangelistFor(root, activeChangelistIds);
                     if (LOG.isDebugEnabled()) {
@@ -139,7 +139,7 @@ public class P4EditFileProvider implements EditFileProvider {
     }
 
     @NotNull
-    private P4ChangelistId getActiveChangelistFor(ClientConfigRoot root, Map<ClientServerRef, P4ChangelistId> ids) {
+    private P4ChangelistId getActiveChangelistFor(RootedClientConfig root, Map<ClientServerRef, P4ChangelistId> ids) {
         ClientServerRef ref = root.getClientConfig().getClientServerRef();
         P4ChangelistId ret = ids.get(ref);
         if (ret == null) {
@@ -165,8 +165,8 @@ public class P4EditFileProvider implements EditFileProvider {
     }
 
 
-    private ClientConfigRoot getClientFor(VirtualFile file) {
+    private RootedClientConfig getClientFor(VirtualFile file) {
         ProjectConfigRegistry reg = ProjectConfigRegistry.getInstance(project);
-        return reg == null ? null : reg.getClientFor(file);
+        return reg == null ? null : reg.getClientConfigFor(file);
     }
 }

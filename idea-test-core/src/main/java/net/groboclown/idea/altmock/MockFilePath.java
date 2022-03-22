@@ -64,8 +64,9 @@ public class MockFilePath implements FilePath {
         return f.toURI().toASCIIString();
     }
 
+    // Removed in >=212
     @Deprecated
-    @Override
+    //@Override
     public @Nullable Document getDocument() {
         return null;
     }
@@ -88,14 +89,16 @@ public class MockFilePath implements FilePath {
         return MockFileType.MOCK;
     }
 
+    // Removed in >=212
     @Deprecated
-    @Override
+    //@Override
     public void refresh() {
 
     }
 
+    // Removed in >=212
     @Deprecated
-    @Override
+    //@Override
     public void hardRefresh() {
 
     }

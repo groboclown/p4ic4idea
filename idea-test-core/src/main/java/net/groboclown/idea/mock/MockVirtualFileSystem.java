@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public class MockVirtualFileSystem
     private final List<VirtualFileListener> listeners = new ArrayList<>();
 
     private final boolean readOnly;
-    private Charset defaultCharset = Charset.forName("utf-8");
+    private Charset defaultCharset = StandardCharsets.UTF_8;
 
 
     @NotNull
@@ -138,7 +139,7 @@ public class MockVirtualFileSystem
         if (vFile instanceof MockVirtualFile) {
             MockVirtualFile mvf = (MockVirtualFile) vFile;
             if (registeredFiles.containsKey(mvf.getPath())) {
-                VirtualFileEvent event = new VirtualFileEvent(requestor, vFile, vFile.getName(), mvf.getParent());
+                VirtualFileEvent event = new VirtualFileEvent(requestor, vFile, mvf.getParent(), 0, 1);
                 for (VirtualFileListener listener : listeners) {
                     listener.beforeFileDeletion(event);
                 }
@@ -176,7 +177,7 @@ public class MockVirtualFileSystem
                 }
                 MockVirtualFile child = new MockVirtualFile(this, fileName, mvd, "", getDefaultCharset());
                 mvd.markChild(child);
-                VirtualFileEvent event = new VirtualFileEvent(requestor, child, fileName, vDir);
+                VirtualFileEvent event = new VirtualFileEvent(requestor, child, vDir, 0, 1);
                 for (VirtualFileListener listener : listeners) {
                     listener.fileCreated(event);
                 }
@@ -209,7 +210,7 @@ public class MockVirtualFileSystem
                 MockVirtualFile child = new MockVirtualFile(this, dirName, mvd);
                 mvd.markChild(child);
                 registeredFiles.put(child.getPath(), child);
-                VirtualFileEvent event = new VirtualFileEvent(requestor, child, dirName, vDir);
+                VirtualFileEvent event = new VirtualFileEvent(requestor, child, vDir, 0, 1);
                 for (VirtualFileListener listener : listeners) {
                     listener.fileCreated(event);
                 }
@@ -233,7 +234,7 @@ public class MockVirtualFileSystem
     }
 
     public void onFileContentsChanged(Object requestor, MockVirtualFile file, String newContents) {
-        VirtualFileEvent event = new VirtualFileEvent(requestor, file, file.getName(), file.getParent());
+        VirtualFileEvent event = new VirtualFileEvent(requestor, file, file.getParent(), 0, 1);
         for (VirtualFileListener listener : listeners) {
             listener.beforeContentsChange(event);
         }

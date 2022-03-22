@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+
 public class MockChangeListManagerGate implements ChangeListManagerGate {
     public LocalChangeList defaultChangelist;
 
@@ -45,6 +46,7 @@ public class MockChangeListManagerGate implements ChangeListManagerGate {
         this.clMgr = clMgr;
     }
 
+    @NotNull
     @Override
     public List<LocalChangeList> getListsCopy() {
         return new ArrayList<>(changes);
@@ -64,8 +66,9 @@ public class MockChangeListManagerGate implements ChangeListManagerGate {
         return clMgr.findChangeList(name);
     }
 
+    @NotNull
     @Override
-    public synchronized LocalChangeList addChangeList(String name, String comment) {
+    public synchronized LocalChangeList addChangeList(@NotNull String name, String comment) {
         if (findChangeList(name) != null) {
             // TODO right exception?
             throw new IllegalArgumentException("changelist already exists: " + name);
@@ -78,11 +81,14 @@ public class MockChangeListManagerGate implements ChangeListManagerGate {
         return cl;
     }
 
+    @NotNull
     @Override
-    public synchronized LocalChangeList findOrCreateList(String name, String comment) {
+    public synchronized LocalChangeList findOrCreateList(@NotNull String name, String comment) {
         LocalChangeList cl = findChangeList(name);
         if (cl != null) {
-            cl.setComment(comment);
+            if (cl instanceof MockLocalChangeList) {
+                ((MockLocalChangeList) cl).setComment(comment);
+            }
             return cl;
         }
         return addChangeList(name, comment);
@@ -91,12 +97,17 @@ public class MockChangeListManagerGate implements ChangeListManagerGate {
     @Override
     public void editComment(@NotNull String name, @Nullable String comment) {
         LocalChangeList cl = getExisting(name);
-        cl.setComment(comment);
+        if (cl instanceof MockLocalChangeList) {
+            ((MockLocalChangeList) cl).setComment(comment);
+        }
     }
 
     @Override
     public void editName(@NotNull String oldName, @NotNull String newName) {
-        getExisting(oldName).setName(newName);
+        LocalChangeList cl = getExisting(oldName);
+        if (cl instanceof MockLocalChangeList) {
+            ((MockLocalChangeList) cl).setName(newName);
+        }
     }
 
     @Override
@@ -109,7 +120,7 @@ public class MockChangeListManagerGate implements ChangeListManagerGate {
     }
 
     @Override
-    public FileStatus getStatus(VirtualFile virtualFile) {
+    public FileStatus getStatus(@NotNull VirtualFile virtualFile) {
         throw new IllegalStateException("not implemented");
         //return null;
     }

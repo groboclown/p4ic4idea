@@ -42,7 +42,8 @@ public class MockLocalChangeList extends LocalChangeList {
         return this;
     }
 
-    @Override
+    // Removed in 213
+    //@Override
     public void setName(@NotNull String s) {
         name = s;
     }
@@ -53,7 +54,8 @@ public class MockLocalChangeList extends LocalChangeList {
         return comment;
     }
 
-    @Override
+    // Removed in 213
+    //@Override
     public void setComment(@Nullable String s) {
         this.comment = s;
     }
@@ -78,7 +80,8 @@ public class MockLocalChangeList extends LocalChangeList {
         return false;
     }
 
-    @Override
+    // Removed in 213
+    //@Override
     public void setReadOnly(boolean b) {
 
     }

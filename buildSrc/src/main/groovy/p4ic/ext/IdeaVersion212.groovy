@@ -63,6 +63,7 @@ class IdeaVersion212 implements IdeaVersionLibMatcher {
                     // com.intellij.openapi.application.Application
                     "intellij.platform.ide.jar",
             ),
+            new NamedLib("ide-core"),
             new NamedLib("ide-impl",
                     // com.intellij.credentialStore.CredentialPromptDialog
                     "intellij.platform.ide.impl.jar",

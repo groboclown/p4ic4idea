@@ -171,53 +171,64 @@ public class PropertiesPartUI
      */
     private void $$$setupUI$$$() {
         root = new JPanel();
-        root.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow",
+        root.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow",
                 "center:d:noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.port.label"));
-        CellConstraints cc = new CellConstraints();
-        root.add(label1, cc.xy(1, 1, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
+        root.add(label1, cc.xy(1, 1, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myPortField = new JTextField();
         myPortField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4port.tooltip"));
-        root.add(myPortField, cc.xy(3, 1, CellConstraints.FILL, CellConstraints.DEFAULT));
+        root.add(myPortField, cc.xy(3, 1, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JLabel label2 = new JLabel();
         this.$$$loadLabelText$$$(label2, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.username.label"));
-        root.add(label2, cc.xy(1, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(label2, cc.xy(1, 3, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.hostname.label"));
-        root.add(label3, cc.xy(1, 5, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(label3, cc.xy(1, 5, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myTicketLabel = new JLabel();
         this.$$$loadLabelText$$$(myTicketLabel, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.authticketfile.label"));
-        root.add(myTicketLabel, cc.xy(1, 7, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(myTicketLabel, cc.xy(1, 7, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myTrustLabel = new JLabel();
         this.$$$loadLabelText$$$(myTrustLabel, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.trustticketfile.label"));
-        root.add(myTrustLabel, cc.xy(1, 9, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(myTrustLabel, cc.xy(1, 9, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JLabel label4 = new JLabel();
         this.$$$loadLabelText$$$(label4, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.ignore.label"));
-        root.add(label4, cc.xy(1, 13, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(label4, cc.xy(1, 13, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JLabel label5 = new JLabel();
         this.$$$loadLabelText$$$(label5, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.loginsso.label"));
-        root.add(label5, cc.xy(1, 11, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(label5, cc.xy(1, 11, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JLabel label6 = new JLabel();
         this.$$$loadLabelText$$$(label6, this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.charset.label"));
-        root.add(label6, cc.xy(1, 15, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        root.add(label6, cc.xy(1, 15, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myUserField = new JTextField();
         myUserField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4user.tooltip"));
-        root.add(myUserField, cc.xy(3, 3, CellConstraints.FILL, CellConstraints.DEFAULT));
+        root.add(myUserField, cc.xy(3, 3, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myHostField = new JTextField();
         myHostField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4host.tooltip"));
-        root.add(myHostField, cc.xy(3, 5, CellConstraints.FILL, CellConstraints.DEFAULT));
+        root.add(myHostField, cc.xy(3, 5, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myTicketField = new TextFieldWithBrowseButton();
         myTicketField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4tickets.tooltip"));
@@ -229,15 +240,18 @@ public class PropertiesPartUI
         myLoginSsoField = new JTextField();
         myLoginSsoField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4loginsso.tooltip"));
-        root.add(myLoginSsoField, cc.xy(3, 11, CellConstraints.FILL, CellConstraints.DEFAULT));
+        root.add(myLoginSsoField, cc.xy(3, 11, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myIgnoreField = new JTextField();
         myIgnoreField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4ignore.tooltip"));
-        root.add(myIgnoreField, cc.xy(3, 13, CellConstraints.FILL, CellConstraints.DEFAULT));
+        root.add(myIgnoreField, cc.xy(3, 13, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myCharsetField = new JTextField();
         myCharsetField.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.properties.p4charset.tooltip"));
-        root.add(myCharsetField, cc.xy(3, 15, CellConstraints.FILL, CellConstraints.DEFAULT));
+        root.add(myCharsetField, cc.xy(3, 15, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         label1.setLabelFor(myPortField);
         label2.setLabelFor(myUserField);
         label3.setLabelFor(myHostField);

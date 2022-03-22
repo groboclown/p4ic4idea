@@ -14,11 +14,12 @@
 
 package net.groboclown.p4plugin.actions;
 
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.actions.AbstractVcsAction;
-import com.intellij.openapi.vcs.actions.VcsContext;
+import com.intellij.openapi.vcs.VcsDataKeys;
 import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import net.groboclown.p4.server.api.ProjectConfigRegistry;
@@ -39,15 +40,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class CreateSwarmReviewAction extends AbstractVcsAction {
+public class CreateSwarmReviewAction extends DumbAwareAction {
     public CreateSwarmReviewAction() {
         getTemplatePresentation().setText(P4Bundle.getString("swarm.review.create.title"));
         getTemplatePresentation().setIcon(P4Icons.SWARM);
     }
 
-
     @Override
-    public void actionPerformed(@NotNull VcsContext event) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         final Project project = event.getProject();
         if (project == null) {
             return;
@@ -72,7 +72,8 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
 
 
     @Override
-    protected void update(@NotNull final VcsContext event, @NotNull final Presentation presentation) {
+    public void update(@NotNull AnActionEvent event) {
+        Presentation presentation = event.getPresentation();
         Project project = event.getProject();
         if (project == null) {
             presentation.setEnabled(false);
@@ -137,8 +138,8 @@ public class CreateSwarmReviewAction extends AbstractVcsAction {
     }
 
     @NotNull
-    private List<ChangeList> getSelectedChangeLists(@NotNull VcsContext event) {
-        ChangeList[] ret = event.getSelectedChangeLists();
+    private List<ChangeList> getSelectedChangeLists(@NotNull AnActionEvent event) {
+        ChangeList[] ret = VcsDataKeys.CHANGE_LISTS.getData(event.getDataContext());
         if (ret == null || ret.length <= 0) {
             return Collections.emptyList();
         }

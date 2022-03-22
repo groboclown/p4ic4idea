@@ -20,7 +20,7 @@ import p4ic.ext.IdeaVersion
 import javax.annotation.Nonnull
 
 class IdeaVersionUtil {
-    public static final String LOWEST_COMPATIBLE_VERSION_NAME = "212" // "203"
+    public static final String LOWEST_COMPATIBLE_VERSION_NAME = "212"
 
     @Nonnull
     static IdeaVersion lowestCompatible(@Nonnull Project project) {

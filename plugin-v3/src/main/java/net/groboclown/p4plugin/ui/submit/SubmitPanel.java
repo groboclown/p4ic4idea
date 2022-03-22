@@ -181,39 +181,47 @@ public class SubmitPanel {
     private void $$$setupUI$$$() {
         createUIComponents();
         myRoot = new JPanel();
-        myRoot.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1, true, false));
+        myRoot.setLayout(
+                new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1, true, false));
         myRoot.setBorder(BorderFactory.createTitledBorder(null,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "submit.job.title"),
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JScrollPane scrollPane1 = new JScrollPane();
         scrollPane1.setHorizontalScrollBarPolicy(31);
-        myRoot.add(scrollPane1,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
+        myRoot.add(scrollPane1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_NORTH,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         myJobTable.setAutoResizeMode(3);
         myJobTable.setFillsViewportHeight(false);
         scrollPane1.setViewportView(myJobTable);
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new FormLayout(
+        panel1.setLayout(new com.jgoodies.forms.layout.FormLayout(
                 "fill:d:noGrow,left:4dlu:noGrow,fill:d:grow,left:4dlu:noGrow,fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow",
                 "center:d:grow,top:4dlu:noGrow,center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
-        myRoot.add(panel1,
-                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
+        myRoot.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, 1,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         final JLabel label1 = new JLabel();
         this.$$$loadLabelText$$$(label1,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.id"));
         label1.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.id.tooltip"));
-        CellConstraints cc = new CellConstraints();
-        panel1.add(label1, cc.xy(1, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
+        panel1.add(label1, cc.xy(1, 3, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myJobIdField = new JTextField();
         myJobIdField.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.id.tooltip"));
-        panel1.add(myJobIdField, cc.xy(3, 3, CellConstraints.FILL, CellConstraints.DEFAULT));
+        panel1.add(myJobIdField, cc.xy(3, 3, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myAddButton = new JButton();
         this.$$$loadButtonText$$$(myAddButton,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.add"));
@@ -242,10 +250,11 @@ public class SubmitPanel {
         myRemoveButton.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "job.panel.remove.tooltip"));
         panel1.add(myRemoveButton, cc.xy(7, 5));
-        final Spacer spacer1 = new Spacer();
-        myRoot.add(spacer1,
-                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final com.intellij.uiDesigner.core.Spacer spacer1 = new com.intellij.uiDesigner.core.Spacer();
+        myRoot.add(spacer1, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, 1,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         label1.setLabelFor(myJobIdField);
         label2.setLabelFor(myResolveState);
     }

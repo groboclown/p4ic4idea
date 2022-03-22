@@ -335,13 +335,13 @@ public class SwarmReviewPanel {
         descriptionTextArea.setWrapStyleWord(true);
         scrollPane2.setViewportView(descriptionTextArea);
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new FormLayout("fill:d:noGrow", "center:d:noGrow"));
+        panel2.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:noGrow", "center:d:noGrow"));
         root.add(panel2, BorderLayout.NORTH);
         final JLabel label1 = new JLabel();
         label1.setHorizontalAlignment(0);
         label1.setHorizontalTextPosition(0);
         label1.setText("Swarm Review Creation is in Beta");
-        CellConstraints cc = new CellConstraints();
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
         panel2.add(label1, cc.xy(1, 1));
     }
 

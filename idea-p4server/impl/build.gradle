@@ -9,6 +9,7 @@ ideaImplementation.uses(
         'core',
         'vcs-core',
         'vcs',
+        'ide-core',
         'util',
         'util-rt',
         'extensions',

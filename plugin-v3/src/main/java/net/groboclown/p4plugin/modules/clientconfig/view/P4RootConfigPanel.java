@@ -208,13 +208,14 @@ public class P4RootConfigPanel {
         panel1.setLayout(new BorderLayout(0, 0));
         rootPanel.add(panel1, BorderLayout.NORTH);
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new FormLayout("fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
+        panel2.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:d:grow",
+                "center:d:grow"));
         panel1.add(panel2, BorderLayout.EAST);
         myCheckConnectionButton = new JButton();
         this.$$$loadButtonText$$$(myCheckConnectionButton,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                         "configuration.check-connection.button"));
-        CellConstraints cc = new CellConstraints();
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
         panel2.add(myCheckConnectionButton, cc.xy(3, 1));
         panel2.add(myCheckConnectionSpinner, cc.xy(1, 1));
         final JPanel panel3 = new JPanel();

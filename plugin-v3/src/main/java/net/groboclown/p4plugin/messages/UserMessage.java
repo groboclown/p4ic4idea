@@ -19,7 +19,6 @@ import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.VcsNotifier;
 import net.groboclown.p4plugin.P4Bundle;
 import net.groboclown.p4plugin.components.UserProjectPreferences;
 import net.groboclown.p4plugin.extension.P4Vcs;
@@ -42,8 +41,8 @@ public class UserMessage {
      *
      * @param project source project
      * @param message message to display to the user
-     * @param title
-     * @param icon
+     * @param title notification title
+     * @param icon notification icon
      */
     public static void showNotification(@Nullable Project project, int level,
             @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String message,
@@ -71,11 +70,9 @@ public class UserMessage {
             @NotNull String message, @NotNull NotificationType icon, @Nullable NotificationListener question,
             @Nullable Runnable onMessageExpired) {
         final String groupId = P4Bundle.getString("notification.groupid");
-        Notification ret;
+        Notification ret = new Notification(groupId, title, message, icon);
         if (question != null) {
-            ret = new Notification(groupId, title, message, icon, question);
-        } else {
-            ret = new Notification(groupId, title, message, icon);
+            ret.setListener(question);
         }
         if (onMessageExpired != null) {
             ret.whenExpired(onMessageExpired);

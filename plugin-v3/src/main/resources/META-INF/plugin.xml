@@ -1,14 +1,19 @@
 <idea-plugin>
     <name>Perforce IDEA Community Integration</name>
     <id>PerforceIC</id>
-    <version>0.12.0-b4</version>
+    <version>0.12.0-b5</version>
     <!-- see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html -->
     <idea-version since-build="212"/>
     <category>VCS Integration</category>
     <change-notes><![CDATA[
     <ul>
       <li><em>0.12.0</em><ul>
-        <li>Fixed incorrect parsing of RSH server connections.</li>
+        <li>Fixed: RSH connections would incorrectly add "localhost:" to the command if the command name had no ':' character in it.</li>
+        <li>Improved the Active Connections panel to better refresh when the connection state changes, and now includes VCS roots that have an invalid Perforce configuration.</li>
+        <li>Internally changed the association of workspace associations to the VCS root registration, which allows for more accurate file associations.  This also alters how the Active Connections panel associates connections to roots.  This is expected to eliminate many places where the plugin showed odd behavior.</li>
+        <li>Removed all code that requires v211 (2021.1) and prior support.</li>
+        <li>Nearly all bundled libraries have been updated.  The included `bom.xml` file includes the updated information.</li>
+        <li>Refactored to simplify connection configuration code.</li>
       </ul></li>
       <li><em>0.11.3</em><ul>
         <li>Fixed a bug where a list returned by the IDE API was assumed to be mutable.</li>

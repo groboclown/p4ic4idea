@@ -20,6 +20,7 @@ import com.intellij.ide.passwordSafe.PasswordSafe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
+import org.jetbrains.concurrency.Promises;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +46,7 @@ public class MockPasswordSafe extends PasswordSafe {
     @NotNull
     @Override
     public Promise<Credentials> getAsync(@NotNull CredentialAttributes credentialAttributes) {
-        return Promise.resolve(get(credentialAttributes));
+        return Promises.resolvedPromise(get(credentialAttributes));
     }
 
     @Override
@@ -69,14 +70,12 @@ public class MockPasswordSafe extends PasswordSafe {
         set(credentialAttributes, credentials, true);
     }
 
-    // TODO Idea182 Compat
-    //@Override
+    @Override
     public void setRememberPasswordByDefault(boolean value) {
         // ignore
     }
 
-    // TODO Idea182 Compat
-    //@Override
+    @Override
     public boolean isRememberPasswordByDefault() {
         return true;
     }

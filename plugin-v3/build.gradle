@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
     id 'p4ic.compat'
-    id 'org.cyclonedx.bom'
+    id 'org.cyclonedx.bom' version '1.5.0'
 }
 version '1.6'
 
@@ -11,6 +11,7 @@ ideaImplementation.uses(
         'vcs-core',
         'vcs',
         'ide',
+        'ide-core',
         'editor',
         'util',
         'util-ui',
@@ -138,9 +139,10 @@ task showDeps {
 }
 
 cyclonedxBom {
-    // skipConfigs is a list of configuration names to exclude when generating the BOM.
     // Because of the distribution of the plugin, we really only care about the
     // libraries included in the packaging, which are "invisible" to the end-user.
+    // zip packages up the real libraries, so only bundle those.
+    // includeConfigs = ['externalBundled']
     skipConfigs += project.configurations.matching {
         return it.name != 'zip'
     }.getAsMap().keySet()

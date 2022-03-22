@@ -7,14 +7,10 @@ of Github.
 
 The codebase is based on 2013 versions of the IDE, and slowly upgraded from then.  Work is going on to upgrade this to support >=203 of the IDE (probably should just go up to 213 of the IDE).  This requires replacing many of the old ways of doing things and removing use of deprecated APIs.
 
-* First
-  * Bug with active connection view.  It includes the project root, not the VCS roots.
-
 * Easy
   * Replace deprecated APIs with the modern usage.
     * P4Java is an exception, here; the deprecation usage is due to localized migrations away from the original Perforce code.
     * idea-test-core is a smaller exception, as it's test-only code. 
-  * `PluginSetup` uses `PeriodicalTasksCloser`, which is deprecated.  A replacement needs to be found.
 * Hard
   * Update `P4CheckinEnvironment` to use modern APIs.  The parent class has changed how it works in many ways, and this implementation should reflect the new way of doing things.
   * Change `InvalidPasswordMonitorComponent` with a per-project service.  There might be opportunities here to fix the password handling issues in general.  Maybe add to `PluginSetup`?
@@ -91,7 +87,7 @@ Alternative ideas:
 
 ### Revert File Logic
 
-**Priority: Block**
+**Priority: Critical**
 
 (#181) Revert file functionality might have an issue in terms of where it's being applied.
 

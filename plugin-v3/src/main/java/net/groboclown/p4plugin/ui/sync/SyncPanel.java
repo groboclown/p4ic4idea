@@ -278,7 +278,7 @@ public class SyncPanel {
         myRootPane = new JPanel();
         myRootPane.setLayout(new BorderLayout(0, 0));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(4, 2, new Insets(4, 4, 4, 4), -1, -1));
+        panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 2, new Insets(4, 4, 4, 4), -1, -1));
         myRootPane.add(panel1, BorderLayout.NORTH);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.to.title"),
@@ -289,55 +289,79 @@ public class SyncPanel {
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.head"));
         mySyncHead.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.head.tooltip"));
-        panel1.add(mySyncHead, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel1.add(mySyncHead, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySyncRev = new JRadioButton();
         this.$$$loadButtonText$$$(mySyncRev,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev"));
         mySyncRev.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev.tooltip"));
-        panel1.add(mySyncRev, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel1.add(mySyncRev, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mySyncChangelist = new JRadioButton();
         this.$$$loadButtonText$$$(mySyncChangelist,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.change"));
         mySyncChangelist.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.other.tooltip"));
-        panel1.add(mySyncChangelist,
-                new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel1.add(mySyncChangelist, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final com.intellij.uiDesigner.core.Spacer spacer1 = new com.intellij.uiDesigner.core.Spacer();
+        panel1.add(spacer1, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel2, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+        panel2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(panel2, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         myRevision.setColumns(4);
         myRevision.setEnabled(false);
         myRevision.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev.value.tooltip"));
-        panel2.add(myRevision, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+        panel2.add(myRevision, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         myRevLabel = new JLabel();
         myRevLabel.setEnabled(false);
         this.$$$loadLabelText$$$(myRevLabel,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.rev.value"));
-        panel2.add(myRevLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel2.add(myRevLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel3, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+        panel3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.add(panel3, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         myOther = new JTextField();
         myOther.setColumns(10);
@@ -345,32 +369,46 @@ public class SyncPanel {
         myOther.setEnabled(false);
         myOther.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "sync.options.other.value.tooltip"));
-        panel3.add(myOther, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+        panel3.add(myOther, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         myOtherLabel = new JLabel();
         myOtherLabel.setEnabled(false);
         this.$$$loadLabelText$$$(myOtherLabel,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.other.field"));
-        panel3.add(myOtherLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(myOtherLabel, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
-        panel4.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow", "center:d:grow"));
-        panel1.add(panel4, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+        panel4.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:d:grow",
+                "center:d:grow"));
+        panel1.add(panel4, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         myFindLabelButton = new JButton();
         myFindLabelButton.setEnabled(false);
         this.$$$loadButtonText$$$(myFindLabelButton,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.find-label"));
-        CellConstraints cc = new CellConstraints();
-        panel4.add(myFindLabelButton, cc.xy(1, 1, CellConstraints.LEFT, CellConstraints.DEFAULT));
-        final Spacer spacer2 = new Spacer();
-        panel4.add(spacer2, cc.xy(3, 1, CellConstraints.FILL, CellConstraints.DEFAULT));
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
+        panel4.add(myFindLabelButton, cc.xy(1, 1, com.jgoodies.forms.layout.CellConstraints.LEFT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
+        final com.intellij.uiDesigner.core.Spacer spacer2 = new com.intellij.uiDesigner.core.Spacer();
+        panel4.add(spacer2, cc.xy(3, 1, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel5.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         myRootPane.add(panel5, BorderLayout.CENTER);
         panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), null,
                 TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
@@ -379,13 +417,17 @@ public class SyncPanel {
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.force"));
         myForce.setToolTipText(
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "sync.options.force.tooltip"));
-        panel5.add(myForce, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer3 = new Spacer();
-        panel5.add(spacer3,
-                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel5.add(myForce, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final com.intellij.uiDesigner.core.Spacer spacer3 = new com.intellij.uiDesigner.core.Spacer();
+        panel5.add(spacer3, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_VERTICAL, 1,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         myRevLabel.setLabelFor(myRevision);
         myOtherLabel.setLabelFor(myOther);
     }

@@ -253,11 +253,12 @@ public class ConfigPartStack {
                 "configuration.connection-choice.picker.tooltip"));
         panel1.add(myAddItemButton, BorderLayout.EAST);
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
+        panel2.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:grow", "center:d:grow"));
         rootPane.add(panel2, BorderLayout.CENTER);
         final JScrollPane scrollPane1 = new JScrollPane();
-        CellConstraints cc = new CellConstraints();
-        panel2.add(scrollPane1, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
+        panel2.add(scrollPane1, cc.xy(1, 1, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.FILL));
         scrollPane1.setViewportView(partStackPanel);
     }
 

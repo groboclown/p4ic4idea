@@ -167,25 +167,28 @@ public class ConfigPartWrapper {
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "configuration.stack.move-down"));
         panel2.add(myDownButton);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow", "center:d:grow"));
+        panel3.setLayout(
+                new com.jgoodies.forms.layout.FormLayout("fill:d:noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow",
+                        "center:d:grow"));
         panel1.add(panel3, BorderLayout.CENTER);
         myDescriptionToggle = new JButton();
         myDescriptionToggle.setText("");
         myDescriptionToggle.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "configuration.stack.wrapper.description.toggle.tooltip"));
-        CellConstraints cc = new CellConstraints();
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
         panel3.add(myDescriptionToggle, cc.xy(1, 1));
         myPartName = new JLabel();
         myPartName.setText("Label");
         panel3.add(myPartName, cc.xy(3, 1));
         myPartDescriptionPanel = new JPanel();
-        myPartDescriptionPanel.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
+        myPartDescriptionPanel.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:grow", "center:d:grow"));
         headerPanel.add(myPartDescriptionPanel, BorderLayout.CENTER);
         myPartDescription = new JTextArea();
         myPartDescription.setEditable(false);
         myPartDescription.setLineWrap(true);
         myPartDescription.setWrapStyleWord(true);
-        myPartDescriptionPanel.add(myPartDescription, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
+        myPartDescriptionPanel.add(myPartDescription, cc.xy(1, 1, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.FILL));
     }
 
     private static Method $$$cachedGetBundleMethod$$$ = null;

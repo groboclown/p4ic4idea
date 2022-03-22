@@ -171,50 +171,67 @@ public class ChooseLabelDialog
     private void $$$setupUI$$$() {
         createUIComponents();
         contentPane = new JPanel();
-        contentPane.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
+        contentPane.setLayout(
+                new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        contentPane.add(panel1,
-                new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null,
-                        null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        contentPane.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0,
+                false));
+        final com.intellij.uiDesigner.core.Spacer spacer1 = new com.intellij.uiDesigner.core.Spacer();
+        panel1.add(spacer1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1, true, false));
-        panel1.add(panel2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+        panel2.setLayout(
+                new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1, true, false));
+        panel1.add(panel2, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
                 false));
         buttonOK = new JButton();
         buttonOK.setText("OK");
-        panel2.add(buttonOK,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel2.add(buttonOK, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         buttonCancel = new JButton();
         buttonCancel.setText("Cancel");
-        panel2.add(buttonCancel,
-                new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel2.add(buttonCancel, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new BorderLayout(0, 0));
-        contentPane.add(panel3,
-                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
-                        0, false));
+        contentPane.add(panel3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0,
+                false));
         final JPanel panel4 = new JPanel();
-        panel4.setLayout(new FormLayout(
+        panel4.setLayout(new com.jgoodies.forms.layout.FormLayout(
                 "fill:d:grow,left:4dlu:noGrow,fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:max(d;4px):noGrow",
                 "center:d:grow,top:4dlu:noGrow,center:d:grow"));
         panel3.add(panel4, BorderLayout.SOUTH);
         mySearchField = new JTextField();
-        CellConstraints cc = new CellConstraints();
-        panel4.add(mySearchField, cc.xy(1, 3, CellConstraints.FILL, CellConstraints.DEFAULT));
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
+        panel4.add(mySearchField, cc.xy(1, 3, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         mySearchButton = new JButton();
         this.$$$loadButtonText$$$(mySearchButton,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "search.label.search-button"));
@@ -223,10 +240,11 @@ public class ChooseLabelDialog
         panel4.add(mySearchButton, cc.xy(3, 3));
         panel4.add(mySearchSpinner, cc.xy(5, 3));
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new FormLayout("fill:d:grow", "center:d:grow"));
+        panel5.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:grow", "center:d:grow"));
         panel3.add(panel5, BorderLayout.CENTER);
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel5.add(scrollPane1, cc.xy(1, 1, CellConstraints.FILL, CellConstraints.FILL));
+        panel5.add(scrollPane1, cc.xy(1, 1, com.jgoodies.forms.layout.CellConstraints.FILL,
+                com.jgoodies.forms.layout.CellConstraints.FILL));
         mySearchResults.setAutoCreateRowSorter(false);
         scrollPane1.setViewportView(mySearchResults);
     }

@@ -131,17 +131,25 @@ public class MockCommandProcessor
 
     }
 
+    // Introduced in 213
+    //@Override
+    public void allowMergeGlobalCommands(@NotNull Runnable runnable) {
+        runnable.run();
+    }
+
     @Override
     public void addCommandListener(@NotNull CommandListener commandListener) {
 
     }
 
-    @Override
+    // Removed in >=213
+    //@Override
     public void addCommandListener(@NotNull CommandListener commandListener, @NotNull Disposable disposable) {
 
     }
 
-    @Override
+    // Removed in >=213
+    //@Override
     public void removeCommandListener(@NotNull CommandListener commandListener) {
 
     }

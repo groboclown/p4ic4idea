@@ -10,6 +10,7 @@ ideaApi.uses(
         'vcs-core',
         'vcs',
         'ide',
+        'ide-core',
         'remote',
         'analysis',
         'project-model',

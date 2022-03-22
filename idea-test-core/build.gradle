@@ -17,6 +17,8 @@ ideaImplementation.uses(
         'vcs',
         'vcs-core',
         'ide',
+        'ide-core',
+        'concurrency',
         'editor',
         'extensions',
         'analysis',

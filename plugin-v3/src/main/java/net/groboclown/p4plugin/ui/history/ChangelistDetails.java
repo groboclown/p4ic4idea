@@ -223,13 +223,13 @@ public class ChangelistDetails {
     private void $$$setupUI$$$() {
         createUIComponents();
         root = new JPanel();
-        root.setLayout(new FormLayout("fill:d:grow",
+        root.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:grow",
                 "center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:d:grow"));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new FormLayout(
+        panel1.setLayout(new com.jgoodies.forms.layout.FormLayout(
                 "fill:d:noGrow,left:4dlu:noGrow,fill:max(d;4px):grow,left:4dlu:noGrow,fill:max(d;4px):noGrow,left:4dlu:noGrow,fill:max(d;4px):grow",
                 "center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
-        CellConstraints cc = new CellConstraints();
+        com.jgoodies.forms.layout.CellConstraints cc = new com.jgoodies.forms.layout.CellConstraints();
         root.add(panel1, cc.xy(1, 1));
         final JLabel label1 = new JLabel();
         Font label1Font = this.$$$getFont$$$(null, Font.BOLD, -1, label1.getFont());
@@ -238,7 +238,8 @@ public class ChangelistDetails {
         }
         this.$$$loadLabelText$$$(label1,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.title"));
-        panel1.add(label1, cc.xy(1, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        panel1.add(label1, cc.xy(1, 3, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myDate = new JLabel();
         myDate.setText("Label");
         panel1.add(myDate, cc.xy(3, 5));
@@ -253,18 +254,21 @@ public class ChangelistDetails {
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.author"));
         label2.setToolTipText(this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle",
                 "changelist.details.author.tooltip"));
-        panel1.add(label2, cc.xy(5, 3, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        panel1.add(label2, cc.xy(5, 3, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JLabel label3 = new JLabel();
         this.$$$loadLabelText$$$(label3,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.date"));
-        panel1.add(label3, cc.xy(1, 5, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        panel1.add(label3, cc.xy(1, 5, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         myAuthor = new JLabel();
         myAuthor.setText("Label");
         panel1.add(myAuthor, cc.xy(7, 3));
         final JLabel label4 = new JLabel();
         this.$$$loadLabelText$$$(label4,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.client"));
-        panel1.add(label4, cc.xy(5, 5, CellConstraints.RIGHT, CellConstraints.DEFAULT));
+        panel1.add(label4, cc.xy(5, 5, com.jgoodies.forms.layout.CellConstraints.RIGHT,
+                com.jgoodies.forms.layout.CellConstraints.DEFAULT));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new BorderLayout(0, 0));
         root.add(panel2, cc.xy(1, 3));
@@ -288,18 +292,19 @@ public class ChangelistDetails {
         final JScrollPane scrollPane2 = new JScrollPane();
         myJobsPanel.add(scrollPane2, BorderLayout.CENTER);
         scrollPane2.setViewportView(myJobs);
-        final Spacer spacer1 = new Spacer();
-        root.add(spacer1, cc.xy(1, 13, CellConstraints.DEFAULT, CellConstraints.FILL));
+        final com.intellij.uiDesigner.core.Spacer spacer1 = new com.intellij.uiDesigner.core.Spacer();
+        root.add(spacer1, cc.xy(1, 13, com.jgoodies.forms.layout.CellConstraints.DEFAULT,
+                com.jgoodies.forms.layout.CellConstraints.FILL));
         myNoFilesPanel = new JPanel();
-        myNoFilesPanel.setLayout(
-                new FormLayout("fill:d:grow", "center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
+        myNoFilesPanel.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:grow",
+                "center:d:grow,top:4dlu:noGrow,center:max(d;4px):noGrow"));
         root.add(myNoFilesPanel, cc.xy(1, 7));
         final JLabel label5 = new JLabel();
         this.$$$loadLabelText$$$(label5,
                 this.$$$getMessageFromBundle$$$("net/groboclown/p4plugin/P4Bundle", "changelist.details.files.none"));
         myNoFilesPanel.add(label5, cc.xy(1, 3));
         myNoJobsPanel = new JPanel();
-        myNoJobsPanel.setLayout(new FormLayout("fill:d:grow", "center:d:noGrow"));
+        myNoJobsPanel.setLayout(new com.jgoodies.forms.layout.FormLayout("fill:d:grow", "center:d:noGrow"));
         root.add(myNoJobsPanel, cc.xy(1, 11));
         final JLabel label6 = new JLabel();
         this.$$$loadLabelText$$$(label6,

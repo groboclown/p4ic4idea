@@ -21,8 +21,6 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
 import com.intellij.util.ui.AsyncProcessIcon;
 import com.intellij.util.ui.UIUtil;
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.config.ClientConfig;
 import net.groboclown.p4.server.api.config.ConfigProblem;
 import net.groboclown.p4.server.api.config.ConfigPropertiesUtil;
@@ -106,7 +104,7 @@ public class P4RootConfigPanel {
         myConfigPartStack.setParts(parts);
     }
 
-    boolean isModified(List<ConfigPart> configParts) {
+    boolean isModified(@Nullable List<ConfigPart> configParts) {
         return myConfigPartStack.isModified(configParts);
     }
 

@@ -86,6 +86,15 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
     @Override
     public void apply()
             throws ConfigurationException {
+        // Bug #233
+        // There's something going on, either on the isModified call, or
+        // that something else isn't being handled here, where the first time the
+        // root is created, the settings list isn't persisted.
+
+        if (panel == null || controller == null) {
+            return;
+        }
+
         Collection<ConfigProblem> problems = null;
         if (isModified()) {
             LOG.info("Updating root configuration for " + vcsRoot);
@@ -118,6 +127,9 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
 
     @Override
     public void reset() {
+        if (panel == null || controller == null) {
+            return;
+        }
         List<ConfigPart> parts = loadPartsFromSettings();
         panel.setConfigParts(parts);
         controller.refreshConfigConnection();
@@ -132,6 +144,12 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         controller = null;
     }
 
+    @Override
+    public void cancel() {
+        // No message is sent.
+    }
+
+    @Nullable
     private List<ConfigPart> loadPartsFromSettings() {
         return VcsRootConfigController.getInstance().getConfigPartsForRoot(project, vcsRoot);
     }
@@ -140,7 +158,7 @@ public class P4VcsRootConfigurable implements UnnamedConfigurable {
         List<ConfigPart> parts = loadPartsFromSettings();
         return new MultipleConfigPart(
                 P4Bundle.getString("configuration.connection-choice.wrapped-container"),
-                parts
+                parts == null ? List.of() : parts
         );
     }
 

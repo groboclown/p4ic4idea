@@ -22,17 +22,15 @@ import com.intellij.openapi.ui.popup.PopupStep;
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
 import net.groboclown.p4.server.api.config.part.ConfigPart;
 import net.groboclown.p4plugin.P4Bundle;
-import net.groboclown.p4plugin.ui.SwingUtil;
 import net.groboclown.p4plugin.modules.clientconfig.view.part.ClientNamePartUI;
 import net.groboclown.p4plugin.modules.clientconfig.view.part.EnvPartUI;
 import net.groboclown.p4plugin.modules.clientconfig.view.part.FilePartUI;
 import net.groboclown.p4plugin.modules.clientconfig.view.part.PropertiesPartUI;
 import net.groboclown.p4plugin.modules.clientconfig.view.part.RequirePasswordPartUI;
 import net.groboclown.p4plugin.modules.clientconfig.view.part.ServerFingerprintPartUI;
+import net.groboclown.p4plugin.ui.SwingUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +107,8 @@ public class ConfigPartStack {
 
     boolean isModified(@Nullable List<ConfigPart> configParts) {
         if (configParts == null) {
-            configParts = List.of();
+            // Not registered, which means it's different.
+            return true;
         }
         List<ConfigPart> pendingParts = getParts();
         if (pendingParts.size() != configParts.size()) {

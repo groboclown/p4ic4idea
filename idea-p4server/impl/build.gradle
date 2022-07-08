@@ -28,6 +28,7 @@ ideaTest.uses(
         'concurrency',
         'util',
         'core-impl',
+        'util-strings',
 
         'fastutil',
         'trove4j',
